@@ -51,23 +51,33 @@ function repaint() {
     // todo refresh other plugins
 }
 
+
 $(document).keydown(function(e) {
     const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
     const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
     console.log(code, char);
-
-    // e.ctrlKey e.altKey e.shiftKey e.metaKey (command/windows)
-    if (e.metaKey || e.ctrlKey) {
-        return; // Doing a browser operation (like command-R to reload); do not prevent it
-    }
 
     if (char === 'Unidentified') {
         console.warn(`Unidentified key for event: ${e}`);
         return;
     }
 
+    // Commands
+    if (e.metaKey || e.ctrlKey) {
+        switch (char) {
+            // TODO Add index.js commands if needed
+            default:
+                return;
+        }
+
+        e.preventDefault(); // One of the index.js commands was used, prevent default
+        return;
+    }
+
+    // Standard characters
     switch (char) {
         case 'Backspace':
+        case 'Delete':
             selection.getSelectedCells().forEach(cell => cell.html(''));
             break;
         default:
@@ -80,7 +90,9 @@ $(document).keydown(function(e) {
             ) {
                 selection.getSelectedCells().forEach(cell => cell.html(char));
             }
-            break;
+            else {
+                return;
+            }
     }
 
     e.preventDefault();

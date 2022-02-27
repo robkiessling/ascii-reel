@@ -48,50 +48,118 @@ export function refresh() {
     }
 }
 
-// Returns a 2d array of the latest selection's cells
-// Does not work if there are multiple selections
-export function getSelectedRect() {
+// If part of the applied layout will end up out of bounds, the callback will return a null value for that point
+export function applyLayoutAtPoint(layout, point, callback) {
+    layout.forEach((layoutRowValues, layoutRow) => {
+        layoutRowValues.forEach((layoutValue, layoutCol) => {
+            // Final row/col is the layout translated by the origin point
+            const row = layoutRow + point.row;
+            const col = layoutCol + point.col;
+            callback(row < 0 || row >= numRows || col < 0 || col >= numCols ? null : layoutValue, row, col);
+        })
+    })
+}
+
+/**
+ * Returns a 2d array of the smallest rectangle that bounds all selections. This 2d array will contain null cells
+ * if there are multiple selections with gaps in between them.
+ *
+ * E.g. If the selection (depicted by x's) was this:
+ *
+ *        .......
+ *        ..xx...
+ *        ..xx..x
+ *        .......
+ *
+ *      Returns:
+ *
+ *        [
+ *          [x, x, null, null, null],
+ *          [x, x, null, null, x]
+ *        ]
+ */
+export function getSelectionLayout(processor = function(cell, r, c) { return cell; }) {
     if (!hasSelection()) {
         return [[]];
     }
-    if (hasMultipleSelections()) {
-        console.warn("Cannot getSelectedRect with multiple selections");
-        return [[]];
-    }
 
-    return getRect(latestSelection());
-}
+    let layout = [];
 
-// Returns a flat array of selected cells
-export function getSelectedCells() {
-    let selectedCells = new Set();
+    // Find outermost boundaries for the layout
+    let { topLeft: layoutTopLeft, bottomRight: layoutBottomRight } = getLayoutCorners();
 
-    selections.forEach(selection => {
-        getRect(selection).flat().forEach(cell => selectedCells.add(cell));
+    // Fill layout with nulls
+    cornerToCorner(layoutTopLeft, layoutBottomRight, (r, c) => {
+        if (!layout[r - layoutTopLeft.row]) { layout[r - layoutTopLeft.row] = []; }
+        layout[r - layoutTopLeft.row][c - layoutTopLeft.col] = null;
     });
 
-    return [...selectedCells];
+    // Iterate through selections, filling layout with cell values
+    selections.forEach(selection => {
+        const { topLeft, bottomRight } = getCorners(selection);
+        cornerToCorner(topLeft, bottomRight, (r, c) => {
+            layout[r - layoutTopLeft.row][c - layoutTopLeft.col] = processor(cells[r][c], r, c);
+        })
+    });
+
+    return layout;
 }
 
+/**
+ * Returns a flat array of selected cells from all selections.
+ *
+ * E.g. If the selection (depicted by x's) was this:
+ *
+ *        .......
+ *        ..xx...
+ *        ..xx..x
+ *        .......
+ *
+ *      Returns:
+ *
+ *        [x, x, x, x, x]
+ */
+export function getSelectedCells() {
+    return getSelectionLayout().flat().filter(cell => cell !== null);
+}
 
-function getRect(selection) {
-    let selectedRect = [];
+export function getLayoutCorners() {
+    let layoutTopLeft = { row: null, col: null };
+    let layoutBottomRight = { row: null, col: null };
+    selections.forEach(selection => {
+        const { topLeft, bottomRight } = getCorners(selection);
+        if (layoutTopLeft.row === null || topLeft.row < layoutTopLeft.row) { layoutTopLeft.row = topLeft.row; }
+        if (layoutTopLeft.col === null || topLeft.col < layoutTopLeft.col) { layoutTopLeft.col = topLeft.col; }
+        if (layoutBottomRight.row === null || bottomRight.row > layoutBottomRight.row) { layoutBottomRight.row = bottomRight.row; }
+        if (layoutBottomRight.col === null || bottomRight.col > layoutBottomRight.col) { layoutBottomRight.col = bottomRight.col; }
+    });
+    return {
+        topLeft: layoutTopLeft,
+        bottomRight: layoutBottomRight
+    };
+}
 
-    // selection start/end are always in two opposite corners. So selection boundaries are min/max of the endpoints
-    const topRow = Math.min(selection.start.row, selection.end.row);
-    const bottomRow = Math.max(selection.start.row, selection.end.row);
-    const leftCol = Math.min(selection.start.col, selection.end.col);
-    const rightCol = Math.max(selection.start.col, selection.end.col);
-
-    for (let r = topRow; r <= bottomRow; r++) {
-        let selectedRow = [];
-        for (let c = leftCol; c <= rightCol; c++) {
-            selectedRow.push(cells[r][c]);
+function getCorners(selection) {
+    return {
+        topLeft: {
+            row: Math.min(selection.start.row, selection.end.row),
+            col: Math.min(selection.start.col, selection.end.col)
+        },
+        bottomRight: {
+            row: Math.max(selection.start.row, selection.end.row),
+            col: Math.max(selection.start.col, selection.end.col)
         }
-        selectedRect.push(selectedRow);
     }
-    return selectedRect;
 }
+
+function cornerToCorner(topLeft, bottomRight, callback) {
+    for (let r = topLeft.row; r <= bottomRight.row; r++) {
+        for (let c = topLeft.col; c <= bottomRight.col; c++) {
+            callback(r, c);
+        }
+    }
+}
+
 
 
 $(document).keydown(function(e) {
@@ -100,13 +168,21 @@ $(document).keydown(function(e) {
     const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
     const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
 
-    switch (char) {
-        case 'a':
-            if (e.metaKey || e.ctrlKey) {
+    // Commands
+    if (e.metaKey || e.ctrlKey) {
+        switch (char) {
+            case 'a':
                 selectAll();
-                e.preventDefault();
-            }
-            break;
+                break;
+            default:
+                return;
+        }
+
+        e.preventDefault(); // One of the commands was used, prevent default
+        return;
+    }
+
+    switch (char) {
         case 'Escape':
             clearSelections();
             break;
@@ -133,7 +209,7 @@ $(document).keydown(function(e) {
     }
 });
 
-function hasSelection() {
+export function hasSelection() {
     return selections.length > 0;
 }
 
