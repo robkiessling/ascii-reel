@@ -1,0 +1,22 @@
+
+.ascii-canvas {
+  background: black;
+  position: relative;
+  font-family: monospace;
+  font-size: 1rem;
+
+  .cell {
+    position: absolute;
+    //border: 1px solid black;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    color: white;
+
+    &.selected {
+      background: #aeae00;
+    }
+  }
+}
