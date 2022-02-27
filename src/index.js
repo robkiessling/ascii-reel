@@ -68,7 +68,7 @@ $(document).keydown(function(e) {
 
     switch (char) {
         case 'Backspace':
-            selection.getSelectedCells().flat().forEach(cell => cell.html(''));
+            selection.getSelectedCells().forEach(cell => cell.html(''));
             break;
         default:
             if (                                // Keyboard keycodes that produce output:
@@ -78,7 +78,7 @@ $(document).keydown(function(e) {
                 (code >= 186 && code <= 192) || // ;=,-./`
                 (code >= 219 && code <= 222)    // [\]'
             ) {
-                selection.getSelectedCells().flat().forEach(cell => cell.html(char));
+                selection.getSelectedCells().forEach(cell => cell.html(char));
             }
             break;
     }
