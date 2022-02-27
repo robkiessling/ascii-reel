@@ -1,6 +1,6 @@
 import $ from "jquery";
 import {frame, numRows, numCols} from './index.js';
-import {refreshSelection} from "./canvas.js";
+import * as canvas from "./canvas.js";
 
 let selections = [];
 
@@ -16,7 +16,7 @@ export function bindCanvas($canvas) {
         const $cell = $(this);
 
         if (!evt.metaKey && !evt.ctrlKey && !evt.shiftKey) {
-            clearSelections();
+            clear();
         }
 
         if (evt.metaKey || evt.ctrlKey || !latestSelection()) {
@@ -25,20 +25,20 @@ export function bindCanvas($canvas) {
 
         if (evt.shiftKey) {
             latestSelection().end = { row: $cell.data('row'), col: $cell.data('col') };
-            refreshSelection();
+            canvas.refreshSelection();
         }
     }).off('mousemove.selection', '.cell').on('mousemove.selection', '.cell', function(evt) {
         if (isSelecting) {
             const $cell = $(this);
             latestSelection().end = { row: $cell.data('row'), col: $cell.data('col') };
-            refreshSelection();
+            canvas.refreshSelection();
         }
     });
 
     $(document).off('mouseup.selection').on('mouseup.selection', function(evt) {
         if (isSelecting) {
             isSelecting = false;
-            refreshSelection();
+            canvas.refreshSelection();
         }
     });
 }
@@ -167,9 +167,9 @@ function latestSelection() {
     return selections[selections.length - 1];
 }
 
-function clearSelections() {
+export function clear() {
     selections = [];
-    refreshSelection();
+    canvas.refreshSelection();
 }
 
 function startSelection(row, col) {
@@ -177,32 +177,32 @@ function startSelection(row, col) {
         start: { row: row, col: col },
         end: { row: row, col: col }
     });
-    refreshSelection();
+    canvas.refreshSelection();
 }
 
-function selectAll() {
+export function selectAll() {
     selections = [{
         start: { row: 0, col: 0 },
         end: { row: numRows() - 1, col: numCols() - 1 }
     }];
-    refreshSelection();
+    canvas.refreshSelection();
 }
 
 // Move all selections in a particular direction, as long as they can ALL move in that direction without hitting boundaries
-function moveSelections(direction, moveStart = true, moveEnd = true) {
+export function moveSelection(direction, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
         startSelection(0, 0);
         return;
     }
 
-    if (selections.every(selection => canMoveSelection(selection, direction, moveStart, moveEnd))) {
-        selections.forEach(selection => moveSelection(selection, direction, moveStart, moveEnd));
+    if (selections.every(selection => canMovePartial(selection, direction, moveStart, moveEnd))) {
+        selections.forEach(selection => movePartial(selection, direction, moveStart, moveEnd));
     }
 
-    refreshSelection();
+    canvas.refreshSelection();
 }
 
-function canMoveSelection(selection, direction, moveStart = true, moveEnd = true) {
+function canMovePartial(selection, direction, moveStart = true, moveEnd = true) {
     switch(direction) {
         case 'left':
             if (moveStart && selection.start.col <= 0) { return false; }
@@ -221,14 +221,14 @@ function canMoveSelection(selection, direction, moveStart = true, moveEnd = true
             if (moveEnd && selection.end.row >= numRows() - 1) { return false; }
             break;
         default:
-            console.warn(`Invalid moveSelection direction: ${direction}`);
+            console.warn(`Invalid canMovePartial direction: ${direction}`);
             return false;
     }
     return true;
 }
 
-// Move a selection in a direction. Does not respect boundaries (you should call canMoveSelection first)
-function moveSelection(selection, direction, moveStart = true, moveEnd = true) {
+// Move a selection in a direction. Does not respect boundaries (you should call canMovePartial first)
+function movePartial(selection, direction, moveStart = true, moveEnd = true) {
     switch(direction) {
         case 'left':
             if (moveStart) { selection.start.col -= 1; }
@@ -247,55 +247,6 @@ function moveSelection(selection, direction, moveStart = true, moveEnd = true) {
             if (moveEnd) { selection.end.row += 1; }
             break;
         default:
-            console.warn(`Invalid moveSelection direction: ${direction}`);
+            console.warn(`Invalid movePartial direction: ${direction}`);
     }
 }
-
-$(document).keydown(function(e) {
-    // e.ctrlKey e.altKey e.shiftKey e.metaKey (command/windows)
-
-    const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
-    const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
-
-    // Commands
-    if (e.metaKey || e.ctrlKey) {
-        switch (char) {
-            case 'a':
-                selectAll();
-                break;
-            default:
-                return;
-        }
-
-        e.preventDefault(); // One of the commands was used, prevent default
-        return;
-    }
-
-    switch (char) {
-        case 'Escape':
-            clearSelections();
-            break;
-        case 'ArrowLeft':
-            moveSelections('left', !e.shiftKey); // If shift key is pressed, we only want to move the end coordinate
-            break;
-        case 'ArrowUp':
-            moveSelections('up', !e.shiftKey);
-            break;
-        case 'ArrowRight':
-            moveSelections('right', !e.shiftKey);
-            break;
-        case 'ArrowDown':
-            moveSelections('down', !e.shiftKey);
-            break;
-        case 'Tab':
-            if (e.shiftKey) { moveSelections('left'); } else { moveSelections('right'); }
-            break;
-        case 'Enter':
-            if (e.shiftKey) { moveSelections('up'); } else { moveSelections('down'); }
-            break;
-        default:
-            return; // No changes
-    }
-
-    e.preventDefault();
-});
