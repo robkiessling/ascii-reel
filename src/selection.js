@@ -3,40 +3,56 @@ import { $canvas, numRows, numCols, cells } from './index.js';
 
 // --------------------------------------
 let selection = {};
-reset();
-
-export function reset() {
-    selection = {
-        focus: { row: 0, col: 0 },
-        topLeft: { row: 0, col: 0 },
-        bottomRight: { row: 0, col: 0 }
-    };
-}
-
-export function refresh() {
-    highlightSelection($canvas, cells);
-}
+clearSelection();
 
 export function loadCanvas() {
-    reset();
+    clearSelection();
+
+    let isSelecting = false;
 
     $canvas.off('mousedown', '.cell').on('mousedown', '.cell', function(evt) {
+        isSelecting = true;
         const $cell = $(this);
         selectCell($cell.data('row'), $cell.data('col'));
-        refresh();
+    }).off('mousemove', '.cell').on('mousemove', '.cell', function(evt) {
+        if (isSelecting) {
+            const $cell = $(this);
+            selection.end = { row: $cell.data('row'), col: $cell.data('col') };
+            refresh();
+        }
+    });
+
+    $(document).off('mouseup').on('mouseup', function(evt) {
+        if (isSelecting) {
+            isSelecting = false;
+            refresh();
+        }
     });
 }
 
-export function getFocusedCell() {
-    return cells[selection.focus.row][selection.focus.col];
+export function refresh() {
+    if ($canvas) {
+        $canvas.find('.cell').removeClass('selected');
+        getSelectedCells().flat().forEach(cell => cell.addClass('selected'));
+    }
 }
 
 export function getSelectedCells() {
     let selectedCells = [];
 
-    for (let r = selection.topLeft.row; r <= selection.bottomRight.row; r++) {
+    if (!hasSelection()) {
+        return selectedCells;
+    }
+
+    // selection start/end are always in two opposite corners. So selection boundaries are min/max of the endpoints
+    const topRow = Math.min(selection.start.row, selection.end.row);
+    const bottomRow = Math.max(selection.start.row, selection.end.row);
+    const leftCol = Math.min(selection.start.col, selection.end.col);
+    const rightCol = Math.max(selection.start.col, selection.end.col);
+
+    for (let r = topRow; r <= bottomRow; r++) {
         let selectedRow = [];
-        for (let c = selection.topLeft.col; c <= selection.bottomRight.col; c++) {
+        for (let c = leftCol; c <= rightCol; c++) {
             selectedRow.push(cells[r][c]);
         }
         selectedCells.push(selectedRow);
@@ -45,86 +61,96 @@ export function getSelectedCells() {
     return selectedCells;
 }
 
-// export function isInSelection(row, col) {
-//     return row >= selection.topLeft.row && row <= selection.bottomRight.row &&
-//         col >= selection.topLeft.col && col <= selection.bottomRight.col;
-// }
-
-
 $(document).keydown(function(e) {
     // e.ctrlKey e.altKey e.shiftKey e.metaKey (command/windows)
-    if (e.metaKey || e.ctrlKey) {
-        return; // Doing a browser operation (like command-R to reload); do not prevent it
-    }
 
     const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
     const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
 
     switch (char) {
+        case 'a':
+            if (e.metaKey || e.ctrlKey) {
+                selectAll();
+                e.preventDefault();
+            }
+            break;
+        case 'Escape':
+            clearSelection();
+            break;
         case 'ArrowLeft':
-            stepFocus('left');
+            moveSelection('left', !e.shiftKey); // If shift key is pressed, we only want to move the end point
             break;
         case 'ArrowUp':
-            stepFocus('up');
+            moveSelection('up', !e.shiftKey);
             break;
         case 'ArrowRight':
-            stepFocus('right');
+            moveSelection('right', !e.shiftKey);
             break;
         case 'ArrowDown':
-            stepFocus('down');
+            moveSelection('down', !e.shiftKey);
             break;
         case 'Tab':
-            if (e.shiftKey) { stepFocus('left'); } else { stepFocus('right'); }
+            if (e.shiftKey) { moveSelection('left'); } else { moveSelection('right'); }
             break;
         case 'Enter':
-            if (e.shiftKey) { stepFocus('up'); } else { stepFocus('down'); }
+            if (e.shiftKey) { moveSelection('up'); } else { moveSelection('down'); }
             break;
         default:
             return; // No changes
     }
-
-    e.preventDefault();
-    refresh();
 });
 
-function highlightSelection() {
-    $canvas.find('.cell').removeClass('selected');
+function hasSelection() {
+    return selection.start.row !== null;
+}
 
-    getSelectedCells().forEach(row => {
-        row.forEach(cell => {
-            cell.addClass('selected');
-        });
-    });
+function clearSelection() {
+    selectCell(null, null);
 }
 
 function selectCell(row, col) {
     selection = {
-        focus: { row: row, col: col },
-        topLeft: { row: row, col: col },
-        bottomRight: { row: row, col: col }
+        start: { row: row, col: col },
+        end: { row: row, col: col }
     };
+    refresh();
 }
 
-function stepFocus(direction) {
-    let row = selection.focus.row, col = selection.focus.col;
+function selectAll() {
+    selection = {
+        start: { row: 0, col: 0 },
+        end: { row: numRows - 1, col: numCols - 1 }
+    };
+    refresh();
+}
+
+function moveSelection(direction, moveStart = true, moveEnd = true) {
+    if (!hasSelection()) {
+        selectCell(0, 0);
+        return;
+    }
 
     switch(direction) {
         case 'left':
-            if (col > 0) { col -= 1; }
+            if (moveStart && selection.start.col > 0) { selection.start.col -= 1; }
+            if (moveEnd && selection.end.col > 0) { selection.end.col -= 1; }
             break;
         case 'up':
-            if (row > 0) { row -= 1; }
+            if (moveStart && selection.start.row > 0) { selection.start.row -= 1; }
+            if (moveEnd && selection.end.row > 0) { selection.end.row -= 1; }
             break;
         case 'right':
-            if (col < numCols - 1) { col += 1; }
+            if (moveStart && selection.start.col < numCols - 1) { selection.start.col += 1; }
+            if (moveEnd && selection.end.col < numCols - 1) { selection.end.col += 1; }
             break;
         case 'down':
-            if (row < numRows - 1) { row += 1; }
+            if (moveStart && selection.start.row < numRows - 1) { selection.start.row += 1; }
+            if (moveEnd && selection.end.row < numRows - 1) { selection.end.row += 1; }
             break;
         default:
-            console.warn(`Invalid stepFocus direction: ${direction}`);
+            console.warn(`Invalid moveSelection direction: ${direction}`);
             return;
     }
 
-    selectCell(row, col);
+    refresh();
 }

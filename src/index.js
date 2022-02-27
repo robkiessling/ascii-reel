@@ -6,8 +6,8 @@ const CELL_WIDTH = 9.6;
 const CELL_HEIGHT = 18.6;
 
 export const $canvas = $('.ascii-canvas');
-export let numRows = 10;
-export let numCols = 20;
+export let numRows = 20;
+export let numCols = 50;
 export let cells = [[]];
 
 $canvas.width(numCols * CELL_WIDTH);
@@ -52,15 +52,15 @@ function repaint() {
 }
 
 $(document).keydown(function(e) {
+    const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
+    const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
+    console.log(code, char);
+
     // e.ctrlKey e.altKey e.shiftKey e.metaKey (command/windows)
     if (e.metaKey || e.ctrlKey) {
         return; // Doing a browser operation (like command-R to reload); do not prevent it
     }
 
-    const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
-    const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
-
-    console.log(code, char);
     if (char === 'Unidentified') {
         console.warn(`Unidentified key for event: ${e}`);
         return;
@@ -68,7 +68,7 @@ $(document).keydown(function(e) {
 
     switch (char) {
         case 'Backspace':
-            selection.getFocusedCell().html('');
+            selection.getSelectedCells().flat().forEach(cell => cell.html(''));
             break;
         default:
             if (                                // Keyboard keycodes that produce output:
@@ -78,7 +78,7 @@ $(document).keydown(function(e) {
                 (code >= 186 && code <= 192) || // ;=,-./`
                 (code >= 219 && code <= 222)    // [\]'
             ) {
-                selection.getFocusedCell().html(char);
+                selection.getSelectedCells().flat().forEach(cell => cell.html(char));
             }
             break;
     }
