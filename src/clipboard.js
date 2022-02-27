@@ -1,8 +1,9 @@
 import $ from "jquery";
 import * as selection from "./selection.js";
-import {cells} from "./index.js";
+import {frame} from "./index.js";
+import {refresh} from "./canvas.js";
 
-let cutTopLeft = null;
+let cutCoordinate = null;
 let copiedLayout = null;
 
 $(document).keydown(function(e) {
@@ -13,25 +14,25 @@ $(document).keydown(function(e) {
     if (e.metaKey || e.ctrlKey) {
         switch (char) {
             case 'x':
-                cutTopLeft = selection.getLayoutCorners().topLeft;
-                copiedLayout = selection.getSelectionLayout((cell, r, c) => cell.html());
+                cutCoordinate = selection.getLayoutCorners().topLeft;
+                copiedLayout = selection.getSelectionLayout();
                 break;
             case 'c':
-                copiedLayout = selection.getSelectionLayout((cell, r, c) => cell.html());
+                copiedLayout = selection.getSelectionLayout();
                 break;
             case 'v':
                 // Need a copied layout and a current selection (so it knows where to paste)
                 if (copiedLayout && selection.hasSelection()) {
                     selection.applyLayoutAtPoint(copiedLayout, selection.getLayoutCorners().topLeft, (value, r, c) => {
-                        if (value !== null) { cells[r][c].html(value); }
+                        if (value !== null) { frame[r][c] = value; }
                     });
 
                     // If cut was used, remove old cut
-                    if (cutTopLeft) {
-                        selection.applyLayoutAtPoint(copiedLayout, cutTopLeft, (value, r, c) => {
-                            if (value !== null) { cells[r][c].html(''); }
+                    if (cutCoordinate) {
+                        selection.applyLayoutAtPoint(copiedLayout, cutCoordinate, (value, r, c) => {
+                            if (value !== null) { frame[r][c] = ''; }
                         });
-                        cutTopLeft = null;
+                        cutCoordinate = null;
                     }
                 }
                 break;
@@ -40,9 +41,11 @@ $(document).keydown(function(e) {
         }
 
         e.preventDefault(); // One of the index.js commands was used, prevent default
+        refresh();
         return;
     }
 
+    // Standard keys
     // e.preventDefault();
-    // repaint();
+    // refresh();
 });

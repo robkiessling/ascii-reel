@@ -1,15 +1,13 @@
 import $ from "jquery";
-import { $canvas, numRows, numCols, cells } from './index.js';
+import {frame, numRows, numCols} from './index.js';
+import {refreshSelection} from "./canvas.js";
 
 let selections = [];
-clearSelections();
 
-export function loadCanvas() {
-    clearSelections();
-
+export function bindCanvas($canvas) {
     let isSelecting = false;
 
-    $canvas.off('mousedown', '.cell').on('mousedown', '.cell', function(evt) {
+    $canvas.off('mousedown.selection', '.cell').on('mousedown.selection', '.cell', function(evt) {
         isSelecting = true;
         const $cell = $(this);
 
@@ -23,41 +21,22 @@ export function loadCanvas() {
 
         if (evt.shiftKey) {
             latestSelection().end = { row: $cell.data('row'), col: $cell.data('col') };
-            refresh();
+            refreshSelection();
         }
-    }).off('mousemove', '.cell').on('mousemove', '.cell', function(evt) {
+    }).off('mousemove.selection', '.cell').on('mousemove.selection', '.cell', function(evt) {
         if (isSelecting) {
             const $cell = $(this);
             latestSelection().end = { row: $cell.data('row'), col: $cell.data('col') };
-            refresh();
+            refreshSelection();
         }
     });
 
-    $(document).off('mouseup').on('mouseup', function(evt) {
+    $(document).off('mouseup.selection').on('mouseup.selection', function(evt) {
         if (isSelecting) {
             isSelecting = false;
-            refresh();
+            refreshSelection();
         }
     });
-}
-
-export function refresh() {
-    if ($canvas) {
-        $canvas.find('.cell').removeClass('selected');
-        getSelectedCells().forEach(cell => cell.addClass('selected'));
-    }
-}
-
-// If part of the applied layout will end up out of bounds, the callback will return a null value for that point
-export function applyLayoutAtPoint(layout, point, callback) {
-    layout.forEach((layoutRowValues, layoutRow) => {
-        layoutRowValues.forEach((layoutValue, layoutCol) => {
-            // Final row/col is the layout translated by the origin point
-            const row = layoutRow + point.row;
-            const col = layoutCol + point.col;
-            callback(row < 0 || row >= numRows || col < 0 || col >= numCols ? null : layoutValue, row, col);
-        })
-    })
 }
 
 /**
@@ -77,8 +56,10 @@ export function applyLayoutAtPoint(layout, point, callback) {
  *          [x, x, null, null, null],
  *          [x, x, null, null, x]
  *        ]
+ *
+ * By default, values are frame characters (frame[r][c]). Can pass a @processor parameter to store a custom value.
  */
-export function getSelectionLayout(processor = function(cell, r, c) { return cell; }) {
+export function getSelectionLayout(processor = function(r, c) { return frame[r][c]; }) {
     if (!hasSelection()) {
         return [[]];
     }
@@ -94,11 +75,12 @@ export function getSelectionLayout(processor = function(cell, r, c) { return cel
         layout[r - layoutTopLeft.row][c - layoutTopLeft.col] = null;
     });
 
-    // Iterate through selections, filling layout with cell values
+    // Iterate through selections, populating layout with cell values
     selections.forEach(selection => {
         const { topLeft, bottomRight } = getCorners(selection);
         cornerToCorner(topLeft, bottomRight, (r, c) => {
-            layout[r - layoutTopLeft.row][c - layoutTopLeft.col] = processor(cells[r][c], r, c);
+            // r is absolute row; r - layoutTopLeft.row is relative row
+            layout[r - layoutTopLeft.row][c - layoutTopLeft.col] = processor(r, c);
         })
     });
 
@@ -106,7 +88,7 @@ export function getSelectionLayout(processor = function(cell, r, c) { return cel
 }
 
 /**
- * Returns a flat array of selected cells from all selections.
+ * Returns a flat array of coordinates for all selected cells.
  *
  * E.g. If the selection (depicted by x's) was this:
  *
@@ -117,10 +99,24 @@ export function getSelectionLayout(processor = function(cell, r, c) { return cel
  *
  *      Returns:
  *
- *        [x, x, x, x, x]
+ *        [{row:1,col:2}, {row:1,col:3}, {row:2,col:2}, {row:2,col:3}, {row:2,col:6}]
  */
-export function getSelectedCells() {
-    return getSelectionLayout().flat().filter(cell => cell !== null);
+export function getSelectedCoordinates() {
+    return getSelectionLayout((r, c) => {
+        return { row: r, col: c };
+    }).flat().filter(cell => cell !== null);
+}
+
+// If part of the applied layout will end up out of bounds, the callback will return a null value for that point
+export function applyLayoutAtPoint(layout, point, callback) {
+    layout.forEach((layoutRowValues, layoutRow) => {
+        layoutRowValues.forEach((layoutValue, layoutCol) => {
+            // Final row/col is the layout translated by the origin point
+            const row = layoutRow + point.row;
+            const col = layoutCol + point.col;
+            callback(row < 0 || row >= numRows() || col < 0 || col >= numCols() ? null : layoutValue, row, col);
+        })
+    })
 }
 
 export function getLayoutCorners() {
@@ -159,8 +155,6 @@ function cornerToCorner(topLeft, bottomRight, callback) {
         }
     }
 }
-
-
 
 $(document).keydown(function(e) {
     // e.ctrlKey e.altKey e.shiftKey e.metaKey (command/windows)
@@ -213,17 +207,13 @@ export function hasSelection() {
     return selections.length > 0;
 }
 
-function hasMultipleSelections() {
-    return selections.length > 1;
-}
-
 function latestSelection() {
     return selections[selections.length - 1];
 }
 
 function clearSelections() {
     selections = [];
-    refresh();
+    refreshSelection();
 }
 
 function startSelection(row, col) {
@@ -231,15 +221,15 @@ function startSelection(row, col) {
         start: { row: row, col: col },
         end: { row: row, col: col }
     });
-    refresh();
+    refreshSelection();
 }
 
 function selectAll() {
     selections = [{
         start: { row: 0, col: 0 },
-        end: { row: numRows - 1, col: numCols - 1 }
+        end: { row: numRows() - 1, col: numCols() - 1 }
     }];
-    refresh();
+    refreshSelection();
 }
 
 // Move all selections in a particular direction, as long as they can ALL move in that direction without hitting boundaries
@@ -265,12 +255,12 @@ function canMoveSelection(selection, direction, moveStart = true, moveEnd = true
             if (moveEnd && selection.end.row <= 0) { return false; }
             break;
         case 'right':
-            if (moveStart && selection.start.col >= numCols - 1) { return false; }
-            if (moveEnd && selection.end.col >= numCols - 1) { return false; }
+            if (moveStart && selection.start.col >= numCols() - 1) { return false; }
+            if (moveEnd && selection.end.col >= numCols() - 1) { return false; }
             break;
         case 'down':
-            if (moveStart && selection.start.row >= numRows - 1) { return false; }
-            if (moveEnd && selection.end.row >= numRows - 1) { return false; }
+            if (moveStart && selection.start.row >= numRows() - 1) { return false; }
+            if (moveEnd && selection.end.row >= numRows() - 1) { return false; }
             break;
         default:
             console.warn(`Invalid moveSelection direction: ${direction}`);
