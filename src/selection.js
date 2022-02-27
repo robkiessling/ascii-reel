@@ -4,6 +4,10 @@ import {refreshSelection} from "./canvas.js";
 
 let selections = [];
 
+export function hasSelection() {
+    return selections.length > 0;
+}
+
 export function bindCanvas($canvas) {
     let isSelecting = false;
 
@@ -41,9 +45,9 @@ export function bindCanvas($canvas) {
 
 /**
  * Returns a 2d array of the smallest rectangle that bounds all selections. This 2d array will contain null cells
- * if there are multiple selections with gaps in between them.
+ * if there are gaps in the rectangle.
  *
- * E.g. If the selection (depicted by x's) was this:
+ * E.g. If the selections (depicted by x's) were this:
  *
  *        .......
  *        ..xx...
@@ -57,9 +61,9 @@ export function bindCanvas($canvas) {
  *          [x, x, null, null, x]
  *        ]
  *
- * By default, values are frame characters (frame[r][c]). Can pass a @processor parameter to store a custom value.
+ * By default, values are frame chars (frame[r][c]). Can pass a @processor parameter to store a custom value.
  */
-export function getSelectionLayout(processor = function(r, c) { return frame[r][c]; }) {
+export function getSelection(processor = function(r, c) { return frame[r][c]; }) {
     if (!hasSelection()) {
         return [[]];
     }
@@ -67,7 +71,7 @@ export function getSelectionLayout(processor = function(r, c) { return frame[r][
     let layout = [];
 
     // Find outermost boundaries for the layout
-    let { topLeft: layoutTopLeft, bottomRight: layoutBottomRight } = getLayoutCorners();
+    let { topLeft: layoutTopLeft, bottomRight: layoutBottomRight } = getSelectionCorners();
 
     // Fill layout with nulls
     cornerToCorner(layoutTopLeft, layoutBottomRight, (r, c) => {
@@ -90,7 +94,7 @@ export function getSelectionLayout(processor = function(r, c) { return frame[r][
 /**
  * Returns a flat array of coordinates for all selected cells.
  *
- * E.g. If the selection (depicted by x's) was this:
+ * E.g. If the selections (depicted by x's) were this:
  *
  *        .......
  *        ..xx...
@@ -102,24 +106,27 @@ export function getSelectionLayout(processor = function(r, c) { return frame[r][
  *        [{row:1,col:2}, {row:1,col:3}, {row:2,col:2}, {row:2,col:3}, {row:2,col:6}]
  */
 export function getSelectedCoordinates() {
-    return getSelectionLayout((r, c) => {
+    return getSelection((r, c) => {
         return { row: r, col: c };
     }).flat().filter(cell => cell !== null);
 }
 
-// If part of the applied layout will end up out of bounds, the callback will return a null value for that point
-export function applyLayoutAtPoint(layout, point, callback) {
-    layout.forEach((layoutRowValues, layoutRow) => {
-        layoutRowValues.forEach((layoutValue, layoutCol) => {
-            // Final row/col is the layout translated by the origin point
-            const row = layoutRow + point.row;
-            const col = layoutCol + point.col;
-            callback(row < 0 || row >= numRows() || col < 0 || col >= numCols() ? null : layoutValue, row, col);
-        })
-    })
-}
-
-export function getLayoutCorners() {
+/**
+ * Returns top-left and bottom-right coordinates for the smallest rectangle that includes all selections.
+ *
+ * E.g. If the selections (depicted by x's) were this:
+ *
+ *        .......
+ *        ..xx...
+ *        ..xx..x
+ *        .......
+ *
+ *      Returns:
+ *
+ *        { topLeft: {row:1,col:2}, bottomRight: {row:2,col:6} }
+ *
+ */
+export function getSelectionCorners() {
     let layoutTopLeft = { row: null, col: null };
     let layoutBottomRight = { row: null, col: null };
     selections.forEach(selection => {
@@ -154,57 +161,6 @@ function cornerToCorner(topLeft, bottomRight, callback) {
             callback(r, c);
         }
     }
-}
-
-$(document).keydown(function(e) {
-    // e.ctrlKey e.altKey e.shiftKey e.metaKey (command/windows)
-
-    const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
-    const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
-
-    // Commands
-    if (e.metaKey || e.ctrlKey) {
-        switch (char) {
-            case 'a':
-                selectAll();
-                break;
-            default:
-                return;
-        }
-
-        e.preventDefault(); // One of the commands was used, prevent default
-        return;
-    }
-
-    switch (char) {
-        case 'Escape':
-            clearSelections();
-            break;
-        case 'ArrowLeft':
-            moveSelections('left', !e.shiftKey); // If shift key is pressed, we only want to move the end point
-            break;
-        case 'ArrowUp':
-            moveSelections('up', !e.shiftKey);
-            break;
-        case 'ArrowRight':
-            moveSelections('right', !e.shiftKey);
-            break;
-        case 'ArrowDown':
-            moveSelections('down', !e.shiftKey);
-            break;
-        case 'Tab':
-            if (e.shiftKey) { moveSelections('left'); } else { moveSelections('right'); }
-            break;
-        case 'Enter':
-            if (e.shiftKey) { moveSelections('up'); } else { moveSelections('down'); }
-            break;
-        default:
-            return; // No changes
-    }
-});
-
-export function hasSelection() {
-    return selections.length > 0;
 }
 
 function latestSelection() {
@@ -242,6 +198,8 @@ function moveSelections(direction, moveStart = true, moveEnd = true) {
     if (selections.every(selection => canMoveSelection(selection, direction, moveStart, moveEnd))) {
         selections.forEach(selection => moveSelection(selection, direction, moveStart, moveEnd));
     }
+
+    refreshSelection();
 }
 
 function canMoveSelection(selection, direction, moveStart = true, moveEnd = true) {
@@ -292,3 +250,52 @@ function moveSelection(selection, direction, moveStart = true, moveEnd = true) {
             console.warn(`Invalid moveSelection direction: ${direction}`);
     }
 }
+
+$(document).keydown(function(e) {
+    // e.ctrlKey e.altKey e.shiftKey e.metaKey (command/windows)
+
+    const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
+    const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
+
+    // Commands
+    if (e.metaKey || e.ctrlKey) {
+        switch (char) {
+            case 'a':
+                selectAll();
+                break;
+            default:
+                return;
+        }
+
+        e.preventDefault(); // One of the commands was used, prevent default
+        return;
+    }
+
+    switch (char) {
+        case 'Escape':
+            clearSelections();
+            break;
+        case 'ArrowLeft':
+            moveSelections('left', !e.shiftKey); // If shift key is pressed, we only want to move the end coordinate
+            break;
+        case 'ArrowUp':
+            moveSelections('up', !e.shiftKey);
+            break;
+        case 'ArrowRight':
+            moveSelections('right', !e.shiftKey);
+            break;
+        case 'ArrowDown':
+            moveSelections('down', !e.shiftKey);
+            break;
+        case 'Tab':
+            if (e.shiftKey) { moveSelections('left'); } else { moveSelections('right'); }
+            break;
+        case 'Enter':
+            if (e.shiftKey) { moveSelections('up'); } else { moveSelections('down'); }
+            break;
+        default:
+            return; // No changes
+    }
+
+    e.preventDefault();
+});
