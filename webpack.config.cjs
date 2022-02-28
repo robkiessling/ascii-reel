@@ -37,7 +37,19 @@ module.exports = {
                 test: /\.js/,
                 use: {
                     loader: 'babel-loader',
-                    options: { presets: ['@babel/preset-env'] }
+                    options: {
+                        presets: [
+                            [
+                                "@babel/preset-env",
+                                {
+                                    // The following is needed for clipboard cut/paste https://stackoverflow.com/a/61517521
+                                    "useBuiltIns": "entry",
+                                    "corejs": 3,
+                                    "targets": "> 0.25%, not dead"
+                                }
+                            ]
+                        ]
+                    }
                 }
             },
             {

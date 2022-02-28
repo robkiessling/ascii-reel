@@ -55,8 +55,8 @@ export function bindCanvas($canvas) {
 }
 
 /**
- * Returns a 2d array of the smallest Rect that bounds all partials. This 2d array will contain null cells
- * if there are gaps in the Rect.
+ * Returns a 2d array of values for the smallest Rect that bounds all Partials. This 2d array will contain null values
+ * for any gaps between partials (if any).
  *
  * E.g. If the partials (depicted by x's) were this:
  *
@@ -107,7 +107,7 @@ export function getSelection(processor = function(r, c) { return frame[r][c]; })
  *
  *      Returns:
  *
- *        [{row:1,col:2}, {row:1,col:3}, {row:2,col:2}, {row:2,col:3}, {row:2,col:6}]
+ *        [Coord{row:1,col:2}, Coord{row:1,col:3}, Coord{row:2,col:2}, Coord{row:2,col:3}, Coord{row:2,col:6}]
  */
 export function getSelectedCoords() {
     return getSelection((r, c) => {
@@ -116,7 +116,7 @@ export function getSelectedCoords() {
 }
 
 /**
- * Returns top-left and bottom-right Coord objects for the smallest Rect that includes all partials.
+ * Returns the smallest possible Rect that includes all Partials.
  *
  * E.g. If the partials (depicted by x's) were this:
  *
@@ -127,7 +127,7 @@ export function getSelectedCoords() {
  *
  *      Returns:
  *
- *        { topLeft: {row:1,col:2}, bottomRight: {row:2,col:6} }
+ *        Rect{ topLeft: {row:1,col:2}, bottomRight: {row:2,col:6} }
  *
  */
 export function getSelectionRect() {
@@ -175,6 +175,8 @@ function startPartial(row, col) {
  * A partial is like a Rect, but instead of having topLeft and bottomRight Coords, it has start and end Coords.
  * The start Coord may be to the bottom-right of the end Coord, depending on how the user draws the rectangle.
  * You can call the helper methods topLeft() / bottomRight() if you need the absolute end points.
+ *
+ * Partials have a reference to the frame they are in, allowing them to calculate if they are in bounds
  */
 class Partial {
     constructor(start, end) {
