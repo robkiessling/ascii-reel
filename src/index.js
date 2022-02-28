@@ -17,18 +17,18 @@ export function numCols() {
 }
 
 /**
- * Translates a 2d array as if it was positioned at coordinate. The callback value will be null for parts of the array
+ * Translates a 2d array as if it was positioned at a Coord. The callback value will be null for parts of the array
  * that go out of the frame.
  *
  * @param layout        2d array
- * @param coordinate    Position to move the top-left coordinate of the layout to
+ * @param coord         Position to move the top-left Coord of the layout to
  * @param callback      function(value, row, col), where row and col are the coordinates if the layout was moved
  */
-export function translate(layout, coordinate, callback) {
+export function translate(layout, coord, callback) {
     layout.forEach((rowValues, rowIndex) => {
         rowValues.forEach((value, colIndex) => {
-            const row = rowIndex + coordinate.row;
-            const col = colIndex + coordinate.col;
+            const row = rowIndex + coord.row;
+            const col = colIndex + coord.col;
             const inBounds = row >= 0 && row < numRows() && col >= 0 && col < numCols();
             callback(inBounds ? value : null, row, col);
         });

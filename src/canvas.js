@@ -52,7 +52,7 @@ export function refreshChars() {
 }
 export function refreshSelection() {
     $canvas.find('.cell').removeClass('selected');
-    selection.getSelectedCoordinates().forEach(coordinate => {
-        cells[coordinate.row][coordinate.col].addClass('selected');
+    selection.getSelectedCoords().forEach(coord => {
+        cells[coord.row][coord.col].addClass('selected');
     });
 }

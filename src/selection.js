@@ -1,11 +1,22 @@
 import $ from "jquery";
 import {frame, numRows, numCols} from './index.js';
 import * as canvas from "./canvas.js";
+import {create2dArray, Coord, Rect} from "./utilities.js";
 
-let selections = [];
+let partials = [];
 
 export function hasSelection() {
-    return selections.length > 0;
+    return partials.length > 0;
+}
+
+export function clear() {
+    partials = [];
+    canvas.refreshSelection();
+}
+
+export function selectAll() {
+    partials.push(new Partial(new Coord(0, 0), new Coord(numRows() - 1, numCols() - 1)));
+    canvas.refreshSelection();
 }
 
 export function bindCanvas($canvas) {
@@ -19,18 +30,18 @@ export function bindCanvas($canvas) {
             clear();
         }
 
-        if (evt.metaKey || evt.ctrlKey || !latestSelection()) {
-            startSelection($cell.data('row'), $cell.data('col'));
+        if (evt.metaKey || evt.ctrlKey || !latestPartial()) {
+            startPartial($cell.data('row'), $cell.data('col'));
         }
 
         if (evt.shiftKey) {
-            latestSelection().end = { row: $cell.data('row'), col: $cell.data('col') };
+            latestPartial().end = { row: $cell.data('row'), col: $cell.data('col') };
             canvas.refreshSelection();
         }
     }).off('mousemove.selection', '.cell').on('mousemove.selection', '.cell', function(evt) {
         if (isSelecting) {
             const $cell = $(this);
-            latestSelection().end = { row: $cell.data('row'), col: $cell.data('col') };
+            latestPartial().end = { row: $cell.data('row'), col: $cell.data('col') };
             canvas.refreshSelection();
         }
     });
@@ -44,10 +55,10 @@ export function bindCanvas($canvas) {
 }
 
 /**
- * Returns a 2d array of the smallest rectangle that bounds all selections. This 2d array will contain null cells
- * if there are gaps in the rectangle.
+ * Returns a 2d array of the smallest Rect that bounds all partials. This 2d array will contain null cells
+ * if there are gaps in the Rect.
  *
- * E.g. If the selections (depicted by x's) were this:
+ * E.g. If the partials (depicted by x's) were this:
  *
  *        .......
  *        ..xx...
@@ -68,33 +79,26 @@ export function getSelection(processor = function(r, c) { return frame[r][c]; })
         return [[]];
     }
 
-    let layout = [];
+    // Fill selection with nulls
+    let selectionRect = getSelectionRect();
+    let selection = create2dArray(selectionRect.height(), selectionRect.width(), null);
 
-    // Find outermost boundaries for the layout
-    let { topLeft: layoutTopLeft, bottomRight: layoutBottomRight } = getSelectionCorners();
-
-    // Fill layout with nulls
-    cornerToCorner(layoutTopLeft, layoutBottomRight, (r, c) => {
-        if (!layout[r - layoutTopLeft.row]) { layout[r - layoutTopLeft.row] = []; }
-        layout[r - layoutTopLeft.row][c - layoutTopLeft.col] = null;
-    });
-
-    // Iterate through selections, populating layout with cell values
-    selections.forEach(selection => {
-        const { topLeft, bottomRight } = getCorners(selection);
-        cornerToCorner(topLeft, bottomRight, (r, c) => {
-            // r is absolute row; r - layoutTopLeft.row is relative row
-            layout[r - layoutTopLeft.row][c - layoutTopLeft.col] = processor(r, c);
+    // Iterate through partials, populating selection with cell values
+    partials.forEach(partial => {
+        partial.toRect().iterate((r, c) => {
+            const relativeRow = r - selectionRect.topLeft.row;
+            const relativeCol = c - selectionRect.topLeft.col;
+            selection[relativeRow][relativeCol] = processor(r, c);
         })
-    });
+    })
 
-    return layout;
+    return selection;
 }
 
 /**
- * Returns a flat array of coordinates for all selected cells.
+ * Returns a flat array of Coord objects for all selected cells.
  *
- * E.g. If the selections (depicted by x's) were this:
+ * E.g. If the partials (depicted by x's) were this:
  *
  *        .......
  *        ..xx...
@@ -105,16 +109,16 @@ export function getSelection(processor = function(r, c) { return frame[r][c]; })
  *
  *        [{row:1,col:2}, {row:1,col:3}, {row:2,col:2}, {row:2,col:3}, {row:2,col:6}]
  */
-export function getSelectedCoordinates() {
+export function getSelectedCoords() {
     return getSelection((r, c) => {
-        return { row: r, col: c };
+        return new Coord(r, c);
     }).flat().filter(cell => cell !== null);
 }
 
 /**
- * Returns top-left and bottom-right coordinates for the smallest rectangle that includes all selections.
+ * Returns top-left and bottom-right Coord objects for the smallest Rect that includes all partials.
  *
- * E.g. If the selections (depicted by x's) were this:
+ * E.g. If the partials (depicted by x's) were this:
  *
  *        .......
  *        ..xx...
@@ -126,127 +130,117 @@ export function getSelectedCoordinates() {
  *        { topLeft: {row:1,col:2}, bottomRight: {row:2,col:6} }
  *
  */
-export function getSelectionCorners() {
-    let layoutTopLeft = { row: null, col: null };
-    let layoutBottomRight = { row: null, col: null };
-    selections.forEach(selection => {
-        const { topLeft, bottomRight } = getCorners(selection);
-        if (layoutTopLeft.row === null || topLeft.row < layoutTopLeft.row) { layoutTopLeft.row = topLeft.row; }
-        if (layoutTopLeft.col === null || topLeft.col < layoutTopLeft.col) { layoutTopLeft.col = topLeft.col; }
-        if (layoutBottomRight.row === null || bottomRight.row > layoutBottomRight.row) { layoutBottomRight.row = bottomRight.row; }
-        if (layoutBottomRight.col === null || bottomRight.col > layoutBottomRight.col) { layoutBottomRight.col = bottomRight.col; }
-    });
-    return {
-        topLeft: layoutTopLeft,
-        bottomRight: layoutBottomRight
-    };
-}
+export function getSelectionRect() {
+    let rect;
 
-function getCorners(selection) {
-    return {
-        topLeft: {
-            row: Math.min(selection.start.row, selection.end.row),
-            col: Math.min(selection.start.col, selection.end.col)
-        },
-        bottomRight: {
-            row: Math.max(selection.start.row, selection.end.row),
-            col: Math.max(selection.start.col, selection.end.col)
+    partials.forEach(partial => {
+        if (rect) {
+            rect.mergeRect(partial.toRect());
         }
-    }
-}
-
-function cornerToCorner(topLeft, bottomRight, callback) {
-    for (let r = topLeft.row; r <= bottomRight.row; r++) {
-        for (let c = topLeft.col; c <= bottomRight.col; c++) {
-            callback(r, c);
+        else {
+            rect = partial.toRect();
         }
-    }
-}
-
-function latestSelection() {
-    return selections[selections.length - 1];
-}
-
-export function clear() {
-    selections = [];
-    canvas.refreshSelection();
-}
-
-function startSelection(row, col) {
-    selections.push({
-        start: { row: row, col: col },
-        end: { row: row, col: col }
     });
-    canvas.refreshSelection();
+
+    return rect;
 }
 
-export function selectAll() {
-    selections = [{
-        start: { row: 0, col: 0 },
-        end: { row: numRows() - 1, col: numCols() - 1 }
-    }];
-    canvas.refreshSelection();
-}
-
-// Move all selections in a particular direction, as long as they can ALL move in that direction without hitting boundaries
+// Move all partials in a particular direction, as long as they can ALL move in that direction without hitting boundaries
 export function moveSelection(direction, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
-        startSelection(0, 0);
+        startPartial(0, 0);
         return;
     }
 
-    if (selections.every(selection => canMovePartial(selection, direction, moveStart, moveEnd))) {
-        selections.forEach(selection => movePartial(selection, direction, moveStart, moveEnd));
+    if (partials.every(partial => partial.canMove(direction, moveStart, moveEnd))) {
+        partials.forEach(partial => partial.move(direction, moveStart, moveEnd));
     }
 
     canvas.refreshSelection();
 }
 
-function canMovePartial(selection, direction, moveStart = true, moveEnd = true) {
-    switch(direction) {
-        case 'left':
-            if (moveStart && selection.start.col <= 0) { return false; }
-            if (moveEnd && selection.end.col <= 0) { return false; }
-            break;
-        case 'up':
-            if (moveStart && selection.start.row <= 0) { return false; }
-            if (moveEnd && selection.end.row <= 0) { return false; }
-            break;
-        case 'right':
-            if (moveStart && selection.start.col >= numCols() - 1) { return false; }
-            if (moveEnd && selection.end.col >= numCols() - 1) { return false; }
-            break;
-        case 'down':
-            if (moveStart && selection.start.row >= numRows() - 1) { return false; }
-            if (moveEnd && selection.end.row >= numRows() - 1) { return false; }
-            break;
-        default:
-            console.warn(`Invalid canMovePartial direction: ${direction}`);
-            return false;
-    }
-    return true;
+
+
+function latestPartial() {
+    return partials[partials.length - 1];
 }
 
-// Move a selection in a direction. Does not respect boundaries (you should call canMovePartial first)
-function movePartial(selection, direction, moveStart = true, moveEnd = true) {
-    switch(direction) {
-        case 'left':
-            if (moveStart) { selection.start.col -= 1; }
-            if (moveEnd) { selection.end.col -= 1; }
-            break;
-        case 'up':
-            if (moveStart) { selection.start.row -= 1; }
-            if (moveEnd) { selection.end.row -= 1; }
-            break;
-        case 'right':
-            if (moveStart) { selection.start.col += 1; }
-            if (moveEnd) { selection.end.col += 1; }
-            break;
-        case 'down':
-            if (moveStart) { selection.start.row += 1; }
-            if (moveEnd) { selection.end.row += 1; }
-            break;
-        default:
-            console.warn(`Invalid movePartial direction: ${direction}`);
+function startPartial(row, col) {
+    partials.push(new Partial(new Coord(row, col), new Coord(row, col)));
+    canvas.refreshSelection();
+}
+
+
+/**
+ * A partial is like a Rect, but instead of having topLeft and bottomRight Coords, it has start and end Coords.
+ * The start Coord may be to the bottom-right of the end Coord, depending on how the user draws the rectangle.
+ * You can call the helper methods topLeft() / bottomRight() if you need the absolute end points.
+ */
+class Partial {
+    constructor(start, end) {
+        this.start = start; // Coord
+        this.end = end; // Coord
+    }
+
+    topLeft() {
+        return new Coord(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
+    }
+
+    bottomRight() {
+        return new Coord(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
+    }
+
+    toRect() {
+        return new Rect(this.topLeft(), this.bottomRight());
+    }
+
+    // Returns true if this partial can be moved 1 space in the given direction
+    canMove(direction, moveStart = true, moveEnd = true) {
+        switch(direction) {
+            case 'left':
+                if (moveStart && this.start.col <= 0) { return false; }
+                if (moveEnd && this.end.col <= 0) { return false; }
+                break;
+            case 'up':
+                if (moveStart && this.start.row <= 0) { return false; }
+                if (moveEnd && this.end.row <= 0) { return false; }
+                break;
+            case 'right':
+                if (moveStart && this.start.col >= numCols() - 1) { return false; }
+                if (moveEnd && this.end.col >= numCols() - 1) { return false; }
+                break;
+            case 'down':
+                if (moveStart && this.start.row >= numRows() - 1) { return false; }
+                if (moveEnd && this.end.row >= numRows() - 1) { return false; }
+                break;
+            default:
+                console.warn(`Invalid direction: ${direction}`);
+                return false;
+        }
+        return true;
+    }
+
+    // Move this partial 1 space in the given direction. Does not respect boundaries (you should call canMove first)
+    move(direction, moveStart = true, moveEnd = true) {
+        switch(direction) {
+            case 'left':
+                if (moveStart) { this.start.col -= 1; }
+                if (moveEnd) { this.end.col -= 1; }
+                break;
+            case 'up':
+                if (moveStart) { this.start.row -= 1; }
+                if (moveEnd) { this.end.row -= 1; }
+                break;
+            case 'right':
+                if (moveStart) { this.start.col += 1; }
+                if (moveEnd) { this.end.col += 1; }
+                break;
+            case 'down':
+                if (moveStart) { this.start.row += 1; }
+                if (moveEnd) { this.end.row += 1; }
+                break;
+            default:
+                console.warn(`Invalid direction: ${direction}`);
+        }
     }
 }

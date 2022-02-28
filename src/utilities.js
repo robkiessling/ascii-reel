@@ -38,3 +38,48 @@ export function iterate2dArray(array, callback) {
         }
     }
 }
+
+export class Coord {
+    constructor(row, col) {
+        this.row = row;
+        this.col = col;
+    }
+
+    clone() {
+        return new Coord(this.row, this.col);
+    }
+}
+
+export class Rect {
+    constructor(topLeft, bottomRight) {
+        this.topLeft = topLeft;
+        this.bottomRight = bottomRight;
+    }
+
+    clone() {
+        return new Rect(this.topLeft.clone(), this.bottomRight.clone());
+    }
+
+    height() {
+        return this.bottomRight.row - this.topLeft.row + 1;
+    }
+
+    width() {
+        return this.bottomRight.col - this.topLeft.col + 1;
+    }
+
+    iterate(callback) {
+        for (let r = this.topLeft.row; r <= this.bottomRight.row; r++) {
+            for (let c = this.topLeft.col; c <= this.bottomRight.col; c++) {
+                callback(r, c);
+            }
+        }
+    }
+
+    mergeRect(otherRect) {
+        if (otherRect.topLeft.row < this.topLeft.row) { this.topLeft.row = otherRect.topLeft.row; }
+        if (otherRect.topLeft.col < this.topLeft.col) { this.topLeft.col = otherRect.topLeft.col; }
+        if (otherRect.bottomRight.row > this.bottomRight.row) { this.bottomRight.row = otherRect.bottomRight.row; }
+        if (otherRect.bottomRight.col > this.bottomRight.col) { this.bottomRight.col = otherRect.bottomRight.col; }
+    }
+}
