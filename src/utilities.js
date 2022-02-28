@@ -41,10 +41,16 @@ export function iterate2dArray(array, callback) {
 
 const MAX_CLIPBOARD_LENGTH = 100000; // Upper limit on clipboard for performance reasons
 
-export function textTo2dArray(text) {
+export function convertTextTo2dArray(text) {
     return text.slice(0, MAX_CLIPBOARD_LENGTH).split(/\r?\n/).map(line => {
         return line.split('');
     })
+}
+
+export function convert2dArrayToText(array) {
+    return array.map(row => {
+        return row.map(char => char === null ? ' ' : char).join('')
+    }).join('\n');
 }
 
 export class Coord {

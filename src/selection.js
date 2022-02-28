@@ -3,7 +3,7 @@ import {frame, numRows, numCols} from './index.js';
 import * as canvas from "./canvas.js";
 import {create2dArray, Coord, Rect} from "./utilities.js";
 
-let partials = [];
+export let partials = [];
 
 export function hasSelection() {
     return partials.length > 0;
@@ -159,8 +159,6 @@ export function moveSelection(direction, moveStart = true, moveEnd = true) {
     canvas.refreshSelection();
 }
 
-
-
 function latestPartial() {
     return partials[partials.length - 1];
 }
@@ -174,9 +172,10 @@ function startPartial(row, col) {
 /**
  * A partial is like a Rect, but instead of having topLeft and bottomRight Coords, it has start and end Coords.
  * The start Coord may be to the bottom-right of the end Coord, depending on how the user draws the rectangle.
- * You can call the helper methods topLeft() / bottomRight() if you need the absolute end points.
+ * You can still call the helper methods topLeft / bottomRight if you need the absolute end points.
  *
  * Partials have a reference to the frame they are in, allowing them to calculate if they are in bounds
+ * TODO Should we remove the reference to frame, and pass it in as an argument?
  */
 class Partial {
     constructor(start, end) {
@@ -184,16 +183,16 @@ class Partial {
         this.end = end; // Coord
     }
 
-    topLeft() {
+    get topLeft() {
         return new Coord(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
     }
 
-    bottomRight() {
+    get bottomRight() {
         return new Coord(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
     }
 
     toRect() {
-        return new Rect(this.topLeft(), this.bottomRight());
+        return new Rect(this.topLeft, this.bottomRight);
     }
 
     // Returns true if this partial can be moved 1 space in the given direction
