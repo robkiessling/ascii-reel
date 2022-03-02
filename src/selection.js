@@ -1,5 +1,4 @@
 import $ from "jquery";
-import {frame, numRows, numCols} from './index.js';
 import * as canvas from "./canvas.js";
 import {create2dArray, Coord, Rect} from "./utilities.js";
 
@@ -15,7 +14,7 @@ export function clear() {
 }
 
 export function selectAll() {
-    partials.push(new Partial(new Coord(0, 0), new Coord(numRows() - 1, numCols() - 1)));
+    partials.push(new Partial(new Coord(0, 0), new Coord(canvas.numRows() - 1, canvas.numCols() - 1)));
     canvas.refreshSelection();
 }
 
@@ -72,9 +71,9 @@ export function bindCanvas($canvas) {
  *          [x, x, null, null, x]
  *        ]
  *
- * By default, values are frame chars (frame[r][c]). Can pass a @processor parameter to store a custom value.
+ * By default, returned values are the displayed chars. Can pass a @processor parameter to return a custom value.
  */
-export function getSelection(processor = function(r, c) { return frame[r][c]; }) {
+export function getSelection(processor = function(r, c) { return canvas.getChar(r, c); }) {
     if (!hasSelection()) {
         return [[]];
     }
@@ -207,12 +206,12 @@ class Partial {
                 if (moveEnd && this.end.row <= 0) { return false; }
                 break;
             case 'right':
-                if (moveStart && this.start.col >= numCols() - 1) { return false; }
-                if (moveEnd && this.end.col >= numCols() - 1) { return false; }
+                if (moveStart && this.start.col >= canvas.numCols() - 1) { return false; }
+                if (moveEnd && this.end.col >= canvas.numCols() - 1) { return false; }
                 break;
             case 'down':
-                if (moveStart && this.start.row >= numRows() - 1) { return false; }
-                if (moveEnd && this.end.row >= numRows() - 1) { return false; }
+                if (moveStart && this.start.row >= canvas.numRows() - 1) { return false; }
+                if (moveEnd && this.end.row >= canvas.numRows() - 1) { return false; }
                 break;
             default:
                 console.warn(`Invalid direction: ${direction}`);

@@ -1,6 +1,5 @@
 import * as selection from "./selection.js";
 import * as canvas from "./canvas.js";
-import {frame, translate} from "./index.js";
 import {convert2dArrayToText, convertTextTo2dArray} from "./utilities.js"; // or more selective import, like "core-js/es/array"
 
 // Necessary for clipboard read/write https://stackoverflow.com/a/61517521
@@ -55,32 +54,32 @@ function copySelection() {
 }
 
 function pasteArray(array) {
+    // If cut was used, remove old cut
+    if (cutCoord) {
+        canvas.translate(array, cutCoord, (value, r, c) => {
+            if (value !== null) { canvas.updateChar(r, c, ''); }
+        })
+        cutCoord = null;
+    }
+
     if (array.length === 1 && array[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         selection.getSelectedCoords().forEach(coord => {
-            frame[coord.row][coord.col] = array[0][0];
+            canvas.updateChar(coord.row, coord.col, array[0][0])
         });
     }
     else {
-        // Past array once at topLeft of first partial
-        translate(array, selection.partials[0].topLeft, (value, r, c) => {
-            if (value !== null) { frame[r][c] = value; }
+        // Paste array once at topLeft of first partial
+        canvas.translate(array, selection.partials[0].topLeft, (value, r, c) => {
+            if (value !== null) { canvas.updateChar(r, c, value); }
         });
 
         // Paste array at topLeft of each partial TODO Has issues if your copiedSelection has multiple partials too
         // selection.partials.forEach(partial => {
-        //     translate(array, partial.topLeft, (value, r, c) => {
-        //         if (value !== null) { frame[r][c] = value; }
+        //     canvas.translate(array, partial.topLeft, (value, r, c) => {
+        //         if (value !== null) { canvas.updateChar(r, c, value); }
         //     });
         // })
-    }
-
-    // If cut was used, remove old cut
-    if (cutCoord) {
-        translate(array, cutCoord, (value, r, c) => {
-            if (value !== null) { frame[r][c] = ''; }
-        })
-        cutCoord = null;
     }
 
     canvas.refreshChars();

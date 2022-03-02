@@ -1,6 +1,5 @@
 import $ from "jquery";
 import * as selection from "./selection.js";
-import {frame, numRows, numCols} from "./index.js";
 import {create2dArray, iterate2dArray} from "./utilities.js";
 
 const CELL_WIDTH = 9.6;
@@ -10,8 +9,25 @@ const $canvas = $('.ascii-canvas');
 selection.bindCanvas($canvas);
 
 let cells = [[]];
+let chars = [[]];
 
-export function createFrame() {
+export function numRows() {
+    return chars.length;
+}
+export function numCols() {
+    return chars[0].length;
+}
+
+export function getChar(row, col) {
+    return chars[row][col];
+}
+export function updateChar(row, col, value) {
+    chars[row][col] = value;
+}
+
+export function loadFrame(frame) {
+    chars = frame;
+
     cells = create2dArray(numRows(), numCols(), (r, c) => {
         const $cell = $('<span>', {
             "class": 'cell',
@@ -46,7 +62,7 @@ export function refresh() {
 }
 
 export function refreshChars() {
-    iterate2dArray(frame, (value, row, col) => {
+    iterate2dArray(chars, (value, row, col) => {
         cells[row][col].html(value);
     });
 }
@@ -56,3 +72,23 @@ export function refreshSelection() {
         cells[coord.row][coord.col].addClass('selected');
     });
 }
+
+/**
+ * Translates a 2d array as if it was positioned at a Coord. The callback value will be null for parts of the array
+ * that go out of the frame.
+ *
+ * @param layout        2d array
+ * @param coord         Position to move the top-left Coord of the layout to
+ * @param callback      function(value, row, col), where row and col are the coordinates if the layout was moved
+ */
+export function translate(layout, coord, callback) {
+    layout.forEach((rowValues, rowIndex) => {
+        rowValues.forEach((value, colIndex) => {
+            const row = rowIndex + coord.row;
+            const col = colIndex + coord.col;
+            const inBounds = row >= 0 && row < numRows() && col >= 0 && col < numCols();
+            callback(inBounds ? value : null, row, col);
+        });
+    });
+}
+

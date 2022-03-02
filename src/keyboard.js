@@ -2,7 +2,6 @@ import $ from "jquery";
 import * as selection from "./selection.js";
 import * as clipboard from "./clipboard.js";
 import * as canvas from "./canvas.js";
-import {frame} from "./index.js";
 
 $(document).keydown(function(e) {
     const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
@@ -67,14 +66,14 @@ $(document).keydown(function(e) {
         case 'Backspace':
         case 'Delete':
             selection.getSelectedCoords().forEach(coord => {
-                frame[coord.row][coord.col] = '';
+                canvas.updateChar(coord.row, coord.col, '');
             });
             canvas.refreshChars();
             break;
         default:
             if (producesText(code)) {
                 selection.getSelectedCoords().forEach(coord => {
-                    frame[coord.row][coord.col] = char;
+                    canvas.updateChar(coord.row, coord.col, char);
                 });
                 canvas.refreshChars();
             }
