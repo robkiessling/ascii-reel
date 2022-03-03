@@ -76,7 +76,7 @@ function refreshChars() {
     iterate2dArray(chars, (value, coord) => {
         context.fillStyle = TEXT_COLOR;
         coord.translate(0.5, 0.5); // Move coord by 50% of a cell, so we can draw char in center of cell
-        context.fillText(value, ...coord.xy());
+        context.fillText(value, ...coord.xy);
     });
 
     if (GRID) {
@@ -92,7 +92,7 @@ function refreshSelection() {
     // Draw all selection rectangles
     selection.getSelectedCoords().forEach(coord => {
         context.fillStyle = SELECTION_COLOR;
-        context.fillRect(...coord.xywh());
+        context.fillRect(...coord.xywh);
     });
 }
 
@@ -135,7 +135,7 @@ function setupCanvas(canvas) {
 
 function clearCanvas(canvas) {
     const context = canvas.getContext("2d");
-    context.clearRect(...Rect.fillScreen().xywh());
+    context.clearRect(...Rect.drawableArea().xywh);
 }
 
 function drawGrid(canvas) {
@@ -146,11 +146,11 @@ function drawGrid(canvas) {
     iterate2dArray(chars, (value, coord) => {
         // Drawing a box around the cell. Only draw left/top borders for first cells in the row/col
         context.beginPath();
-        context.moveTo(...coord.xy());
-        coord.col === 0 ? context.lineTo(...coord.translate(1, 0).xy()) : context.moveTo(...coord.translate(1, 0).xy());
-        context.lineTo(...coord.translate(0, 1).xy());
-        context.lineTo(...coord.translate(-1, 0).xy());
-        coord.row === 0 ? context.lineTo(...coord.translate(0, -1).xy()) : context.moveTo(...coord.translate(0, -1).xy())
+        context.moveTo(...coord.xy);
+        coord.col === 0 ? context.lineTo(...coord.translate(1, 0).xy) : context.moveTo(...coord.translate(1, 0).xy);
+        context.lineTo(...coord.translate(0, 1).xy);
+        context.lineTo(...coord.translate(-1, 0).xy);
+        coord.row === 0 ? context.lineTo(...coord.translate(0, -1).xy) : context.moveTo(...coord.translate(0, -1).xy)
         context.stroke();
     });
 }
@@ -202,10 +202,17 @@ class ZoomHandler {
     }
 }
 
-export class XYCoord {
-    constructor(absoluteX, absoluteY) {
-        this.absoluteX = absoluteX;
-        this.absoluteY = absoluteY;
+/**
+ * An XYCoord is simply an x and y value. These values are relative to the top-left of the ENTIRE canvas element.
+ * If you want x/y values relative to the top-left of the editable area, use relativeX and relativeY.
+ *
+ * The x/y values are all scaled according to the zoomHandler. If you are creating an XYCoord from "un-zoomed" x/y
+ * values (e.g. from the width of the entire canvas, from a mouse events, etc.) you must use XYCoord.fromExternal(x, y).
+ */
+class XYCoord {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
     }
 
     static fromExternal(x, y) {
@@ -213,22 +220,31 @@ export class XYCoord {
     }
 
     get relativeX() {
-        return this.absoluteX - zoomHandler.origin.absoluteX;
+        return this.x - zoomHandler.origin.x;
     }
     get relativeY() {
-        return this.absoluteY - zoomHandler.origin.absoluteY;
+        return this.y - zoomHandler.origin.y;
     }
 
-    toCoord() {
-        return new Coord(Math.floor(this.relativeY / CELL_HEIGHT), Math.floor(this.relativeX / CELL_WIDTH))
+    // Used to spread (...) into functions that take (x, y) parameters
+    get xy() {
+        return [this.x, this.y];
     }
 }
 
 // A class so we can deal with rows/columns, and it handles x/y positioning for us
-export class Coord {
+export class Coord extends XYCoord {
     constructor(row, col) {
-        this.row = row;
-        this.col = col;
+        super();
+
+        this._row = row;
+        this._col = col;
+        this._updateXY();
+    }
+
+    static fromExternalXY(x, y) {
+        const xy = XYCoord.fromExternal(x, y);
+        return new Coord(Math.floor(xy.relativeY / CELL_HEIGHT), Math.floor(xy.relativeX / CELL_WIDTH));
     }
 
     clone() {
@@ -236,27 +252,44 @@ export class Coord {
     }
 
     translate(rowDelta, colDelta) {
-        this.row += rowDelta;
-        this.col += colDelta;
+        this._row += rowDelta;
+        this._col += colDelta;
+        this._updateXY();
         return this;
     }
 
-    x() {
-        return this.col * CELL_WIDTH + zoomHandler.origin.absoluteX;
-    }
-
-    y() {
-        return this.row * CELL_HEIGHT + zoomHandler.origin.absoluteY;
-    }
-
-    // Used to spread (...) into functions that take (x, y) parameters
-    xy() {
-        return [this.x(), this.y()];
+    bounded() {
+        if (this.row < 0) { this.row = 0; }
+        if (this.row > numRows() - 1) { this.row = numRows() - 1; }
+        if (this.col < 0) { this.col = 0; }
+        if (this.col > numCols() - 1) { this.col = numCols() - 1; }
+        return this;
     }
 
     // Used to spread (...) into functions that take (x, y, width, height) parameters
-    xywh() {
-        return [this.x(), this.y(), CELL_WIDTH, CELL_HEIGHT];
+    get xywh() {
+        return [this.x, this.y, CELL_WIDTH, CELL_HEIGHT];
+    }
+
+    get row() {
+        return this._row;
+    }
+    set row(newValue) {
+        this._row = newValue;
+        this._updateXY();
+    }
+    get col() {
+        return this._col;
+    }
+    set col(newValue) {
+        this._col = newValue;
+        this._updateXY();
+    }
+
+    // Keep the x/y values of the underlying XYCoord consistent
+    _updateXY() {
+        this.x = this.col * CELL_WIDTH + zoomHandler.origin.x;
+        this.y = this.row * CELL_HEIGHT + zoomHandler.origin.y;
     }
 }
 
@@ -266,24 +299,24 @@ export class Rect {
         this.bottomRight = bottomRight; // Coord
     }
 
-    static fillScreen() {
+    static drawableArea() {
         return new Rect(new Coord(0, 0), new Coord(numRows() - 1, numCols() - 1));
     }
 
-    xywh() {
-        return [this.topLeft.x(), this.topLeft.y(), this.width() * CELL_WIDTH, this.height() * CELL_HEIGHT];
+    get xywh() {
+        return [this.topLeft.x, this.topLeft.y, this.width * CELL_WIDTH, this.height * CELL_HEIGHT];
+    }
+
+    get height() {
+        return this.bottomRight.row - this.topLeft.row + 1;
+    }
+
+    get width() {
+        return this.bottomRight.col - this.topLeft.col + 1;
     }
 
     clone() {
         return new Rect(this.topLeft.clone(), this.bottomRight.clone());
-    }
-
-    height() {
-        return this.bottomRight.row - this.topLeft.row + 1;
-    }
-
-    width() {
-        return this.bottomRight.col - this.topLeft.col + 1;
     }
 
     iterate(callback) {
@@ -307,39 +340,28 @@ export class Rect {
  * A partial is like a Rect, but instead of having topLeft and bottomRight Coords, it has start and end Coords.
  * The start Coord may be to the bottom-right of the end Coord, depending on how the user draws the rectangle.
  * You can still call the helper methods topLeft / bottomRight if you need the absolute end points.
- *
- * Partials have a reference to the frame they are in, allowing them to calculate if they are in bounds
- * TODO Should we remove the reference to frame, and pass it in as an argument?
  */
-
 export class Partial {
     constructor(start, end) {
         this.start = start; // Coord
         this.end = end; // Coord
     }
 
-    static fillScreen() {
+    static drawableArea() {
         return new Partial(new Coord(0, 0), new Coord(numRows() - 1, numCols() - 1));
     }
 
     set start(coord) {
-        this._start = this._boundCoord(coord);
+        this._start = coord.bounded();
     }
     get start() {
         return this._start;
     }
     set end(coord) {
-        this._end = this._boundCoord(coord);
+        this._end = coord.bounded();
     }
     get end() {
         return this._end;
-    }
-    _boundCoord(coord) {
-        if (coord.row < 0) { coord.row = 0; }
-        if (coord.row > numRows() - 1) { coord.row = numRows() - 1; }
-        if (coord.col < 0) { coord.col = 0; }
-        if (coord.col > numCols() - 1) { coord.col = numCols() - 1; }
-        return coord;
     }
 
     get topLeft() {
@@ -355,6 +377,8 @@ export class Partial {
     }
 
     // Returns true if this partial can be moved 1 space in the given direction
+    // TODO Rework this, sometimes you want to shift a selection off screen
+    //      Maybe Coord class should have "bindToDrawableArea" or something
     canMove(direction, moveStart = true, moveEnd = true) {
         switch(direction) {
             case 'left':

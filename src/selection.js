@@ -1,7 +1,7 @@
 import $ from "jquery";
 import * as canvas from "./canvas.js";
 import {create2dArray} from "./utilities.js";
-import {XYCoord, Coord, Partial} from "./canvas.js";
+import {Coord, Partial} from "./canvas.js";
 
 // The selection is made up of 1 or more Partials. All Partials are highlighted in the editor.
 export let partials = [];
@@ -16,7 +16,7 @@ export function clear() {
 }
 
 export function selectAll() {
-    partials = [Partial.fillScreen()];
+    partials = [Partial.drawableArea()];
     canvas.refresh('selection');
 }
 
@@ -31,17 +31,17 @@ export function bindCanvas($canvas) {
         }
 
         if (evt.metaKey || evt.ctrlKey || !latestPartial()) {
-            startPartial(XYCoord.fromExternal(evt.offsetX, evt.offsetY).toCoord());
+            startPartial(Coord.fromExternalXY(evt.offsetX, evt.offsetY));
         }
 
         if (evt.shiftKey) {
-            latestPartial().end = XYCoord.fromExternal(evt.offsetX, evt.offsetY).toCoord();
+            latestPartial().end = Coord.fromExternalXY(evt.offsetX, evt.offsetY);
             canvas.refresh('selection');
         }
     });
     $canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
-            latestPartial().end = XYCoord.fromExternal(evt.offsetX, evt.offsetY).toCoord();
+            latestPartial().end = Coord.fromExternalXY(evt.offsetX, evt.offsetY);
             canvas.refresh('selection');
         }
     });
@@ -81,7 +81,7 @@ export function getSelection(processor = function(r, c) { return canvas.getChar(
 
     // Fill selection with nulls
     let selectionRect = getSelectionRect();
-    let selection = create2dArray(selectionRect.height(), selectionRect.width(), null);
+    let selection = create2dArray(selectionRect.height, selectionRect.width, null);
 
     // Iterate through partials, populating selection with cell values
     partials.forEach(partial => {
