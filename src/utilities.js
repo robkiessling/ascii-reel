@@ -1,3 +1,4 @@
+import {CELL_HEIGHT, CELL_WIDTH} from "./canvas.js";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -34,7 +35,7 @@ export function createArray(size, defaultValue = null) {
 export function iterate2dArray(array, callback) {
     for (let row = 0; row < array.length; row++) {
         for (let col = 0; col < array[row].length; col++) {
-            callback(array[row][col], row, col, array);
+            callback(array[row][col], new Coord(row, col), array);
         }
     }
 }
@@ -53,6 +54,7 @@ export function convert2dArrayToText(array) {
     }).join('\n');
 }
 
+// A class so we can deal with rows/columns, and it handles x/y positioning for us
 export class Coord {
     constructor(row, col) {
         this.row = row;
@@ -62,12 +64,39 @@ export class Coord {
     clone() {
         return new Coord(this.row, this.col);
     }
+
+    translate(rowDelta, colDelta) {
+        this.row += rowDelta;
+        this.col += colDelta;
+    }
+
+    static fromXY(x, y) {
+        return new Coord(Math.floor(y / CELL_HEIGHT), Math.floor(x / CELL_WIDTH));
+    }
+
+    x() {
+        return this.col * CELL_WIDTH;
+    }
+
+    y() {
+        return this.row * CELL_HEIGHT;
+    }
+
+    // Used to spread (...) into functions that take (x, y) parameters
+    xy() {
+        return [this.x(), this.y()];
+    }
+
+    // Used to spread (...) into functions that take (x, y, width, height) parameters
+    xywh() {
+        return [this.x(), this.y(), CELL_WIDTH, CELL_HEIGHT];
+    }
 }
 
 export class Rect {
     constructor(topLeft, bottomRight) {
-        this.topLeft = topLeft;
-        this.bottomRight = bottomRight;
+        this.topLeft = topLeft; // Coord
+        this.bottomRight = bottomRight; // Coord
     }
 
     clone() {

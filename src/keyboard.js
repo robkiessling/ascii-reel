@@ -4,8 +4,8 @@ import * as clipboard from "./clipboard.js";
 import * as canvas from "./canvas.js";
 
 $(document).keydown(function(e) {
-    const code = e.which // Keycodes https://keycode.info/ e.g. 37 38
-    const char = e.key; // The resulting character: e.g. a A 1 ? Control Alt Shift Meta Enter
+    const code = e.which // Note: This is normalized by jQuery. Keycodes https://keycode.info/
+    const char = e.key; // E.g. a A 1 Control Alt Shift Meta Enter [ { \ /
     console.log(code, char);
 
     if (char === 'Unidentified') {

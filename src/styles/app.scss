@@ -6,25 +6,24 @@ body {
   margin: 1rem;
 }
 
-.ascii-canvas {
-  background: black;
+#main-content {
+  display: flex;
+}
+
+#canvas-container {
   position: relative;
-  font-family: monospace;
-  font-size: 1rem;
+  background: #ddd;
+  display: inline-block;
+  margin-left: 0.5rem;
 
-  .cell {
+  canvas {
     position: absolute;
-    //border: 1px solid black;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    top: 0;
+    left: 0;
+  }
 
-    color: white;
-
-    &.selected {
-      background: #aeae00;
-    }
+  #selection-canvas {
+    background: black;
   }
 }
 

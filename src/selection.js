@@ -22,31 +22,30 @@ export function selectAll() {
 export function bindCanvas($canvas) {
     let isSelecting = false;
 
-    $canvas.off('mousedown.selection', '.cell').on('mousedown.selection', '.cell', function(evt) {
+    $canvas.off('mousedown.selection').on('mousedown.selection', evt => {
         isSelecting = true;
-        const $cell = $(this);
 
         if (!evt.metaKey && !evt.ctrlKey && !evt.shiftKey) {
             clear();
         }
 
         if (evt.metaKey || evt.ctrlKey || !latestPartial()) {
-            startPartial($cell.data('row'), $cell.data('col'));
+            startPartial(Coord.fromXY(evt.offsetX, evt.offsetY));
         }
 
         if (evt.shiftKey) {
-            latestPartial().end = { row: $cell.data('row'), col: $cell.data('col') };
+            latestPartial().end = Coord.fromXY(evt.offsetX, evt.offsetY);
             canvas.refreshSelection();
         }
-    }).off('mousemove.selection', '.cell').on('mousemove.selection', '.cell', function(evt) {
+    });
+    $canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
-            const $cell = $(this);
-            latestPartial().end = { row: $cell.data('row'), col: $cell.data('col') };
+            latestPartial().end = Coord.fromXY(evt.offsetX, evt.offsetY);
             canvas.refreshSelection();
         }
     });
 
-    $(document).off('mouseup.selection').on('mouseup.selection', function(evt) {
+    $(document).off('mouseup.selection').on('mouseup.selection', evt => {
         if (isSelecting) {
             isSelecting = false;
             canvas.refreshSelection();
@@ -148,7 +147,7 @@ export function getSelectionRect() {
 // Move all partials in a particular direction, as long as they can ALL move in that direction without hitting boundaries
 export function moveSelection(direction, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
-        startPartial(0, 0);
+        startPartial(new Coord(0, 0));
         return;
     }
 
@@ -163,8 +162,8 @@ function latestPartial() {
     return partials[partials.length - 1];
 }
 
-function startPartial(row, col) {
-    partials.push(new Partial(new Coord(row, col), new Coord(row, col)));
+function startPartial(coord) {
+    partials.push(new Partial(coord, coord.clone()));
     canvas.refreshSelection();
 }
 

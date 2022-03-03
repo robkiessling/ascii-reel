@@ -1,14 +1,21 @@
 import $ from "jquery";
 import * as selection from "./selection.js";
-import {create2dArray, iterate2dArray} from "./utilities.js";
+import {iterate2dArray} from "./utilities.js";
 
-const CELL_WIDTH = 9.6;
-const CELL_HEIGHT = 18.6;
+export const CELL_HEIGHT = 16;
+export const CELL_WIDTH = 16 * 3/5; // Standard monospace ratio is 3/5
 
-const $canvas = $('.ascii-canvas');
-selection.bindCanvas($canvas);
+const GRID = false;
+const GRID_WIDTH = 0.25;
+const GRID_COLOR = '#fff';
 
-let cells = [[]];
+const SELECTION_COLOR = '#0066ccaa';
+const TEXT_COLOR = '#fff'; // TODO This will be configurable
+
+const charCanvas = document.getElementById('char-canvas');
+const selectionCanvas = document.getElementById('selection-canvas');
+selection.bindCanvas($('#canvas-container').find('canvas').last()); // Using last element since it is on "top"
+
 let chars = [[]];
 
 export function numRows() {
@@ -25,33 +32,11 @@ export function updateChar(row, col, value) {
     chars[row][col] = value;
 }
 
-export function loadFrame(frame) {
-    chars = frame;
+export function loadChars(newChars) {
+    chars = newChars;
 
-    cells = create2dArray(numRows(), numCols(), (r, c) => {
-        const $cell = $('<span>', {
-            "class": 'cell',
-            "data-row": r,
-            "data-col": c,
-            css: {
-                left: c * CELL_WIDTH,
-                top: r * CELL_HEIGHT,
-                width: CELL_WIDTH,
-                height: CELL_HEIGHT
-            }
-        });
-
-        // const range = [32,127];
-        // let char = String.fromCharCode(range[0] + Math.floor((range[1] - range[0]) * Math.random()));
-        // $cell.html(char);
-
-        $cell.appendTo($canvas);
-
-        return $cell;
-    })
-
-    $canvas.width(numCols() * CELL_WIDTH);
-    $canvas.height(numRows() * CELL_HEIGHT);
+    setupCanvas(charCanvas);
+    setupCanvas(selectionCanvas);
 
     refresh();
 }
@@ -62,14 +47,31 @@ export function refresh() {
 }
 
 export function refreshChars() {
-    iterate2dArray(chars, (value, row, col) => {
-        cells[row][col].html(value);
+    const charCtx = charCanvas.getContext("2d");
+
+    clearCanvas(charCanvas);
+
+    // Draw all chars using fillText
+    iterate2dArray(chars, (value, coord) => {
+        charCtx.fillStyle = TEXT_COLOR;
+        coord.translate(0.5, 0.5); // Move coord by 50% of a cell, so we can draw char in center of cell
+        charCtx.fillText(value, ...coord.xy());
     });
+
+    if (GRID) {
+        drawGrid(charCanvas);
+    }
 }
+
 export function refreshSelection() {
-    $canvas.find('.cell').removeClass('selected');
+    const selectionCtx = selectionCanvas.getContext("2d");
+
+    clearCanvas(selectionCanvas);
+
+    // Draw all selection rectangles
     selection.getSelectedCoords().forEach(coord => {
-        cells[coord.row][coord.col].addClass('selected');
+        selectionCtx.fillStyle = SELECTION_COLOR;
+        selectionCtx.fillRect(...coord.xywh());
     });
 }
 
@@ -92,3 +94,63 @@ export function translate(layout, coord, callback) {
     });
 }
 
+
+function setupCanvas(canvas) {
+    const context = canvas.getContext("2d");
+
+    // Fix canvas PPI https://stackoverflow.com/a/65124939/4904996
+    let ratio = window.devicePixelRatio;
+    canvas.width = canvasWidth() * ratio;
+    canvas.height = canvasHeight() * ratio;
+    canvas.style.width = canvasWidth() + "px";
+    canvas.style.height = canvasHeight() + "px";
+    context.scale(ratio, ratio);
+
+    // Set up font
+    context.font = '1rem monospace';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+}
+
+function clearCanvas(canvas) {
+    const context = canvas.getContext("2d");
+    context.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawGrid(canvas) {
+    const context = canvas.getContext("2d");
+    context.strokeStyle = GRID_COLOR;
+
+    iterate2dArray(chars, (value, coord) => {
+        if (coord.row !== 0) {
+            context.beginPath();
+            context.lineWidth = GRID_WIDTH;
+            context.moveTo(...coord.xy());
+            coord.translate(0, 1); // Move coord 1 cell to the right
+            context.lineTo(...coord.xy());
+            context.stroke();
+        }
+
+        if (coord.col !== 0) {
+            context.beginPath();
+            context.lineWidth = GRID_WIDTH;
+            context.moveTo(...coord.xy());
+            coord.translate(1, 0); // Move coord 1 cell down
+            context.lineTo(...coord.xy());
+            context.stroke();
+        }
+    });
+
+    context.beginPath();
+    context.lineWidth = GRID_WIDTH * 2;
+    context.rect(0, 0, canvasWidth(), canvasHeight());
+    context.stroke();
+}
+
+function canvasWidth() {
+    return numCols() * CELL_WIDTH;
+}
+
+function canvasHeight() {
+    return numRows() * CELL_HEIGHT;
+}
