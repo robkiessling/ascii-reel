@@ -6,12 +6,12 @@ import {convert2dArrayToText, convertTextTo2dArray} from "./utilities.js"; // or
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
 
-let cutCoord = null;
+let cutCell = null;
 let copiedSelection = null; // 2d array
 let copiedText = null; // string
 
 export function cut() {
-    cutCoord = selection.getSelectionRect().topLeft;
+    cutCell = selection.getSelectionRect().topLeft;
     copySelection();
 }
 
@@ -37,7 +37,7 @@ export function paste() {
     readClipboard(text => {
         if (copiedText !== text) {
             // External clipboard has changed; paste the external clipboard
-            cutCoord = null; // Disregard any previous cuts
+            cutCell = null; // Disregard any previous cuts
             pasteArray(convertTextTo2dArray(text));
         }
         else if (copiedSelection) {
@@ -55,17 +55,17 @@ function copySelection() {
 
 function pasteArray(array) {
     // If cut was used, remove old cut
-    if (cutCoord) {
-        canvas.translate(array, cutCoord, (value, r, c) => {
+    if (cutCell) {
+        canvas.translate(array, cutCell, (value, r, c) => {
             if (value !== null) { canvas.updateChar(r, c, ''); }
         })
-        cutCoord = null;
+        cutCell = null;
     }
 
     if (array.length === 1 && array[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
-        selection.getSelectedCoords().forEach(coord => {
-            canvas.updateChar(coord.row, coord.col, array[0][0])
+        selection.getSelectedCells().forEach(cell => {
+            canvas.updateChar(cell.row, cell.col, array[0][0])
         });
     }
     else {

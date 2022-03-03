@@ -43,7 +43,7 @@ $(document).keydown(function(e) {
             selection.clear();
             break;
         case 'ArrowLeft':
-            // If shift key is pressed, we only want to move the end coord
+            // If shift key is pressed, we only want to move the end cell
             selection.moveSelection('left', !e.shiftKey);
             break;
         case 'ArrowUp':
@@ -65,15 +65,15 @@ $(document).keydown(function(e) {
 
         case 'Backspace':
         case 'Delete':
-            selection.getSelectedCoords().forEach(coord => {
-                canvas.updateChar(coord.row, coord.col, '');
+            selection.getSelectedCells().forEach(cell => {
+                canvas.updateChar(cell.row, cell.col, '');
             });
             canvas.refresh('chars');
             break;
         default:
             if (producesText(code)) {
-                selection.getSelectedCoords().forEach(coord => {
-                    canvas.updateChar(coord.row, coord.col, char);
+                selection.getSelectedCells().forEach(cell => {
+                    canvas.updateChar(cell.row, cell.col, char);
                 });
                 canvas.refresh('chars');
             }

@@ -1,7 +1,7 @@
 import $ from "jquery";
 import * as canvas from "./canvas.js";
 import {create2dArray} from "./utilities.js";
-import {Coord, Partial} from "./canvas.js";
+import {Cell, Partial} from "./canvas.js";
 
 // The selection is made up of 1 or more Partials. All Partials are highlighted in the editor.
 export let partials = [];
@@ -31,17 +31,17 @@ export function bindCanvas($canvas) {
         }
 
         if (evt.metaKey || evt.ctrlKey || !latestPartial()) {
-            startPartial(Coord.fromExternalXY(evt.offsetX, evt.offsetY));
+            startPartial(Cell.fromExternalXY(evt.offsetX, evt.offsetY));
         }
 
         if (evt.shiftKey) {
-            latestPartial().end = Coord.fromExternalXY(evt.offsetX, evt.offsetY);
+            latestPartial().end = Cell.fromExternalXY(evt.offsetX, evt.offsetY);
             canvas.refresh('selection');
         }
     });
     $canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
-            latestPartial().end = Coord.fromExternalXY(evt.offsetX, evt.offsetY);
+            latestPartial().end = Cell.fromExternalXY(evt.offsetX, evt.offsetY);
             canvas.refresh('selection');
         }
     });
@@ -96,7 +96,7 @@ export function getSelection(processor = function(r, c) { return canvas.getChar(
 }
 
 /**
- * Returns a flat array of Coord objects for all selected cells.
+ * Returns a flat array of Cell objects for all selected cells.
  *
  * E.g. If the partials (depicted by x's) were this:
  *
@@ -107,11 +107,11 @@ export function getSelection(processor = function(r, c) { return canvas.getChar(
  *
  *      Returns:
  *
- *        [Coord{row:1,col:2}, Coord{row:1,col:3}, Coord{row:2,col:2}, Coord{row:2,col:3}, Coord{row:2,col:6}]
+ *        [Cell{row:1,col:2}, Cell{row:1,col:3}, Cell{row:2,col:2}, Cell{row:2,col:3}, Cell{row:2,col:6}]
  */
-export function getSelectedCoords() {
+export function getSelectedCells() {
     return getSelection((r, c) => {
-        return new Coord(r, c);
+        return new Cell(r, c);
     }).flat().filter(cell => cell !== null);
 }
 
@@ -148,7 +148,7 @@ export function getSelectionRect() {
 // Move all partials in a particular direction, as long as they can ALL move in that direction without hitting boundaries
 export function moveSelection(direction, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
-        startPartial(new Coord(0, 0));
+        startPartial(new Cell(0, 0));
         return;
     }
 
@@ -163,8 +163,8 @@ function latestPartial() {
     return partials[partials.length - 1];
 }
 
-function startPartial(coord) {
-    partials.push(new Partial(coord, coord.clone()));
+function startPartial(cell) {
+    partials.push(new Partial(cell, cell.clone()));
     canvas.refresh('selection');
 }
 

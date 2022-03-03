@@ -1,4 +1,4 @@
-import {Coord} from "./canvas.js";
+import {Cell} from "./canvas.js";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -35,7 +35,7 @@ export function createArray(size, defaultValue = null) {
 export function iterate2dArray(array, callback) {
     for (let row = 0; row < array.length; row++) {
         for (let col = 0; col < array[row].length; col++) {
-            callback(array[row][col], new Coord(row, col), array);
+            callback(array[row][col], new Cell(row, col), array);
         }
     }
 }

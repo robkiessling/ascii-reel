@@ -73,10 +73,10 @@ function refreshChars() {
     clearCanvas(charCanvas);
 
     // Draw all chars using fillText
-    iterate2dArray(chars, (value, coord) => {
+    iterate2dArray(chars, (value, cell) => {
         context.fillStyle = TEXT_COLOR;
-        coord.translate(0.5, 0.5); // Move coord by 50% of a cell, so we can draw char in center of cell
-        context.fillText(value, ...coord.xy);
+        cell.translate(0.5, 0.5); // Translate cell by 50%, so we can draw char in center of cell
+        context.fillText(value, ...cell.xy);
     });
 
     if (GRID) {
@@ -90,25 +90,25 @@ function refreshSelection() {
     clearCanvas(selectionCanvas);
 
     // Draw all selection rectangles
-    selection.getSelectedCoords().forEach(coord => {
+    selection.getSelectedCells().forEach(cell => {
         context.fillStyle = SELECTION_COLOR;
-        context.fillRect(...coord.xywh);
+        context.fillRect(...cell.xywh);
     });
 }
 
 /**
- * Translates a 2d array as if it was positioned at a Coord. The callback value will be null for parts of the array
+ * Translates a 2d array as if it was positioned at a Cell. The callback value will be null for parts of the array
  * that go out of the frame.
  *
  * @param layout        2d array
- * @param coord         Position to move the top-left Coord of the layout to
+ * @param cell         Position to move the top-left Cell of the layout to
  * @param callback      function(value, row, col), where row and col are the coordinates if the layout was moved
  */
-export function translate(layout, coord, callback) {
+export function translate(layout, cell, callback) {
     layout.forEach((rowValues, rowIndex) => {
         rowValues.forEach((value, colIndex) => {
-            const row = rowIndex + coord.row;
-            const col = colIndex + coord.col;
+            const row = rowIndex + cell.row;
+            const col = colIndex + cell.col;
             const inBounds = row >= 0 && row < numRows() && col >= 0 && col < numCols();
             callback(inBounds ? value : null, row, col);
         });
@@ -143,14 +143,14 @@ function drawGrid(canvas) {
     context.strokeStyle = GRID_COLOR;
     context.lineWidth = GRID_WIDTH;
 
-    iterate2dArray(chars, (value, coord) => {
+    iterate2dArray(chars, (value, cell) => {
         // Drawing a box around the cell. Only draw left/top borders for first cells in the row/col
         context.beginPath();
-        context.moveTo(...coord.xy);
-        coord.col === 0 ? context.lineTo(...coord.translate(1, 0).xy) : context.moveTo(...coord.translate(1, 0).xy);
-        context.lineTo(...coord.translate(0, 1).xy);
-        context.lineTo(...coord.translate(-1, 0).xy);
-        coord.row === 0 ? context.lineTo(...coord.translate(0, -1).xy) : context.moveTo(...coord.translate(0, -1).xy)
+        context.moveTo(...cell.xy);
+        cell.col === 0 ? context.lineTo(...cell.translate(1, 0).xy) : context.moveTo(...cell.translate(1, 0).xy);
+        context.lineTo(...cell.translate(0, 1).xy);
+        context.lineTo(...cell.translate(-1, 0).xy);
+        cell.row === 0 ? context.lineTo(...cell.translate(0, -1).xy) : context.moveTo(...cell.translate(0, -1).xy)
         context.stroke();
     });
 }
@@ -191,7 +191,7 @@ class ZoomHandler {
             canvas.getContext("2d").scale(contextScale, contextScale); // scaled to desired amount
         })
 
-        this.origin = new XYCoord(
+        this.origin = new XY(
             this.scale(outerWidth()) / 2 - (numCols() * CELL_WIDTH) / 2,
             this.scale(outerHeight()) / 2 - (numRows() * CELL_HEIGHT) / 2
         );
@@ -203,20 +203,20 @@ class ZoomHandler {
 }
 
 /**
- * An XYCoord is simply an x and y value. These values are relative to the top-left of the ENTIRE canvas element.
- * If you want x/y values relative to the top-left of the editable area, use relativeX and relativeY.
+ * An XY is simply an x/y coordinate. These values are relative to the top-left of the ENTIRE canvas element.
+ * If you want x/y values relative to the top-left of the drawable area, use relativeX and relativeY.
  *
- * The x/y values are all scaled according to the zoomHandler. If you are creating an XYCoord from "un-zoomed" x/y
- * values (e.g. from the width of the entire canvas, from a mouse events, etc.) you must use XYCoord.fromExternal(x, y).
+ * The x/y values are all scaled according to the zoomHandler. If you are creating an XY from "un-zoomed" x/y
+ * values (e.g. from the width of the entire canvas, from a mouse events, etc.) you must use XY.fromExternal(x, y).
  */
-class XYCoord {
+class XY {
     constructor(x, y) {
         this.x = x;
         this.y = y;
     }
 
     static fromExternal(x, y) {
-        return new XYCoord(zoomHandler.scale(x), zoomHandler.scale(y));
+        return new XY(zoomHandler.scale(x), zoomHandler.scale(y));
     }
 
     get relativeX() {
@@ -232,29 +232,31 @@ class XYCoord {
     }
 }
 
-// A class so we can deal with rows/columns, and it handles x/y positioning for us
-export class Coord extends XYCoord {
+/**
+ * A Cell is a particular row/column pair of the drawable area. It is useful so we can deal with rows/columns instead
+ * of raw x/y values. However, it is built on top of an XY, so if you need to get a Cell's absolute or relative x/y
+ * positions, you can call the normal XY getters.
+ */
+export class Cell extends XY {
     constructor(row, col) {
         super();
 
-        this._row = row;
-        this._col = col;
-        this._updateXY();
+        this.row = row;
+        this.col = col;
     }
 
     static fromExternalXY(x, y) {
-        const xy = XYCoord.fromExternal(x, y);
-        return new Coord(Math.floor(xy.relativeY / CELL_HEIGHT), Math.floor(xy.relativeX / CELL_WIDTH));
+        const xy = XY.fromExternal(x, y);
+        return new Cell(Math.floor(xy.relativeY / CELL_HEIGHT), Math.floor(xy.relativeX / CELL_WIDTH));
     }
 
     clone() {
-        return new Coord(this.row, this.col);
+        return new Cell(this.row, this.col);
     }
 
     translate(rowDelta, colDelta) {
-        this._row += rowDelta;
-        this._col += colDelta;
-        this._updateXY();
+        this.row += rowDelta;
+        this.col += colDelta;
         return this;
     }
 
@@ -271,6 +273,7 @@ export class Coord extends XYCoord {
         return [this.x, this.y, CELL_WIDTH, CELL_HEIGHT];
     }
 
+    // Override row/col setters so we can ensure underlying XY remains consistent
     get row() {
         return this._row;
     }
@@ -285,22 +288,23 @@ export class Coord extends XYCoord {
         this._col = newValue;
         this._updateXY();
     }
-
-    // Keep the x/y values of the underlying XYCoord consistent
     _updateXY() {
         this.x = this.col * CELL_WIDTH + zoomHandler.origin.x;
         this.y = this.row * CELL_HEIGHT + zoomHandler.origin.y;
     }
 }
 
+/**
+ * A Rect is a rectangle drawn between a topLeft Cell and a bottomRight Cell.
+ */
 export class Rect {
     constructor(topLeft, bottomRight) {
-        this.topLeft = topLeft; // Coord
-        this.bottomRight = bottomRight; // Coord
+        this.topLeft = topLeft; // Cell
+        this.bottomRight = bottomRight; // Cell
     }
 
     static drawableArea() {
-        return new Rect(new Coord(0, 0), new Coord(numRows() - 1, numCols() - 1));
+        return new Rect(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
     }
 
     get xywh() {
@@ -337,39 +341,40 @@ export class Rect {
 
 
 /**
- * A partial is like a Rect, but instead of having topLeft and bottomRight Coords, it has start and end Coords.
- * The start Coord may be to the bottom-right of the end Coord, depending on how the user draws the rectangle.
+ * A partial is like a Rect, but instead of having topLeft and bottomRight Cells, it has start and end Cells.
+ * The start Cell may be to the bottom or right of the end Cell, depending on how the user draws the rectangle.
  * You can still call the helper methods topLeft / bottomRight if you need the absolute end points.
+ * TODO Should this extend Rect?
  */
 export class Partial {
     constructor(start, end) {
-        this.start = start; // Coord
-        this.end = end; // Coord
+        this.start = start; // Cell
+        this.end = end; // Cell
     }
 
     static drawableArea() {
-        return new Partial(new Coord(0, 0), new Coord(numRows() - 1, numCols() - 1));
+        return new Partial(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
     }
 
-    set start(coord) {
-        this._start = coord.bounded();
+    set start(cell) {
+        this._start = cell.bounded();
     }
     get start() {
         return this._start;
     }
-    set end(coord) {
-        this._end = coord.bounded();
+    set end(cell) {
+        this._end = cell.bounded();
     }
     get end() {
         return this._end;
     }
 
     get topLeft() {
-        return new Coord(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
+        return new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
     }
 
     get bottomRight() {
-        return new Coord(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
+        return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
     }
 
     toRect() {
@@ -378,7 +383,7 @@ export class Partial {
 
     // Returns true if this partial can be moved 1 space in the given direction
     // TODO Rework this, sometimes you want to shift a selection off screen
-    //      Maybe Coord class should have "bindToDrawableArea" or something
+    //      Maybe Cell class should have "bindToDrawableArea" or something
     canMove(direction, moveStart = true, moveEnd = true) {
         switch(direction) {
             case 'left':
