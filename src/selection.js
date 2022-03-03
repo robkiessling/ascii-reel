@@ -2,6 +2,7 @@ import $ from "jquery";
 import * as canvas from "./canvas.js";
 import {create2dArray, Coord, Rect} from "./utilities.js";
 
+// The selection is made up of 1 or more Partials. All Partials are highlighted in the editor.
 export let partials = [];
 
 export function hasSelection() {
@@ -14,7 +15,7 @@ export function clear() {
 }
 
 export function selectAll() {
-    partials.push(new Partial(new Coord(0, 0), new Coord(canvas.numRows() - 1, canvas.numCols() - 1)));
+    partials = [new Partial(new Coord(0, 0), new Coord(canvas.numRows() - 1, canvas.numCols() - 1))]
     canvas.refreshSelection();
 }
 

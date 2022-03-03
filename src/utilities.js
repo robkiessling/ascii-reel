@@ -3,9 +3,9 @@ export function isFunction(value) {
     return typeof value === 'function';
 }
 
-// @param defaultValue can be a primitive value (like an integer or string) or a function that returns the value to set.
-// Do not pass an object as a default value; otherwise all the elements will point to the same object. You should pass
-// a function that returns a new object.
+// @param defaultValue can be a primitive value (like an integer or string) or a function that returns the desired value.
+// Do not pass an object as a default value; otherwise all the elements will be a reference to the same object. You 
+// should pass a function that returns a new object.
 export function create2dArray(numRows, numCols, defaultValue = null) {
     let array = [];
 
@@ -39,10 +39,10 @@ export function iterate2dArray(array, callback) {
     }
 }
 
-const MAX_CLIPBOARD_LENGTH = 100000; // Upper limit on clipboard for performance reasons
+const MAX_TEXT_LENGTH = 100000; // Upper limit just in case the OS clipboard had a huge amount of text copied
 
 export function convertTextTo2dArray(text) {
-    return text.slice(0, MAX_CLIPBOARD_LENGTH).split(/\r?\n/).map(line => {
+    return text.slice(0, MAX_TEXT_LENGTH).split(/\r?\n/).map(line => {
         return line.split('');
     })
 }
