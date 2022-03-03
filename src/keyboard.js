@@ -68,14 +68,14 @@ $(document).keydown(function(e) {
             selection.getSelectedCoords().forEach(coord => {
                 canvas.updateChar(coord.row, coord.col, '');
             });
-            canvas.refreshChars();
+            canvas.refresh('chars');
             break;
         default:
             if (producesText(code)) {
                 selection.getSelectedCoords().forEach(coord => {
                     canvas.updateChar(coord.row, coord.col, char);
                 });
-                canvas.refreshChars();
+                canvas.refresh('chars');
             }
             else {
                 // Unrecognized input; let browser handle as normal

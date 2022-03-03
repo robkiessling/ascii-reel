@@ -82,7 +82,7 @@ function pasteArray(array) {
         // })
     }
 
-    canvas.refreshChars();
+    canvas.refresh('chars');
 }
 
 function readClipboard(callback) {

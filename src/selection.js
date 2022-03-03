@@ -11,12 +11,12 @@ export function hasSelection() {
 
 export function clear() {
     partials = [];
-    canvas.refreshSelection();
+    canvas.refresh('selection');
 }
 
 export function selectAll() {
     partials = [new Partial(new Coord(0, 0), new Coord(canvas.numRows() - 1, canvas.numCols() - 1))]
-    canvas.refreshSelection();
+    canvas.refresh('selection');
 }
 
 export function bindCanvas($canvas) {
@@ -35,20 +35,20 @@ export function bindCanvas($canvas) {
 
         if (evt.shiftKey) {
             latestPartial().end = Coord.fromXY(evt.offsetX, evt.offsetY);
-            canvas.refreshSelection();
+            canvas.refresh('selection');
         }
     });
     $canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
             latestPartial().end = Coord.fromXY(evt.offsetX, evt.offsetY);
-            canvas.refreshSelection();
+            canvas.refresh('selection');
         }
     });
 
     $(document).off('mouseup.selection').on('mouseup.selection', evt => {
         if (isSelecting) {
             isSelecting = false;
-            canvas.refreshSelection();
+            canvas.refresh('selection');
         }
     });
 }
@@ -155,7 +155,7 @@ export function moveSelection(direction, moveStart = true, moveEnd = true) {
         partials.forEach(partial => partial.move(direction, moveStart, moveEnd));
     }
 
-    canvas.refreshSelection();
+    canvas.refresh('selection');
 }
 
 function latestPartial() {
@@ -164,7 +164,7 @@ function latestPartial() {
 
 function startPartial(coord) {
     partials.push(new Partial(coord, coord.clone()));
-    canvas.refreshSelection();
+    canvas.refresh('selection');
 }
 
 

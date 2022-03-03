@@ -1,6 +1,7 @@
 import $ from "jquery";
 import * as selection from "./selection.js";
 import {iterate2dArray} from "./utilities.js";
+import {updatePreview} from "./preview.js";
 
 export const CELL_HEIGHT = 16;
 export const CELL_WIDTH = 16 * 3/5; // Standard monospace ratio is 3/5
@@ -12,9 +13,10 @@ const GRID_COLOR = '#fff';
 const SELECTION_COLOR = '#0066ccaa';
 const TEXT_COLOR = '#fff'; // TODO This will be configurable
 
+const $canvasContainer = $('#canvas-container');
 const charCanvas = document.getElementById('char-canvas');
 const selectionCanvas = document.getElementById('selection-canvas');
-selection.bindCanvas($('#canvas-container').find('canvas').last()); // Using last element since it is on "top"
+selection.bindCanvas($canvasContainer.find('canvas').last()); // Using last element since it is on "top"
 
 let chars = [[]];
 
@@ -41,21 +43,42 @@ export function loadChars(newChars) {
     refresh();
 }
 
-export function refresh() {
-    refreshChars();
-    refreshSelection();
+export function refresh(specificCanvas) {
+    if (specificCanvas) {
+        switch(specificCanvas) {
+            case 'chars':
+                refreshChars();
+                break;
+            case 'selection':
+                refreshSelection();
+                break;
+            default:
+                console.warn(`refresh("${specificCanvas}") is not a valid canvas`);
+        }
+    }
+    else {
+        refreshChars();
+        refreshSelection();
+    }
+
+    updatePreview(charCanvas);
 }
 
-export function refreshChars() {
-    const charCtx = charCanvas.getContext("2d");
+export function setBackgroundColor(color) {
+    // Using first element since it is on "bottom"
+    $canvasContainer.find('canvas').first().css('background', color);
+}
+
+function refreshChars() {
+    const context = charCanvas.getContext("2d");
 
     clearCanvas(charCanvas);
 
     // Draw all chars using fillText
     iterate2dArray(chars, (value, coord) => {
-        charCtx.fillStyle = TEXT_COLOR;
+        context.fillStyle = TEXT_COLOR;
         coord.translate(0.5, 0.5); // Move coord by 50% of a cell, so we can draw char in center of cell
-        charCtx.fillText(value, ...coord.xy());
+        context.fillText(value, ...coord.xy());
     });
 
     if (GRID) {
@@ -63,15 +86,15 @@ export function refreshChars() {
     }
 }
 
-export function refreshSelection() {
-    const selectionCtx = selectionCanvas.getContext("2d");
+function refreshSelection() {
+    const context = selectionCanvas.getContext("2d");
 
     clearCanvas(selectionCanvas);
 
     // Draw all selection rectangles
     selection.getSelectedCoords().forEach(coord => {
-        selectionCtx.fillStyle = SELECTION_COLOR;
-        selectionCtx.fillRect(...coord.xywh());
+        context.fillStyle = SELECTION_COLOR;
+        context.fillRect(...coord.xywh());
     });
 }
 
