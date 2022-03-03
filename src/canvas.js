@@ -3,20 +3,38 @@ import * as selection from "./selection.js";
 import {iterate2dArray} from "./utilities.js";
 import {updatePreview} from "./preview.js";
 
+const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
-const CELL_WIDTH = 16 * 3/5; // Standard monospace ratio is 3/5
+const CELL_WIDTH = CELL_HEIGHT * MONOSPACE_RATIO;
 
-const GRID = true;
+// Since monospace ratio has denominator of 5, this should be a multiple a 5 if you want cells to align with checkers
+const CHECKERS_PER_CELL_COL = 5;
+const CHECKERS_PER_CELL_ROW = CHECKERS_PER_CELL_COL * MONOSPACE_RATIO;
+const CHECKER_WIDTH = CELL_WIDTH / CHECKERS_PER_CELL_ROW;
+const CHECKER_HEIGHT = CELL_HEIGHT / CHECKERS_PER_CELL_COL;
+
+const GRID = false;
 const GRID_WIDTH = 0.25;
 const GRID_COLOR = '#fff';
 
-const SELECTION_COLOR = '#0066ccaa';
-const TEXT_COLOR = '#fff'; // TODO This will be configurable
+const SELECTION_COLOR = '#0066cc88';
+const TEXT_COLOR = '#fff';
+
+const CHAR_BACKGROUND = false; // false => transparent (will rarely NOT be transparent; only when you need to see spaces)
+const CANVAS_BACKGROUND = '#4c4c4c'; // false => transparent
+const CHECKERBOARD_A = '#4c4c4c';
+const CHECKERBOARD_B = '#555';
+
+const ZOOM_BOUNDARIES = [0.5, 5];
+const ZOOM_SPEED = 1;
 
 const $canvasContainer = $('#canvas-container');
+const $canvases = $canvasContainer.find('canvas');
+const $topCanvas = $canvases.last();
+
 const charCanvas = document.getElementById('char-canvas');
 const selectionCanvas = document.getElementById('selection-canvas');
-selection.bindCanvas($canvasContainer.find('canvas').last()); // Using last element since it is on "top"
+selection.bindCanvas($topCanvas);
 
 let chars;
 let zoomHandler;
@@ -25,7 +43,7 @@ export function initialize() {
     chars = [[]];
     setupCanvas(charCanvas);
     setupCanvas(selectionCanvas);
-    zoomHandler = new ZoomHandler([charCanvas, selectionCanvas]);
+    zoomHandler = new ZoomHandler();
 }
 
 export function getChar(row, col) {
@@ -37,8 +55,7 @@ export function updateChar(row, col, value) {
 
 export function loadChars(newChars) {
     chars = newChars;
-    zoomHandler.zoom(1);
-    refresh();
+    zoomHandler.zoom(2);
 }
 
 export function refresh(specificCanvas) {
@@ -62,21 +79,35 @@ export function refresh(specificCanvas) {
     updatePreview(charCanvas);
 }
 
-export function setBackgroundColor(color) {
-    // Using first element since it is on "bottom"
-    $canvasContainer.find('canvas').first().css('background', color);
-}
 
 function refreshChars() {
     const context = charCanvas.getContext("2d");
 
     clearCanvas(charCanvas);
 
+    if (CANVAS_BACKGROUND === false) {
+        fillCheckerboard(charCanvas, Rect.drawableArea());
+    }
+    else {
+        context.fillStyle = CANVAS_BACKGROUND;
+        context.fillRect(...Rect.drawableArea().xywh);
+    }
+
+    if (CHAR_BACKGROUND) {
+        context.beginPath();
+        context.fillStyle = CHAR_BACKGROUND;
+        iterate2dArray(chars, (value, cell) => {
+            if (value !== '') {
+                context.rect(...cell.xywh);
+            }
+        });
+        context.fill();
+    }
+
     // Draw all chars using fillText
     iterate2dArray(chars, (value, cell) => {
         context.fillStyle = TEXT_COLOR;
-        cell.translate(0.5, 0.5); // Translate cell by 50%, so we can draw char in center of cell
-        context.fillText(value, ...cell.xy);
+        context.fillText(value, ...cell.translate(0.5, 0.5).xy); // Translate by 50%, so we can draw char in center of cell
     });
 
     if (GRID) {
@@ -135,7 +166,7 @@ function setupCanvas(canvas) {
 
 function clearCanvas(canvas) {
     const context = canvas.getContext("2d");
-    context.clearRect(...Rect.drawableArea().xywh);
+    context.clearRect(...Rect.fullArea().xywh);
 }
 
 function drawGrid(canvas) {
@@ -155,6 +186,31 @@ function drawGrid(canvas) {
     });
 }
 
+function fillCheckerboard(canvas, rect) {
+    const context = canvas.getContext("2d");
+
+    context.beginPath();
+    context.fillStyle = CHECKERBOARD_A;
+    context.rect(...Rect.drawableArea().xywh);
+    context.fill();
+
+    context.beginPath();
+    context.fillStyle = CHECKERBOARD_B;
+    let rowStartsOnB = false;
+    // TODO Hack subtracting 0.001 to account for floating point round errors
+    for (let x = rect.x; x < (rect.x + rect.width - 0.001); x += CHECKER_WIDTH) {
+        let isCheckered = rowStartsOnB;
+        for (let y = rect.y; y < (rect.y + rect.height - 0.001); y += CHECKER_HEIGHT) {
+            if (isCheckered) {
+                context.rect(x, y, CHECKER_WIDTH, CHECKER_HEIGHT);
+            }
+            isCheckered = !isCheckered;
+        }
+        rowStartsOnB = !rowStartsOnB;
+    }
+    context.fill();
+}
+
 function outerWidth() {
     return $canvasContainer.outerWidth();
 }
@@ -170,35 +226,48 @@ function numCols() {
 }
 
 
-/**
- *
- */
+
 class ZoomHandler {
-    constructor(canvases) {
-        this.canvases = canvases;
-        this.zoom(1);
+    constructor() {
+        this._setupScrollListener();
     }
 
     zoom(newValue) {
-        if (newValue !== undefined) {
-            this._zoom = newValue;
-        }
+        if (newValue < ZOOM_BOUNDARIES[0]) { newValue = ZOOM_BOUNDARIES[0]; }
+        if (newValue > ZOOM_BOUNDARIES[1]) { newValue = ZOOM_BOUNDARIES[1]; }
+        if (newValue === this._zoom) { return; }
+        this._zoom = newValue;
 
         // Set context scale: Have to factor in device PPI like we did when we built the canvas
         const contextScale = window.devicePixelRatio * this._zoom;
-        this.canvases.forEach(canvas => {
-            canvas.getContext("2d").setTransform(1, 0, 0, 1, 0, 0); // reset scale
-            canvas.getContext("2d").scale(contextScale, contextScale); // scaled to desired amount
-        })
+        $canvases.each(function() {
+            this.getContext("2d").setTransform(1, 0, 0, 1, 0, 0); // reset scale
+            this.getContext("2d").scale(contextScale, contextScale); // scaled to desired amount
+        });
 
+        /**
+         * origin is the absolute x/y coordinates of the top-left point of the drawable rectangle.
+         * The XY and Cell classes will use this origin to calculate their relative x/y positions.
+         */
         this.origin = new XY(
             this.scale(outerWidth()) / 2 - (numCols() * CELL_WIDTH) / 2,
             this.scale(outerHeight()) / 2 - (numRows() * CELL_HEIGHT) / 2
         );
+
+        refresh();
     }
 
     scale(value) {
         return value / this._zoom;
+    }
+
+    _setupScrollListener() {
+        $topCanvas.off('wheel.ZoomHandler').on('wheel.ZoomHandler', evt => {
+            const wheel = evt.originalEvent.deltaY;
+            if (wheel === 0) { return; }
+            this.zoom(this._zoom - wheel * ZOOM_SPEED / 200);
+            evt.preventDefault();
+        });
     }
 }
 
@@ -260,11 +329,15 @@ export class Cell extends XY {
         return this;
     }
 
-    bounded() {
-        if (this.row < 0) { this.row = 0; }
-        if (this.row > numRows() - 1) { this.row = numRows() - 1; }
-        if (this.col < 0) { this.col = 0; }
-        if (this.col > numCols() - 1) { this.col = numCols() - 1; }
+    bindToDrawableArea(newValue) {
+        this._boundToDrawableArea = newValue;
+
+        // If turning on binding, immediately set the row/col values so the binding takes effect
+        if (newValue) {
+            this.row = this.row;
+            this.col = this.col;
+        }
+
         return this;
     }
 
@@ -273,12 +346,15 @@ export class Cell extends XY {
         return [this.x, this.y, CELL_WIDTH, CELL_HEIGHT];
     }
 
-    // Override row/col setters so we can ensure underlying XY remains consistent
     get row() {
         return this._row;
     }
     set row(newValue) {
         this._row = newValue;
+        if (this._boundToDrawableArea) {
+            if (this._row < 0) { this._row = 0; }
+            if (this._row > numRows() - 1) { this._row = numRows() - 1; }
+        }
         this._updateXY();
     }
     get col() {
@@ -286,8 +362,14 @@ export class Cell extends XY {
     }
     set col(newValue) {
         this._col = newValue;
+        if (this._boundToDrawableArea) {
+            if (this._col < 0) { this._col = 0; }
+            if (this._col > numCols() - 1) { this._col = numCols() - 1; }
+        }
         this._updateXY();
     }
+
+    // Ensure underlying XY remains consistent
     _updateXY() {
         this.x = this.col * CELL_WIDTH + zoomHandler.origin.x;
         this.y = this.row * CELL_HEIGHT + zoomHandler.origin.y;
@@ -307,15 +389,32 @@ export class Rect {
         return new Rect(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
     }
 
-    get xywh() {
-        return [this.topLeft.x, this.topLeft.y, this.width * CELL_WIDTH, this.height * CELL_HEIGHT];
+    static fullArea() {
+        return new Rect(Cell.fromExternalXY(0, 0), Cell.fromExternalXY(outerWidth(), outerHeight()));
     }
 
+    get x() {
+        return this.topLeft.x;
+    }
+    get y() {
+        return this.topLeft.y;
+    }
+    get width() {
+        return this.numCols * CELL_WIDTH;
+    }
     get height() {
+        return this.numRows * CELL_HEIGHT;
+    }
+
+    get xywh() {
+        return [this.x, this.y, this.width, this.height];
+    }
+
+    get numRows() {
         return this.bottomRight.row - this.topLeft.row + 1;
     }
 
-    get width() {
+    get numCols() {
         return this.bottomRight.col - this.topLeft.col + 1;
     }
 
@@ -357,13 +456,13 @@ export class Partial {
     }
 
     set start(cell) {
-        this._start = cell.bounded();
+        this._start = cell.bindToDrawableArea(true);
     }
     get start() {
         return this._start;
     }
     set end(cell) {
-        this._end = cell.bounded();
+        this._end = cell.bindToDrawableArea(true);
     }
     get end() {
         return this._end;
@@ -382,8 +481,6 @@ export class Partial {
     }
 
     // Returns true if this partial can be moved 1 space in the given direction
-    // TODO Rework this, sometimes you want to shift a selection off screen
-    //      Maybe Cell class should have "bindToDrawableArea" or something
     canMove(direction, moveStart = true, moveEnd = true) {
         switch(direction) {
             case 'left':

@@ -81,7 +81,7 @@ export function getSelection(processor = function(r, c) { return canvas.getChar(
 
     // Fill selection with nulls
     let selectionRect = getSelectionRect();
-    let selection = create2dArray(selectionRect.height, selectionRect.width, null);
+    let selection = create2dArray(selectionRect.numRows, selectionRect.numCols, null);
 
     // Iterate through partials, populating selection with cell values
     partials.forEach(partial => {
@@ -152,9 +152,9 @@ export function moveSelection(direction, moveStart = true, moveEnd = true) {
         return;
     }
 
-    if (partials.every(partial => partial.canMove(direction, moveStart, moveEnd))) {
+    // if (partials.every(partial => partial.canMove(direction, moveStart, moveEnd))) {
         partials.forEach(partial => partial.move(direction, moveStart, moveEnd));
-    }
+    // }
 
     canvas.refresh('selection');
 }
