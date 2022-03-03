@@ -1,6 +1,7 @@
 import $ from "jquery";
 import * as canvas from "./canvas.js";
-import {create2dArray, Coord, Rect} from "./utilities.js";
+import {create2dArray} from "./utilities.js";
+import {XYCoord, Coord, Partial} from "./canvas.js";
 
 // The selection is made up of 1 or more Partials. All Partials are highlighted in the editor.
 export let partials = [];
@@ -15,7 +16,7 @@ export function clear() {
 }
 
 export function selectAll() {
-    partials = [new Partial(new Coord(0, 0), new Coord(canvas.numRows() - 1, canvas.numCols() - 1))]
+    partials = [Partial.fillScreen()];
     canvas.refresh('selection');
 }
 
@@ -30,17 +31,17 @@ export function bindCanvas($canvas) {
         }
 
         if (evt.metaKey || evt.ctrlKey || !latestPartial()) {
-            startPartial(Coord.fromXY(evt.offsetX, evt.offsetY));
+            startPartial(XYCoord.fromExternal(evt.offsetX, evt.offsetY).toCoord());
         }
 
         if (evt.shiftKey) {
-            latestPartial().end = Coord.fromXY(evt.offsetX, evt.offsetY);
+            latestPartial().end = XYCoord.fromExternal(evt.offsetX, evt.offsetY).toCoord();
             canvas.refresh('selection');
         }
     });
     $canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
-            latestPartial().end = Coord.fromXY(evt.offsetX, evt.offsetY);
+            latestPartial().end = XYCoord.fromExternal(evt.offsetX, evt.offsetY).toCoord();
             canvas.refresh('selection');
         }
     });
@@ -167,80 +168,3 @@ function startPartial(coord) {
     canvas.refresh('selection');
 }
 
-
-/**
- * A partial is like a Rect, but instead of having topLeft and bottomRight Coords, it has start and end Coords.
- * The start Coord may be to the bottom-right of the end Coord, depending on how the user draws the rectangle.
- * You can still call the helper methods topLeft / bottomRight if you need the absolute end points.
- *
- * Partials have a reference to the frame they are in, allowing them to calculate if they are in bounds
- * TODO Should we remove the reference to frame, and pass it in as an argument?
- */
-class Partial {
-    constructor(start, end) {
-        this.start = start; // Coord
-        this.end = end; // Coord
-    }
-
-    get topLeft() {
-        return new Coord(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
-    }
-
-    get bottomRight() {
-        return new Coord(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
-    }
-
-    toRect() {
-        return new Rect(this.topLeft, this.bottomRight);
-    }
-
-    // Returns true if this partial can be moved 1 space in the given direction
-    canMove(direction, moveStart = true, moveEnd = true) {
-        switch(direction) {
-            case 'left':
-                if (moveStart && this.start.col <= 0) { return false; }
-                if (moveEnd && this.end.col <= 0) { return false; }
-                break;
-            case 'up':
-                if (moveStart && this.start.row <= 0) { return false; }
-                if (moveEnd && this.end.row <= 0) { return false; }
-                break;
-            case 'right':
-                if (moveStart && this.start.col >= canvas.numCols() - 1) { return false; }
-                if (moveEnd && this.end.col >= canvas.numCols() - 1) { return false; }
-                break;
-            case 'down':
-                if (moveStart && this.start.row >= canvas.numRows() - 1) { return false; }
-                if (moveEnd && this.end.row >= canvas.numRows() - 1) { return false; }
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-                return false;
-        }
-        return true;
-    }
-
-    // Move this partial 1 space in the given direction. Does not respect boundaries (you should call canMove first)
-    move(direction, moveStart = true, moveEnd = true) {
-        switch(direction) {
-            case 'left':
-                if (moveStart) { this.start.col -= 1; }
-                if (moveEnd) { this.end.col -= 1; }
-                break;
-            case 'up':
-                if (moveStart) { this.start.row -= 1; }
-                if (moveEnd) { this.end.row -= 1; }
-                break;
-            case 'right':
-                if (moveStart) { this.start.col += 1; }
-                if (moveEnd) { this.end.col += 1; }
-                break;
-            case 'down':
-                if (moveStart) { this.start.row += 1; }
-                if (moveEnd) { this.end.row += 1; }
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-        }
-    }
-}

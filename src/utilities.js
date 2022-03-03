@@ -1,4 +1,4 @@
-import {CELL_HEIGHT, CELL_WIDTH} from "./canvas.js";
+import {Coord} from "./canvas.js";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -65,77 +65,4 @@ export function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// A class so we can deal with rows/columns, and it handles x/y positioning for us
-export class Coord {
-    constructor(row, col) {
-        this.row = row;
-        this.col = col;
-    }
-
-    clone() {
-        return new Coord(this.row, this.col);
-    }
-
-    translate(rowDelta, colDelta) {
-        this.row += rowDelta;
-        this.col += colDelta;
-    }
-
-    static fromXY(x, y) {
-        return new Coord(Math.floor(y / CELL_HEIGHT), Math.floor(x / CELL_WIDTH));
-    }
-
-    x() {
-        return this.col * CELL_WIDTH;
-    }
-
-    y() {
-        return this.row * CELL_HEIGHT;
-    }
-
-    // Used to spread (...) into functions that take (x, y) parameters
-    xy() {
-        return [this.x(), this.y()];
-    }
-
-    // Used to spread (...) into functions that take (x, y, width, height) parameters
-    xywh() {
-        return [this.x(), this.y(), CELL_WIDTH, CELL_HEIGHT];
-    }
-}
-
-export class Rect {
-    constructor(topLeft, bottomRight) {
-        this.topLeft = topLeft; // Coord
-        this.bottomRight = bottomRight; // Coord
-    }
-
-    clone() {
-        return new Rect(this.topLeft.clone(), this.bottomRight.clone());
-    }
-
-    height() {
-        return this.bottomRight.row - this.topLeft.row + 1;
-    }
-
-    width() {
-        return this.bottomRight.col - this.topLeft.col + 1;
-    }
-
-    iterate(callback) {
-        for (let r = this.topLeft.row; r <= this.bottomRight.row; r++) {
-            for (let c = this.topLeft.col; c <= this.bottomRight.col; c++) {
-                callback(r, c);
-            }
-        }
-    }
-
-    mergeRect(otherRect) {
-        if (otherRect.topLeft.row < this.topLeft.row) { this.topLeft.row = otherRect.topLeft.row; }
-        if (otherRect.topLeft.col < this.topLeft.col) { this.topLeft.col = otherRect.topLeft.col; }
-        if (otherRect.bottomRight.row > this.bottomRight.row) { this.bottomRight.row = otherRect.bottomRight.row; }
-        if (otherRect.bottomRight.col > this.bottomRight.col) { this.bottomRight.col = otherRect.bottomRight.col; }
-    }
 }
