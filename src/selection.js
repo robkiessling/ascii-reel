@@ -2,6 +2,7 @@ import $ from "jquery";
 import * as canvas from "./canvas.js";
 import {create2dArray} from "./utilities.js";
 import {Cell, Partial} from "./canvas.js";
+import {getChar, refresh, selectionCanvas} from "./index.js";
 
 // The selection is made up of 1 or more Partials. All Partials are highlighted in the editor.
 export let partials = [];
@@ -12,12 +13,12 @@ export function hasSelection() {
 
 export function clear() {
     partials = [];
-    canvas.refresh('selection');
+    refresh('selection');
 }
 
 export function selectAll() {
-    partials = [Partial.drawableArea()];
-    canvas.refresh('selection');
+    partials = [Partial.drawableArea(selectionCanvas)];
+    refresh('selection');
 }
 
 export function bindCanvas($canvas) {
@@ -31,25 +32,25 @@ export function bindCanvas($canvas) {
         }
 
         if (evt.metaKey || evt.ctrlKey || !latestPartial()) {
-            startPartial(Cell.fromExternalXY(evt.offsetX, evt.offsetY));
+            startPartial(Cell.fromExternalXY(selectionCanvas, evt.offsetX, evt.offsetY));
         }
 
         if (evt.shiftKey) {
-            latestPartial().end = Cell.fromExternalXY(evt.offsetX, evt.offsetY);
-            canvas.refresh('selection');
+            latestPartial().end = Cell.fromExternalXY(selectionCanvas, evt.offsetX, evt.offsetY);
+            refresh('selection');
         }
     });
     $canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
-            latestPartial().end = Cell.fromExternalXY(evt.offsetX, evt.offsetY);
-            canvas.refresh('selection');
+            latestPartial().end = Cell.fromExternalXY(selectionCanvas, evt.offsetX, evt.offsetY);
+            refresh('selection');
         }
     });
 
     $(document).off('mouseup.selection').on('mouseup.selection', evt => {
         if (isSelecting) {
             isSelecting = false;
-            canvas.refresh('selection');
+            refresh('selection');
         }
     });
 }
@@ -74,7 +75,7 @@ export function bindCanvas($canvas) {
  *
  * By default, returned values are the displayed chars. Can pass a @processor parameter to return a custom value.
  */
-export function getSelection(processor = function(r, c) { return canvas.getChar(r, c); }) {
+export function getSelection(processor = function(r, c) { return getChar(r, c); }) {
     if (!hasSelection()) {
         return [[]];
     }
@@ -111,7 +112,7 @@ export function getSelection(processor = function(r, c) { return canvas.getChar(
  */
 export function getSelectedCells() {
     return getSelection((r, c) => {
-        return new Cell(r, c);
+        return new Cell(selectionCanvas, r, c);
     }).flat().filter(cell => cell !== null);
 }
 
@@ -148,7 +149,7 @@ export function getSelectionRect() {
 // Move all partials in a particular direction, as long as they can ALL move in that direction without hitting boundaries
 export function moveSelection(direction, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
-        startPartial(new Cell(0, 0));
+        startPartial(new Cell(selectionCanvas, 0, 0));
         return;
     }
 
@@ -156,7 +157,7 @@ export function moveSelection(direction, moveStart = true, moveEnd = true) {
         partials.forEach(partial => partial.move(direction, moveStart, moveEnd));
     // }
 
-    canvas.refresh('selection');
+    refresh('selection');
 }
 
 function latestPartial() {
@@ -164,7 +165,7 @@ function latestPartial() {
 }
 
 function startPartial(cell) {
-    partials.push(new Partial(cell, cell.clone()));
-    canvas.refresh('selection');
+    partials.push(new Partial(selectionCanvas, cell, cell.clone()));
+    refresh('selection');
 }
 

@@ -25,6 +25,9 @@ html, body {
   flex: 1;
   overflow: auto;
 
+  //max-height: 500px;
+  //max-width: 500px;
+
   position: relative;
   background: #ccc;
 }
@@ -37,6 +40,10 @@ html, body {
   //background: url('../images/transparent-bg.png');
 }
 
+.full {
+  width: 100%;
+  height: 100%;
+}
 .absolute-center {
   position:absolute;
   left:50%;

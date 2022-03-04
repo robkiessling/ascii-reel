@@ -1,7 +1,6 @@
 import $ from "jquery";
 import * as selection from "./selection.js";
-import {iterate2dArray} from "./utilities.js";
-import {updatePreview} from "./preview.js";
+import {charCanvas, chars, numCols, numRows, refresh} from "./index.js";
 
 const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
@@ -13,7 +12,7 @@ const CHECKERS_PER_CELL_ROW = CHECKERS_PER_CELL_COL * MONOSPACE_RATIO;
 const CHECKER_WIDTH = CELL_WIDTH / CHECKERS_PER_CELL_ROW;
 const CHECKER_HEIGHT = CELL_HEIGHT / CHECKERS_PER_CELL_COL;
 
-const GRID = false;
+const GRID = true;
 const GRID_WIDTH = 0.25;
 const GRID_COLOR = '#fff';
 
@@ -28,104 +27,134 @@ const CHECKERBOARD_B = '#555';
 const ZOOM_BOUNDARIES = [0.5, 5];
 const ZOOM_SPEED = 1;
 
-const $canvasContainer = $('#canvas-container');
-const $canvases = $canvasContainer.find('canvas');
-const $topCanvas = $canvases.last();
+export class CanvasControl {
+    constructor($canvas, config = {}) {
+        this.$canvas = $canvas;
+        this.canvas = this.$canvas.get(0);
+        this.context = this.canvas.getContext("2d");
+        this.config = config;
 
-const charCanvas = document.getElementById('char-canvas');
-const selectionCanvas = document.getElementById('selection-canvas');
-selection.bindCanvas($topCanvas);
+        // Fix canvas PPI https://stackoverflow.com/a/65124939/4904996
+        let ratio = window.devicePixelRatio;
+        this.canvas.width = this.outerWidth * ratio;
+        this.canvas.height = this.outerHeight * ratio;
+        this.canvas.style.width = this.outerWidth + "px";
+        this.canvas.style.height = this.outerHeight + "px";
+        this.context.scale(ratio, ratio);
 
-let chars;
-let zoomHandler;
+        // Set up font
+        this.context.font = '1rem monospace';
+        this.context.textAlign = 'center';
+        this.context.textBaseline = 'middle';
 
-export function initialize() {
-    chars = [[]];
-    setupCanvas(charCanvas);
-    setupCanvas(selectionCanvas);
-    zoomHandler = new ZoomHandler();
-}
+        this.zoom = new ZoomHandler(this, config.zoom);
+    }
 
-export function getChar(row, col) {
-    return chars[row][col];
-}
-export function updateChar(row, col, value) {
-    chars[row][col] = value;
-}
+    get outerWidth() {
+        return this.$canvas.outerWidth();
+    }
+    get outerHeight() {
+        return this.$canvas.outerHeight();
+    }
 
-export function loadChars(newChars) {
-    chars = newChars;
-    zoomHandler.zoom(2);
-}
+    clear() {
+        this.context.clearRect(...Rect.fullArea(this).xywh);
+    }
 
-export function refresh(specificCanvas) {
-    if (specificCanvas) {
-        switch(specificCanvas) {
-            case 'chars':
-                refreshChars();
-                break;
-            case 'selection':
-                refreshSelection();
-                break;
-            default:
-                console.warn(`refresh("${specificCanvas}") is not a valid canvas`);
+    // TODO Move to subclass?
+    refreshChars() {
+        this.clear();
+
+        if (CANVAS_BACKGROUND === false) {
+            this.fillCheckerboard(Rect.drawableArea(this));
+        }
+        else {
+            this.context.fillStyle = CANVAS_BACKGROUND;
+            this.context.fillRect(...Rect.drawableArea(this).xywh);
+        }
+
+        if (CHAR_BACKGROUND) {
+            this.context.beginPath();
+            this.context.fillStyle = CHAR_BACKGROUND;
+            this._iterate2dArray(chars, (value, cell) => {
+                if (value !== '') {
+                    this.context.rect(...cell.xywh);
+                }
+            });
+            this.context.fill();
+        }
+
+        // Draw all chars using fillText
+        this._iterate2dArray(chars, (value, cell) => {
+            this.context.fillStyle = TEXT_COLOR;
+            this.context.fillText(value, ...cell.translate(0.5, 0.5).xy); // Translate by 50%, so we can draw char in center of cell
+        });
+
+        if (GRID) {
+            this.drawGrid();
         }
     }
-    else {
-        refreshChars();
-        refreshSelection();
-    }
+    refreshSelection() {
+        this.clear();
 
-    updatePreview(charCanvas);
-}
-
-
-function refreshChars() {
-    const context = charCanvas.getContext("2d");
-
-    clearCanvas(charCanvas);
-
-    if (CANVAS_BACKGROUND === false) {
-        fillCheckerboard(charCanvas, Rect.drawableArea());
-    }
-    else {
-        context.fillStyle = CANVAS_BACKGROUND;
-        context.fillRect(...Rect.drawableArea().xywh);
-    }
-
-    if (CHAR_BACKGROUND) {
-        context.beginPath();
-        context.fillStyle = CHAR_BACKGROUND;
-        iterate2dArray(chars, (value, cell) => {
-            if (value !== '') {
-                context.rect(...cell.xywh);
-            }
+        // Draw all selection rectangles
+        selection.getSelectedCells().forEach(cell => {
+            this.context.fillStyle = SELECTION_COLOR;
+            this.context.fillRect(...cell.xywh);
         });
-        context.fill();
     }
 
-    // Draw all chars using fillText
-    iterate2dArray(chars, (value, cell) => {
-        context.fillStyle = TEXT_COLOR;
-        context.fillText(value, ...cell.translate(0.5, 0.5).xy); // Translate by 50%, so we can draw char in center of cell
-    });
+    _iterate2dArray(array, callback) {
+        for (let row = 0; row < array.length; row++) {
+            for (let col = 0; col < array[row].length; col++) {
+                callback(array[row][col], new Cell(this, row, col));
+            }
+        }
+    }
 
-    if (GRID) {
-        drawGrid(charCanvas);
+    drawGrid() {
+        this.context.strokeStyle = GRID_COLOR;
+        this.context.lineWidth = GRID_WIDTH;
+
+        this._iterate2dArray(chars, (value, cell) => {
+            // Drawing a box around the cell. Only draw left/top borders for first cells in the row/col
+            this.context.beginPath();
+            this.context.moveTo(...cell.xy);
+            cell.col === 0 ? this.context.lineTo(...cell.translate(1, 0).xy) : this.context.moveTo(...cell.translate(1, 0).xy);
+            this.context.lineTo(...cell.translate(0, 1).xy);
+            this.context.lineTo(...cell.translate(-1, 0).xy);
+            cell.row === 0 ? this.context.lineTo(...cell.translate(0, -1).xy) : this.context.moveTo(...cell.translate(0, -1).xy)
+            this.context.stroke();
+        });
+    }
+
+    fillCheckerboard(canvas, rect) {
+        this.context.beginPath();
+        this.context.fillStyle = CHECKERBOARD_A;
+        this.context.rect(...Rect.drawableArea(this).xywh);
+        this.context.fill();
+
+        this.context.beginPath();
+        this.context.fillStyle = CHECKERBOARD_B;
+        let rowStartsOnB = false;
+        // TODO Hack subtracting 0.001 to account for floating point round errors
+        for (let x = rect.x; x < (rect.x + rect.width - 0.001); x += CHECKER_WIDTH) {
+            let isCheckered = rowStartsOnB;
+            for (let y = rect.y; y < (rect.y + rect.height - 0.001); y += CHECKER_HEIGHT) {
+                if (isCheckered) {
+                    this.context.rect(x, y, CHECKER_WIDTH, CHECKER_HEIGHT);
+                }
+                isCheckered = !isCheckered;
+            }
+            rowStartsOnB = !rowStartsOnB;
+        }
+        this.context.fill();
     }
 }
 
-function refreshSelection() {
-    const context = selectionCanvas.getContext("2d");
 
-    clearCanvas(selectionCanvas);
 
-    // Draw all selection rectangles
-    selection.getSelectedCells().forEach(cell => {
-        context.fillStyle = SELECTION_COLOR;
-        context.fillRect(...cell.xywh);
-    });
-}
+
 
 /**
  * Translates a 2d array as if it was positioned at a Cell. The callback value will be null for parts of the array
@@ -147,114 +176,39 @@ export function translate(layout, cell, callback) {
 }
 
 
-function setupCanvas(canvas) {
-    const context = canvas.getContext("2d");
-
-    // Fix canvas PPI https://stackoverflow.com/a/65124939/4904996
-    let ratio = window.devicePixelRatio;
-    canvas.width = outerWidth() * ratio;
-    canvas.height = outerHeight() * ratio;
-    canvas.style.width = outerWidth() + "px";
-    canvas.style.height = outerHeight() + "px";
-    context.scale(ratio, ratio);
-
-    // Set up font
-    context.font = '1rem monospace';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-}
-
-function clearCanvas(canvas) {
-    const context = canvas.getContext("2d");
-    context.clearRect(...Rect.fullArea().xywh);
-}
-
-function drawGrid(canvas) {
-    const context = canvas.getContext("2d");
-    context.strokeStyle = GRID_COLOR;
-    context.lineWidth = GRID_WIDTH;
-
-    iterate2dArray(chars, (value, cell) => {
-        // Drawing a box around the cell. Only draw left/top borders for first cells in the row/col
-        context.beginPath();
-        context.moveTo(...cell.xy);
-        cell.col === 0 ? context.lineTo(...cell.translate(1, 0).xy) : context.moveTo(...cell.translate(1, 0).xy);
-        context.lineTo(...cell.translate(0, 1).xy);
-        context.lineTo(...cell.translate(-1, 0).xy);
-        cell.row === 0 ? context.lineTo(...cell.translate(0, -1).xy) : context.moveTo(...cell.translate(0, -1).xy)
-        context.stroke();
-    });
-}
-
-function fillCheckerboard(canvas, rect) {
-    const context = canvas.getContext("2d");
-
-    context.beginPath();
-    context.fillStyle = CHECKERBOARD_A;
-    context.rect(...Rect.drawableArea().xywh);
-    context.fill();
-
-    context.beginPath();
-    context.fillStyle = CHECKERBOARD_B;
-    let rowStartsOnB = false;
-    // TODO Hack subtracting 0.001 to account for floating point round errors
-    for (let x = rect.x; x < (rect.x + rect.width - 0.001); x += CHECKER_WIDTH) {
-        let isCheckered = rowStartsOnB;
-        for (let y = rect.y; y < (rect.y + rect.height - 0.001); y += CHECKER_HEIGHT) {
-            if (isCheckered) {
-                context.rect(x, y, CHECKER_WIDTH, CHECKER_HEIGHT);
-            }
-            isCheckered = !isCheckered;
-        }
-        rowStartsOnB = !rowStartsOnB;
-    }
-    context.fill();
-}
-
-function outerWidth() {
-    return $canvasContainer.outerWidth();
-}
-function outerHeight() {
-    return $canvasContainer.outerHeight();
-}
-
-function numRows() {
-    return chars.length;
-}
-function numCols() {
-    return chars[0].length;
-}
-
-
 
 class ZoomHandler {
-    constructor() {
-        this._setupScrollListener();
+    constructor(canvas, config = {}) {
+        this.canvas = canvas;
+        this.config = config;
+
+        if (this.config.enabled) {
+            this._setupScrollListener();
+        }
+
+        this.zoom(1);
     }
 
     zoom(newValue) {
         if (newValue < ZOOM_BOUNDARIES[0]) { newValue = ZOOM_BOUNDARIES[0]; }
         if (newValue > ZOOM_BOUNDARIES[1]) { newValue = ZOOM_BOUNDARIES[1]; }
-        if (newValue === this._zoom) { return; }
-        this._zoom = newValue;
+        // if (newValue === this._zoom) { return; }
+        if (newValue !== undefined) { this._zoom = newValue; }
 
         // Set context scale: Have to factor in device PPI like we did when we built the canvas
         const contextScale = window.devicePixelRatio * this._zoom;
-        $canvases.each(function() {
-            this.getContext("2d").setTransform(1, 0, 0, 1, 0, 0); // reset scale
-            this.getContext("2d").scale(contextScale, contextScale); // scaled to desired amount
-        });
+        this.canvas.context.setTransform(1, 0, 0, 1, 0, 0); // reset scale
+        this.canvas.context.scale(contextScale, contextScale); // scaled to desired amount
 
         /**
          * origin is the absolute x/y coordinates of the top-left point of the drawable rectangle.
          * The XY and Cell classes will use this origin to calculate their relative x/y positions.
          */
         this.origin = new XY(
-            this.scale(outerWidth()) / 2 - (numCols() * CELL_WIDTH) / 2,
-            this.scale(outerHeight()) / 2 - (numRows() * CELL_HEIGHT) / 2
+            this.canvas,
+            this.scale(this.canvas.outerWidth) / 2 - (numCols() * CELL_WIDTH) / 2,
+            this.scale(this.canvas.outerHeight) / 2 - (numRows() * CELL_HEIGHT) / 2
         );
-
-        refresh();
     }
 
     scale(value) {
@@ -262,10 +216,14 @@ class ZoomHandler {
     }
 
     _setupScrollListener() {
-        $topCanvas.off('wheel.ZoomHandler').on('wheel.ZoomHandler', evt => {
+        this.canvas.$canvas.off('wheel.ZoomHandler').on('wheel.ZoomHandler', evt => {
             const wheel = evt.originalEvent.deltaY;
             if (wheel === 0) { return; }
-            this.zoom(this._zoom - wheel * ZOOM_SPEED / 200);
+            this.zoom(this._zoom - wheel * ZOOM_SPEED / 300);
+            // TODO HACK
+            charCanvas.zoom.zoom(this._zoom - wheel * ZOOM_SPEED / 300);
+
+            refresh();
             evt.preventDefault();
         });
     }
@@ -279,20 +237,21 @@ class ZoomHandler {
  * values (e.g. from the width of the entire canvas, from a mouse events, etc.) you must use XY.fromExternal(x, y).
  */
 class XY {
-    constructor(x, y) {
+    constructor(canvas, x, y) {
+        this.canvas = canvas;
         this.x = x;
         this.y = y;
     }
 
-    static fromExternal(x, y) {
-        return new XY(zoomHandler.scale(x), zoomHandler.scale(y));
+    static fromExternal(canvas, x, y) {
+        return new XY(canvas, canvas.zoom.scale(x), canvas.zoom.scale(y));
     }
 
     get relativeX() {
-        return this.x - zoomHandler.origin.x;
+        return this.x - this.canvas.zoom.origin.x;
     }
     get relativeY() {
-        return this.y - zoomHandler.origin.y;
+        return this.y - this.canvas.zoom.origin.y;
     }
 
     // Used to spread (...) into functions that take (x, y) parameters
@@ -307,20 +266,21 @@ class XY {
  * positions, you can call the normal XY getters.
  */
 export class Cell extends XY {
-    constructor(row, col) {
+    constructor(canvas, row, col) {
         super();
 
+        this.canvas = canvas;
         this.row = row;
         this.col = col;
     }
 
-    static fromExternalXY(x, y) {
-        const xy = XY.fromExternal(x, y);
-        return new Cell(Math.floor(xy.relativeY / CELL_HEIGHT), Math.floor(xy.relativeX / CELL_WIDTH));
+    static fromExternalXY(canvas, x, y) {
+        const xy = XY.fromExternal(canvas, x, y);
+        return new Cell(canvas, Math.floor(xy.relativeY / CELL_HEIGHT), Math.floor(xy.relativeX / CELL_WIDTH));
     }
 
     clone() {
-        return new Cell(this.row, this.col);
+        return new Cell(this.canvas, this.row, this.col);
     }
 
     translate(rowDelta, colDelta) {
@@ -371,8 +331,8 @@ export class Cell extends XY {
 
     // Ensure underlying XY remains consistent
     _updateXY() {
-        this.x = this.col * CELL_WIDTH + zoomHandler.origin.x;
-        this.y = this.row * CELL_HEIGHT + zoomHandler.origin.y;
+        this.x = this.col * CELL_WIDTH + this.canvas.zoom.origin.x;
+        this.y = this.row * CELL_HEIGHT + this.canvas.zoom.origin.y;
     }
 }
 
@@ -380,17 +340,19 @@ export class Cell extends XY {
  * A Rect is a rectangle drawn between a topLeft Cell and a bottomRight Cell.
  */
 export class Rect {
-    constructor(topLeft, bottomRight) {
+    constructor(canvas, topLeft, bottomRight) {
+        this.canvas = canvas;
         this.topLeft = topLeft; // Cell
         this.bottomRight = bottomRight; // Cell
     }
 
-    static drawableArea() {
-        return new Rect(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
+    // TODO Move these to canvas
+    static drawableArea(canvas) {
+        return new Rect(canvas, new Cell(canvas, 0, 0), new Cell(canvas, numRows() - 1, numCols() - 1));
     }
 
-    static fullArea() {
-        return new Rect(Cell.fromExternalXY(0, 0), Cell.fromExternalXY(outerWidth(), outerHeight()));
+    static fullArea(canvas) {
+        return new Rect(canvas, Cell.fromExternalXY(canvas, 0, 0), Cell.fromExternalXY(canvas, canvas.outerWidth, canvas.outerHeight));
     }
 
     get x() {
@@ -419,7 +381,7 @@ export class Rect {
     }
 
     clone() {
-        return new Rect(this.topLeft.clone(), this.bottomRight.clone());
+        return new Rect(this.canvas, this.topLeft.clone(), this.bottomRight.clone());
     }
 
     iterate(callback) {
@@ -446,13 +408,15 @@ export class Rect {
  * TODO Should this extend Rect?
  */
 export class Partial {
-    constructor(start, end) {
+    constructor(canvas, start, end) {
+        this.canvas = canvas;
         this.start = start; // Cell
         this.end = end; // Cell
     }
 
-    static drawableArea() {
-        return new Partial(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
+    // TODO Move this to canvas
+    static drawableArea(canvas) {
+        return new Partial(canvas, new Cell(canvas, 0, 0), new Cell(canvas, numRows() - 1, numCols() - 1));
     }
 
     set start(cell) {
@@ -469,15 +433,15 @@ export class Partial {
     }
 
     get topLeft() {
-        return new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
+        return new Cell(this.canvas, Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
     }
 
     get bottomRight() {
-        return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
+        return new Cell(this.canvas, Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
     }
 
     toRect() {
-        return new Rect(this.topLeft, this.bottomRight);
+        return new Rect(this.canvas, this.topLeft, this.bottomRight);
     }
 
     // Returns true if this partial can be moved 1 space in the given direction

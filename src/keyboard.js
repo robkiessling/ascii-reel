@@ -2,6 +2,7 @@ import $ from "jquery";
 import * as selection from "./selection.js";
 import * as clipboard from "./clipboard.js";
 import * as canvas from "./canvas.js";
+import {refresh, updateChar} from "./index.js";
 
 $(document).keydown(function(e) {
     const code = e.which // Note: This is normalized by jQuery. Keycodes https://keycode.info/
@@ -66,16 +67,16 @@ $(document).keydown(function(e) {
         case 'Backspace':
         case 'Delete':
             selection.getSelectedCells().forEach(cell => {
-                canvas.updateChar(cell.row, cell.col, '');
+                updateChar(cell.row, cell.col, '');
             });
-            canvas.refresh('chars');
+            refresh('chars');
             break;
         default:
             if (producesText(code)) {
                 selection.getSelectedCells().forEach(cell => {
-                    canvas.updateChar(cell.row, cell.col, char);
+                    updateChar(cell.row, cell.col, char);
                 });
-                canvas.refresh('chars');
+                refresh('chars');
             }
             else {
                 // Unrecognized input; let browser handle as normal
