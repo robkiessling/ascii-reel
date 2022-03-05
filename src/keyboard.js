@@ -1,7 +1,6 @@
 import $ from "jquery";
 import * as selection from "./selection.js";
 import * as clipboard from "./clipboard.js";
-import * as canvas from "./canvas.js";
 import {refresh, updateChar} from "./index.js";
 
 $(document).keydown(function(e) {

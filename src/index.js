@@ -7,22 +7,28 @@ import './keyboard.js';
 import * as selection from './selection.js';
 import './clipboard.js';
 
-export let chars = [[]];
+let chars = [[]];
 
-export const charCanvas = new CanvasControl($('#char-canvas'), {
+const charCanvas = new CanvasControl($('#char-canvas'), {});
+const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
+selection.bindToCanvas(selectionCanvas);
 
+const ZOOM_SPEED = 1;
+selectionCanvas.$canvas.off('wheel.zoom').on('wheel.zoom', evt => {
+    evt.preventDefault();
+
+    const deltaY = evt.originalEvent.deltaY;
+    if (deltaY === 0) { return; }
+    const scaledDelta = -deltaY * ZOOM_SPEED / 300;
+    charCanvas.zoomDelta(scaledDelta);
+    selectionCanvas.zoomDelta(scaledDelta);
+    refresh();
 });
-export const selectionCanvas = new CanvasControl($('#selection-canvas'), {
-    zoom: {
-        enabled: true
-    }
-});
-selection.bindCanvas(selectionCanvas.$canvas);
 
 function loadChars(newChars) {
     chars = newChars;
-    charCanvas.zoom.zoom();
-    selectionCanvas.zoom.zoom();
+    charCanvas.rebuild();
+    selectionCanvas.rebuild();
     refresh();
 }
 
@@ -44,18 +50,18 @@ export function refresh(specificCanvas) {
     if (specificCanvas) {
         switch(specificCanvas) {
             case 'chars':
-                charCanvas.refreshChars();
+                charCanvas.drawChars(chars);
                 break;
             case 'selection':
-                selectionCanvas.refreshSelection();
+                selectionCanvas.highlightSelection(selection.getSelectedCells());
                 break;
             default:
                 console.warn(`refresh("${specificCanvas}") is not a valid canvas`);
         }
     }
     else {
-        charCanvas.refreshChars();
-        selectionCanvas.refreshSelection();
+        charCanvas.drawChars(chars);
+        selectionCanvas.highlightSelection(selection.getSelectedCells());
     }
 
     // updatePreview(charCanvas);

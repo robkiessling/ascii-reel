@@ -1,6 +1,4 @@
-import $ from "jquery";
-import * as selection from "./selection.js";
-import {charCanvas, chars, numCols, numRows, refresh} from "./index.js";
+import {numCols, numRows} from "./index.js";
 
 const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
@@ -25,7 +23,6 @@ const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
 
 const ZOOM_BOUNDARIES = [0.5, 5];
-const ZOOM_SPEED = 1;
 
 export class CanvasControl {
     constructor($canvas, config = {}) {
@@ -40,14 +37,14 @@ export class CanvasControl {
         this.canvas.height = this.outerHeight * ratio;
         this.canvas.style.width = this.outerWidth + "px";
         this.canvas.style.height = this.outerHeight + "px";
-        this.context.scale(ratio, ratio);
+        this.context.scale(ratio, ratio); // Note: This is not really necessary; it will get overriden by zoom
 
         // Set up font
         this.context.font = '1rem monospace';
         this.context.textAlign = 'center';
         this.context.textBaseline = 'middle';
 
-        this.zoom = new ZoomHandler(this, config.zoom);
+        this.zoomTo(1);
     }
 
     get outerWidth() {
@@ -57,20 +54,25 @@ export class CanvasControl {
         return this.$canvas.outerHeight();
     }
 
-    clear() {
-        this.context.clearRect(...Rect.fullArea(this).xywh);
+    // If numRows or numCols changes, entire canvas will need to be rebuilt
+    rebuild() {
+        this.zoomTo(this._zoom);
+        this.clear();
     }
 
-    // TODO Move to subclass?
-    refreshChars() {
+    clear() {
+        this.context.clearRect(...Rect.fullArea().xywh(this));
+    }
+
+    drawChars(chars) {
         this.clear();
 
         if (CANVAS_BACKGROUND === false) {
-            this.fillCheckerboard(Rect.drawableArea(this));
+            this.fillCheckerboard(Rect.drawableArea());
         }
         else {
             this.context.fillStyle = CANVAS_BACKGROUND;
-            this.context.fillRect(...Rect.drawableArea(this).xywh);
+            this.context.fillRect(...Rect.drawableArea().xywh(this));
         }
 
         if (CHAR_BACKGROUND) {
@@ -78,7 +80,7 @@ export class CanvasControl {
             this.context.fillStyle = CHAR_BACKGROUND;
             this._iterate2dArray(chars, (value, cell) => {
                 if (value !== '') {
-                    this.context.rect(...cell.xywh);
+                    this.context.rect(...cell.xywh(this));
                 }
             });
             this.context.fill();
@@ -87,60 +89,55 @@ export class CanvasControl {
         // Draw all chars using fillText
         this._iterate2dArray(chars, (value, cell) => {
             this.context.fillStyle = TEXT_COLOR;
-            this.context.fillText(value, ...cell.translate(0.5, 0.5).xy); // Translate by 50%, so we can draw char in center of cell
+
+            // Translate by 50%, so we can draw char in center of cell
+            this.context.fillText(value, ...cell.translate(0.5, 0.5).xy(this));
         });
 
         if (GRID) {
-            this.drawGrid();
+            this.drawGrid(chars);
         }
     }
-    refreshSelection() {
+
+    highlightSelection(cells) {
         this.clear();
 
         // Draw all selection rectangles
-        selection.getSelectedCells().forEach(cell => {
+        cells.forEach(cell => {
             this.context.fillStyle = SELECTION_COLOR;
-            this.context.fillRect(...cell.xywh);
+            this.context.fillRect(...cell.xywh(this));
         });
     }
 
-    _iterate2dArray(array, callback) {
-        for (let row = 0; row < array.length; row++) {
-            for (let col = 0; col < array[row].length; col++) {
-                callback(array[row][col], new Cell(this, row, col));
-            }
-        }
-    }
-
-    drawGrid() {
+    drawGrid(chars) {
         this.context.strokeStyle = GRID_COLOR;
         this.context.lineWidth = GRID_WIDTH;
 
         this._iterate2dArray(chars, (value, cell) => {
             // Drawing a box around the cell. Only draw left/top borders for first cells in the row/col
             this.context.beginPath();
-            this.context.moveTo(...cell.xy);
-            cell.col === 0 ? this.context.lineTo(...cell.translate(1, 0).xy) : this.context.moveTo(...cell.translate(1, 0).xy);
-            this.context.lineTo(...cell.translate(0, 1).xy);
-            this.context.lineTo(...cell.translate(-1, 0).xy);
-            cell.row === 0 ? this.context.lineTo(...cell.translate(0, -1).xy) : this.context.moveTo(...cell.translate(0, -1).xy)
+            this.context.moveTo(...cell.xy(this));
+            cell.col === 0 ? this.context.lineTo(...cell.translate(1, 0).xy(this)) : this.context.moveTo(...cell.translate(1, 0).xy(this));
+            this.context.lineTo(...cell.translate(0, 1).xy(this));
+            this.context.lineTo(...cell.translate(-1, 0).xy(this));
+            cell.row === 0 ? this.context.lineTo(...cell.translate(0, -1).xy(this)) : this.context.moveTo(...cell.translate(0, -1).xy(this))
             this.context.stroke();
         });
     }
 
-    fillCheckerboard(canvas, rect) {
+    fillCheckerboard(rect) {
         this.context.beginPath();
         this.context.fillStyle = CHECKERBOARD_A;
-        this.context.rect(...Rect.drawableArea(this).xywh);
+        this.context.rect(...rect.xywh(this));
         this.context.fill();
 
         this.context.beginPath();
         this.context.fillStyle = CHECKERBOARD_B;
         let rowStartsOnB = false;
         // TODO Hack subtracting 0.001 to account for floating point round errors
-        for (let x = rect.x; x < (rect.x + rect.width - 0.001); x += CHECKER_WIDTH) {
+        for (let x = rect.x(this); x < (rect.x(this) + rect.width(this) - 0.001); x += CHECKER_WIDTH) {
             let isCheckered = rowStartsOnB;
-            for (let y = rect.y; y < (rect.y + rect.height - 0.001); y += CHECKER_HEIGHT) {
+            for (let y = rect.y(this); y < (rect.y(this) + rect.height(this) - 0.001); y += CHECKER_HEIGHT) {
                 if (isCheckered) {
                     this.context.rect(x, y, CHECKER_WIDTH, CHECKER_HEIGHT);
                 }
@@ -149,6 +146,67 @@ export class CanvasControl {
             rowStartsOnB = !rowStartsOnB;
         }
         this.context.fill();
+    }
+
+    cellAtExternalXY(x, y) {
+        x = this.relativeX(this.scale(x)); // Scale external value & make relative to origin
+        y = this.relativeY(this.scale(y)); // Scale external value & make relative to origin
+        return new Cell(Math.floor(y / CELL_HEIGHT), Math.floor(x / CELL_WIDTH))
+    }
+
+    absoluteX(relativeX) {
+        return relativeX + this._origin.x;
+    }
+    absoluteY(relativeY) {
+        return relativeY + this._origin.y;
+    }
+    relativeX(absoluteX) {
+        return absoluteX - this._origin.x;
+    }
+    relativeY(absoluteY) {
+        return absoluteY - this._origin.y;
+    }
+
+    zoomTo(level) {
+        this._zoom = level;
+
+        // Set context scale: Have to factor in device PPI like we did when we built the canvas
+        const contextScale = window.devicePixelRatio * this._zoom;
+        this.context.setTransform(1, 0, 0, 1, 0, 0); // reset scale
+        this.context.scale(contextScale, contextScale); // scaled to desired amount
+
+        /**
+         * _origin is the absolute x/y coordinates of the top-left point of the drawable rectangle.
+         * The XY and Cell classes will use this origin to calculate their relative x/y positions.
+         */
+        const drawableRect = Rect.drawableArea();
+        this._origin = {
+            x: this.scale(this.outerWidth) / 2 - drawableRect.width(this) / 2,
+            y: this.scale(this.outerHeight) / 2 - drawableRect.height(this) / 2
+        }
+    }
+
+    zoomDelta(delta) {
+        const originalZoom = this._zoom;
+        let newZoom = originalZoom + delta;
+
+        if (newZoom < ZOOM_BOUNDARIES[0]) { newZoom = ZOOM_BOUNDARIES[0]; }
+        if (newZoom > ZOOM_BOUNDARIES[1]) { newZoom = ZOOM_BOUNDARIES[1]; }
+        if (newZoom === originalZoom) { return; }
+
+        this.zoomTo(newZoom);
+    }
+
+    scale(value) {
+        return value / this._zoom;
+    }
+
+    _iterate2dArray(array, callback) {
+        for (let row = 0; row < array.length; row++) {
+            for (let col = 0; col < array[row].length; col++) {
+                callback(array[row][col], new Cell(row, col));
+            }
+        }
     }
 }
 
@@ -175,112 +233,21 @@ export function translate(layout, cell, callback) {
     });
 }
 
-
-
-class ZoomHandler {
-    constructor(canvas, config = {}) {
-        this.canvas = canvas;
-        this.config = config;
-
-        if (this.config.enabled) {
-            this._setupScrollListener();
-        }
-
-        this.zoom(1);
-    }
-
-    zoom(newValue) {
-        if (newValue < ZOOM_BOUNDARIES[0]) { newValue = ZOOM_BOUNDARIES[0]; }
-        if (newValue > ZOOM_BOUNDARIES[1]) { newValue = ZOOM_BOUNDARIES[1]; }
-        // if (newValue === this._zoom) { return; }
-        if (newValue !== undefined) { this._zoom = newValue; }
-
-        // Set context scale: Have to factor in device PPI like we did when we built the canvas
-        const contextScale = window.devicePixelRatio * this._zoom;
-        this.canvas.context.setTransform(1, 0, 0, 1, 0, 0); // reset scale
-        this.canvas.context.scale(contextScale, contextScale); // scaled to desired amount
-
-        /**
-         * origin is the absolute x/y coordinates of the top-left point of the drawable rectangle.
-         * The XY and Cell classes will use this origin to calculate their relative x/y positions.
-         */
-        this.origin = new XY(
-            this.canvas,
-            this.scale(this.canvas.outerWidth) / 2 - (numCols() * CELL_WIDTH) / 2,
-            this.scale(this.canvas.outerHeight) / 2 - (numRows() * CELL_HEIGHT) / 2
-        );
-    }
-
-    scale(value) {
-        return value / this._zoom;
-    }
-
-    _setupScrollListener() {
-        this.canvas.$canvas.off('wheel.ZoomHandler').on('wheel.ZoomHandler', evt => {
-            const wheel = evt.originalEvent.deltaY;
-            if (wheel === 0) { return; }
-            this.zoom(this._zoom - wheel * ZOOM_SPEED / 300);
-            // TODO HACK
-            charCanvas.zoom.zoom(this._zoom - wheel * ZOOM_SPEED / 300);
-
-            refresh();
-            evt.preventDefault();
-        });
-    }
-}
-
-/**
- * An XY is simply an x/y coordinate. These values are relative to the top-left of the ENTIRE canvas element.
- * If you want x/y values relative to the top-left of the drawable area, use relativeX and relativeY.
- *
- * The x/y values are all scaled according to the zoomHandler. If you are creating an XY from "un-zoomed" x/y
- * values (e.g. from the width of the entire canvas, from a mouse events, etc.) you must use XY.fromExternal(x, y).
- */
-class XY {
-    constructor(canvas, x, y) {
-        this.canvas = canvas;
-        this.x = x;
-        this.y = y;
-    }
-
-    static fromExternal(canvas, x, y) {
-        return new XY(canvas, canvas.zoom.scale(x), canvas.zoom.scale(y));
-    }
-
-    get relativeX() {
-        return this.x - this.canvas.zoom.origin.x;
-    }
-    get relativeY() {
-        return this.y - this.canvas.zoom.origin.y;
-    }
-
-    // Used to spread (...) into functions that take (x, y) parameters
-    get xy() {
-        return [this.x, this.y];
-    }
-}
-
 /**
  * A Cell is a particular row/column pair of the drawable area. It is useful so we can deal with rows/columns instead
- * of raw x/y values. However, it is built on top of an XY, so if you need to get a Cell's absolute or relative x/y
- * positions, you can call the normal XY getters.
+ * of raw x/y values.
+ *
+ * If you want to get the computed x/y value of a cell, you can call the x/y methods. You have to pass in the canvas as
+ * a parameter because the x/y value is dependent on the canvas zoom/dimensions.
  */
-export class Cell extends XY {
-    constructor(canvas, row, col) {
-        super();
-
-        this.canvas = canvas;
+export class Cell {
+    constructor(row, col) {
         this.row = row;
         this.col = col;
     }
 
-    static fromExternalXY(canvas, x, y) {
-        const xy = XY.fromExternal(canvas, x, y);
-        return new Cell(canvas, Math.floor(xy.relativeY / CELL_HEIGHT), Math.floor(xy.relativeX / CELL_WIDTH));
-    }
-
     clone() {
-        return new Cell(this.canvas, this.row, this.col);
+        return new Cell(this.row, this.col);
     }
 
     translate(rowDelta, colDelta) {
@@ -301,9 +268,23 @@ export class Cell extends XY {
         return this;
     }
 
-    // Used to spread (...) into functions that take (x, y, width, height) parameters
-    get xywh() {
-        return [this.x, this.y, CELL_WIDTH, CELL_HEIGHT];
+    x(canvas) {
+        return canvas.absoluteX(this.col * CELL_WIDTH);
+    }
+    y(canvas) {
+        return canvas.absoluteY(this.row * CELL_HEIGHT);
+    }
+    width(/* canvas */) {
+        return CELL_WIDTH;
+    }
+    height(/* canvas */) {
+        return CELL_HEIGHT;
+    }
+    xy(canvas) {
+        return [this.x(canvas), this.y(canvas)];
+    }
+    xywh(canvas) {
+        return [this.x(canvas), this.y(canvas), this.width(canvas), this.height(canvas)];
     }
 
     get row() {
@@ -315,7 +296,6 @@ export class Cell extends XY {
             if (this._row < 0) { this._row = 0; }
             if (this._row > numRows() - 1) { this._row = numRows() - 1; }
         }
-        this._updateXY();
     }
     get col() {
         return this._col;
@@ -326,13 +306,6 @@ export class Cell extends XY {
             if (this._col < 0) { this._col = 0; }
             if (this._col > numCols() - 1) { this._col = numCols() - 1; }
         }
-        this._updateXY();
-    }
-
-    // Ensure underlying XY remains consistent
-    _updateXY() {
-        this.x = this.col * CELL_WIDTH + this.canvas.zoom.origin.x;
-        this.y = this.row * CELL_HEIGHT + this.canvas.zoom.origin.y;
     }
 }
 
@@ -340,36 +313,33 @@ export class Cell extends XY {
  * A Rect is a rectangle drawn between a topLeft Cell and a bottomRight Cell.
  */
 export class Rect {
-    constructor(canvas, topLeft, bottomRight) {
-        this.canvas = canvas;
+    constructor(topLeft, bottomRight) {
         this.topLeft = topLeft; // Cell
         this.bottomRight = bottomRight; // Cell
     }
 
-    // TODO Move these to canvas
-    static drawableArea(canvas) {
-        return new Rect(canvas, new Cell(canvas, 0, 0), new Cell(canvas, numRows() - 1, numCols() - 1));
+    static drawableArea() {
+        return new Rect(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
     }
 
-    static fullArea(canvas) {
-        return new Rect(canvas, Cell.fromExternalXY(canvas, 0, 0), Cell.fromExternalXY(canvas, canvas.outerWidth, canvas.outerHeight));
+    static fullArea() {
+        return new FullAreaRect();
     }
 
-    get x() {
-        return this.topLeft.x;
+    x(canvas) {
+        return this.topLeft.x(canvas);
     }
-    get y() {
-        return this.topLeft.y;
+    y(canvas) {
+        return this.topLeft.y(canvas);
     }
-    get width() {
+    width(/* canvas */) {
         return this.numCols * CELL_WIDTH;
     }
-    get height() {
+    height(/* canvas */) {
         return this.numRows * CELL_HEIGHT;
     }
-
-    get xywh() {
-        return [this.x, this.y, this.width, this.height];
+    xywh(canvas) {
+        return [this.x(canvas), this.y(canvas), this.width(canvas), this.height(canvas)];
     }
 
     get numRows() {
@@ -381,7 +351,7 @@ export class Rect {
     }
 
     clone() {
-        return new Rect(this.canvas, this.topLeft.clone(), this.bottomRight.clone());
+        return new Rect(this.topLeft.clone(), this.bottomRight.clone());
     }
 
     iterate(callback) {
@@ -400,6 +370,28 @@ export class Rect {
     }
 }
 
+/**
+ * A special Rect that is always the full dimensions of the canvas.
+ * Note: This does not have the normal row/col methods of a regular Rect.
+ */
+class FullAreaRect {
+    x(canvas) {
+        return canvas.scale(0);
+    }
+    y(canvas) {
+        return canvas.scale(0);
+    }
+    width(canvas) {
+        return canvas.scale(canvas.outerWidth);
+    }
+    height(canvas) {
+        return canvas.scale(canvas.outerHeight);
+    }
+    xywh(canvas) {
+        return [this.x(canvas), this.y(canvas), this.width(canvas), this.height(canvas)];
+    }
+}
+
 
 /**
  * A partial is like a Rect, but instead of having topLeft and bottomRight Cells, it has start and end Cells.
@@ -408,15 +400,13 @@ export class Rect {
  * TODO Should this extend Rect?
  */
 export class Partial {
-    constructor(canvas, start, end) {
-        this.canvas = canvas;
+    constructor(start, end) {
         this.start = start; // Cell
         this.end = end; // Cell
     }
 
-    // TODO Move this to canvas
-    static drawableArea(canvas) {
-        return new Partial(canvas, new Cell(canvas, 0, 0), new Cell(canvas, numRows() - 1, numCols() - 1));
+    static drawableArea() {
+        return new Partial(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
     }
 
     set start(cell) {
@@ -433,15 +423,15 @@ export class Partial {
     }
 
     get topLeft() {
-        return new Cell(this.canvas, Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
+        return new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
     }
 
     get bottomRight() {
-        return new Cell(this.canvas, Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
+        return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
     }
 
     toRect() {
-        return new Rect(this.canvas, this.topLeft, this.bottomRight);
+        return new Rect(this.topLeft, this.bottomRight);
     }
 
     // Returns true if this partial can be moved 1 space in the given direction

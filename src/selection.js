@@ -1,8 +1,7 @@
 import $ from "jquery";
-import * as canvas from "./canvas.js";
 import {create2dArray} from "./utilities.js";
 import {Cell, Partial} from "./canvas.js";
-import {getChar, refresh, selectionCanvas} from "./index.js";
+import {getChar, refresh} from "./index.js";
 
 // The selection is made up of 1 or more Partials. All Partials are highlighted in the editor.
 export let partials = [];
@@ -17,14 +16,14 @@ export function clear() {
 }
 
 export function selectAll() {
-    partials = [Partial.drawableArea(selectionCanvas)];
+    partials = [Partial.drawableArea()];
     refresh('selection');
 }
 
-export function bindCanvas($canvas) {
+export function bindToCanvas(canvas) {
     let isSelecting = false;
 
-    $canvas.off('mousedown.selection').on('mousedown.selection', evt => {
+    canvas.$canvas.off('mousedown.selection').on('mousedown.selection', evt => {
         isSelecting = true;
 
         if (!evt.metaKey && !evt.ctrlKey && !evt.shiftKey) {
@@ -32,17 +31,17 @@ export function bindCanvas($canvas) {
         }
 
         if (evt.metaKey || evt.ctrlKey || !latestPartial()) {
-            startPartial(Cell.fromExternalXY(selectionCanvas, evt.offsetX, evt.offsetY));
+            startPartial(canvas.cellAtExternalXY(evt.offsetX, evt.offsetY));
         }
 
         if (evt.shiftKey) {
-            latestPartial().end = Cell.fromExternalXY(selectionCanvas, evt.offsetX, evt.offsetY);
+            latestPartial().end = canvas.cellAtExternalXY(evt.offsetX, evt.offsetY);
             refresh('selection');
         }
     });
-    $canvas.off('mousemove.selection').on('mousemove.selection', evt => {
+    canvas.$canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
-            latestPartial().end = Cell.fromExternalXY(selectionCanvas, evt.offsetX, evt.offsetY);
+            latestPartial().end = canvas.cellAtExternalXY(evt.offsetX, evt.offsetY);
             refresh('selection');
         }
     });
@@ -112,7 +111,7 @@ export function getSelection(processor = function(r, c) { return getChar(r, c); 
  */
 export function getSelectedCells() {
     return getSelection((r, c) => {
-        return new Cell(selectionCanvas, r, c);
+        return new Cell(r, c);
     }).flat().filter(cell => cell !== null);
 }
 
@@ -149,7 +148,7 @@ export function getSelectionRect() {
 // Move all partials in a particular direction, as long as they can ALL move in that direction without hitting boundaries
 export function moveSelection(direction, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
-        startPartial(new Cell(selectionCanvas, 0, 0));
+        startPartial(new Cell(0, 0));
         return;
     }
 
@@ -165,7 +164,7 @@ function latestPartial() {
 }
 
 function startPartial(cell) {
-    partials.push(new Partial(selectionCanvas, cell, cell.clone()));
+    partials.push(new Partial(cell, cell.clone()));
     refresh('selection');
 }
 
