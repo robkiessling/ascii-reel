@@ -25,6 +25,8 @@ selectionCanvas.$canvas.off('wheel.zoom').on('wheel.zoom', evt => {
     refresh();
 });
 
+// TODO Move everything dealing with chars (and numRows/numCols) to a new class
+
 function loadChars(newChars) {
     chars = newChars;
     charCanvas.rebuild();
@@ -67,6 +69,24 @@ export function refresh(specificCanvas) {
     // updatePreview(charCanvas);
 }
 
+/**
+ * Translates a 2d array as if it was positioned at a Cell. The callback value will be null for parts of the array
+ * that go out of the frame.
+ *
+ * @param array         2d array of values
+ * @param cell          Position to move the top-left Cell of the layout to
+ * @param callback      function(value, row, col), where row and col are the coordinates if the layout was moved
+ */
+export function translate(array, cell, callback) {
+    array.forEach((rowValues, rowIndex) => {
+        rowValues.forEach((value, colIndex) => {
+            const row = rowIndex + cell.row;
+            const col = colIndex + cell.col;
+            const inBounds = row >= 0 && row < numRows() && col >= 0 && col < numCols();
+            callback(inBounds ? value : null, row, col);
+        });
+    });
+}
 
 loadChars(create2dArray(30, 50, () => randomPrintableChar()));
 // loadChars(create2dArray(6, 10, (row, col) => {

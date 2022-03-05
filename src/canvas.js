@@ -61,18 +61,18 @@ export class CanvasControl {
     }
 
     clear() {
-        this.context.clearRect(...Rect.fullArea().xywh(this));
+        this.context.clearRect(...new FullAreaRect().xywh(this));
     }
 
     drawChars(chars) {
         this.clear();
 
         if (CANVAS_BACKGROUND === false) {
-            this.fillCheckerboard(Rect.drawableArea());
+            this.fillCheckerboard(CellArea.drawableArea());
         }
         else {
             this.context.fillStyle = CANVAS_BACKGROUND;
-            this.context.fillRect(...Rect.drawableArea().xywh(this));
+            this.context.fillRect(...CellArea.drawableArea().xywh(this));
         }
 
         if (CHAR_BACKGROUND) {
@@ -125,19 +125,19 @@ export class CanvasControl {
         });
     }
 
-    fillCheckerboard(rect) {
+    fillCheckerboard(area) {
         this.context.beginPath();
         this.context.fillStyle = CHECKERBOARD_A;
-        this.context.rect(...rect.xywh(this));
+        this.context.rect(...area.xywh(this));
         this.context.fill();
 
         this.context.beginPath();
         this.context.fillStyle = CHECKERBOARD_B;
         let rowStartsOnB = false;
         // TODO Hack subtracting 0.001 to account for floating point round errors
-        for (let x = rect.x(this); x < (rect.x(this) + rect.width(this) - 0.001); x += CHECKER_WIDTH) {
+        for (let x = area.x(this); x < (area.x(this) + area.width(this) - 0.001); x += CHECKER_WIDTH) {
             let isCheckered = rowStartsOnB;
-            for (let y = rect.y(this); y < (rect.y(this) + rect.height(this) - 0.001); y += CHECKER_HEIGHT) {
+            for (let y = area.y(this); y < (area.y(this) + area.height(this) - 0.001); y += CHECKER_HEIGHT) {
                 if (isCheckered) {
                     this.context.rect(x, y, CHECKER_WIDTH, CHECKER_HEIGHT);
                 }
@@ -176,13 +176,12 @@ export class CanvasControl {
         this.context.scale(contextScale, contextScale); // scaled to desired amount
 
         /**
-         * _origin is the absolute x/y coordinates of the top-left point of the drawable rectangle.
-         * The XY and Cell classes will use this origin to calculate their relative x/y positions.
+         * _origin is the absolute x/y coordinates of the top-left point of the drawable area
          */
-        const drawableRect = Rect.drawableArea();
+        const drawableArea = CellArea.drawableArea();
         this._origin = {
-            x: this.scale(this.outerWidth) / 2 - drawableRect.width(this) / 2,
-            y: this.scale(this.outerHeight) / 2 - drawableRect.height(this) / 2
+            x: this.scale(this.outerWidth) / 2 - drawableArea.width(this) / 2,
+            y: this.scale(this.outerHeight) / 2 - drawableArea.height(this) / 2
         }
     }
 
@@ -214,23 +213,19 @@ export class CanvasControl {
 
 
 
+
 /**
- * Translates a 2d array as if it was positioned at a Cell. The callback value will be null for parts of the array
- * that go out of the frame.
- *
- * @param layout        2d array
- * @param cell         Position to move the top-left Cell of the layout to
- * @param callback      function(value, row, col), where row and col are the coordinates if the layout was moved
+ * A mixin that provide additional helper methods for classes that implement x, y, width, and height methods.
+ * This allows x/y/width/height values to be easily passed to other methods using javascript spread syntax (...)
  */
-export function translate(layout, cell, callback) {
-    layout.forEach((rowValues, rowIndex) => {
-        rowValues.forEach((value, colIndex) => {
-            const row = rowIndex + cell.row;
-            const col = colIndex + cell.col;
-            const inBounds = row >= 0 && row < numRows() && col >= 0 && col < numCols();
-            callback(inBounds ? value : null, row, col);
-        });
-    });
+const RectMixin = {
+    xy(canvas) {
+        return [this.x(canvas), this.y(canvas)];
+    },
+
+    xywh(canvas) {
+        return [this.x(canvas), this.y(canvas), this.width(canvas), this.height(canvas)];
+    }
 }
 
 /**
@@ -268,6 +263,30 @@ export class Cell {
         return this;
     }
 
+    get row() {
+        return this._row;
+    }
+
+    set row(newValue) {
+        this._row = newValue;
+        if (this._boundToDrawableArea) {
+            if (this._row < 0) { this._row = 0; }
+            if (this._row > numRows() - 1) { this._row = numRows() - 1; }
+        }
+    }
+
+    get col() {
+        return this._col;
+    }
+
+    set col(newValue) {
+        this._col = newValue;
+        if (this._boundToDrawableArea) {
+            if (this._col < 0) { this._col = 0; }
+            if (this._col > numCols() - 1) { this._col = numCols() - 1; }
+        }
+    }
+
     x(canvas) {
         return canvas.absoluteX(this.col * CELL_WIDTH);
     }
@@ -280,50 +299,47 @@ export class Cell {
     height(/* canvas */) {
         return CELL_HEIGHT;
     }
-    xy(canvas) {
-        return [this.x(canvas), this.y(canvas)];
-    }
-    xywh(canvas) {
-        return [this.x(canvas), this.y(canvas), this.width(canvas), this.height(canvas)];
-    }
-
-    get row() {
-        return this._row;
-    }
-    set row(newValue) {
-        this._row = newValue;
-        if (this._boundToDrawableArea) {
-            if (this._row < 0) { this._row = 0; }
-            if (this._row > numRows() - 1) { this._row = numRows() - 1; }
-        }
-    }
-    get col() {
-        return this._col;
-    }
-    set col(newValue) {
-        this._col = newValue;
-        if (this._boundToDrawableArea) {
-            if (this._col < 0) { this._col = 0; }
-            if (this._col > numCols() - 1) { this._col = numCols() - 1; }
-        }
-    }
 }
+Object.assign(Cell.prototype, RectMixin);
 
 /**
- * A Rect is a rectangle drawn between a topLeft Cell and a bottomRight Cell.
+ * A CellArea is a rectangle of Cells between a topLeft Cell and a bottomRight Cell.
  */
-export class Rect {
+export class CellArea {
     constructor(topLeft, bottomRight) {
         this.topLeft = topLeft; // Cell
         this.bottomRight = bottomRight; // Cell
     }
 
     static drawableArea() {
-        return new Rect(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
+        return new CellArea(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
     }
 
-    static fullArea() {
-        return new FullAreaRect();
+    get numRows() {
+        return this.bottomRight.row - this.topLeft.row + 1;
+    }
+
+    get numCols() {
+        return this.bottomRight.col - this.topLeft.col + 1;
+    }
+
+    clone() {
+        return new CellArea(this.topLeft.clone(), this.bottomRight.clone());
+    }
+
+    iterate(callback) {
+        for (let r = this.topLeft.row; r <= this.bottomRight.row; r++) {
+            for (let c = this.topLeft.col; c <= this.bottomRight.col; c++) {
+                callback(r, c);
+            }
+        }
+    }
+
+    mergeArea(otherRect) {
+        if (otherRect.topLeft.row < this.topLeft.row) { this.topLeft.row = otherRect.topLeft.row; }
+        if (otherRect.topLeft.col < this.topLeft.col) { this.topLeft.col = otherRect.topLeft.col; }
+        if (otherRect.bottomRight.row > this.bottomRight.row) { this.bottomRight.row = otherRect.bottomRight.row; }
+        if (otherRect.bottomRight.col > this.bottomRight.col) { this.bottomRight.col = otherRect.bottomRight.col; }
     }
 
     x(canvas) {
@@ -338,41 +354,13 @@ export class Rect {
     height(/* canvas */) {
         return this.numRows * CELL_HEIGHT;
     }
-    xywh(canvas) {
-        return [this.x(canvas), this.y(canvas), this.width(canvas), this.height(canvas)];
-    }
-
-    get numRows() {
-        return this.bottomRight.row - this.topLeft.row + 1;
-    }
-
-    get numCols() {
-        return this.bottomRight.col - this.topLeft.col + 1;
-    }
-
-    clone() {
-        return new Rect(this.topLeft.clone(), this.bottomRight.clone());
-    }
-
-    iterate(callback) {
-        for (let r = this.topLeft.row; r <= this.bottomRight.row; r++) {
-            for (let c = this.topLeft.col; c <= this.bottomRight.col; c++) {
-                callback(r, c);
-            }
-        }
-    }
-
-    mergeRect(otherRect) {
-        if (otherRect.topLeft.row < this.topLeft.row) { this.topLeft.row = otherRect.topLeft.row; }
-        if (otherRect.topLeft.col < this.topLeft.col) { this.topLeft.col = otherRect.topLeft.col; }
-        if (otherRect.bottomRight.row > this.bottomRight.row) { this.bottomRight.row = otherRect.bottomRight.row; }
-        if (otherRect.bottomRight.col > this.bottomRight.col) { this.bottomRight.col = otherRect.bottomRight.col; }
-    }
 }
+Object.assign(CellArea.prototype, RectMixin);
+
 
 /**
  * A special Rect that is always the full dimensions of the canvas.
- * Note: This does not have the normal row/col methods of a regular Rect.
+ * Note: This does not have the normal row/col methods of a regular CellArea.
  */
 class FullAreaRect {
     x(canvas) {
@@ -387,100 +375,5 @@ class FullAreaRect {
     height(canvas) {
         return canvas.scale(canvas.outerHeight);
     }
-    xywh(canvas) {
-        return [this.x(canvas), this.y(canvas), this.width(canvas), this.height(canvas)];
-    }
 }
-
-
-/**
- * A partial is like a Rect, but instead of having topLeft and bottomRight Cells, it has start and end Cells.
- * The start Cell may be to the bottom or right of the end Cell, depending on how the user draws the rectangle.
- * You can still call the helper methods topLeft / bottomRight if you need the absolute end points.
- * TODO Should this extend Rect?
- */
-export class Partial {
-    constructor(start, end) {
-        this.start = start; // Cell
-        this.end = end; // Cell
-    }
-
-    static drawableArea() {
-        return new Partial(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
-    }
-
-    set start(cell) {
-        this._start = cell.bindToDrawableArea(true);
-    }
-    get start() {
-        return this._start;
-    }
-    set end(cell) {
-        this._end = cell.bindToDrawableArea(true);
-    }
-    get end() {
-        return this._end;
-    }
-
-    get topLeft() {
-        return new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
-    }
-
-    get bottomRight() {
-        return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
-    }
-
-    toRect() {
-        return new Rect(this.topLeft, this.bottomRight);
-    }
-
-    // Returns true if this partial can be moved 1 space in the given direction
-    canMove(direction, moveStart = true, moveEnd = true) {
-        switch(direction) {
-            case 'left':
-                if (moveStart && this.start.col <= 0) { return false; }
-                if (moveEnd && this.end.col <= 0) { return false; }
-                break;
-            case 'up':
-                if (moveStart && this.start.row <= 0) { return false; }
-                if (moveEnd && this.end.row <= 0) { return false; }
-                break;
-            case 'right':
-                if (moveStart && this.start.col >= numCols() - 1) { return false; }
-                if (moveEnd && this.end.col >= numCols() - 1) { return false; }
-                break;
-            case 'down':
-                if (moveStart && this.start.row >= numRows() - 1) { return false; }
-                if (moveEnd && this.end.row >= numRows() - 1) { return false; }
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-                return false;
-        }
-        return true;
-    }
-
-    // Move this partial 1 space in the given direction. Does not respect boundaries (you should call canMove first)
-    move(direction, moveStart = true, moveEnd = true) {
-        switch(direction) {
-            case 'left':
-                if (moveStart) { this.start.col -= 1; }
-                if (moveEnd) { this.end.col -= 1; }
-                break;
-            case 'up':
-                if (moveStart) { this.start.row -= 1; }
-                if (moveEnd) { this.end.row -= 1; }
-                break;
-            case 'right':
-                if (moveStart) { this.start.col += 1; }
-                if (moveEnd) { this.end.col += 1; }
-                break;
-            case 'down':
-                if (moveStart) { this.start.row += 1; }
-                if (moveEnd) { this.end.row += 1; }
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-        }
-    }
-}
+Object.assign(FullAreaRect.prototype, RectMixin);

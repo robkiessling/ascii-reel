@@ -1,18 +1,17 @@
 import * as selection from "./selection.js";
-import * as canvas from "./canvas.js";
 import {convert2dArrayToText, convertTextTo2dArray} from "./utilities.js"; // or more selective import, like "core-js/es/array"
 
 // Necessary for clipboard read/write https://stackoverflow.com/a/61517521
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
-import {refresh, updateChar} from "./index.js";
+import {refresh, translate, updateChar} from "./index.js";
 
 let cutCell = null;
 let copiedSelection = null; // 2d array
 let copiedText = null; // string
 
 export function cut() {
-    cutCell = selection.getSelectionRect().topLeft;
+    cutCell = selection.getSelectedArea().topLeft;
     copySelection();
 }
 
@@ -49,7 +48,7 @@ export function paste() {
 }
 
 function copySelection() {
-    copiedSelection = selection.getSelection();
+    copiedSelection = selection.getSelectedValues();
     copiedText = convert2dArrayToText(copiedSelection);
     writeClipboard(copiedText);
 }
@@ -57,7 +56,7 @@ function copySelection() {
 function pasteArray(array) {
     // If cut was used, remove old cut
     if (cutCell) {
-        canvas.translate(array, cutCell, (value, r, c) => {
+        translate(array, cutCell, (value, r, c) => {
             if (value !== null) { updateChar(r, c, ''); }
         })
         cutCell = null;
@@ -70,17 +69,17 @@ function pasteArray(array) {
         });
     }
     else {
-        // Paste array once at topLeft of first partial
-        canvas.translate(array, selection.partials[0].topLeft, (value, r, c) => {
+        // Paste array once at topLeft of first selectionArea
+        translate(array, selection.selectionAreas[0].topLeft, (value, r, c) => {
             if (value !== null) { updateChar(r, c, value); }
         });
 
-        // Paste array at topLeft of each partial TODO Has issues if your copiedSelection has multiple partials too
-        // selection.partials.forEach(partial => {
-        //     canvas.translate(array, partial.topLeft, (value, r, c) => {
+        // Paste array at topLeft of each selectionArea TODO Has issues if your copiedSelection has multiple selectionAreas too
+        // selection.selectionAreas.forEach(selectionArea => {
+        //     translate(array, selectionArea.topLeft, (value, r, c) => {
         //         if (value !== null) { updateChar(r, c, value); }
         //     });
-        // })
+        // });
     }
 
     refresh('chars');
