@@ -20,10 +20,10 @@ export function selectAll() {
     refresh('selection');
 }
 
-export function bindToCanvas(canvas) {
+export function bindMouseToCanvas(canvasControl) {
     let isSelecting = false;
 
-    canvas.$canvas.off('mousedown.selection').on('mousedown.selection', evt => {
+    canvasControl.$canvas.off('mousedown.selection').on('mousedown.selection', evt => {
         isSelecting = true;
 
         if (!evt.metaKey && !evt.ctrlKey && !evt.shiftKey) {
@@ -31,17 +31,17 @@ export function bindToCanvas(canvas) {
         }
 
         if (evt.metaKey || evt.ctrlKey || !lastArea()) {
-            startArea(canvas.cellAtExternalXY(evt.offsetX, evt.offsetY));
+            startArea(canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY));
         }
 
         if (evt.shiftKey) {
-            lastArea().end = canvas.cellAtExternalXY(evt.offsetX, evt.offsetY);
+            lastArea().end = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
             refresh('selection');
         }
     });
-    canvas.$canvas.off('mousemove.selection').on('mousemove.selection', evt => {
+    canvasControl.$canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
-            lastArea().end = canvas.cellAtExternalXY(evt.offsetX, evt.offsetY);
+            lastArea().end = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
             refresh('selection');
         }
     });

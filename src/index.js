@@ -1,36 +1,39 @@
 import $ from "jquery";
 import './styles/app.scss'
 import {create2dArray, randomPrintableChar} from "./utilities.js";
-import {CanvasControl} from './canvas.js';
+import {CanvasControl, CellArea, FullAreaRect} from './canvas.js';
 import './preview.js';
 import './keyboard.js';
 import * as selection from './selection.js';
+import * as zoom from './zoom.js';
 import './clipboard.js';
+// import "./preview.js";
 
+// TODO Move everything dealing with chars (and numRows/numCols) to a new class
 let chars = [[]];
 
 const charCanvas = new CanvasControl($('#char-canvas'), {});
 const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
-selection.bindToCanvas(selectionCanvas);
+const previewCanvas = new CanvasControl($('#preview-canvas'), {});
 
-const ZOOM_SPEED = 1;
-selectionCanvas.$canvas.off('wheel.zoom').on('wheel.zoom', evt => {
-    evt.preventDefault();
+selection.bindMouseToCanvas(selectionCanvas);
 
-    const deltaY = evt.originalEvent.deltaY;
-    if (deltaY === 0) { return; }
-    const scaledDelta = -deltaY * ZOOM_SPEED / 300;
-    charCanvas.zoomDelta(scaledDelta);
-    selectionCanvas.zoomDelta(scaledDelta);
+zoom.bindScrollToCanvas(selectionCanvas, (zoomDelta, target) => {
+    charCanvas.zoomDelta(zoomDelta, target);
+    selectionCanvas.zoomDelta(zoomDelta, target);
+
     refresh();
 });
 
-// TODO Move everything dealing with chars (and numRows/numCols) to a new class
+zoom.bindWindow(previewCanvas);
 
 function loadChars(newChars) {
     chars = newChars;
     charCanvas.rebuild();
     selectionCanvas.rebuild();
+    previewCanvas.rebuild();
+
+    previewCanvas.zoomToFit();
     refresh();
 }
 
@@ -53,9 +56,10 @@ export function refresh(specificCanvas) {
         switch(specificCanvas) {
             case 'chars':
                 charCanvas.drawChars(chars);
+                previewCanvas.drawChars(chars);
                 break;
             case 'selection':
-                selectionCanvas.highlightSelection(selection.getSelectedCells());
+                selectionCanvas.highlightCells(selection.getSelectedCells());
                 break;
             default:
                 console.warn(`refresh("${specificCanvas}") is not a valid canvas`);
@@ -63,7 +67,8 @@ export function refresh(specificCanvas) {
     }
     else {
         charCanvas.drawChars(chars);
-        selectionCanvas.highlightSelection(selection.getSelectedCells());
+        previewCanvas.drawChars(chars);
+        selectionCanvas.highlightCells(selection.getSelectedCells());
     }
 
     // updatePreview(charCanvas);
@@ -88,7 +93,7 @@ export function translate(array, cell, callback) {
     });
 }
 
-loadChars(create2dArray(30, 50, () => randomPrintableChar()));
+loadChars(create2dArray(10, 100, () => randomPrintableChar()));
 // loadChars(create2dArray(6, 10, (row, col) => {
 //     if (row < 2) {
 //         return randomPrintableChar();

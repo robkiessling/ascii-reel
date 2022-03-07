@@ -1,3 +1,4 @@
+import {Cell} from "./canvas.js";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -30,6 +31,16 @@ export function createArray(size, defaultValue = null) {
 
     return array;
 }
+
+export function iterate2dArray(array, callback) {
+    for (let row = 0; row < array.length; row++) {
+        for (let col = 0; col < array[row].length; col++) {
+            callback(array[row][col], new Cell(row, col));
+        }
+    }
+}
+
+
 
 const MAX_TEXT_LENGTH = 100000; // Upper limit just in case the OS clipboard had a huge amount of text copied
 
