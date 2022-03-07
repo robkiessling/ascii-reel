@@ -32,11 +32,12 @@ html, body {
   background: #ccc;
 }
 
-#preview {
+#preview-container {
   width: 200px;
   margin: 1rem;
 
-  background: #ccc;
+  background: #999;
+  border: 1px solid #999;
   //background: url('../images/transparent-bg.png');
 }
 

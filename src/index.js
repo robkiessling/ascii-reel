@@ -1,13 +1,11 @@
 import $ from "jquery";
 import './styles/app.scss'
 import {create2dArray, randomPrintableChar} from "./utilities.js";
-import {CanvasControl, CellArea, FullAreaRect} from './canvas.js';
-import './preview.js';
+import {CanvasControl} from './canvas.js';
 import './keyboard.js';
 import * as selection from './selection.js';
-import * as zoom from './zoom.js';
+import * as zoomEvents from './zoom_events.js';
 import './clipboard.js';
-// import "./preview.js";
 
 // TODO Move everything dealing with chars (and numRows/numCols) to a new class
 let chars = [[]];
@@ -18,21 +16,12 @@ const previewCanvas = new CanvasControl($('#preview-canvas'), {});
 
 selection.bindMouseToCanvas(selectionCanvas);
 
-zoom.bindScrollToCanvas(selectionCanvas, (zoomDelta, target) => {
-    charCanvas.zoomDelta(zoomDelta, target);
-    selectionCanvas.zoomDelta(zoomDelta, target);
-
-    refresh();
-});
-
-zoom.bindWindow(previewCanvas);
+zoomEvents.setup(selectionCanvas, previewCanvas, [selectionCanvas, charCanvas]);
 
 function loadChars(newChars) {
     chars = newChars;
-    charCanvas.rebuild();
-    selectionCanvas.rebuild();
-    previewCanvas.rebuild();
-
+    charCanvas.buildBoundaries();
+    selectionCanvas.buildBoundaries();
     previewCanvas.zoomToFit();
     refresh();
 }
@@ -57,6 +46,7 @@ export function refresh(specificCanvas) {
             case 'chars':
                 charCanvas.drawChars(chars);
                 previewCanvas.drawChars(chars);
+                zoomEvents.updateWindow();
                 break;
             case 'selection':
                 selectionCanvas.highlightCells(selection.getSelectedCells());
@@ -69,6 +59,7 @@ export function refresh(specificCanvas) {
         charCanvas.drawChars(chars);
         previewCanvas.drawChars(chars);
         selectionCanvas.highlightCells(selection.getSelectedCells());
+        zoomEvents.updateWindow();
     }
 
     // updatePreview(charCanvas);
@@ -93,7 +84,7 @@ export function translate(array, cell, callback) {
     });
 }
 
-loadChars(create2dArray(10, 100, () => randomPrintableChar()));
+loadChars(create2dArray(10, 20, () => randomPrintableChar()));
 // loadChars(create2dArray(6, 10, (row, col) => {
 //     if (row < 2) {
 //         return randomPrintableChar();

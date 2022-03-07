@@ -1,5 +1,5 @@
 import {numCols, numRows} from "./index.js";
-import {iterate2dArray} from "./utilities.js";
+import {iterate2dArray, roundForComparison} from "./utilities.js";
 
 const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
@@ -26,7 +26,7 @@ const CANVAS_BACKGROUND = '#4c4c4c'; // false => transparent
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
 
-const ZOOM_BOUNDARIES = [0.25, 5];
+const ZOOM_BOUNDARIES = [0.25, 10];
 const ZOOM_MARGIN = 1.1;
 
 export class CanvasControl {
@@ -63,27 +63,22 @@ export class CanvasControl {
         return this.$canvas.outerHeight();
     }
 
-    // If numRows or numCols changes, entire canvas will need to be rebuilt
-    rebuild() {
-        this.buildBoundaries();
-        this.clear();
-    }
-
     clear() {
         this.usingFullArea((fullArea) => {
-            this.context.clearRect(...fullArea.xywh(this));
+            this.context.clearRect(...fullArea.xywh);
         });
     }
 
+    // Note: If numRows or numCols changes, canvas will need to be rezoomed
     drawChars(chars) {
         this.clear();
 
         if (CANVAS_BACKGROUND === false) {
-            this.fillCheckerboard(CellArea.drawableArea());
+            this._fillCheckerboard(CellArea.drawableArea());
         }
         else {
             this.context.fillStyle = CANVAS_BACKGROUND;
-            this.context.fillRect(...CellArea.drawableArea().xywh(this));
+            this.context.fillRect(...CellArea.drawableArea().xywh);
         }
 
         if (CHAR_BACKGROUND) {
@@ -91,7 +86,7 @@ export class CanvasControl {
             this.context.fillStyle = CHAR_BACKGROUND;
             iterate2dArray(chars, (value, cell) => {
                 if (value !== '') {
-                    this.context.rect(...cell.xywh(this));
+                    this.context.rect(...cell.xywh);
                 }
             });
             this.context.fill();
@@ -102,11 +97,11 @@ export class CanvasControl {
             this.context.fillStyle = TEXT_COLOR;
 
             // Translate by 50%, so we can draw char in center of cell
-            this.context.fillText(value, ...cell.translate(0.5, 0.5).xy(this));
+            this.context.fillText(value, ...cell.translate(0.5, 0.5).xy);
         });
 
         if (GRID) {
-            this.drawGrid(chars);
+            this._drawGrid(chars);
         }
     }
 
@@ -116,45 +111,44 @@ export class CanvasControl {
         // Draw all selection rectangles
         cells.forEach(cell => {
             this.context.fillStyle = SELECTION_COLOR;
-            this.context.fillRect(...cell.xywh(this));
+            this.context.fillRect(...cell.xywh);
         });
     }
 
     drawWindow(rect) {
         this.context.strokeStyle = WINDOW_COLOR;
         this.context.lineWidth = WINDOW_WIDTH;
-        this.context.strokeRect(...rect.xywh(this));
+        this.context.strokeRect(...rect.xywh);
     }
 
-    drawGrid(chars) {
+    _drawGrid(chars) {
         this.context.strokeStyle = GRID_COLOR;
         this.context.lineWidth = GRID_WIDTH;
 
         iterate2dArray(chars, (value, cell) => {
             // Drawing a box around the cell. Only draw left/top borders for first cells in the row/col
             this.context.beginPath();
-            this.context.moveTo(...cell.xy(this));
-            cell.col === 0 ? this.context.lineTo(...cell.translate(1, 0).xy(this)) : this.context.moveTo(...cell.translate(1, 0).xy(this));
-            this.context.lineTo(...cell.translate(0, 1).xy(this));
-            this.context.lineTo(...cell.translate(-1, 0).xy(this));
-            cell.row === 0 ? this.context.lineTo(...cell.translate(0, -1).xy(this)) : this.context.moveTo(...cell.translate(0, -1).xy(this))
+            this.context.moveTo(...cell.xy);
+            cell.col === 0 ? this.context.lineTo(...cell.translate(1, 0).xy) : this.context.moveTo(...cell.translate(1, 0).xy);
+            this.context.lineTo(...cell.translate(0, 1).xy);
+            this.context.lineTo(...cell.translate(-1, 0).xy);
+            cell.row === 0 ? this.context.lineTo(...cell.translate(0, -1).xy) : this.context.moveTo(...cell.translate(0, -1).xy)
             this.context.stroke();
         });
     }
 
-    fillCheckerboard(area) {
+    _fillCheckerboard(area) {
         this.context.beginPath();
         this.context.fillStyle = CHECKERBOARD_A;
-        this.context.rect(...area.xywh(this));
+        this.context.rect(...area.xywh);
         this.context.fill();
 
         this.context.beginPath();
         this.context.fillStyle = CHECKERBOARD_B;
         let rowStartsOnB = false;
-        // TODO Hack subtracting 0.001 to account for floating point round errors
-        for (let x = area.x(this); x < (area.x(this) + area.width(this) - 0.001); x += CHECKER_WIDTH) {
+        for (let x = area.x; roundForComparison(x) < roundForComparison(area.x + area.width); x += CHECKER_WIDTH) {
             let isCheckered = rowStartsOnB;
-            for (let y = area.y(this); y < (area.y(this) + area.height(this) - 0.001); y += CHECKER_HEIGHT) {
+            for (let y = area.y; roundForComparison(y) < roundForComparison(area.y + area.height); y += CHECKER_HEIGHT) {
                 if (isCheckered) {
                     this.context.rect(x, y, CHECKER_WIDTH, CHECKER_HEIGHT);
                 }
@@ -164,26 +158,35 @@ export class CanvasControl {
         }
         this.context.fill();
     }
+    
+    
+    // -------------------------------------------------------------- Zoom/View related methods
 
-    // When you call getTransform(), it contains values relative to our originalTransform (which could be a scale of 2).
-    // If you want the absolute transform, have to divide by the starting point (originalTransform)
-    //      getTransform() => 0.5
-    //      we are actually at 0.25 from absolute
-    absoluteTransform() {
-        const current = this.context.getTransform();
-        current.a /= this.originalTransform.a;
-        current.d /= this.originalTransform.d;
-        current.e /= this.originalTransform.a;
-        current.f /= this.originalTransform.d;
-        return current;
+    // Builds the zoom boundaries and zooms out all the way
+    buildBoundaries() {
+        this._minZoom = this._zoomLevelForFit() / ZOOM_MARGIN;
+        this.zoomTo(this._minZoom);
+        this._boundaries = this.currentViewRect();
     }
 
-    currentZoom() {
-        return this.context.getTransform().a / this.originalTransform.a;
+    // Returns a Rect of the current view window
+    currentViewRect() {
+        const topLeft = this.pointAtExternalXY(0, 0);
+        const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
+        return new Rect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+    }
+
+    // This method allows you to perform operations on the full area of the canvas
+    usingFullArea(callback) {
+        // Temporarily transform to original context -> make a Rect with canvas boundaries -> transform back afterwards
+        const currentTransform = this.context.getTransform();
+        this.context.setTransform(this.originalTransform);
+        callback(new Rect(0, 0, this.outerWidth, this.outerHeight));
+        this.context.setTransform(currentTransform);
     }
 
     pointAtExternalXY(x, y) {
-        const absTransform = this.absoluteTransform();
+        const absTransform = this._absoluteTransform();
         return {
             x: (x - absTransform.e) / absTransform.a,
             y: (y - absTransform.f) / absTransform.d
@@ -195,92 +198,101 @@ export class CanvasControl {
         return new Cell(Math.floor(point.y / CELL_HEIGHT), Math.floor(point.x / CELL_WIDTH))
     }
 
-    zoomTo(newZoom) {
+    zoomTo(level) {
         // Reset scale
         this.context.setTransform(this.originalTransform);
 
         // Center around absolute midpoint of drawableArea
         const drawableArea = CellArea.drawableArea();
         const target = {
-            x: this.outerWidth / 2 - drawableArea.width(this) * newZoom / 2,
-            y: this.outerHeight / 2 - drawableArea.height(this) * newZoom / 2
+            x: this.outerWidth / 2 - drawableArea.width * level / 2,
+            y: this.outerHeight / 2 - drawableArea.height * level / 2
         }
         this.context.translate(target.x, target.y);
 
         // Scale to desired level
-        this.context.scale(newZoom, newZoom);
-    }
-
-    zoomDelta(delta, target) {
-        const originalZoom = this.currentZoom();
-        let newZoom = originalZoom * delta;
-
-        if (newZoom < ZOOM_BOUNDARIES[0]) { newZoom = ZOOM_BOUNDARIES[0]; delta = newZoom / originalZoom; }
-        if (newZoom > ZOOM_BOUNDARIES[1]) { newZoom = ZOOM_BOUNDARIES[1]; delta = newZoom / originalZoom; }
-        if (newZoom === originalZoom) { return; }
-        if (newZoom < this._minZoom) { newZoom = this._minZoom; delta = newZoom / originalZoom; }
-
-        target = this.pointAtExternalXY(target.x, target.y);
-
-        this.context.translate(target.x, target.y)
-        this.context.scale(delta, delta);
-        this.context.translate(-target.x, -target.y)
-
-        if (this._boundaries) {
-            const newTopLeft = this.pointAtExternalXY(0, 0);
-            const newBottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
-
-            if (newTopLeft.x < this._boundaries.x()) {
-                this.context.translate(-(this._boundaries.x() - newTopLeft.x), 0);
-            }
-            if (newTopLeft.y < this._boundaries.y()) {
-                this.context.translate(0, -(this._boundaries.y() - newTopLeft.y));
-            }
-            const farRightBoundary = this._boundaries.x() + this._boundaries.width();
-            if (newBottomRight.x > farRightBoundary) {
-                this.context.translate((newBottomRight.x - farRightBoundary), 0);
-            }
-            const forBottomBoundary = this._boundaries.y() + this._boundaries.height();
-            if (newBottomRight.y > forBottomBoundary) {
-                this.context.translate(0, (newBottomRight.y - forBottomBoundary));
-            }
-        }
+        this.context.scale(level, level);
     }
 
     zoomToFit() {
         this.zoomTo(this._zoomLevelForFit());
     }
 
+    zoomDelta(delta, target) {
+        const currentZoom = this._absoluteTransform().a;
+        let newZoom = currentZoom * delta;
+
+        if (newZoom < ZOOM_BOUNDARIES[0]) { newZoom = ZOOM_BOUNDARIES[0]; delta = newZoom / currentZoom; }
+        if (newZoom > ZOOM_BOUNDARIES[1]) { newZoom = ZOOM_BOUNDARIES[1]; delta = newZoom / currentZoom; }
+        if (newZoom < this._minZoom) { newZoom = this._minZoom; delta = newZoom / currentZoom; }
+        if (roundForComparison(newZoom) === roundForComparison(currentZoom)) { return; }
+
+        // Zoom to the mouse target, using a process described here: https://stackoverflow.com/a/5526721
+        this.context.translate(target.x, target.y)
+        this.context.scale(delta, delta);
+        this.context.translate(-target.x, -target.y)
+
+        this._applyBoundaries();
+    }
+
+    // Moves zoom window to be centered around target
+    translateZoom(target) {
+        const currentZoom = this._absoluteTransform().a;
+        const viewRect = this.currentViewRect();
+
+        this.context.setTransform(this.originalTransform);
+        this.context.translate(
+            -target.x * currentZoom + viewRect.width * currentZoom / 2,
+            -target.y * currentZoom + viewRect.height * currentZoom / 2
+        )
+        this.context.scale(currentZoom, currentZoom);
+
+        this._applyBoundaries();
+    }
+
     _zoomLevelForFit() {
         const drawableArea = CellArea.drawableArea();
 
-        // We want origin to be [0, 0]. I.e. this.outerWidth / this._zoom = drawableArea.width(this);
-        const xZoom = this.outerWidth / drawableArea.width(this);
-        const yZoom = this.outerHeight / drawableArea.height(this);
+        // We want origin to be [0, 0]. I.e. this.outerWidth / this._zoom = drawableArea.width;
+        const xZoom = this.outerWidth / drawableArea.width;
+        const yZoom = this.outerHeight / drawableArea.height;
 
         // Use whichever axis needs to be zoomed out more
         return Math.min(xZoom, yZoom);
     }
 
-    buildBoundaries() {
-        this._minZoom = this._zoomLevelForFit() / ZOOM_MARGIN;
-        this.zoomTo(this._minZoom);
-        this._boundaries = this.viewRect();
+    // Lock zoom-out to a set of boundaries
+    _applyBoundaries() {
+        if (this._boundaries) {
+            const topLeft = this.pointAtExternalXY(0, 0);
+            const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
+
+            if (topLeft.x < this._boundaries.x) {
+                this.context.translate(topLeft.x - this._boundaries.x, 0);
+            }
+            if (topLeft.y < this._boundaries.y) {
+                this.context.translate(0, topLeft.y - this._boundaries.y);
+            }
+            const farRightBoundary = this._boundaries.x + this._boundaries.width;
+            if (bottomRight.x > farRightBoundary) {
+                this.context.translate(bottomRight.x - farRightBoundary, 0);
+            }
+            const forBottomBoundary = this._boundaries.y + this._boundaries.height;
+            if (bottomRight.y > forBottomBoundary) {
+                this.context.translate(0, bottomRight.y - forBottomBoundary);
+            }
+        }
     }
 
-    viewRect() {
-        const topLeft = this.pointAtExternalXY(0, 0);
-        const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
-        return new Rect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
-    }
-
-    usingFullArea(callback) {
-        // Note: The Rect we create only makes sense at the originalTransform, so we temporarily transform the context
-        //       back to the original
-        const currentTransform = this.context.getTransform();
-        this.context.setTransform(this.originalTransform);
-        callback(new Rect(0, 0, this.outerWidth, this.outerHeight));
-        this.context.setTransform(currentTransform);
+    // When you call getTransform(), it contains values relative to our originalTransform (which could be a scale of 2).
+    // If you want the absolute transform, have to divide by the starting point (originalTransform)
+    _absoluteTransform() {
+        const current = this.context.getTransform();
+        current.a /= this.originalTransform.a;
+        current.d /= this.originalTransform.d;
+        current.e /= this.originalTransform.a;
+        current.f /= this.originalTransform.d;
+        return current;
     }
 
 }
@@ -290,26 +302,45 @@ export class CanvasControl {
 
 
 
-/**
- * A mixin that provide additional helper methods for classes that implement x, y, width, and height methods.
- * This allows x/y/width/height values to be easily passed to other methods using javascript spread syntax (...)
- */
-const RectMixin = {
-    xy(canvas) {
-        return [this.x(canvas), this.y(canvas)];
-    },
-
-    xywh(canvas) {
-        return [this.x(canvas), this.y(canvas), this.width(canvas), this.height(canvas)];
+class Rect {
+    constructor(x, y, width, height) {
+        this._x = x;
+        this._y = y;
+        this._width = width;
+        this._height = height;
     }
+    get x() {
+        return this._x;
+    }
+    get y() {
+        return this._y;
+    }
+    get width() {
+        return this._width;
+    }
+    get height() {
+        return this._height;
+    }
+
+    // Allows x/y values to be easily passed to other methods using javascript spread syntax (...)
+    get xy() {
+        return [this.x, this.y];
+    }
+
+    // Allows x/y/width/height values to be easily passed to other methods using javascript spread syntax (...)
+    get xywh() {
+        return [this.x, this.y, this.width, this.height];
+    }
+
 }
 
 /**
  * A Cell is a particular row/column pair of the drawable area. It is useful so we can deal with rows/columns instead
  * of raw x/y values.
  */
-export class Cell {
+export class Cell extends Rect {
     constructor(row, col) {
+        super();
         this.row = row;
         this.col = col;
     }
@@ -360,26 +391,26 @@ export class Cell {
         }
     }
 
-    x(canvas) {
+    get x() {
         return this.col * CELL_WIDTH;
     }
-    y(canvas) {
+    get y() {
         return this.row * CELL_HEIGHT;
     }
-    width(/* canvas */) {
+    get width() {
         return CELL_WIDTH;
     }
-    height(/* canvas */) {
+    get height() {
         return CELL_HEIGHT;
     }
 }
-Object.assign(Cell.prototype, RectMixin);
 
 /**
  * A CellArea is a rectangle of Cells between a topLeft Cell and a bottomRight Cell.
  */
-export class CellArea {
+export class CellArea extends Rect {
     constructor(topLeft, bottomRight) {
+        super();
         this.topLeft = topLeft; // Cell
         this.bottomRight = bottomRight; // Cell
     }
@@ -415,40 +446,16 @@ export class CellArea {
         if (otherRect.bottomRight.col > this.bottomRight.col) { this.bottomRight.col = otherRect.bottomRight.col; }
     }
 
-    x(canvas) {
-        return this.topLeft.x(canvas);
+    get x() {
+        return this.topLeft.x;
     }
-    y(canvas) {
-        return this.topLeft.y(canvas);
+    get y() {
+        return this.topLeft.y;
     }
-    width(/* canvas */) {
+    get width() {
         return this.numCols * CELL_WIDTH;
     }
-    height(/* canvas */) {
+    get height() {
         return this.numRows * CELL_HEIGHT;
     }
 }
-Object.assign(CellArea.prototype, RectMixin);
-
-
-export class Rect {
-    constructor(x, y, width, height) {
-        this._x = x;
-        this._y = y;
-        this._width = width;
-        this._height = height;
-    }
-    x() {
-        return this._x;
-    }
-    y() {
-        return this._y;
-    }
-    width() {
-        return this._width;
-    }
-    height() {
-        return this._height;
-    }
-}
-Object.assign(Rect.prototype, RectMixin);
