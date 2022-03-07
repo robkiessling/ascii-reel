@@ -36,6 +36,17 @@ export class CanvasControl {
         this.context = this.canvas.getContext("2d");
         this.config = config;
 
+        this.resize();
+    }
+
+    // TODO Currently it will always zoom all the way out after a resize event, due to buildBoundaries
+    resize() {
+        // Reset any width/height attributes that may have been set previously
+        this.canvas.removeAttribute('width');
+        this.canvas.removeAttribute('height');
+        this.canvas.style.width = "100%";
+        this.canvas.style.height = "100%";
+
         // Fix canvas PPI https://stackoverflow.com/a/65124939/4904996
         let ratio = window.devicePixelRatio;
         this.canvas.width = this.outerWidth * ratio;
@@ -165,7 +176,7 @@ export class CanvasControl {
     // Builds the zoom boundaries and zooms out all the way
     buildBoundaries() {
         this._minZoom = this._zoomLevelForFit() / ZOOM_MARGIN;
-        this.zoomTo(this._minZoom);
+        this.zoomTo(this._minZoom); // Have to zoom to minimum so we can record what the boundaries are
         this._boundaries = this.currentViewRect();
     }
 

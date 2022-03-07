@@ -20,11 +20,20 @@ zoomEvents.setup(selectionCanvas, previewCanvas, [selectionCanvas, charCanvas]);
 
 function loadChars(newChars) {
     chars = newChars;
+
+    // numRows changed, so have to rebuild boundaries
     charCanvas.buildBoundaries();
     selectionCanvas.buildBoundaries();
     previewCanvas.zoomToFit();
     refresh();
 }
+
+$(window).off('resize:debounced').on('resize:debounced', () => {
+    charCanvas.resize();
+    selectionCanvas.resize();
+    previewCanvas.resize();
+    refresh();
+})
 
 export function getChar(row, col) {
     return chars[row][col];

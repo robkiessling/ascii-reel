@@ -1,4 +1,5 @@
 import {Cell} from "./canvas.js";
+import $ from "jquery";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -86,3 +87,13 @@ export function roundToDecimal(number, numDecimals) {
 export function roundForComparison(number) {
     return roundToDecimal(number, 5);
 }
+
+
+// Debounce window resize events
+let resizeId;
+$(window).resize(function() {
+    clearTimeout(resizeId);
+    resizeId = setTimeout(() => {
+        $(window).trigger('resize:debounced');
+    }, 500);
+});
