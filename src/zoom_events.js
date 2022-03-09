@@ -92,7 +92,7 @@ function updateCanvases(callback) {
         callback(canvasControl);
     });
 
-    refresh();
+    refresh('zoom');
 }
 
 function disableRightClick(canvasControl) {

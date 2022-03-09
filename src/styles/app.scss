@@ -20,6 +20,31 @@ html, body {
   min-width: 100px;
 }
 
+#frames-container {
+  display: flex;
+  flex-direction: column;
+  //justify-content: center;
+  align-items: center;
+
+  margin-top: 1rem;
+  width: 200px;
+
+  .frame {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    margin-bottom: 1rem;
+
+    cursor: pointer;
+    border: 2px solid #555;
+    background: #999;
+
+    &.selected {
+      border: 2px solid yellow;
+    }
+  }
+}
+
 #canvas-container {
   // Fill remaining space
   flex: 1;

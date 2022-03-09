@@ -6,25 +6,29 @@ import './keyboard.js';
 import * as selection from './selection.js';
 import * as zoomEvents from './zoom_events.js';
 import './clipboard.js';
+import {FrameController} from "./frames.js";
 
-// TODO Move everything dealing with chars (and numRows/numCols) to a new class
-let chars = [[]];
-
+export const frameController = new FrameController($('#frames-container'));
 const charCanvas = new CanvasControl($('#char-canvas'), {});
 const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 const previewCanvas = new CanvasControl($('#preview-canvas'), {});
 
 selection.bindMouseToCanvas(selectionCanvas);
-
 zoomEvents.setup(selectionCanvas, previewCanvas, [selectionCanvas, charCanvas]);
 
-function loadChars(newChars) {
-    chars = newChars;
+function loadFrames(frames) {
+    // This has to come first, to set dimensions
+    frameController.loadFrames(frames);
 
-    // numRows changed, so have to rebuild boundaries
-    charCanvas.buildBoundaries();
-    selectionCanvas.buildBoundaries();
+    // Resize everything now that dimensions are set
+    charCanvas.resize();
+    selectionCanvas.resize();
+    previewCanvas.resize();
+    frameController.resize();
+
+    // Lock preview to dimensions
     previewCanvas.zoomToFit();
+
     refresh();
 }
 
@@ -32,78 +36,43 @@ $(window).off('resize:debounced').on('resize:debounced', () => {
     charCanvas.resize();
     selectionCanvas.resize();
     previewCanvas.resize();
+    frameController.resize();
     refresh();
-})
+});
 
-export function getChar(row, col) {
-    return chars[row][col];
-}
-export function updateChar(row, col, value) {
-    chars[row][col] = value;
-}
-
-export function numRows() {
-    return chars.length;
-}
-export function numCols() {
-    return chars[0].length;
-}
-
-export function refresh(specificCanvas) {
-    if (specificCanvas) {
-        switch(specificCanvas) {
-            case 'chars':
-                charCanvas.drawChars(chars);
-                previewCanvas.drawChars(chars);
-                zoomEvents.updateWindow();
-                break;
-            case 'selection':
-                selectionCanvas.highlightCells(selection.getSelectedCells());
-                break;
-            default:
-                console.warn(`refresh("${specificCanvas}") is not a valid canvas`);
-        }
+export function refresh(type = 'full') {
+    switch(type) {
+        case 'chars':
+            charCanvas.drawChars(frameController.currentFrame.chars);
+            previewCanvas.drawChars(frameController.currentFrame.chars);
+            frameController.currentFrame.drawChars();
+            break;
+        case 'selection':
+            selectionCanvas.highlightCells(selection.getSelectedCells());
+            break;
+        case 'zoom':
+            charCanvas.drawChars(frameController.currentFrame.chars);
+            previewCanvas.drawChars(frameController.currentFrame.chars);
+            zoomEvents.updateWindow();
+            selectionCanvas.highlightCells(selection.getSelectedCells());
+            break;
+        case 'full':
+            charCanvas.drawChars(frameController.currentFrame.chars);
+            previewCanvas.drawChars(frameController.currentFrame.chars);
+            zoomEvents.updateWindow();
+            selectionCanvas.highlightCells(selection.getSelectedCells());
+            frameController.fullRefresh();
+            break;
+        default:
+            console.warn(`refresh("${type}") is not a valid type`);
     }
-    else {
-        charCanvas.drawChars(chars);
-        previewCanvas.drawChars(chars);
-        selectionCanvas.highlightCells(selection.getSelectedCells());
-        zoomEvents.updateWindow();
-    }
-
-    // updatePreview(charCanvas);
 }
 
-/**
- * Translates a 2d array as if it was positioned at a Cell. The callback value will be null for parts of the array
- * that go out of the frame.
- *
- * @param array         2d array of values
- * @param cell          Position to move the top-left Cell of the layout to
- * @param callback      function(value, row, col), where row and col are the coordinates if the layout was moved
- */
-export function translate(array, cell, callback) {
-    array.forEach((rowValues, rowIndex) => {
-        rowValues.forEach((value, colIndex) => {
-            const row = rowIndex + cell.row;
-            const col = colIndex + cell.col;
-            const inBounds = row >= 0 && row < numRows() && col >= 0 && col < numCols();
-            callback(inBounds ? value : null, row, col);
-        });
-    });
-}
-
-loadChars(create2dArray(10, 20, () => randomPrintableChar()));
-// loadChars(create2dArray(6, 10, (row, col) => {
-//     if (row < 2) {
-//         return randomPrintableChar();
-//     } else if (row < 4) {
-//         return ' ';
-//     }
-//     else {
-//         return '';
-//     }
-// }));
+loadFrames([
+    create2dArray(5, 10, () => randomPrintableChar()),
+    create2dArray(10, 20, () => randomPrintableChar()),
+    create2dArray(10, 20, () => randomPrintableChar()),
+])
 // loadChars(create2dArray(30, 50, (row, col) => {
 //     return row % 10 === 0 && col % 10 === 0 ? 'X' : '';
 // }));

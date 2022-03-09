@@ -1,10 +1,10 @@
 import * as selection from "./selection.js";
-import {convert2dArrayToText, convertTextTo2dArray} from "./utilities.js"; // or more selective import, like "core-js/es/array"
+import {convert2dArrayToText, convertTextTo2dArray, translate} from "./utilities.js";
 
 // Necessary for clipboard read/write https://stackoverflow.com/a/61517521
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
-import {refresh, translate, updateChar} from "./index.js";
+import {frameController, refresh} from "./index.js";
 
 let cutCell = null;
 let copiedSelection = null; // 2d array
@@ -57,7 +57,7 @@ function pasteArray(array) {
     // If cut was used, remove old cut
     if (cutCell) {
         translate(array, cutCell, (value, r, c) => {
-            if (value !== null) { updateChar(r, c, ''); }
+            if (value !== null) { frameController.currentFrame.updateChar(r, c, ''); }
         })
         cutCell = null;
     }
@@ -65,19 +65,19 @@ function pasteArray(array) {
     if (array.length === 1 && array[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         selection.getSelectedCells().forEach(cell => {
-            updateChar(cell.row, cell.col, array[0][0])
+            frameController.currentFrame.updateChar(cell.row, cell.col, array[0][0])
         });
     }
     else {
         // Paste array once at topLeft of first selectionArea
         translate(array, selection.selectionAreas[0].topLeft, (value, r, c) => {
-            if (value !== null) { updateChar(r, c, value); }
+            if (value !== null) { frameController.currentFrame.updateChar(r, c, value); }
         });
 
         // Paste array at topLeft of each selectionArea TODO Has issues if your copiedSelection has multiple selectionAreas too
         // selection.selectionAreas.forEach(selectionArea => {
         //     translate(array, selectionArea.topLeft, (value, r, c) => {
-        //         if (value !== null) { updateChar(r, c, value); }
+        //         if (value !== null) { frameController.currentFrame.updateChar(r, c, value); }
         //     });
         // });
     }

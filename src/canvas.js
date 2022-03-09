@@ -1,4 +1,4 @@
-import {numCols, numRows} from "./index.js";
+import {frameController} from "./index.js";
 import {iterate2dArray, roundForComparison} from "./utilities.js";
 
 const MONOSPACE_RATIO = 3/5;
@@ -27,7 +27,7 @@ const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
 
 const ZOOM_BOUNDARIES = [0.25, 10];
-const ZOOM_MARGIN = 1.1;
+const ZOOM_MARGIN = 1.2;
 
 export class CanvasControl {
     constructor($canvas, config = {}) {
@@ -35,8 +35,6 @@ export class CanvasControl {
         this.canvas = this.$canvas.get(0);
         this.context = this.canvas.getContext("2d");
         this.config = config;
-
-        this.resize();
     }
 
     // TODO Currently it will always zoom all the way out after a resize event, due to buildBoundaries
@@ -116,6 +114,7 @@ export class CanvasControl {
         }
     }
 
+    // Note: This conflicts with drawChars. We use different canvases for chars/selections stacked on top of each other.
     highlightCells(cells) {
         this.clear();
 
@@ -391,7 +390,7 @@ export class Cell extends Rect {
         this._row = newValue;
         if (this._boundToDrawableArea) {
             if (this._row < 0) { this._row = 0; }
-            if (this._row > numRows() - 1) { this._row = numRows() - 1; }
+            if (this._row > frameController.numRows - 1) { this._row = frameController.numRows - 1; }
         }
     }
 
@@ -403,7 +402,7 @@ export class Cell extends Rect {
         this._col = newValue;
         if (this._boundToDrawableArea) {
             if (this._col < 0) { this._col = 0; }
-            if (this._col > numCols() - 1) { this._col = numCols() - 1; }
+            if (this._col > frameController.numCols - 1) { this._col = frameController.numCols - 1; }
         }
     }
 
@@ -432,7 +431,7 @@ export class CellArea extends Rect {
     }
 
     static drawableArea() {
-        return new CellArea(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
+        return new CellArea(new Cell(0, 0), new Cell(frameController.numRows - 1, frameController.numCols - 1));
     }
 
     get numRows() {

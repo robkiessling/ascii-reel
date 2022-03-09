@@ -1,5 +1,6 @@
 import {Cell} from "./canvas.js";
 import $ from "jquery";
+import {frameController} from "./index.js";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -39,6 +40,25 @@ export function iterate2dArray(array, callback) {
             callback(array[row][col], new Cell(row, col));
         }
     }
+}
+
+/**
+ * Translates a 2d array as if it was positioned at a Cell. The callback value will be null for parts of the array
+ * that go out of the frame.
+ *
+ * @param array         2d array of values
+ * @param cell          Position to move the top-left Cell of the layout to
+ * @param callback      function(value, row, col), where row and col are the coordinates if the layout was moved
+ */
+export function translate(array, cell, callback) {
+    array.forEach((rowValues, rowIndex) => {
+        rowValues.forEach((value, colIndex) => {
+            const row = rowIndex + cell.row;
+            const col = colIndex + cell.col;
+            const inBounds = row >= 0 && row < frameController.numRows && col >= 0 && col < frameController.numCols;
+            callback(inBounds ? value : null, row, col);
+        });
+    });
 }
 
 
