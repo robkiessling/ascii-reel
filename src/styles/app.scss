@@ -33,18 +33,14 @@ html, body {
 }
 
 #preview-container {
+  position: relative;
+  height: 200px;
   width: 200px;
   margin: 1rem;
 
   background: #999;
   border: 1px solid #999;
   //background: url('../images/transparent-bg.png');
-}
-
-#preview-container {
-  position: relative;
-  height: 200px;
-  width: 200px;
 }
 
 .full {
@@ -63,4 +59,13 @@ html, body {
   -moz-user-select: none;
   -khtml-user-select: none;
   -ms-user-select: none;
+}
+
+.draggable {
+  cursor: move; /* fallback */
+  cursor: grab; /* W3C standards syntax, all modern browser */
+
+  &:active {
+    cursor: grabbing;
+  }
 }

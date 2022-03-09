@@ -5,13 +5,14 @@ const ZOOM_SCROLL_FACTOR = 1.1;
 
 let source, preview, canvases;
 
-export function setup(sourceCanvas, previewCanvas, zoomCanvases) {
+export function setup(sourceCanvas, previewCanvas, canvasControls) {
     source = sourceCanvas;
     preview = previewCanvas;
-    canvases = zoomCanvases;
+    canvases = canvasControls;
 
     setupScroll();
     setupMouse();
+    setupPreviewMouse();
 }
 
 export function updateWindow() {
@@ -28,27 +29,29 @@ function setupScroll() {
         if (deltaY === 0) { return; }
 
         const scaledDelta = Math.pow(ZOOM_SCROLL_FACTOR, -deltaY / 100);
-
-        canvases.forEach(canvasControl => {
-            canvasControl.zoomDelta(scaledDelta, canvasControl.pointAtExternalXY(evt.offsetX, evt.offsetY));
-        });
-
-        refresh();
+        const target = source.pointAtExternalXY(evt.offsetX, evt.offsetY);
+        updateCanvases(canvasControl => canvasControl.zoomDelta(scaledDelta, target))
     });
 }
 
 function setupMouse() {
     let isSliding;
+    let originalPoint;
 
-    preview.$canvas.off('mousedown.zoom').on('mousedown.zoom', evt => {
+    disableRightClick(source);
+
+    source.$canvas.off('mousedown.zoom').on('mousedown.zoom', evt => {
+        if (evt.which !== 2 && evt.which !== 3) { return; } // Only apply to middle-click and right-click
+
         isSliding = true;
-
-        panWindow(preview.pointAtExternalXY(evt.offsetX, evt.offsetY))
+        originalPoint = source.pointAtExternalXY(evt.offsetX, evt.offsetY);
     });
 
-    preview.$canvas.off('mousemove.zoom').on('mousemove.zoom', evt => {
+    source.$canvas.off('mousemove.zoom').on('mousemove.zoom', evt => {
         if (isSliding) {
-            panWindow(preview.pointAtExternalXY(evt.offsetX, evt.offsetY))
+            const currentPoint = source.pointAtExternalXY(evt.offsetX, evt.offsetY);
+            const deltas = [currentPoint.x - originalPoint.x, currentPoint.y - originalPoint.y];
+            updateCanvases(canvasControl => canvasControl.translateAmount(...deltas));
         }
     });
 
@@ -59,11 +62,41 @@ function setupMouse() {
     });
 }
 
-function panWindow(target) {
+function setupPreviewMouse() {
+    let isSliding;
+
+    disableRightClick(preview);
+
+    preview.$canvas.off('mousedown.previewZoom').on('mousedown.previewZoom', evt => {
+        isSliding = true;
+        const target = preview.pointAtExternalXY(evt.offsetX, evt.offsetY);
+        updateCanvases(canvasControl => canvasControl.translateToTarget(target));
+    });
+
+    preview.$canvas.off('mousemove.previewZoom').on('mousemove.previewZoom', evt => {
+        if (isSliding) {
+            const target = preview.pointAtExternalXY(evt.offsetX, evt.offsetY);
+            updateCanvases(canvasControl => canvasControl.translateToTarget(target));
+        }
+    });
+
+    $(document).off('mouseup.previewZoom').on('mouseup.previewZoom', evt => {
+        if (isSliding) {
+            isSliding = false;
+        }
+    });
+}
+
+function updateCanvases(callback) {
     canvases.forEach(canvasControl => {
-        canvasControl.translateZoom(target);
+        callback(canvasControl);
     });
 
     refresh();
 }
 
+function disableRightClick(canvasControl) {
+    canvasControl.$canvas.off('contextmenu.zoom').on('contextmenu.zoom', evt => {
+        return false;
+    });
+}

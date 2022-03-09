@@ -24,6 +24,8 @@ export function bindMouseToCanvas(canvasControl) {
     let isSelecting = false;
 
     canvasControl.$canvas.off('mousedown.selection').on('mousedown.selection', evt => {
+        if (evt.which !== 1) { return; } // Only apply to left-click
+
         isSelecting = true;
 
         if (!evt.metaKey && !evt.ctrlKey && !evt.shiftKey) {

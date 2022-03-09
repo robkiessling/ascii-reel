@@ -22,7 +22,7 @@ const SELECTION_COLOR = '#0066cc88';
 const TEXT_COLOR = '#fff';
 
 const CHAR_BACKGROUND = false; // false => transparent (will rarely NOT be transparent; only when you need to see spaces)
-const CANVAS_BACKGROUND = '#4c4c4c'; // false => transparent
+const CANVAS_BACKGROUND = false;//'#4c4c4c'; // false => transparent
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
 
@@ -247,7 +247,7 @@ export class CanvasControl {
     }
 
     // Moves zoom window to be centered around target
-    translateZoom(target) {
+    translateToTarget(target) {
         const currentZoom = this._absoluteTransform().a;
         const viewRect = this.currentViewRect();
 
@@ -258,6 +258,11 @@ export class CanvasControl {
         )
         this.context.scale(currentZoom, currentZoom);
 
+        this._applyBoundaries();
+    }
+
+    translateAmount(x, y) {
+        this.context.translate(x, y);
         this._applyBoundaries();
     }
 
