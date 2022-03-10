@@ -15,10 +15,11 @@ const GRID = false;
 const GRID_WIDTH = 0.25;
 const GRID_COLOR = '#fff';
 
-const WINDOW_COLOR = '#ffff00';
-const WINDOW_WIDTH = 4;
+const WINDOW_BORDER = '#f48225'; // TODO Get this from scss?
+const WINDOW_WIDTH = 5;
 
-const SELECTION_COLOR = '#0066cc88';
+// const SELECTION_COLOR = '#0066cc88';
+const SELECTION_COLOR = '#4c8bf588';
 const TEXT_COLOR = '#fff';
 
 const CHAR_BACKGROUND = false; // false => transparent (will rarely NOT be transparent; only when you need to see spaces)
@@ -26,7 +27,7 @@ const CANVAS_BACKGROUND = false;//'#4c4c4c'; // false => transparent
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
 
-const ZOOM_BOUNDARIES = [0.25, 10];
+const ZOOM_BOUNDARIES = [0.25, 30];
 const ZOOM_MARGIN = 1.2;
 
 export class CanvasControl {
@@ -126,8 +127,8 @@ export class CanvasControl {
     }
 
     drawWindow(rect) {
-        this.context.strokeStyle = WINDOW_COLOR;
-        this.context.lineWidth = WINDOW_WIDTH;
+        this.context.strokeStyle = WINDOW_BORDER;
+        this.context.lineWidth = WINDOW_WIDTH / this._currentZoom();
         this.context.strokeRect(...rect.xywh);
     }
 
@@ -229,7 +230,7 @@ export class CanvasControl {
     }
 
     zoomDelta(delta, target) {
-        const currentZoom = this._absoluteTransform().a;
+        const currentZoom = this._currentZoom();
         let newZoom = currentZoom * delta;
 
         if (newZoom < ZOOM_BOUNDARIES[0]) { newZoom = ZOOM_BOUNDARIES[0]; delta = newZoom / currentZoom; }
@@ -247,7 +248,7 @@ export class CanvasControl {
 
     // Moves zoom window to be centered around target
     translateToTarget(target) {
-        const currentZoom = this._absoluteTransform().a;
+        const currentZoom = this._currentZoom();
         const viewRect = this.currentViewRect();
 
         this.context.setTransform(this.originalTransform);
@@ -263,6 +264,10 @@ export class CanvasControl {
     translateAmount(x, y) {
         this.context.translate(x, y);
         this._applyBoundaries();
+    }
+
+    _currentZoom() {
+        return this._absoluteTransform().a;
     }
 
     _zoomLevelForFit() {

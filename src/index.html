@@ -7,14 +7,30 @@
 <body>
 <div id="main-content">
     <div id="left-column">
-        <div id="frames-container"></div>
+        <div id="frame-controller">
+            <div class="tools">
+                <button class="add-blank-frame">
+                    <span class="fa-fw fa-lg fa-solid fa-plus"></span>
+                </button>
+                <button class="duplicate-frame">
+                    <span class="fa-fw fa-lg fa-solid fa-copy"></span>
+                </button>
+                <button class="delete-frame">
+                    <span class="fa-fw fa-lg fa-solid fa-trash-can"></span>
+                </button>
+            </div>
+            <div class="frame-template frame" hidden>
+                <span class="frame-index"></span>
+                <canvas class="absolute-center full"></canvas>
+            </div>
+            <div class="frame-list"></div>
+        </div>
     </div>
-    <div id="canvas-container">
+    <div id="middle-column">
         <canvas id="char-canvas" class="absolute-center full"></canvas>
         <canvas id="selection-canvas" class="absolute-center full"></canvas>
     </div>
     <div id="right-column">
-<!--        <img id="preview">-->
         <div id="preview-container">
             <canvas id="preview-canvas" class="absolute-center full draggable"></canvas>
         </div>

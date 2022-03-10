@@ -1,6 +1,5 @@
 import {Cell} from "./canvas.js";
 import $ from "jquery";
-import {frameController} from "./index.js";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -53,10 +52,7 @@ export function iterate2dArray(array, callback) {
 export function translate(array, cell, callback) {
     array.forEach((rowValues, rowIndex) => {
         rowValues.forEach((value, colIndex) => {
-            const row = rowIndex + cell.row;
-            const col = colIndex + cell.col;
-            const inBounds = row >= 0 && row < frameController.numRows && col >= 0 && col < frameController.numCols;
-            callback(inBounds ? value : null, row, col);
+            callback(value, rowIndex + cell.row, colIndex + cell.col);
         });
     });
 }
@@ -73,7 +69,8 @@ export function convertTextTo2dArray(text) {
 
 export function convert2dArrayToText(array) {
     return array.map(row => {
-        return row.map(char => char === null ? ' ' : char).join('')
+        // Convert empty cells to space char ' ' so when it is pasted to a text document the spacing is correct
+        return row.map(char => char === null || char === '' ? ' ' : char).join('')
     }).join('\n');
 }
 

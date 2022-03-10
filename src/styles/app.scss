@@ -1,77 +1,145 @@
+$fa-font-path: '~@fortawesome/fontawesome-free/webfonts'; // https://stackoverflow.com/a/63804707
+@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
+@import '~@fortawesome/fontawesome-free/scss/regular.scss';
+@import '~@fortawesome/fontawesome-free/scss/solid.scss';
+@import 'simplebar/dist/simplebar.css';
+
+//$highlight: #4C8BF5;
+$highlight: #f48225;
+$darkest: #202124;
+$darker: #282C2F;
+$dark: #323639;
+$light: #868889; // custom
+$lightest: #D6D6D7;
+
+$main-spacing: 1rem;
 
 html, body {
   height: 100%;
   width: 100%;
   margin: 0;
+
+  font-family: roboto, sans-serif;
 }
 
 #main-content {
   display: flex;
   flex-direction: row;
   height: 100%;
-  background: #222;
+  background: $darkest;
 }
 
 #left-column {
   min-width: 100px;
+  margin: $main-spacing;
+}
+
+#middle-column {
+  flex: 1; // Fill remaining width between left/right columns
+  margin: $main-spacing 0;
+
+  position: relative;
+  background: $lightest;
 }
 
 #right-column {
   min-width: 100px;
+  margin: $main-spacing;
 }
 
-#frames-container {
+$frame-controller-width: 130px;
+$frame-width: 100px;
+$frame-tools-height: 40px;
+$frame-tools-mb: 10px;
+$frame-border-width: 4px;
+
+#frame-controller {
+  height: 100%;
+  width: $frame-controller-width;
   display: flex;
   flex-direction: column;
-  //justify-content: center;
-  align-items: center;
 
-  margin-top: 1rem;
-  width: 200px;
+  .tools {
+    height: $frame-tools-height;
+    margin-bottom: 10px;
 
-  .frame {
-    width: 100px;
-    height: 100px;
-    position: relative;
-    margin-bottom: 1rem;
+    border-bottom: 1px solid $light;
+    box-sizing: border-box;
 
-    cursor: pointer;
-    border: 2px solid #555;
-    background: #999;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-    &.selected {
-      border: 2px solid yellow;
+  .frame-list {
+    height: calc(100vh - #{$frame-tools-height} - #{$frame-tools-mb} - 2 * #{$main-spacing});
+    overflow-y: auto;
+
+    width: 100%;
+
+    .simplebar-scrollbar::before {
+      background-color: $lightest;
+    }
+    .simplebar-scrollbar.simplebar-hover::before, &.simplebar-dragging .simplebar-scrollbar::before {
+      background-color: $light;
+      opacity: 0.8;
+    }
+    .simplebar-track.simplebar-vertical {
+      background-color: $dark
     }
   }
-}
 
-#canvas-container {
-  // Fill remaining space
-  flex: 1;
-  overflow: auto;
+  .frame {
+    flex: 1 0 auto;
 
-  //max-height: 500px;
-  //max-width: 500px;
+    position: relative;
+    width: $frame-width;
+    max-height: $frame-width;
+    height: $frame-width;
+    margin-bottom: 6px;
 
-  position: relative;
-  background: #ccc;
+    cursor: pointer;
+    border: $frame-border-width solid $light;
+    background: $lightest;
+
+    .frame-index {
+      display: flex;
+      position: absolute;
+      top: -#{$frame-border-width};
+      left: -#{$frame-border-width};
+      z-index: 2;
+      width: 30px;
+      height: 30px;
+      justify-content: center;
+      align-items: center;
+      background: $light;
+      color: white;
+    }
+
+    &.selected {
+      border-color: $highlight;
+      .frame-index {
+        color: black;
+        background: $highlight;
+      }
+    }
+  }
 }
 
 #preview-container {
   position: relative;
   height: 200px;
   width: 200px;
-  margin: 1rem;
 
-  background: #999;
-  border: 1px solid #999;
-  //background: url('../images/transparent-bg.png');
+  background: $lightest;
 }
 
 .full {
   width: 100%;
   height: 100%;
 }
+
 .absolute-center {
   position:absolute;
   left:50%;
@@ -92,5 +160,27 @@ html, body {
 
   &:active {
     cursor: grabbing;
+  }
+}
+
+// Hide annoying outline when keyboard is used (if you don't have a mouse, you're gunna have a bad time anyway)
+:focus-visible {
+  outline: none;
+}
+
+button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 2px;
+  padding: 8px;
+
+  &:hover {
+    background: $dark;
+  }
+
+  &:disabled {
+    color: #666;
   }
 }

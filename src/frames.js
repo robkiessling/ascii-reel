@@ -1,15 +1,32 @@
 import {create2dArray} from "./utilities.js";
 import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
-import {refresh} from "./index.js";
-
-const DEFAULT_DIMENSIONS = [20, 20];
+import {refresh, resize} from "./index.js";
+import SimpleBar from 'simplebar';
 
 export class FrameController {
     constructor($container) {
         this.$container = $container;
-        this._dimensions = [0,0];
-        this.loadFrames(); // default: one empty frame
+        this._init();
+    }
+
+    _init() {
+        this.$frames = this.$container.find('.frame-list');
+        this.$template = this.$container.find('.frame-template');
+
+        this.simpleBar = new SimpleBar(this.$frames.get(0), {
+            autoHide: false,
+            forceVisible: true
+        });
+        this.$frames = $(this.simpleBar.getContentElement());
+
+        this.$frames.off('click', '.frame').on('click', '.frame', evt => {
+            this.selectFrame($(evt.currentTarget).index());
+        });
+
+        this.$container.find('.add-blank-frame').off('click').on('click', () => this.addBlankFrame());
+        this.$container.find('.duplicate-frame').off('click').on('click', () => this.duplicateFrame());
+        this.$container.find('.delete-frame').off('click').on('click', () => this.deleteFrame());
     }
 
     get numCols() {
@@ -18,47 +35,28 @@ export class FrameController {
     get numRows() {
         return this._dimensions[1];
     }
-    get dimensions() {
-        return this._dimensions;
-    }
-    set dimensions(dimensions) {
-        this._dimensions = dimensions;
-        // TODO refresh
-    }
 
-    clearFrames() {
-        this.$container.empty();
-        this._frames = [];
-        this._frameIndex = 0;
-    }
+    rebuildFrames() {
+        const scrollTop = this.simpleBar.getScrollElement().scrollTop;
+        this.$frames.empty();
+        this._frames.forEach(frame => frame.build());
+        this.simpleBar.getScrollElement().scrollTop = scrollTop;
+        this.simpleBar.recalculate();
 
-    resize() {
-        this._frames.forEach(frame => frame.resize());
-    }
-
-    fullRefresh() {
-        this._frames.forEach(frame => {
-            frame.drawChars();
-            frame.toggleSelectedClass(frame === this.currentFrame);
-        });
+        this.$container.find('.delete-frame').prop('disabled', this._frames.length <= 1);
     }
 
     loadFrames(frames) {
-        this.clearFrames();
-
-        if (!frames || !frames.length) {
-            frames = [create2dArray(DEFAULT_DIMENSIONS[1], DEFAULT_DIMENSIONS[0], '')];
-        }
+        this.$frames.empty();
+        this._frames = [];
+        this._frameIndex = 0;
 
         const firstFrame = frames[0]; // We base the dimensions off of just the first frame
         this._dimensions = [firstFrame[0].length, firstFrame.length];
 
-        frames.forEach(chars => {
-            // Ensure all char arrays are bounded to same dimensions
-            chars.length = this.numRows;
-            chars.forEach(row => row.length = this.numCols);
-            this._frames.push(new Frame(this, chars));
-        });
+        frames.forEach(chars => this._frames.push(new Frame(this, chars)));
+
+        resize();
     }
 
     get currentFrame() {
@@ -66,27 +64,31 @@ export class FrameController {
         return this._frames[this._frameIndex];
     }
 
-    indexOf(frame) {
-        return this._frames.indexOf(frame);
-    }
-
     selectFrame(index) {
         this._frameIndex = index;
         refresh();
     }
 
-    copyFrame(index) {
+    addBlankFrame() {
+        const frame = new Frame(this, create2dArray(this.numRows, this.numCols, ''));
+        this._frames.splice(this._frameIndex + 1, 0, frame);
+        this.selectFrame(this._frameIndex + 1);
+    }
 
+    duplicateFrame() {
+        const frame = new Frame(this, $.extend(true, [], this.currentFrame.chars));
+        this._frames.splice(this._frameIndex + 1, 0, frame);
+        this.selectFrame(this._frameIndex + 1);
+    }
+
+    deleteFrame() {
+        this._frames.splice(this._frameIndex, 1);
+        this.selectFrame(Math.min(this._frameIndex, this._frames.length - 1));
     }
 
     reorderFrame(oldIndex, newIndex) {
 
     }
-
-    deleteFrame(index) {
-
-    }
-
 
 }
 
@@ -94,49 +96,46 @@ class Frame {
     constructor(frameController, chars) {
         this._chars = chars;
         this._frameController = frameController;
-        this._buildCanvas();
+
+        // Ensure chars are bounded to the dimensions
+        this._chars.length = this._frameController.numRows;
+        chars.forEach(row => row.length = this._frameController.numCols);
+    }
+
+    build() {
+        this.$frame = this._frameController.$template.clone();
+        this.$frame.removeClass('frame-template').appendTo(this._frameController.$frames).show();
+
+        this.$frame.toggleClass('selected', this === this._frameController.currentFrame);
+        this.$frame.find('.frame-index').html(this.$frame.index() + 1);
+
+        this._canvasController = new CanvasControl(this.$frame.find('canvas'), {});
+        this._canvasController.resize();
+        this._canvasController.zoomToFit();
+
+        this.drawChars();
     }
 
     get chars() {
         return this._chars;
     }
 
-    get index() {
-        return this._frameController.indexOf(this);
+    getChar(row, col) {
+        return this.isInBounds(row, col) ? this._chars[row][col] : null;
     }
 
-    getChar(row, col) {
-        return this._chars[row][col];
-    }
     updateChar(row, col, value) {
-        this._chars[row][col] = value;
-    }
-    resize() {
-        this._canvasController.resize();
-        this._canvasController.zoomToFit();
+        if (this.isInBounds(row, col)) {
+            this._chars[row][col] = value;
+        }
     }
 
     drawChars() {
         this._canvasController.drawChars(this._chars);
     }
 
-    toggleSelectedClass(isSelected) {
-        this.$frame.toggleClass('selected', isSelected);
-    }
-
-    _buildCanvas() {
-        this.$frame = $('<div>', {
-            'class': 'frame'
-        }).appendTo(this._frameController.$container);
-        const $canvas = $('<canvas>', {
-            'class': 'absolute-center full'
-        }).appendTo(this.$frame);
-
-        this._canvasController = new CanvasControl($canvas, {});
-
-        this.$frame.off('click').on('click', () => {
-            this._frameController.selectFrame(this.index);
-        });
+    isInBounds(row, col) {
+        return row >= 0 && row < this._frameController.numRows && col >= 0 && col < this._frameController.numCols;
     }
 
 }
