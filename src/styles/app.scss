@@ -12,7 +12,10 @@ $dark: #323639;
 $light: #868889; // custom
 $lightest: #D6D6D7;
 
-$main-spacing: 1rem;
+$main-spacing: 0.5rem;
+$right-col-width: 220px;
+$frame-size: 75px;
+$frame-border-width: 3px;
 
 html, body {
   height: 100%;
@@ -22,71 +25,56 @@ html, body {
   font-family: roboto, sans-serif;
 }
 
-#main-content {
+body {
   display: flex;
-  flex-direction: row;
-  height: 100%;
   background: $darkest;
 }
 
-#left-column {
-  min-width: 100px;
+#main-content {
+  flex: 1; // Fill remaining width
   margin: $main-spacing;
+
+  display: flex;
+
+  &.frames-on-bottom {
+    flex-direction: column;
+  }
+  &.frames-on-left {
+    flex-direction: row-reverse;
+  }
 }
 
-#middle-column {
-  flex: 1; // Fill remaining width between left/right columns
-  margin: $main-spacing 0;
+#side-content {
+  min-width: $right-col-width;
+  margin: $main-spacing $main-spacing $main-spacing 0;
+}
+
+#canvas-container {
+  background: $lightest;
+  flex: 1;
 
   position: relative;
-  background: $lightest;
 }
-
-#right-column {
-  min-width: 100px;
-  margin: $main-spacing;
-}
-
-$frame-controller-width: 130px;
-$frame-width: 100px;
-$frame-tools-height: 40px;
-$frame-tools-mb: 10px;
-$frame-border-width: 4px;
 
 #frame-controller {
-  height: 100%;
-  width: $frame-controller-width;
   display: flex;
-  flex-direction: column;
+  // Note: More flex settings get set below, based on frames-on-left vs. frames-on-bottom
 
   .tools {
-    height: $frame-tools-height;
-    margin-bottom: 10px;
-
-    border-bottom: 1px solid $light;
-    box-sizing: border-box;
-
     display: flex;
-    flex-direction: row;
-    justify-content: space-between;
     align-items: center;
   }
 
   .frame-list {
-    height: calc(100vh - #{$frame-tools-height} - #{$frame-tools-mb} - 2 * #{$main-spacing});
-    overflow-y: auto;
-
-    width: 100%;
-
+    .simplebar-content {
+      display: flex;
+    }
     .simplebar-scrollbar::before {
       background-color: $lightest;
     }
     .simplebar-scrollbar.simplebar-hover::before, &.simplebar-dragging .simplebar-scrollbar::before {
       background-color: $light;
-      opacity: 0.8;
-    }
-    .simplebar-track.simplebar-vertical {
-      background-color: $dark
+      opacity: 0.6;
     }
   }
 
@@ -94,10 +82,10 @@ $frame-border-width: 4px;
     flex: 1 0 auto;
 
     position: relative;
-    width: $frame-width;
-    max-height: $frame-width;
-    height: $frame-width;
-    margin-bottom: 6px;
+    width: $frame-size;
+    max-width: $frame-size;
+    height: $frame-size;
+    max-height: $frame-size;
 
     cursor: pointer;
     border: $frame-border-width solid $light;
@@ -109,8 +97,8 @@ $frame-border-width: 4px;
       top: -#{$frame-border-width};
       left: -#{$frame-border-width};
       z-index: 2;
-      width: 30px;
-      height: 30px;
+      width: 25px;
+      height: 25px;
       justify-content: center;
       align-items: center;
       background: $light;
@@ -127,10 +115,72 @@ $frame-border-width: 4px;
   }
 }
 
+.frames-on-left #frame-controller {
+  flex-direction: row;
+  margin-right: 1rem;
+
+  .tools {
+    flex-direction: column;
+    margin-right: 2px;
+
+    .section-header {
+      writing-mode: vertical-rl;
+      //transform: rotate(180deg);
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .frame-list {
+    min-width: $frame-size + 2 * $frame-border-width + 18px; // 18 for scrollbar
+    max-height: calc(100vh - 2 * #{$main-spacing}); // TODO This should be needed, but simplebar messes up without it
+
+    .simplebar-content {
+      flex-direction: column;
+    }
+    .simplebar-track.simplebar-vertical {
+      background-color: $dark;
+    }
+  }
+
+  .frame {
+    margin-bottom: 6px;
+  }
+}
+
+.frames-on-bottom #frame-controller {
+  flex-direction: column;
+  margin-top: 1rem;
+
+  .tools {
+    flex-direction: row;
+    margin-bottom: 2px;
+
+    .section-header {
+      margin-right: 1rem;
+    }
+  }
+
+  .frame-list {
+    min-height: $frame-size + 2 * $frame-border-width + 18px; // 18 for scrollbar
+
+    .simplebar-content {
+      flex-direction: row;
+    }
+    .simplebar-track.simplebar-horizontal {
+      background-color: $dark;
+    }
+  }
+
+  .frame {
+    margin-right: 6px;
+  }
+}
+
+
 #preview-container {
   position: relative;
-  height: 200px;
-  width: 200px;
+  height: $right-col-width;
+  width: $right-col-width;
 
   background: $lightest;
 }
@@ -168,13 +218,22 @@ $frame-border-width: 4px;
   outline: none;
 }
 
+.section-header {
+  color: $light;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.875rem;
+}
+
 button {
   background: none;
   border: none;
   color: white;
   cursor: pointer;
   border-radius: 2px;
-  padding: 8px;
+  padding: 6px 4px;
+  margin: 0 4px;
+  display: inline-block;
 
   &:hover {
     background: $dark;

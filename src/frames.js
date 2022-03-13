@@ -37,10 +37,15 @@ export class FrameController {
     }
 
     rebuildFrames() {
-        const scrollTop = this.simpleBar.getScrollElement().scrollTop;
+        const scrollElement = this.simpleBar.getScrollElement();
+        const scrollLeft = scrollElement.scrollLeft;
+        const scrollTop = scrollElement.scrollTop;
+
         this.$frames.empty();
         this._frames.forEach(frame => frame.build());
-        this.simpleBar.getScrollElement().scrollTop = scrollTop;
+
+        scrollElement.scrollLeft = scrollLeft;
+        scrollElement.scrollTop = scrollTop;
         this.simpleBar.recalculate();
 
         this.$container.find('.delete-frame').prop('disabled', this._frames.length <= 1);
