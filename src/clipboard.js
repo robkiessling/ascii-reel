@@ -4,7 +4,7 @@ import {convert2dArrayToText, convertTextTo2dArray, translate} from "./utilities
 // Necessary for clipboard read/write https://stackoverflow.com/a/61517521
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
-import {frameController, refresh} from "./index.js";
+import {timeline, refresh} from "./index.js";
 
 let cutCell = null;
 let copiedSelection = null; // 2d array
@@ -57,7 +57,7 @@ function pasteArray(array) {
     // If cut was used, remove old cut
     if (cutCell) {
         translate(array, cutCell, (value, r, c) => {
-            if (value !== null) { frameController.currentFrame.updateChar(r, c, ''); }
+            if (value !== null) { timeline.currentFrame.updateChar(r, c, ''); }
         })
         cutCell = null;
     }
@@ -65,19 +65,19 @@ function pasteArray(array) {
     if (array.length === 1 && array[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         selection.getSelectedCells().forEach(cell => {
-            frameController.currentFrame.updateChar(cell.row, cell.col, array[0][0])
+            timeline.currentFrame.updateChar(cell.row, cell.col, array[0][0])
         });
     }
     else {
         // Paste array once at topLeft of first selectionArea
         translate(array, selection.selectionAreas[0].topLeft, (value, r, c) => {
-            if (value !== null) { frameController.currentFrame.updateChar(r, c, value); }
+            if (value !== null) { timeline.currentFrame.updateChar(r, c, value); }
         });
 
         // Paste array at topLeft of each selectionArea TODO Has issues if your copiedSelection has multiple selectionAreas too
         // selection.selectionAreas.forEach(selectionArea => {
         //     translate(array, selectionArea.topLeft, (value, r, c) => {
-        //         if (value !== null) { frameController.currentFrame.updateChar(r, c, value); }
+        //         if (value !== null) { timeline.currentFrame.updateChar(r, c, value); }
         //     });
         // });
     }

@@ -1,7 +1,7 @@
 import $ from "jquery";
 import {create2dArray} from "./utilities.js";
 import {Cell, CellArea} from "./canvas.js";
-import {frameController, refresh} from "./index.js";
+import {timeline, refresh} from "./index.js";
 
 // The full selection is made up of 1 or more SelectionAreas. All SelectionAreas are highlighted in the editor.
 export let selectionAreas = [];
@@ -76,7 +76,7 @@ export function bindMouseToCanvas(canvasControl) {
  *
  * By default, returned values are the displayed chars. Can pass a @processor parameter to return a custom value.
  */
-export function getSelectedValues(processor = function(r, c) { return frameController.currentFrame.getChar(r, c); }) {
+export function getSelectedValues(processor = function(r, c) { return timeline.currentFrame.getChar(r, c); }) {
     if (!hasSelection()) {
         return [[]];
     }
@@ -185,7 +185,7 @@ class SelectionArea {
     }
 
     static drawableArea() {
-        return new SelectionArea(new Cell(0, 0), new Cell(frameController.numRows - 1, frameController.numCols - 1));
+        return new SelectionArea(new Cell(0, 0), new Cell(timeline.numRows - 1, timeline.numCols - 1));
     }
 
     set start(cell) {
@@ -225,12 +225,12 @@ class SelectionArea {
                 if (moveEnd && this.end.row <= 0) { return false; }
                 break;
             case 'right':
-                if (moveStart && this.start.col >= frameController.numCols - 1) { return false; }
-                if (moveEnd && this.end.col >= frameController.numCols - 1) { return false; }
+                if (moveStart && this.start.col >= timeline.numCols - 1) { return false; }
+                if (moveEnd && this.end.col >= timeline.numCols - 1) { return false; }
                 break;
             case 'down':
-                if (moveStart && this.start.row >= frameController.numRows - 1) { return false; }
-                if (moveEnd && this.end.row >= frameController.numRows - 1) { return false; }
+                if (moveStart && this.start.row >= timeline.numRows - 1) { return false; }
+                if (moveEnd && this.end.row >= timeline.numRows - 1) { return false; }
                 break;
             default:
                 console.warn(`Invalid direction: ${direction}`);

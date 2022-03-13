@@ -6,9 +6,9 @@ import './keyboard.js';
 import * as selection from './selection.js';
 import * as zoomEvents from './zoom_events.js';
 import './clipboard.js';
-import {FrameController} from "./frames.js";
+import {Timeline} from "./frames.js";
 
-export const frameController = new FrameController($('#frame-controller'));
+export const timeline = new Timeline($('#frame-controller'));
 const charCanvas = new CanvasControl($('#char-canvas'), {});
 const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 const previewCanvas = new CanvasControl($('#preview-canvas'), {});
@@ -22,7 +22,7 @@ export function resize() {
     charCanvas.resize();
     selectionCanvas.resize();
     previewCanvas.resize();
-    // Note: frameController frames will be resized during refresh() since they all have to be rebuilt
+    // Note: timeline frames will be resized during refresh() since they all have to be rebuilt
 
     previewCanvas.zoomToFit();
     refresh();
@@ -31,32 +31,32 @@ export function resize() {
 export function refresh(type = 'full') {
     switch(type) {
         case 'chars':
-            charCanvas.drawChars(frameController.currentFrame.chars);
-            previewCanvas.drawChars(frameController.currentFrame.chars);
-            frameController.currentFrame.drawChars();
+            charCanvas.drawChars(timeline.currentFrame.chars);
+            previewCanvas.drawChars(timeline.currentFrame.chars);
+            timeline.currentFrame.drawChars();
             break;
         case 'selection':
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'zoom':
-            charCanvas.drawChars(frameController.currentFrame.chars);
-            previewCanvas.drawChars(frameController.currentFrame.chars);
+            charCanvas.drawChars(timeline.currentFrame.chars);
+            previewCanvas.drawChars(timeline.currentFrame.chars);
             zoomEvents.updateWindow();
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'full':
-            charCanvas.drawChars(frameController.currentFrame.chars);
-            previewCanvas.drawChars(frameController.currentFrame.chars);
+            charCanvas.drawChars(timeline.currentFrame.chars);
+            previewCanvas.drawChars(timeline.currentFrame.chars);
             zoomEvents.updateWindow();
             selectionCanvas.highlightCells(selection.getSelectedCells());
-            frameController.rebuildFrames();
+            timeline.rebuildFrames();
             break;
         default:
             console.warn(`refresh("${type}") is not a valid type`);
     }
 }
 
-frameController.loadFrames([
+timeline.loadFrames([
     create2dArray(5, 10, () => randomPrintableChar()),
     create2dArray(30, 50, () => randomPrintableChar()),
     create2dArray(10, 20, () => randomPrintableChar()),

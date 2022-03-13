@@ -1,4 +1,4 @@
-import {frameController} from "./index.js";
+import {timeline} from "./index.js";
 import {iterate2dArray, roundForComparison} from "./utilities.js";
 
 const MONOSPACE_RATIO = 3/5;
@@ -395,7 +395,7 @@ export class Cell extends Rect {
         this._row = newValue;
         if (this._boundToDrawableArea) {
             if (this._row < 0) { this._row = 0; }
-            if (this._row > frameController.numRows - 1) { this._row = frameController.numRows - 1; }
+            if (this._row > timeline.numRows - 1) { this._row = timeline.numRows - 1; }
         }
     }
 
@@ -407,7 +407,7 @@ export class Cell extends Rect {
         this._col = newValue;
         if (this._boundToDrawableArea) {
             if (this._col < 0) { this._col = 0; }
-            if (this._col > frameController.numCols - 1) { this._col = frameController.numCols - 1; }
+            if (this._col > timeline.numCols - 1) { this._col = timeline.numCols - 1; }
         }
     }
 
@@ -436,7 +436,7 @@ export class CellArea extends Rect {
     }
 
     static drawableArea() {
-        return new CellArea(new Cell(0, 0), new Cell(frameController.numRows - 1, frameController.numCols - 1));
+        return new CellArea(new Cell(0, 0), new Cell(timeline.numRows - 1, timeline.numCols - 1));
     }
 
     get numRows() {

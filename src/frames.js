@@ -4,7 +4,7 @@ import $ from "jquery";
 import {refresh, resize} from "./index.js";
 import SimpleBar from 'simplebar';
 
-export class FrameController {
+export class Timeline {
     constructor($container) {
         this.$container = $container;
         this._init();
@@ -12,7 +12,7 @@ export class FrameController {
 
     _init() {
         this.$frames = this.$container.find('.frame-list');
-        this.$template = this.$container.find('.frame-template');
+        this.$frameTemplate = this.$container.find('.frame-template');
 
         this.simpleBar = new SimpleBar(this.$frames.get(0), {
             autoHide: false,
@@ -98,20 +98,20 @@ export class FrameController {
 }
 
 class Frame {
-    constructor(frameController, chars) {
+    constructor(timeline, chars) {
         this._chars = chars;
-        this._frameController = frameController;
+        this._timeline = timeline;
 
         // Ensure chars are bounded to the dimensions
-        this._chars.length = this._frameController.numRows;
-        chars.forEach(row => row.length = this._frameController.numCols);
+        this._chars.length = this._timeline.numRows;
+        chars.forEach(row => row.length = this._timeline.numCols);
     }
 
     build() {
-        this.$frame = this._frameController.$template.clone();
-        this.$frame.removeClass('frame-template').appendTo(this._frameController.$frames).show();
+        this.$frame = this._timeline.$frameTemplate.clone();
+        this.$frame.removeClass('frame-template').appendTo(this._timeline.$frames).show();
 
-        this.$frame.toggleClass('selected', this === this._frameController.currentFrame);
+        this.$frame.toggleClass('selected', this === this._timeline.currentFrame);
         this.$frame.find('.frame-index').html(this.$frame.index() + 1);
 
         this._canvasController = new CanvasControl(this.$frame.find('canvas'), {});
@@ -140,7 +140,7 @@ class Frame {
     }
 
     isInBounds(row, col) {
-        return row >= 0 && row < this._frameController.numRows && col >= 0 && col < this._frameController.numCols;
+        return row >= 0 && row < this._timeline.numRows && col >= 0 && col < this._timeline.numCols;
     }
 
 }
