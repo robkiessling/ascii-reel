@@ -1,4 +1,6 @@
 @import 'simplebar/dist/simplebar.css';
+@import 'jquery-ui/themes/base/core';
+@import 'jquery-ui/themes/base/sortable';
 
 //$highlight: #4C8BF5;
 $highlight: #f48225;
@@ -82,8 +84,8 @@ body {
   }
 
   .layer-list {
-    min-height: 100px;
-    max-height: 150px;
+    height: 150px;
+    //max-height: 150px;
 
     .simplebar-content {
       display: flex;
@@ -118,6 +120,12 @@ body {
 
     &.layer-template {
       display: none;
+    }
+
+    &.placeholder {
+      background: $dark;
+      border: $frame-border-width dashed $highlight;
+      height: 1.5rem;
     }
   }
 }
@@ -175,7 +183,13 @@ body {
     &.frame-template {
       display: none;
     }
+
+    &.placeholder {
+      background: $dark;
+      border: $frame-border-width dashed $highlight;
+    }
   }
+
 }
 
 .frames-on-left #frame-controller {

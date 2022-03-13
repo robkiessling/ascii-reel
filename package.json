@@ -46,6 +46,7 @@
     "core-js": "^3.21.1",
     "express": "^4.17.3",
     "jquery": "^3.6.0",
+    "jquery-ui": "^1.13.1",
     "regenerator-runtime": "^0.13.9",
     "remixicon": "^2.5.0",
     "simplebar": "^5.3.6"

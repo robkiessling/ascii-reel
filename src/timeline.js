@@ -3,6 +3,7 @@ import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
 import {refresh, resize} from "./index.js";
 import SimpleBar from 'simplebar';
+import 'jquery-ui/ui/widgets/sortable.js';
 
 export class Timeline {
     constructor($frameContainer, $layerContainer) {
@@ -22,12 +23,29 @@ export class Timeline {
         });
         this.$layers = $(this.layerSimpleBar.getContentElement());
 
+        let draggedIndex;
+        this.$layers.sortable({
+            axis: 'y',
+            placeholder: 'layer placeholder',
+            start: (event, ui) => {
+                draggedIndex = this._layerIndexFromDOM(ui.item.index());
+            },
+            update: (event, ui) => {
+                this._reorderLayer(draggedIndex, this._layerIndexFromDOM(ui.item.index()));
+            }
+        });
+
         this.$layers.off('click', '.layer').on('click', '.layer', evt => {
-            this._selectLayer((this._layers.length - 1) - $(evt.currentTarget).index());
+            this._selectLayer(this._layerIndexFromDOM($(evt.currentTarget).index()));
         });
 
         this.$layerContainer.find('.add-blank-layer').off('click').on('click', () => this._addBlankLayer());
         this.$layerContainer.find('.delete-layer').off('click').on('click', () => this._deleteLayer());
+    }
+
+    // Layers are sorted backwards in the DOM
+    _layerIndexFromDOM(index) {
+        return (this._layers.length - 1) - index;
     }
 
     _initFrames() {
@@ -40,6 +58,17 @@ export class Timeline {
         });
         this.$frames = $(this.frameSimpleBar.getContentElement());
 
+        let draggedIndex;
+        this.$frames.sortable({
+            axis: 'x', // TODO Won't work if frames on left
+            placeholder: 'frame placeholder',
+            start: (event, ui) => {
+                draggedIndex = ui.item.index();
+            },
+            update: (event, ui) => {
+                this._reorderFrame(draggedIndex, ui.item.index());
+            }
+        });
         this.$frames.off('click', '.frame').on('click', '.frame', evt => {
             this._selectFrame($(evt.currentTarget).index());
         });
@@ -165,6 +194,10 @@ export class Timeline {
         this._layers.splice(this._layerIndex, 1);
         this._selectLayer(Math.min(this._layerIndex, this._layers.length - 1));
     }
+    _reorderLayer(oldIndex, newIndex) {
+        this._layers.splice(newIndex, 0, this._layers.splice(oldIndex, 1)[0]);
+        this._selectLayer(newIndex);
+    }
 
     _selectFrame(index) {
         this._frameIndex = index;
@@ -203,7 +236,13 @@ export class Timeline {
     }
 
     _reorderFrame(oldIndex, newIndex) {
+        this._layers.forEach(layer => {
+            layer.reorderCel(oldIndex, newIndex);
+        });
 
+        this._frames.splice(newIndex, 0, this._frames.splice(oldIndex, 1)[0]);
+
+        this._selectFrame(newIndex);
     }
 }
 
@@ -271,6 +310,10 @@ class Layer {
 
     get numCels() {
         return this._cels.length;
+    }
+
+    reorderCel(oldIndex, newIndex) {
+        this._cels.splice(newIndex, 0, this._cels.splice(oldIndex, 1)[0]);
     }
 
     celAtFrameIndex(index) {
