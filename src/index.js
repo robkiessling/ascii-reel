@@ -6,7 +6,7 @@ import './keyboard.js';
 import * as selection from './selection.js';
 import * as zoomEvents from './zoom_events.js';
 import './clipboard.js';
-import {Timeline} from "./frames.js";
+import {Timeline} from "./timeline.js";
 
 export const timeline = new Timeline($('#frame-controller'));
 const charCanvas = new CanvasControl($('#char-canvas'), {});
@@ -31,22 +31,22 @@ export function resize() {
 export function refresh(type = 'full') {
     switch(type) {
         case 'chars':
-            charCanvas.drawChars(timeline.currentFrame.chars);
-            previewCanvas.drawChars(timeline.currentFrame.chars);
+            charCanvas.drawChars(timeline.currentCel.chars);
+            previewCanvas.drawChars(timeline.currentCel.chars);
             timeline.currentFrame.drawChars();
             break;
         case 'selection':
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'zoom':
-            charCanvas.drawChars(timeline.currentFrame.chars);
-            previewCanvas.drawChars(timeline.currentFrame.chars);
+            charCanvas.drawChars(timeline.currentCel.chars);
+            previewCanvas.drawChars(timeline.currentCel.chars);
             zoomEvents.updateWindow();
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'full':
-            charCanvas.drawChars(timeline.currentFrame.chars);
-            previewCanvas.drawChars(timeline.currentFrame.chars);
+            charCanvas.drawChars(timeline.currentCel.chars);
+            previewCanvas.drawChars(timeline.currentCel.chars);
             zoomEvents.updateWindow();
             selectionCanvas.highlightCells(selection.getSelectedCells());
             timeline.rebuildFrames();
@@ -56,11 +56,19 @@ export function refresh(type = 'full') {
     }
 }
 
-timeline.loadFrames([
-    create2dArray(5, 10, () => randomPrintableChar()),
-    create2dArray(30, 50, () => randomPrintableChar()),
-    create2dArray(10, 20, () => randomPrintableChar()),
+// timeline.loadFrames([
+//     create2dArray(5, 10, () => randomPrintableChar()),
+//     create2dArray(30, 50, () => randomPrintableChar()),
+//     create2dArray(10, 20, () => randomPrintableChar()),
+// ]);
+timeline.loadLayers([
+    [
+        create2dArray(5, 10, () => randomPrintableChar()),
+        create2dArray(30, 50, () => randomPrintableChar()),
+        create2dArray(10, 20, () => randomPrintableChar()),
+    ]
 ])
+
 // loadChars(create2dArray(30, 50, (row, col) => {
 //     return row % 10 === 0 && col % 10 === 0 ? 'X' : '';
 // }));

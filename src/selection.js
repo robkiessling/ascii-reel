@@ -76,7 +76,7 @@ export function bindMouseToCanvas(canvasControl) {
  *
  * By default, returned values are the displayed chars. Can pass a @processor parameter to return a custom value.
  */
-export function getSelectedValues(processor = function(r, c) { return timeline.currentFrame.getChar(r, c); }) {
+export function getSelectedValues(processor = function(r, c) { return timeline.currentCel.getChar(r, c); }) {
     if (!hasSelection()) {
         return [[]];
     }

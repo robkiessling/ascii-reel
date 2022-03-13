@@ -66,14 +66,14 @@ $(document).keydown(function(e) {
         case 'Backspace':
         case 'Delete':
             selection.getSelectedCells().forEach(cell => {
-                timeline.currentFrame.updateChar(cell.row, cell.col, '');
+                timeline.currentCel.updateChar(cell.row, cell.col, '');
             });
             refresh('chars');
             break;
         default:
             if (producesText(code)) {
                 selection.getSelectedCells().forEach(cell => {
-                    timeline.currentFrame.updateChar(cell.row, cell.col, char);
+                    timeline.currentCel.updateChar(cell.row, cell.col, char);
                 });
                 refresh('chars');
             }
