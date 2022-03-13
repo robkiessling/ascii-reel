@@ -41,6 +41,14 @@ export function iterate2dArray(array, callback) {
     }
 }
 
+// Used for converting an array into a new object (similar to ruby's each_with_object method)
+export function eachWithObject(array, initialObject = {}, callback) {
+    return array.reduce((obj, element) => {
+        callback(element, obj);
+        return obj;
+    }, initialObject);
+}
+
 /**
  * Translates a 2d array as if it was positioned at a Cell. The callback value will be null for parts of the array
  * that go out of the frame.

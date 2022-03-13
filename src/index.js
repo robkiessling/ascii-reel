@@ -1,5 +1,6 @@
 import $ from "jquery";
 import './styles/app.scss'
+import 'remixicon/fonts/remixicon.css';
 import {create2dArray, randomPrintableChar} from "./utilities.js";
 import {CanvasControl} from './canvas.js';
 import './keyboard.js';
@@ -62,14 +63,20 @@ export function refresh(type = 'full') {
 //     create2dArray(10, 20, () => randomPrintableChar()),
 // ]);
 timeline.loadLayers([
-    [
-        create2dArray(5, 10, () => randomPrintableChar()),
-        create2dArray(2, 5, () => randomPrintableChar()),
-        create2dArray(5, 10, () => randomPrintableChar()),
-    ],
-    [
-        create2dArray(2, 5, 'x')
-    ]
+    {
+        name: 'Bottom layer',
+        cels: [
+            create2dArray(5, 10, () => randomPrintableChar()),
+            create2dArray(2, 5, () => randomPrintableChar()),
+            create2dArray(5, 10, () => randomPrintableChar()),
+        ]
+    },
+    {
+        name: 'Top Layer',
+        cels: [
+            create2dArray(2, 5, 'x')
+        ]
+    }
 ])
 
 // loadChars(create2dArray(30, 50, (row, col) => {

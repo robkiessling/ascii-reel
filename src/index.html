@@ -5,7 +5,7 @@
     <title>ASCII Art Maker</title>
 </head>
 <body>
-    <div id="main-content" class="frames-on-left">
+    <div id="main-content" class="frames-on-bottom">
         <div id="canvas-container">
             <canvas id="char-canvas" class="absolute-center full"></canvas>
             <canvas id="selection-canvas" class="absolute-center full"></canvas>
@@ -14,13 +14,16 @@
             <div class="tools">
                 <span class="section-header">Frames</span>
                 <button class="add-blank-frame">
-                    <span class="fa-fw fa-lg fa-solid fa-plus"></span>
+                    <span class="ri-add-line ri-fw"></span>
                 </button>
                 <button class="duplicate-frame">
-                    <span class="fa-fw fa-lg fa-solid fa-copy"></span>
+                    <span class="ri-file-copy-2-line ri-fw"></span>
                 </button>
                 <button class="delete-frame">
-                    <span class="fa-fw fa-lg fa-solid fa-trash-can"></span>
+                    <span class="ri-delete-bin-line ri-fw"></span>
+                </button>
+                <button class="toggle-onion">
+                    <span class="ri-send-backward ri-fw"></span>
                 </button>
             </div>
             <div class="frame-template frame">
@@ -39,11 +42,14 @@
             <div class="tools">
                 <span class="section-header">Layers</span>
                 <button class="add-blank-layer">
-                    <span class="fa-fw fa-lg fa-solid fa-plus"></span>
+                    <span class="ri-add-line ri-fw"></span>
+                </button>
+                <button class="delete-layer">
+                    <span class="ri-delete-bin-line ri-fw"></span>
                 </button>
             </div>
             <div class="layer-template layer">
-                <span>Layer <span class="layer-index"></span></span>
+                <span class="layer-name"></span>
             </div>
             <div class="layer-list"></div>
         </div>

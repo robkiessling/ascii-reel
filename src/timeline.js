@@ -1,4 +1,4 @@
-import {create2dArray, iterate2dArray} from "./utilities.js";
+import {create2dArray, eachWithObject, iterate2dArray} from "./utilities.js";
 import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
 import {refresh, resize} from "./index.js";
@@ -25,6 +25,9 @@ export class Timeline {
         this.$layers.off('click', '.layer').on('click', '.layer', evt => {
             this._selectLayer((this._layers.length - 1) - $(evt.currentTarget).index());
         });
+
+        this.$layerContainer.find('.add-blank-layer').off('click').on('click', () => this._addBlankLayer());
+        this.$layerContainer.find('.delete-layer').off('click').on('click', () => this._deleteLayer());
     }
 
     _initFrames() {
@@ -52,17 +55,24 @@ export class Timeline {
     get numRows() {
         return this._dimensions[1];
     }
+    get numFrames() {
+        // Note: This doesn't return this._frames.length, since this is used when generating how many frames to make
+        return this._layers[0].numCels;
+    }
 
     loadLayers(layers) {
-        this._normalizeLayers(layers);
+        // this._normalizeLayers(layers);
+        const firstLayerCels = layers[0].cels;
+        const firstCel = firstLayerCels[0]; // We base the dimensions off of the first cel received
+        this._dimensions = [firstCel[0].length, firstCel.length];
 
         this._layers = [];
         this._layerIndex = 0;
-        layers.forEach(celData => this._layers.push(new Layer(this, celData)));
+        layers.forEach((data, i) => this._layers.push(new Layer(this, data, i !== 0)));
 
         this._frames = [];
         this._frameIndex = 0;
-        layers[0].forEach(() => this._frames.push(new Frame(this)));
+        firstLayerCels.forEach(() => this._frames.push(new Frame(this)));
 
         this.rebuildLayers();
         // Not calling rebuildFrames; resize will handle it
@@ -142,7 +152,18 @@ export class Timeline {
         refresh();
     }
     _addBlankLayer() {
-        
+        const layerIndex = this._layerIndex + 1; // Add blank layer right after current layer
+
+        this._layers.splice(layerIndex, 0, new Layer(this, {
+            name: `Layer ${this._layers.length + 1}`,
+            cels: []
+        }));
+
+        this._selectLayer(layerIndex);
+    }
+    _deleteLayer() {
+        this._layers.splice(this._layerIndex, 1);
+        this._selectLayer(Math.min(this._layerIndex, this._layers.length - 1));
     }
 
     _selectFrame(index) {
@@ -184,41 +205,56 @@ export class Timeline {
     _reorderFrame(oldIndex, newIndex) {
 
     }
-
-    _normalizeLayers(layers) {
-        const firstLayer = layers[0]; // We base the number of cels off of the first layer received
-        const firstCel = firstLayer[0]; // We base the dimensions off of the first cel received
-        this._dimensions = [firstCel[0].length, firstCel.length];
-
-        const numCels = firstLayer.length;
-
-        let i, cel, row, col;
-        layers.forEach(layer => {
-            for (i = 0; i < numCels; i++) {
-                if (!layer[i]) { layer[i] = [[]]; } // Ensure cel exists
-                cel = layer[i];
-                for (row = 0; row < this.numRows; row++) {
-                    if (!cel[row]) { cel[row] = []; } // Ensure row exists
-                    for (col = 0; col < this.numCols; col++) {
-                        if (cel[row][col] === undefined) { cel[row][col] = '' } // Ensure col exists
-                    }
-                }
-                cel.length = this.numRows; // Limit number of rows
-                cel.forEach(row => row.length = this.numCols); // Limit number of cols
-            }
-            layer.length = numCels; // Limit number of cels
-        });
-    }
-
 }
 
+/**
+ * Example data:
+ * {
+ *     name: 'My layer',
+ *     opacity: 1.0,
+ *     visible: true,
+ *     connectionType: 'TODO',
+ *     cels: [
+ *         [['a']],
+ *         [['b']]
+ *     ]
+ * }
+ */
+const LAYER_ATTRIBUTES = ['name', 'opacity', 'visible', 'connectionType'];
 class Layer {
-    constructor(timeline, celData) {
+    constructor(timeline, data, normalizeCels = true) {
         this._timeline = timeline;
-
-        this._cels = celData.map(chars => {
+        this._cels = (normalizeCels ? this._normalizeCels(data.cels) : data.cels).map(chars => {
             return new Cel(this._timeline, chars);
         });
+        this._attributes = eachWithObject(LAYER_ATTRIBUTES, {}, (attribute, obj) => obj[attribute] = data[attribute]);
+    }
+
+    _normalizeCels(cels) {
+        if (!cels) { cels = []; } // Ensure cels exist
+
+        let cel, row, col;
+        for (let i = 0; i < this._timeline.numFrames; i++) {
+            if (!cels[i]) { cels[i] = [[]]; } // Ensure cel exists
+            cel = cels[i];
+            for (row = 0; row < this._timeline.numRows; row++) {
+                if (!cel[row]) { cel[row] = []; } // Ensure row exists
+                for (col = 0; col < this._timeline.numCols; col++) {
+                    if (cel[row][col] === undefined) { cel[row][col] = ''; } // Ensure col exists
+                }
+            }
+            cel.length = this._timeline.numRows; // Limit number of rows
+            cel.forEach(row => row.length = this._timeline.numCols); // Limit number of cols
+        }
+        cels.length = this._timeline.numFrames; // Limit number of cels
+
+        return cels;
+    }
+
+    export() {
+        let data = $.extend(true, {}, this._attributes);
+        data.cels = this._cels.map(cel => cel.chars);
+        return data;
     }
 
     build() {
@@ -226,11 +262,15 @@ class Layer {
         this._$container.removeClass('layer-template').prependTo(this._timeline.$layers).show();
 
         this._$container.toggleClass('selected', this === this._timeline.currentLayer);
-        this._$container.find('.layer-index').html(this.index + 1);
+        this._$container.find('.layer-name').html(this._attributes.name);
     }
 
     get index() {
         return this._timeline._layers.indexOf(this);
+    }
+
+    get numCels() {
+        return this._cels.length;
     }
 
     celAtFrameIndex(index) {
@@ -285,10 +325,6 @@ class Cel {
     constructor(timeline, chars) {
         this._timeline = timeline;
         this._chars = chars;
-
-        // Ensure chars are bounded to the dimensions
-        this._chars.length = this._timeline.numRows;
-        chars.forEach(row => row.length = this._timeline.numCols);
     }
 
     clone() {

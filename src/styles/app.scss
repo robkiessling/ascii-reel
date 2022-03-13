@@ -1,7 +1,3 @@
-$fa-font-path: '~@fortawesome/fontawesome-free/webfonts'; // https://stackoverflow.com/a/63804707
-@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
-@import '~@fortawesome/fontawesome-free/scss/regular.scss';
-@import '~@fortawesome/fontawesome-free/scss/solid.scss';
 @import 'simplebar/dist/simplebar.css';
 
 //$highlight: #4C8BF5;
@@ -110,6 +106,7 @@ body {
     box-sizing: border-box;
 
     font-size: 0.875rem;
+    cursor: pointer;
 
     &.selected {
       border-color: $highlight;
