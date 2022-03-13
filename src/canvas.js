@@ -15,17 +15,18 @@ const GRID = false;
 const GRID_WIDTH = 0.25;
 const GRID_COLOR = '#fff';
 
-const WINDOW_BORDER = '#f48225'; // TODO Get this from scss?
+// const WINDOW_BORDER = '#f48225'; // TODO Get this from scss?
+const WINDOW_BORDER = '#4c8bf5';
 const WINDOW_WIDTH = 5;
 
 // const SELECTION_COLOR = '#0066cc88';
 const SELECTION_COLOR = '#4c8bf588';
 const TEXT_COLOR = '#fff';
 
-const CHAR_BACKGROUND = false; // false => transparent (will rarely NOT be transparent; only when you need to see spaces)
-const CANVAS_BACKGROUND = false;//'#4c4c4c'; // false => transparent
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
+const CHAR_BACKGROUND = CHECKERBOARD_A; // false => transparent. We use non-transparent so you can see spaces
+const CANVAS_BACKGROUND = false; // false => transparent
 
 const ZOOM_BOUNDARIES = [0.25, 30];
 const ZOOM_MARGIN = 1.2;

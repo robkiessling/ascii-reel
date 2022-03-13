@@ -14,7 +14,7 @@ $lightest: #D6D6D7;
 
 $main-spacing: 0.5rem;
 $right-col-width: 220px;
-$frame-size: 75px;
+$frame-size: 85px;
 $frame-border-width: 3px;
 
 html, body {
@@ -56,6 +56,75 @@ body {
   position: relative;
 }
 
+.simplebar-scrollbar::before {
+  background-color: $lightest;
+}
+
+.simplebar-scrollbar.simplebar-hover::before, .simplebar-dragging .simplebar-scrollbar::before {
+  background-color: $light;
+  opacity: 0.6;
+}
+
+#layer-controller {
+  display: flex;
+  flex-direction: column;
+
+  //border: 1px solid $light;
+  //margin-top: 1rem;
+
+  .tools {
+    display: flex;
+    align-items: center;
+
+    flex-direction: row;
+    //padding: 0.25rem 0.5rem;
+    //margin-bottom: 2px;
+
+    .section-header {
+      margin-right: 1rem;
+    }
+  }
+
+  .layer-list {
+    min-height: 100px;
+    max-height: 150px;
+
+    .simplebar-content {
+      display: flex;
+      flex-direction: column;
+    }
+    .simplebar-track.simplebar-vertical {
+      background-color: $dark;
+    }
+  }
+
+  .layer {
+    display: flex;
+
+    max-width: $right-col-width - 18px; // 18 for scrollbar
+    padding: 2px;
+
+    background: $dark;
+    color: white;
+    border: 2px solid $light;
+    box-sizing: border-box;
+
+    font-size: 0.875rem;
+
+    &.selected {
+      border-color: $highlight;
+      .frame-index {
+        color: black;
+        background: $highlight;
+      }
+    }
+
+    &.layer-template {
+      display: none;
+    }
+  }
+}
+
 #frame-controller {
   display: flex;
   // Note: More flex settings get set below, based on frames-on-left vs. frames-on-bottom
@@ -68,13 +137,6 @@ body {
   .frame-list {
     .simplebar-content {
       display: flex;
-    }
-    .simplebar-scrollbar::before {
-      background-color: $lightest;
-    }
-    .simplebar-scrollbar.simplebar-hover::before, &.simplebar-dragging .simplebar-scrollbar::before {
-      background-color: $light;
-      opacity: 0.6;
     }
   }
 
@@ -111,6 +173,10 @@ body {
         color: black;
         background: $highlight;
       }
+    }
+
+    &.frame-template {
+      display: none;
     }
   }
 }
@@ -223,6 +289,11 @@ body {
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 0.875rem;
+}
+
+hr {
+  border-color: $lightest !important;
+  margin: 0.75rem 0;
 }
 
 button {

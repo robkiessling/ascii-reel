@@ -1,32 +1,49 @@
-import {create2dArray} from "./utilities.js";
+import {create2dArray, iterate2dArray} from "./utilities.js";
 import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
 import {refresh, resize} from "./index.js";
 import SimpleBar from 'simplebar';
 
 export class Timeline {
-    constructor($container) {
-        this.$container = $container;
-        this._init();
+    constructor($frameContainer, $layerContainer) {
+        this.$frameContainer = $frameContainer;
+        this.$layerContainer = $layerContainer;
+        this._initLayers();
+        this._initFrames();
     }
 
-    _init() {
-        this.$frames = this.$container.find('.frame-list');
-        this.$frameTemplate = this.$container.find('.frame-template');
+    _initLayers() {
+        this.$layers = this.$layerContainer.find('.layer-list');
+        this.$layerTemplate = this.$layerContainer.find('.layer-template');
 
-        this.simpleBar = new SimpleBar(this.$frames.get(0), {
+        this.layerSimpleBar = new SimpleBar(this.$layers.get(0), {
             autoHide: false,
             forceVisible: true
         });
-        this.$frames = $(this.simpleBar.getContentElement());
+        this.$layers = $(this.layerSimpleBar.getContentElement());
+
+        this.$layers.off('click', '.layer').on('click', '.layer', evt => {
+            this._selectLayer((this._layers.length - 1) - $(evt.currentTarget).index());
+        });
+    }
+
+    _initFrames() {
+        this.$frames = this.$frameContainer.find('.frame-list');
+        this.$frameTemplate = this.$frameContainer.find('.frame-template');
+
+        this.frameSimpleBar = new SimpleBar(this.$frames.get(0), {
+            autoHide: false,
+            forceVisible: true
+        });
+        this.$frames = $(this.frameSimpleBar.getContentElement());
 
         this.$frames.off('click', '.frame').on('click', '.frame', evt => {
             this._selectFrame($(evt.currentTarget).index());
         });
 
-        this.$container.find('.add-blank-frame').off('click').on('click', () => this._addBlankFrame());
-        this.$container.find('.duplicate-frame').off('click').on('click', () => this._duplicateFrame());
-        this.$container.find('.delete-frame').off('click').on('click', () => this._deleteFrame());
+        this.$frameContainer.find('.add-blank-frame').off('click').on('click', () => this._addBlankFrame());
+        this.$frameContainer.find('.duplicate-frame').off('click').on('click', () => this._duplicateFrame());
+        this.$frameContainer.find('.delete-frame').off('click').on('click', () => this._deleteFrame());
     }
 
     get numCols() {
@@ -37,9 +54,7 @@ export class Timeline {
     }
 
     loadLayers(layers) {
-        const firstLayer = layers[0]; // We base frames off of the first layer received
-        const firstCel = firstLayer[0]; // We base the dimensions off of the first cel received
-        this._dimensions = [firstCel[0].length, firstCel.length];
+        this._normalizeLayers(layers);
 
         this._layers = [];
         this._layerIndex = 0;
@@ -47,13 +62,28 @@ export class Timeline {
 
         this._frames = [];
         this._frameIndex = 0;
-        firstLayer.forEach(() => this._frames.push(new Frame(this)));
+        layers[0].forEach(() => this._frames.push(new Frame(this)));
 
+        this.rebuildLayers();
+        // Not calling rebuildFrames; resize will handle it
         resize();
     }
 
+    rebuildLayers() {
+        const scrollElement = this.layerSimpleBar.getScrollElement();
+        const scrollTop = scrollElement.scrollTop;
+
+        this.$layers.empty();
+        this._layers.forEach(layer => layer.build());
+
+        scrollElement.scrollTop = scrollTop;
+        this.layerSimpleBar.recalculate();
+
+        this.$frameContainer.find('.delete-frame').prop('disabled', this._layers.length <= 1);
+    }
+
     rebuildFrames() {
-        const scrollElement = this.simpleBar.getScrollElement();
+        const scrollElement = this.frameSimpleBar.getScrollElement();
         const scrollLeft = scrollElement.scrollLeft;
         const scrollTop = scrollElement.scrollTop;
 
@@ -62,9 +92,9 @@ export class Timeline {
 
         scrollElement.scrollLeft = scrollLeft;
         scrollElement.scrollTop = scrollTop;
-        this.simpleBar.recalculate();
+        this.frameSimpleBar.recalculate();
 
-        this.$container.find('.delete-frame').prop('disabled', this._frames.length <= 1);
+        this.$frameContainer.find('.delete-frame').prop('disabled', this._frames.length <= 1);
     }
 
     get currentLayer() {
@@ -74,18 +104,50 @@ export class Timeline {
         return this._frames[this._frameIndex];
     }
     get currentCel() {
-        return this.currentLayer.cels[this._frameIndex];
+        return this.currentLayer.celAtFrameIndex(this._frameIndex);
     }
 
     celForFrameIndex(frameIndex) { // assuming current layer
-        return this.currentLayer.cels[frameIndex];
+        return this.currentLayer.celAtFrameIndex(frameIndex);
     }
     celForLayerIndex(layerIndex) { // assuming current frame
-        return this._layers[layerIndex].cels[this._frameIndex];
+        return this._layers[layerIndex].celAtFrameIndex(this._frameIndex);
+    }
+    
+    get layeredChars() {
+        let chars;
+
+        this._layers.forEach((layer, index) => {
+            const celChars = layer.celAtFrameIndex(this._frameIndex).chars;
+
+            if (index === 0) {
+                chars = $.extend(true, [], celChars);
+            }
+            else {
+                iterate2dArray(celChars, (value, cell) => {
+                    // Only overwriting char if it is not blank
+                    if (value !== '') {
+                        chars[cell.row][cell.col] = value;
+                    }
+                });
+            }
+        });
+
+        return chars;
+    }
+    
+    _selectLayer(index) {
+        this._layerIndex = index;
+        this.rebuildLayers();
+        refresh();
+    }
+    _addBlankLayer() {
+        
     }
 
     _selectFrame(index) {
         this._frameIndex = index;
+        // Not calling rebuildFrames; refresh will handle it
         refresh();
     }
 
@@ -123,6 +185,31 @@ export class Timeline {
 
     }
 
+    _normalizeLayers(layers) {
+        const firstLayer = layers[0]; // We base the number of cels off of the first layer received
+        const firstCel = firstLayer[0]; // We base the dimensions off of the first cel received
+        this._dimensions = [firstCel[0].length, firstCel.length];
+
+        const numCels = firstLayer.length;
+
+        let i, cel, row, col;
+        layers.forEach(layer => {
+            for (i = 0; i < numCels; i++) {
+                if (!layer[i]) { layer[i] = [[]]; } // Ensure cel exists
+                cel = layer[i];
+                for (row = 0; row < this.numRows; row++) {
+                    if (!cel[row]) { cel[row] = []; } // Ensure row exists
+                    for (col = 0; col < this.numCols; col++) {
+                        if (cel[row][col] === undefined) { cel[row][col] = '' } // Ensure col exists
+                    }
+                }
+                cel.length = this.numRows; // Limit number of rows
+                cel.forEach(row => row.length = this.numCols); // Limit number of cols
+            }
+            layer.length = numCels; // Limit number of cels
+        });
+    }
+
 }
 
 class Layer {
@@ -134,8 +221,20 @@ class Layer {
         });
     }
 
-    get cels() {
-        return this._cels;
+    build() {
+        this._$container = this._timeline.$layerTemplate.clone();
+        this._$container.removeClass('layer-template').prependTo(this._timeline.$layers).show();
+
+        this._$container.toggleClass('selected', this === this._timeline.currentLayer);
+        this._$container.find('.layer-index').html(this.index + 1);
+    }
+
+    get index() {
+        return this._timeline._layers.indexOf(this);
+    }
+
+    celAtFrameIndex(index) {
+        return this._cels[index];
     }
 
     addCel(index, cel) {
@@ -144,6 +243,38 @@ class Layer {
 
     deleteCel(index) {
         this._cels.splice(index, 1);
+    }
+}
+
+
+/**
+ * A Frame is the set of cels for all layers in a specific time
+ */
+class Frame {
+    constructor(timeline) {
+        this._timeline = timeline;
+    }
+
+    build() {
+        this._$container = this._timeline.$frameTemplate.clone();
+        this._$container.removeClass('frame-template').appendTo(this._timeline.$frames).show();
+
+        this._$container.toggleClass('selected', this === this._timeline.currentFrame);
+        this._$container.find('.frame-index').html(this.index + 1);
+
+        this._canvasController = new CanvasControl(this._$container.find('canvas'), {});
+        this._canvasController.resize();
+        this._canvasController.zoomToFit();
+
+        this.drawChars();
+    }
+
+    get index() {
+        return this._timeline._frames.indexOf(this);
+    }
+
+    drawChars() {
+        this._canvasController.drawChars(this._timeline.celForFrameIndex(this.index).chars);
     }
 }
 
@@ -180,36 +311,5 @@ class Cel {
 
     _isInBounds(row, col) {
         return row >= 0 && row < this._timeline.numRows && col >= 0 && col < this._timeline.numCols;
-    }
-}
-
-/**
- * A Frame is the set of cels for all layers in a specific time
- */
-class Frame {
-    constructor(timeline) {
-        this._timeline = timeline;
-    }
-
-    build() {
-        this.$frame = this._timeline.$frameTemplate.clone();
-        this.$frame.removeClass('frame-template').appendTo(this._timeline.$frames).show();
-
-        this.$frame.toggleClass('selected', this === this._timeline.currentFrame);
-        this.$frame.find('.frame-index').html(this.index + 1);
-
-        this._canvasController = new CanvasControl(this.$frame.find('canvas'), {});
-        this._canvasController.resize();
-        this._canvasController.zoomToFit();
-
-        this.drawChars();
-    }
-
-    get index() {
-        return this.$frame.index();
-    }
-
-    drawChars() {
-        this._canvasController.drawChars(this._timeline.celForFrameIndex(this.index).chars);
     }
 }
