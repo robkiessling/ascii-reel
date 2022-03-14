@@ -8,6 +8,7 @@ import * as selection from './selection.js';
 import * as zoomEvents from './zoom_events.js';
 import './clipboard.js';
 import {Timeline} from "./timeline.js";
+import * as state from "./state.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 const charCanvas = new CanvasControl($('#char-canvas'), {});
@@ -18,6 +19,15 @@ selection.bindMouseToCanvas(selectionCanvas);
 zoomEvents.setup(selectionCanvas, previewCanvas, [selectionCanvas, charCanvas]);
 
 $(window).off('resize:debounced').on('resize:debounced', resize);
+
+function load(data) {
+    state.loadState(data);
+
+    timeline.reset();
+    timeline.rebuildLayers();
+    // Don't need to call timeline.rebuildFrames(); resize will handle it
+    resize();
+}
 
 export function resize() {
     charCanvas.resize();
@@ -34,7 +44,7 @@ export function refresh(type = 'full') {
         case 'chars':
             charCanvas.drawChars(timeline.currentCel.chars);
             previewCanvas.drawChars(timeline.layeredChars);
-            timeline.currentFrame.drawChars();
+            timeline.currentFrameComponent.redrawChars();
             break;
         case 'selection':
             selectionCanvas.highlightCells(selection.getSelectedCells());
@@ -57,27 +67,28 @@ export function refresh(type = 'full') {
     }
 }
 
-// timeline.loadFrames([
-//     create2dArray(5, 10, () => randomPrintableChar()),
-//     create2dArray(30, 50, () => randomPrintableChar()),
-//     create2dArray(10, 20, () => randomPrintableChar()),
-// ]);
-timeline.loadLayers([
-    {
-        name: 'Bottom layer',
-        cels: [
-            create2dArray(5, 10, () => randomPrintableChar()),
-            create2dArray(2, 5, () => randomPrintableChar()),
-            create2dArray(5, 10, () => randomPrintableChar()),
-        ]
+load({
+    config: {
+        dimensions: [10, 5]
     },
-    {
-        name: 'Top Layer',
-        cels: [
-            create2dArray(2, 5, 'x')
-        ]
-    }
-])
+    layers: [
+        { id: 1, name: 'Bottom Layer', opacity: 1 },
+        { id: 2, name: 'Top Layer', opacity: 1 }
+    ],
+    frames: [
+        { id: 1, duration: 0.5 },
+        { id: 2, duration: 0.5 },
+        { id: 3, duration: 0.5 },
+    ],
+    cels: [
+        { layerId: 1, frameId: 1, chars: create2dArray(5, 10, () => randomPrintableChar()), colors: [[]] },
+        { layerId: 1, frameId: 2, chars: create2dArray(2, 5, () => randomPrintableChar()), colors: [[]] },
+        { layerId: 1, frameId: 3, chars: create2dArray(5, 10, () => randomPrintableChar()), colors: [[]] },
+        { layerId: 2, frameId: 1, chars: create2dArray(2, 5, 'x'), colors: [[]] },
+        { layerId: 2, frameId: 2, chars: [[]], colors: [[]] },
+        { layerId: 2, frameId: 3, chars: [[]], colors: [[]] },
+    ]
+});
 
 // loadChars(create2dArray(30, 50, (row, col) => {
 //     return row % 10 === 0 && col % 10 === 0 ? 'X' : '';

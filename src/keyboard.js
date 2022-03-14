@@ -1,6 +1,7 @@
 import $ from "jquery";
 import * as selection from "./selection.js";
 import * as clipboard from "./clipboard.js";
+import * as state from "./state.js";
 import {timeline, refresh} from "./index.js";
 
 $(document).keydown(function(e) {
@@ -66,14 +67,14 @@ $(document).keydown(function(e) {
         case 'Backspace':
         case 'Delete':
             selection.getSelectedCells().forEach(cell => {
-                timeline.currentCel.updateChar(cell.row, cell.col, '');
+                state.updateCurrentCelChar(cell.row, cell.col, '');
             });
             refresh('chars');
             break;
         default:
             if (producesText(code)) {
                 selection.getSelectedCells().forEach(cell => {
-                    timeline.currentCel.updateChar(cell.row, cell.col, char);
+                    state.updateCurrentCelChar(cell.row, cell.col, char);
                 });
                 refresh('chars');
             }

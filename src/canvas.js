@@ -1,5 +1,5 @@
-import {timeline} from "./index.js";
 import {iterate2dArray, roundForComparison} from "./utilities.js";
+import * as state from "./state.js";
 
 const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
@@ -396,7 +396,7 @@ export class Cell extends Rect {
         this._row = newValue;
         if (this._boundToDrawableArea) {
             if (this._row < 0) { this._row = 0; }
-            if (this._row > timeline.numRows - 1) { this._row = timeline.numRows - 1; }
+            if (this._row > state.numRows() - 1) { this._row = state.numRows() - 1; }
         }
     }
 
@@ -408,7 +408,7 @@ export class Cell extends Rect {
         this._col = newValue;
         if (this._boundToDrawableArea) {
             if (this._col < 0) { this._col = 0; }
-            if (this._col > timeline.numCols - 1) { this._col = timeline.numCols - 1; }
+            if (this._col > state.numCols() - 1) { this._col = state.numCols() - 1; }
         }
     }
 
@@ -437,7 +437,7 @@ export class CellArea extends Rect {
     }
 
     static drawableArea() {
-        return new CellArea(new Cell(0, 0), new Cell(timeline.numRows - 1, timeline.numCols - 1));
+        return new CellArea(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
     }
 
     get numRows() {
