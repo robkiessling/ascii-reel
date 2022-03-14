@@ -1,7 +1,11 @@
 import $ from "jquery";
-import {eachWithObject} from "./utilities.js";
-import {timeline} from "./index.js";
+import {eachWithObject, iterate2dArray} from "./utilities.js";
 
+const CONFIG_DEFAULTS = {
+    dimensions: [9, 9],
+    layerIndex: 0,
+    frameIndex: 0
+}
 const LAYER_DEFAULTS = {
     name: 'Layer',
     opacity: 1
@@ -17,7 +21,7 @@ let sequences;
 
 export function loadState(data) {
     state = {
-        config: $.extend(true, {}, data.config),
+        config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure index is in bounds
         layers: $.extend(true, [], data.layers), // todo merge in defaults
         frames: $.extend(true, [], data.frames)
     };
@@ -46,6 +50,29 @@ export function layers() {
 }
 export function frames() {
     return state.frames;
+}
+
+export function layerIndex() {
+    return state.config.layerIndex;
+}
+export function setLayerIndex(index) {
+    state.config.layerIndex = index;
+}
+export function frameIndex() {
+    return state.config.frameIndex;
+}
+export function setFrameIndex(index) {
+    state.config.frameIndex = index;
+}
+
+export function currentLayer() {
+    return state.layers[layerIndex()];
+}
+export function currentFrame() {
+    return state.frames[frameIndex()];
+}
+export function currentCel() {
+    return cel(currentLayer(), currentFrame());
 }
 
 export function cel(layer, frame) {
@@ -139,14 +166,37 @@ function normalizeCel(cel) {
 }
 
 export function getCurrentCelChar(row, col) {
-    return charInBounds(row, col) ? timeline.currentCel.chars[row][col] : null;
+    return charInBounds(row, col) ? currentCel().chars[row][col] : null;
 }
 export function updateCurrentCelChar(row, col, value) {
     if (charInBounds(row, col)) {
-        timeline.currentCel.chars[row][col] = value;
+        currentCel().chars[row][col] = value;
     }
 }
 
 function charInBounds(row, col) {
     return row >= 0 && row < numRows() && col >= 0 && col < numCols();
+}
+
+// Aggregates all layers for the current frame
+export function layeredChars() {
+    let result;
+
+    state.layers.forEach((layer, index) => {
+        const layerChars = cel(layer, currentFrame()).chars;
+
+        if (index === 0) {
+            result = $.extend(true, [], layerChars);
+        }
+        else {
+            iterate2dArray(layerChars, (value, cell) => {
+                // Only overwriting char if it is not blank
+                if (value !== '') {
+                    result[cell.row][cell.col] = value;
+                }
+            });
+        }
+    });
+
+    return result;
 }

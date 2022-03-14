@@ -1,4 +1,3 @@
-import {iterate2dArray} from "./utilities.js";
 import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
 import {refresh} from "./index.js";
@@ -32,7 +31,9 @@ export class Timeline {
                 draggedIndex = this._layerIndexFromDOM(ui.item.index());
             },
             update: (event, ui) => {
-                this._reorderLayer(draggedIndex, this._layerIndexFromDOM(ui.item.index()));
+                const newIndex = this._layerIndexFromDOM(ui.item.index());
+                state.reorderLayer(draggedIndex, newIndex);
+                this._selectLayer(newIndex);
             }
         });
 
@@ -40,13 +41,18 @@ export class Timeline {
             this._selectLayer(this._layerIndexFromDOM($(evt.currentTarget).index()));
         });
 
-        this.$layerContainer.find('.add-blank-layer').off('click').on('click', () => this._addBlankLayer());
-        this.$layerContainer.find('.delete-layer').off('click').on('click', () => this._deleteLayer());
-    }
+        this.$layerContainer.find('.add-blank-layer').off('click').on('click', () => {
+            const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
+            state.createLayer(layerIndex, {
+                name: `Layer ${state.layers().length + 1}`
+            });
+            this._selectLayer(layerIndex);
+        });
 
-    // Layers are sorted backwards in the DOM
-    _layerIndexFromDOM(index) {
-        return (state.layers().length - 1) - index;
+        this.$layerContainer.find('.delete-layer').off('click').on('click', () => {
+            state.deleteLayer(state.layerIndex());
+            this._selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
+        });
     }
 
     _initFrames() {
@@ -67,23 +73,31 @@ export class Timeline {
                 draggedIndex = ui.item.index();
             },
             update: (event, ui) => {
-                this._reorderFrame(draggedIndex, ui.item.index());
+                const newIndex = ui.item.index();
+                state.reorderFrame(draggedIndex, newIndex);
+                this._selectFrame(newIndex);
             }
         });
+
         this.$frames.off('click', '.frame').on('click', '.frame', evt => {
             this._selectFrame($(evt.currentTarget).index());
         });
 
-        this.$frameContainer.find('.add-blank-frame').off('click').on('click', () => this._addBlankFrame());
-        this.$frameContainer.find('.duplicate-frame').off('click').on('click', () => this._duplicateFrame());
-        this.$frameContainer.find('.delete-frame').off('click').on('click', () => this._deleteFrame());
-    }
+        this.$frameContainer.find('.add-blank-frame').off('click').on('click', () => {
+            const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
+            state.createFrame(frameIndex, {});
+            this._selectFrame(frameIndex);
+        });
 
-    reset() {
-        this._layerIndex = 0;
-        this._frameIndex = 0;
-        this.$layers.empty();
-        this.$frames.empty();
+        this.$frameContainer.find('.duplicate-frame').off('click').on('click', () => {
+            state.duplicateFrame(state.frameIndex());
+            this._selectFrame(state.frameIndex() + 1);
+        });
+
+        this.$frameContainer.find('.delete-frame').off('click').on('click', () => {
+            state.deleteFrame(state.frameIndex());
+            this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
+        });
     }
 
     rebuildLayers() {
@@ -96,7 +110,7 @@ export class Timeline {
         scrollElement.scrollTop = scrollTop;
         this.layerSimpleBar.recalculate();
 
-        this.$frameContainer.find('.delete-frame').prop('disabled', state.layers().length <= 1);
+        this.$layerContainer.find('.delete-layer').prop('disabled', state.layers().length <= 1);
     }
 
     rebuildFrames() {
@@ -115,84 +129,25 @@ export class Timeline {
     }
 
     get currentFrameComponent() {
-        return this._frameComponents[this._frameIndex];
+        return this._frameComponents[state.frameIndex()];
+    }
+    get currentLayerComponent() {
+        return this._layerComponents[state.layerIndex()];
     }
 
-    get currentLayer() {
-        return state.layers()[this._layerIndex];
-    }
-    get currentFrame() {
-        return state.frames()[this._frameIndex];
-    }
-    get currentCel() {
-        return state.cel(this.currentLayer, this.currentFrame);
+    // Layers are sorted backwards in the DOM
+    _layerIndexFromDOM(index) {
+        return (state.layers().length - 1) - index;
     }
 
-    // Aggregates all layers for the current frame
-    get layeredChars() {
-        let result;
-
-        state.layers().forEach((layer, index) => {
-            const layerChars = state.cel(layer, this.currentFrame).chars;
-
-            if (index === 0) {
-                result = $.extend(true, [], layerChars);
-            }
-            else {
-                iterate2dArray(layerChars, (value, cell) => {
-                    // Only overwriting char if it is not blank
-                    if (value !== '') {
-                        result[cell.row][cell.col] = value;
-                    }
-                });
-            }
-        });
-
-        return result;
-    }
-    
     _selectLayer(index) {
-        this._layerIndex = index;
-        this.rebuildLayers();
+        state.setLayerIndex(index);
         refresh();
-    }
-    _addBlankLayer() {
-        const layerIndex = this._layerIndex + 1; // Add blank layer right after current layer
-        state.createLayer(layerIndex, {
-            name: `Layer ${state.layers().length + 1}`
-        });
-        this._selectLayer(layerIndex);
-    }
-    _deleteLayer() {
-        state.deleteLayer(this._layerIndex);
-        this._selectLayer(Math.min(this._layerIndex, state.layers().length - 1));
-    }
-    _reorderLayer(oldIndex, newIndex) {
-        state.reorderLayer(oldIndex, newIndex);
-        this._selectLayer(newIndex);
     }
 
     _selectFrame(index) {
-        this._frameIndex = index;
-        // Not calling rebuildFrames; refresh will handle it
+        state.setFrameIndex(index);
         refresh();
-    }
-    _addBlankFrame() {
-        const frameIndex = this._frameIndex + 1; // Add blank frame right after current frame
-        state.createFrame(frameIndex, {});
-        this._selectFrame(frameIndex);
-    }
-    _duplicateFrame() {
-        state.duplicateFrame(this._frameIndex);
-        this._selectFrame(this._frameIndex + 1);
-    }
-    _deleteFrame() {
-        state.deleteFrame(this._frameIndex);
-        this._selectFrame(Math.min(this._frameIndex, state.frames().length - 1));
-    }
-    _reorderFrame(oldIndex, newIndex) {
-        state.reorderFrame(oldIndex, newIndex);
-        this._selectFrame(newIndex);
     }
 }
 
@@ -201,21 +156,19 @@ class LayerComponent {
         this._$container = timeline.$layerTemplate.clone();
         this._$container.removeClass('layer-template').prependTo(timeline.$layers).show();
 
-        this._$container.toggleClass('selected', index === timeline._layerIndex); // todo
+        this._$container.toggleClass('selected', index === state.layerIndex());
         this._$container.find('.layer-name').html(layer.name);
 
-        this._layer = layer;
+        // this._layer = layer;
     }
 }
 
 class FrameComponent {
     constructor(timeline, frame, index) {
-        this._timeline = timeline;
-
         this._$container = timeline.$frameTemplate.clone();
         this._$container.removeClass('frame-template').appendTo(timeline.$frames).show();
 
-        this._$container.toggleClass('selected', index === timeline._frameIndex); // todo
+        this._$container.toggleClass('selected', index === state.frameIndex());
         this._$container.find('.frame-index').html(index + 1);
 
         this._canvasController = new CanvasControl(this._$container.find('canvas'), {});
@@ -228,6 +181,6 @@ class FrameComponent {
     }
 
     redrawChars() {
-        this._canvasController.drawChars(state.cel(this._timeline.currentLayer, this._frame).chars);
+        this._canvasController.drawChars(state.cel(state.currentLayer(), this._frame).chars);
     }
 }

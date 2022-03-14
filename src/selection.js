@@ -1,9 +1,8 @@
 import $ from "jquery";
 import {create2dArray} from "./utilities.js";
 import {Cell, CellArea} from "./canvas.js";
-import {timeline, refresh} from "./index.js";
+import {refresh} from "./index.js";
 import * as state from "./state.js";
-import {getCurrentCelChar} from "./state.js";
 
 // The full selection is made up of 1 or more SelectionAreas. All SelectionAreas are highlighted in the editor.
 export let selectionAreas = [];

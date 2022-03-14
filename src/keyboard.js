@@ -2,7 +2,7 @@ import $ from "jquery";
 import * as selection from "./selection.js";
 import * as clipboard from "./clipboard.js";
 import * as state from "./state.js";
-import {timeline, refresh} from "./index.js";
+import {refresh} from "./index.js";
 
 $(document).keydown(function(e) {
     const code = e.which // Note: This is normalized by jQuery. Keycodes https://keycode.info/

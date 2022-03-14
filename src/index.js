@@ -22,10 +22,6 @@ $(window).off('resize:debounced').on('resize:debounced', resize);
 
 function load(data) {
     state.loadState(data);
-
-    timeline.reset();
-    timeline.rebuildLayers();
-    // Don't need to call timeline.rebuildFrames(); resize will handle it
     resize();
 }
 
@@ -42,24 +38,25 @@ export function resize() {
 export function refresh(type = 'full') {
     switch(type) {
         case 'chars':
-            charCanvas.drawChars(timeline.currentCel.chars);
-            previewCanvas.drawChars(timeline.layeredChars);
+            charCanvas.drawChars(state.currentCel().chars);
+            previewCanvas.drawChars(state.layeredChars());
             timeline.currentFrameComponent.redrawChars();
             break;
         case 'selection':
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'zoom':
-            charCanvas.drawChars(timeline.currentCel.chars);
-            previewCanvas.drawChars(timeline.layeredChars);
+            charCanvas.drawChars(state.currentCel().chars);
+            previewCanvas.drawChars(state.layeredChars());
             zoomEvents.updateWindow();
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'full':
-            charCanvas.drawChars(timeline.currentCel.chars);
-            previewCanvas.drawChars(timeline.layeredChars);
+            charCanvas.drawChars(state.currentCel().chars);
+            previewCanvas.drawChars(state.layeredChars());
             zoomEvents.updateWindow();
             selectionCanvas.highlightCells(selection.getSelectedCells());
+            timeline.rebuildLayers();
             timeline.rebuildFrames();
             break;
         default:
