@@ -15,12 +15,6 @@ export function setup(sourceCanvas, previewCanvas, canvasControls) {
     setupPreviewMouse();
 }
 
-export function updateWindow() {
-    if (source && preview) {
-        preview.drawWindow(source.currentViewRect());
-    }
-}
-
 function setupScroll() {
     source.$canvas.off('wheel.zoom').on('wheel.zoom', evt => {
         evt.preventDefault();

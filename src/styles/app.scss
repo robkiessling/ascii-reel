@@ -1,9 +1,14 @@
 @import 'simplebar/dist/simplebar.css';
 @import 'jquery-ui/themes/base/core';
 @import 'jquery-ui/themes/base/sortable';
+@import 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
+@import 'jquery-ui/themes/base/slider';
 
-//$highlight: #4C8BF5;
+$highlight2: #4C8BF5;
+$highlight2-dark: #3873d7;
+
 $highlight: #f48225;
+
 $darkest: #202124;
 $darker: #282C2F;
 $dark: #323639;
@@ -12,6 +17,7 @@ $lightest: #D6D6D7;
 
 $main-spacing: 0.5rem;
 $right-col-width: 220px;
+$preview-size: $right-col-width;
 $frame-size: 85px;
 $frame-border-width: 3px;
 
@@ -137,6 +143,12 @@ body {
   .tools {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+
+    > div {
+      display: flex;
+      align-items: center;
+    }
   }
 
   .frame-list {
@@ -205,12 +217,19 @@ body {
       //transform: rotate(180deg);
       margin-bottom: 0.5rem;
     }
+
+    > div {
+      flex-direction: column;
+    }
   }
 
   .frame-list {
     min-width: $frame-size + 2 * $frame-border-width + 18px; // 18 for scrollbar
     max-height: calc(100vh - 2 * #{$main-spacing}); // TODO This should be needed, but simplebar messes up without it
 
+    .simplebar-content-wrapper {
+      height: 100% !important;
+    }
     .simplebar-content {
       flex-direction: column;
     }
@@ -235,11 +254,18 @@ body {
     .section-header {
       margin-right: 1rem;
     }
+
+    > div {
+      flex-direction: row;
+    }
   }
 
   .frame-list {
     min-height: $frame-size + 2 * $frame-border-width + 18px; // 18 for scrollbar
 
+    .simplebar-content-wrapper {
+      width: 100% !important; // note: this is not really needed, but the height:100% is needed in other orientation
+    }
     .simplebar-content {
       flex-direction: row;
     }
@@ -253,13 +279,34 @@ body {
   }
 }
 
+#preview-controller {
+  #preview-canvas-container {
+    position: relative;
+    height: $preview-size;
+    width: $preview-size;
 
-#preview-container {
-  position: relative;
-  height: $right-col-width;
-  width: $right-col-width;
+    margin-top: 0.5rem;
 
-  background: $lightest;
+    background: $lightest;
+  }
+  #preview-fps-container {
+    display: flex;
+    align-items: center;
+    background: $dark;
+
+    #preview-fps-value {
+      font-size: 0.875rem;
+      color: white;
+      margin-left: 0.5rem;
+      min-width: 3rem;
+      display: flex;
+      justify-content: center;
+    }
+    #preview-fps-slider {
+      flex: 1;
+      margin: 0.5rem;
+    }
+  }
 }
 
 .full {
@@ -289,6 +336,8 @@ body {
     cursor: grabbing;
   }
 }
+
+
 
 // Hide annoying outline when keyboard is used (if you don't have a mouse, you're gunna have a bad time anyway)
 :focus-visible {
@@ -323,5 +372,26 @@ button {
 
   &:disabled {
     color: #666;
+  }
+}
+
+.ui-slider {
+  .ui-slider-handle {
+    width: 0.8em;
+    height: 0.8em;
+    background: $highlight2;
+    border-color: $dark;
+
+    &.ui-state-active {
+      background: $highlight2-dark;
+    }
+  }
+
+  &.ui-slider-horizontal {
+    height: 0.4em;
+
+    .ui-slider-handle {
+      top: -0.3em;
+    }
   }
 }

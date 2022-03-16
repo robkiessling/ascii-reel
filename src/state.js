@@ -3,6 +3,7 @@ import {eachWithObject, iterate2dArray} from "./utilities.js";
 
 const CONFIG_DEFAULTS = {
     dimensions: [9, 9],
+    fps: 1,
     layerIndex: 0,
     frameIndex: 0
 }
@@ -52,17 +53,13 @@ export function frames() {
     return state.frames;
 }
 
-export function layerIndex() {
+export function layerIndex(newIndex) {
+    if (newIndex !== undefined) { state.config.layerIndex = newIndex; }
     return state.config.layerIndex;
 }
-export function setLayerIndex(index) {
-    state.config.layerIndex = index;
-}
-export function frameIndex() {
+export function frameIndex(newIndex) {
+    if (newIndex !== undefined) { state.config.frameIndex = newIndex; }
     return state.config.frameIndex;
-}
-export function setFrameIndex(index) {
-    state.config.frameIndex = index;
 }
 
 export function currentLayer() {
@@ -77,6 +74,11 @@ export function currentCel() {
 
 export function cel(layer, frame) {
     return state.cels[getCelId(layer.id, frame.id)];
+}
+
+export function fps(newFps) {
+    if (newFps !== undefined) { state.config.fps = newFps; }
+    return state.config.fps;
 }
 
 function celIdsForLayer(layer) {
@@ -168,7 +170,7 @@ function normalizeCel(cel) {
 export function getCurrentCelChar(row, col) {
     return charInBounds(row, col) ? currentCel().chars[row][col] : null;
 }
-export function updateCurrentCelChar(row, col, value) {
+export function setCurrentCelChar(row, col, value) {
     if (charInBounds(row, col)) {
         currentCel().chars[row][col] = value;
     }
@@ -179,11 +181,11 @@ function charInBounds(row, col) {
 }
 
 // Aggregates all layers for the current frame
-export function layeredChars() {
+export function layeredChars(frameIndex) {
     let result;
 
     state.layers.forEach((layer, index) => {
-        const layerChars = cel(layer, currentFrame()).chars;
+        const layerChars = cel(layer, state.frames[frameIndex]).chars;
 
         if (index === 0) {
             result = $.extend(true, [], layerChars);

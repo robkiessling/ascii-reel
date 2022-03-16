@@ -9,29 +9,32 @@ import * as zoomEvents from './zoom_events.js';
 import './clipboard.js';
 import {Timeline} from "./timeline.js";
 import * as state from "./state.js";
+import * as preview from "./preview.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
-const charCanvas = new CanvasControl($('#char-canvas'), {});
-const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
-const previewCanvas = new CanvasControl($('#preview-canvas'), {});
+export const charCanvas = new CanvasControl($('#char-canvas'), {});
+export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
 selection.bindMouseToCanvas(selectionCanvas);
-zoomEvents.setup(selectionCanvas, previewCanvas, [selectionCanvas, charCanvas]);
+zoomEvents.setup(selectionCanvas, preview.canvasControl, [selectionCanvas, charCanvas]);
 
 $(window).off('resize:debounced').on('resize:debounced', resize);
 
 function load(data) {
     state.loadState(data);
+    preview.init();
     resize();
 }
 
 export function resize() {
+    console.log(`A: w: ${charCanvas.outerWidth}, h: ${charCanvas.outerHeight}`)
     charCanvas.resize();
+    console.log(`B: w: ${charCanvas.outerWidth}, h: ${charCanvas.outerHeight}`)
     selectionCanvas.resize();
-    previewCanvas.resize();
+    preview.canvasControl.resize();
     // Note: timeline frames will be resized during refresh() since they all have to be rebuilt
 
-    previewCanvas.zoomToFit();
+    preview.canvasControl.zoomToFit(); // todo just do this once?
     refresh();
 }
 
@@ -39,7 +42,7 @@ export function refresh(type = 'full') {
     switch(type) {
         case 'chars':
             charCanvas.drawChars(state.currentCel().chars);
-            previewCanvas.drawChars(state.layeredChars());
+            preview.refresh();
             timeline.currentFrameComponent.redrawChars();
             break;
         case 'selection':
@@ -47,14 +50,12 @@ export function refresh(type = 'full') {
             break;
         case 'zoom':
             charCanvas.drawChars(state.currentCel().chars);
-            previewCanvas.drawChars(state.layeredChars());
-            zoomEvents.updateWindow();
+            preview.refresh();
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'full':
             charCanvas.drawChars(state.currentCel().chars);
-            previewCanvas.drawChars(state.layeredChars());
-            zoomEvents.updateWindow();
+            preview.reset();
             selectionCanvas.highlightCells(selection.getSelectedCells());
             timeline.rebuildLayers();
             timeline.rebuildFrames();

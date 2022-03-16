@@ -67,14 +67,14 @@ $(document).keydown(function(e) {
         case 'Backspace':
         case 'Delete':
             selection.getSelectedCells().forEach(cell => {
-                state.updateCurrentCelChar(cell.row, cell.col, '');
+                state.setCurrentCelChar(cell.row, cell.col, '');
             });
             refresh('chars');
             break;
         default:
             if (producesText(code)) {
                 selection.getSelectedCells().forEach(cell => {
-                    state.updateCurrentCelChar(cell.row, cell.col, char);
+                    state.setCurrentCelChar(cell.row, cell.col, char);
                 });
                 refresh('chars');
             }

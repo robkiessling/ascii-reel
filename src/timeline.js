@@ -1,6 +1,6 @@
 import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
-import {refresh} from "./index.js";
+import {refresh, resize} from "./index.js";
 import SimpleBar from 'simplebar';
 import 'jquery-ui/ui/widgets/sortable.js';
 import * as state from "./state.js";
@@ -67,7 +67,6 @@ export class Timeline {
 
         let draggedIndex;
         this.$frames.sortable({
-            axis: 'x', // TODO Won't work if frames on left
             placeholder: 'frame placeholder',
             start: (event, ui) => {
                 draggedIndex = ui.item.index();
@@ -98,6 +97,16 @@ export class Timeline {
             state.deleteFrame(state.frameIndex());
             this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
         });
+
+        this.$frameContainer.find('.align-frames-left').off('click').on('click', () => {
+            this._alignFrames('left');
+            window.setTimeout(() => { resize() }, 1);
+        });
+        this.$frameContainer.find('.align-frames-bottom').off('click').on('click', () => {
+            this._alignFrames('bottom');
+            window.setTimeout(() => { resize() }, 1); // TODO For some reason it takes a little time for heights to update
+        });
+        this._alignFrames('left'); // initial value
     }
 
     rebuildLayers() {
@@ -141,13 +150,22 @@ export class Timeline {
     }
 
     _selectLayer(index) {
-        state.setLayerIndex(index);
+        state.layerIndex(index);
         refresh();
     }
 
     _selectFrame(index) {
-        state.setFrameIndex(index);
+        state.frameIndex(index);
         refresh();
+    }
+
+    _alignFrames(orientation) {
+        $('#main-content')
+            .toggleClass('frames-on-left', orientation === 'left')
+            .toggleClass('frames-on-bottom', orientation === 'bottom');
+        this.$frameContainer.find('.align-frames-left').prop('disabled', orientation === 'left');
+        this.$frameContainer.find('.align-frames-bottom').prop('disabled', orientation === 'bottom');
+        this.$frames.sortable('option', 'axis', orientation === 'left' ? 'y' : 'x');
     }
 }
 
