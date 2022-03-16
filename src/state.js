@@ -4,8 +4,10 @@ import {eachWithObject, iterate2dArray} from "./utilities.js";
 const CONFIG_DEFAULTS = {
     dimensions: [9, 9],
     fps: 1,
+    onion: false, // todo may add more options
     layerIndex: 0,
-    frameIndex: 0
+    frameIndex: 0,
+    frameOrientation: 'left'
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',
@@ -53,13 +55,16 @@ export function frames() {
     return state.frames;
 }
 
+export function config(key, newValue) {
+    if (newValue !== undefined) { state.config[key] = newValue; }
+    return state.config[key];
+}
+
 export function layerIndex(newIndex) {
-    if (newIndex !== undefined) { state.config.layerIndex = newIndex; }
-    return state.config.layerIndex;
+    return config('layerIndex', newIndex);
 }
 export function frameIndex(newIndex) {
-    if (newIndex !== undefined) { state.config.frameIndex = newIndex; }
-    return state.config.frameIndex;
+    return config('frameIndex', newIndex);
 }
 
 export function currentLayer() {
@@ -68,18 +73,23 @@ export function currentLayer() {
 export function currentFrame() {
     return state.frames[frameIndex()];
 }
+export function previousFrame() {
+    let index = frameIndex();
+    index -= 1;
+    if (index < 0) { index = frames().length - 1; }
+    return state.frames[index];
+}
 export function currentCel() {
     return cel(currentLayer(), currentFrame());
+}
+export function previousCel() {
+    return cel(currentLayer(), previousFrame());
 }
 
 export function cel(layer, frame) {
     return state.cels[getCelId(layer.id, frame.id)];
 }
 
-export function fps(newFps) {
-    if (newFps !== undefined) { state.config.fps = newFps; }
-    return state.config.fps;
-}
 
 function celIdsForLayer(layer) {
     return state.frames.map(frame => getCelId(layer.id, frame.id));

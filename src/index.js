@@ -22,7 +22,8 @@ $(window).off('resize:debounced').on('resize:debounced', resize);
 
 function load(data) {
     state.loadState(data);
-    preview.init();
+    preview.configUpdated();
+    timeline.configUpdated();
     resize();
 }
 
@@ -41,7 +42,7 @@ export function resize() {
 export function refresh(type = 'full') {
     switch(type) {
         case 'chars':
-            charCanvas.drawChars(state.currentCel().chars);
+            redrawCharCanvas();
             preview.refresh();
             timeline.currentFrameComponent.redrawChars();
             break;
@@ -49,12 +50,12 @@ export function refresh(type = 'full') {
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'zoom':
-            charCanvas.drawChars(state.currentCel().chars);
+            redrawCharCanvas();
             preview.refresh();
             selectionCanvas.highlightCells(selection.getSelectedCells());
             break;
         case 'full':
-            charCanvas.drawChars(state.currentCel().chars);
+            redrawCharCanvas();
             preview.reset();
             selectionCanvas.highlightCells(selection.getSelectedCells());
             timeline.rebuildLayers();
@@ -62,6 +63,13 @@ export function refresh(type = 'full') {
             break;
         default:
             console.warn(`refresh("${type}") is not a valid type`);
+    }
+}
+
+function redrawCharCanvas() {
+    charCanvas.drawChars(state.currentCel().chars);
+    if (state.config('onion')) {
+        charCanvas.drawOnion(state.previousCel().chars);
     }
 }
 

@@ -22,10 +22,11 @@ const WINDOW_WIDTH = 5;
 // const SELECTION_COLOR = '#0066cc88';
 const SELECTION_COLOR = '#4c8bf588';
 const TEXT_COLOR = '#fff';
+const ONION_OPACITY = 0.25;
 
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
-const CHAR_BACKGROUND = CHECKERBOARD_A; // false => transparent. We use non-transparent so you can see spaces
+const CHAR_BACKGROUND = false;//CHECKERBOARD_A; // false => transparent. We use non-transparent so you can see spaces
 const CANVAS_BACKGROUND = false; // false => transparent
 
 const ZOOM_BOUNDARIES = [0.25, 30];
@@ -81,15 +82,17 @@ export class CanvasControl {
     }
 
     // Note: If numRows or numCols changes, canvas will need to be rezoomed
-    drawChars(chars) {
-        this.clear();
+    drawChars(chars, clearCanvas = true) {
+        if (clearCanvas) {
+            this.clear();
 
-        if (CANVAS_BACKGROUND === false) {
-            this._fillCheckerboard(CellArea.drawableArea());
-        }
-        else {
-            this.context.fillStyle = CANVAS_BACKGROUND;
-            this.context.fillRect(...CellArea.drawableArea().xywh);
+            if (CANVAS_BACKGROUND === false) {
+                this._fillCheckerboard(CellArea.drawableArea());
+            }
+            else {
+                this.context.fillStyle = CANVAS_BACKGROUND;
+                this.context.fillRect(...CellArea.drawableArea().xywh);
+            }
         }
 
         if (CHAR_BACKGROUND) {
@@ -114,6 +117,13 @@ export class CanvasControl {
         if (GRID) {
             this._drawGrid(chars);
         }
+    }
+
+    drawOnion(chars) {
+        this.context.save();
+        this.context.globalAlpha = ONION_OPACITY;
+        this.drawChars(chars, false);
+        this.context.restore();
     }
 
     // Note: This conflicts with drawChars. We use different canvases for chars/selections stacked on top of each other.

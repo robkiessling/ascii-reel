@@ -98,15 +98,27 @@ export class Timeline {
             this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
         });
 
+        this.$frameContainer.find('.toggle-onion').off('click').on('click', () => {
+            state.config('onion', !state.config('onion'));
+            this._refreshOnion();
+            refresh('chars');
+        });
+
         this.$frameContainer.find('.align-frames-left').off('click').on('click', () => {
-            this._alignFrames('left');
+            state.config('frameOrientation', 'left');
+            this._alignFrames();
             window.setTimeout(() => { resize() }, 1);
         });
         this.$frameContainer.find('.align-frames-bottom').off('click').on('click', () => {
-            this._alignFrames('bottom');
+            state.config('frameOrientation', 'bottom');
+            this._alignFrames();
             window.setTimeout(() => { resize() }, 1); // TODO For some reason it takes a little time for heights to update
         });
-        this._alignFrames('left'); // initial value
+    }
+
+    configUpdated() {
+        this._alignFrames();
+        this._refreshOnion();
     }
 
     rebuildLayers() {
@@ -159,13 +171,20 @@ export class Timeline {
         refresh();
     }
 
-    _alignFrames(orientation) {
+    _alignFrames() {
+        const orientation = state.config('frameOrientation');
         $('#main-content')
             .toggleClass('frames-on-left', orientation === 'left')
             .toggleClass('frames-on-bottom', orientation === 'bottom');
-        this.$frameContainer.find('.align-frames-left').prop('disabled', orientation === 'left');
-        this.$frameContainer.find('.align-frames-bottom').prop('disabled', orientation === 'bottom');
+        this.$frameContainer.find('.align-frames-left').prop('disabled', orientation === 'left')
+            .find('.ri').toggleClass('active', orientation === 'left');
+        this.$frameContainer.find('.align-frames-bottom').prop('disabled', orientation === 'bottom')
+            .find('.ri').toggleClass('active', orientation === 'bottom');
         this.$frames.sortable('option', 'axis', orientation === 'left' ? 'y' : 'x');
+    }
+
+    _refreshOnion() {
+        this.$frameContainer.find('.toggle-onion').find('.ri').toggleClass('active', state.config('onion'));
     }
 }
 
