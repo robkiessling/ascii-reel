@@ -4,6 +4,7 @@ import {refresh, resize} from "./index.js";
 import SimpleBar from 'simplebar';
 import 'jquery-ui/ui/widgets/sortable.js';
 import * as state from "./state.js";
+import {toggleAllLayerVisibility} from "./state.js";
 
 export class Timeline {
     constructor($frameContainer, $layerContainer) {
@@ -38,7 +39,10 @@ export class Timeline {
         });
 
         this.$layers.off('click', '.layer').on('click', '.layer', evt => {
-            this._selectLayer(this._layerIndexFromDOM($(evt.currentTarget).index()));
+            const newIndex = this._layerIndexFromDOM($(evt.currentTarget).index());
+            if (newIndex !== state.layerIndex()) {
+                this._selectLayer(newIndex);
+            }
         });
 
         this.$layerContainer.find('.add-blank-layer').off('click').on('click', () => {
@@ -53,6 +57,18 @@ export class Timeline {
             state.deleteLayer(state.layerIndex());
             this._selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
         });
+
+        this.$layerContainer.find('.toggle-visibility-all').off('click').on('click', () => {
+            const allVisible = state.layers().every(layer => layer.visible);
+            state.toggleAllLayerVisibility(!allVisible);
+
+            // const atLeastOneVisible = state.layers().some(layer => layer.visible);
+            // state.toggleAllLayerVisibility(!atLeastOneVisible);
+
+            refresh();
+        });
+
+
     }
 
     _initFrames() {
@@ -79,7 +95,10 @@ export class Timeline {
         });
 
         this.$frames.off('click', '.frame').on('click', '.frame', evt => {
-            this._selectFrame($(evt.currentTarget).index());
+            const newIndex = $(evt.currentTarget).index();
+            if (newIndex !== state.frameIndex()) {
+                this._selectFrame(newIndex);
+            }
         });
 
         this.$frameContainer.find('.add-blank-frame').off('click').on('click', () => {
@@ -100,23 +119,22 @@ export class Timeline {
 
         this.$frameContainer.find('.toggle-onion').off('click').on('click', () => {
             state.config('onion', !state.config('onion'));
-            this._refreshOnion();
+            this._refreshOnion(); // have to refresh this manually since just refreshing chars
             refresh('chars');
         });
 
         this.$frameContainer.find('.align-frames-left').off('click').on('click', () => {
             state.config('frameOrientation', 'left');
-            this._alignFrames();
             window.setTimeout(() => { resize() }, 1);
         });
         this.$frameContainer.find('.align-frames-bottom').off('click').on('click', () => {
             state.config('frameOrientation', 'bottom');
-            this._alignFrames();
             window.setTimeout(() => { resize() }, 1); // TODO For some reason it takes a little time for heights to update
         });
     }
 
     configUpdated() {
+        this._refreshVisibilities();
         this._alignFrames();
         this._refreshOnion();
     }
@@ -171,6 +189,19 @@ export class Timeline {
         refresh();
     }
 
+    _refreshVisibilities() {
+        if (this._layerComponents) {
+            this._layerComponents.forEach(layerComponent => layerComponent.refresh());
+
+            const atLeastOneVisible = state.layers().some(layer => layer.visible);
+            this.$layerContainer.find('.toggle-visibility-all').find('.ri')
+                .toggleClass('active', atLeastOneVisible)
+                .toggleClass('ri-eye-line', atLeastOneVisible)
+                .toggleClass('ri-eye-off-line', !atLeastOneVisible);
+
+        }
+    }
+
     _alignFrames() {
         const orientation = state.config('frameOrientation');
         $('#main-content')
@@ -196,7 +227,21 @@ class LayerComponent {
         this._$container.toggleClass('selected', index === state.layerIndex());
         this._$container.find('.layer-name').html(layer.name);
 
-        // this._layer = layer;
+        this._$container.find('.toggle-visibility').off('click').on('click', () => {
+            state.toggleLayerVisibility(this._layer);
+            refresh(); // Note: This is index refresh
+        })
+
+        this._layer = layer;
+
+        this.refresh();
+    }
+
+    refresh() {
+        this._$container.find('.toggle-visibility').find('.ri')
+            .toggleClass('active', this._layer.visible)
+            .toggleClass('ri-eye-line', this._layer.visible)
+            .toggleClass('ri-eye-off-line', !this._layer.visible);
     }
 }
 
@@ -218,6 +263,6 @@ class FrameComponent {
     }
 
     redrawChars() {
-        this._canvasController.drawChars(state.cel(state.currentLayer(), this._frame).chars);
+        this._canvasController.drawChars(state.layeredChars(this._frame));
     }
 }

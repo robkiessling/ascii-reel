@@ -27,13 +27,12 @@ export function configUpdated() {
 
 // Just refresh the current preview frame (e.g. if chars got updated)
 export function refresh() {
-    canvasControl.drawChars(state.layeredChars(previewIndex));
+    canvasControl.drawChars(state.layeredChars(state.frames()[previewIndex]));
     canvasControl.drawWindow(selectionCanvas.currentViewRect());
 }
 
 // Reset the preview interval (e.g. if fps changes, if a frame got deleted, etc.)
 export function reset() {
-    console.log('reset');
     window.clearInterval(previewInterval);
 
     $fpsValue.html(`${state.config('fps')} FPS`);

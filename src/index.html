@@ -58,16 +58,29 @@
         <hr>
         <div id="layer-controller">
             <div class="tools">
-                <span class="section-header">Layers</span>
-                <button class="add-blank-layer">
-                    <span class="ri ri-fw ri-add-line"></span>
-                </button>
-                <button class="delete-layer">
-                    <span class="ri ri-fw ri-delete-bin-line"></span>
-                </button>
+                <div>
+                    <span class="section-header">Layers</span>
+                    <button class="add-blank-layer">
+                        <span class="ri ri-fw ri-add-line"></span>
+                    </button>
+                    <button class="edit-layer">
+                        <span class="ri ri-fw ri-pencil-line"></span>
+                    </button>
+                    <button class="delete-layer">
+                        <span class="ri ri-fw ri-delete-bin-line"></span>
+                    </button>
+                </div>
+                <div>
+                    <button class="toggle-visibility-all">
+                        <span class="ri ri-fw ri-eye-line"></span>
+                    </button>
+                </div>
             </div>
             <div class="layer-template layer">
                 <span class="layer-name"></span>
+                <button class="toggle-visibility">
+                    <span class="ri ri-fw ri-eye-line"></span>
+                </button>
             </div>
             <div class="layer-list"></div>
         </div>

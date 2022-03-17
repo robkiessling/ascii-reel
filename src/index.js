@@ -28,9 +28,7 @@ function load(data) {
 }
 
 export function resize() {
-    console.log(`A: w: ${charCanvas.outerWidth}, h: ${charCanvas.outerHeight}`)
     charCanvas.resize();
-    console.log(`B: w: ${charCanvas.outerWidth}, h: ${charCanvas.outerHeight}`)
     selectionCanvas.resize();
     preview.canvasControl.resize();
     // Note: timeline frames will be resized during refresh() since they all have to be rebuilt
@@ -60,6 +58,7 @@ export function refresh(type = 'full') {
             selectionCanvas.highlightCells(selection.getSelectedCells());
             timeline.rebuildLayers();
             timeline.rebuildFrames();
+            timeline.configUpdated();
             break;
         default:
             console.warn(`refresh("${type}") is not a valid type`);
@@ -67,9 +66,10 @@ export function refresh(type = 'full') {
 }
 
 function redrawCharCanvas() {
-    charCanvas.drawChars(state.currentCel().chars);
+    charCanvas.drawChars(state.layeredChars(state.currentFrame()));
+
     if (state.config('onion')) {
-        charCanvas.drawOnion(state.previousCel().chars);
+        charCanvas.drawOnion(state.layeredChars(state.previousFrame()));
     }
 }
 

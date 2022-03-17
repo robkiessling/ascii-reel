@@ -1,5 +1,5 @@
 import $ from "jquery";
-import {eachWithObject, iterate2dArray} from "./utilities.js";
+import {create2dArray, eachWithObject, iterate2dArray} from "./utilities.js";
 
 const CONFIG_DEFAULTS = {
     dimensions: [9, 9],
@@ -11,6 +11,7 @@ const CONFIG_DEFAULTS = {
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',
+    visible: true,
     opacity: 1
 }
 const FRAME_DEFAULTS = {}
@@ -25,8 +26,8 @@ let sequences;
 export function loadState(data) {
     state = {
         config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure index is in bounds
-        layers: $.extend(true, [], data.layers), // todo merge in defaults
-        frames: $.extend(true, [], data.frames)
+        layers: data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
+        frames: data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame))
     };
 
     // TODO Ensure every layer and frame has enough cels?
@@ -119,6 +120,14 @@ export function deleteLayer(index) {
 export function reorderLayer(oldIndex, newIndex) {
     state.layers.splice(newIndex, 0, state.layers.splice(oldIndex, 1)[0]);
 }
+export function toggleLayerVisibility(layer) {
+    layer.visible = !layer.visible;
+}
+export function toggleAllLayerVisibility(visible) {
+    state.layers.forEach(layer => layer.visible = visible);
+}
+
+
 
 export function createFrame(index, data) {
     const frame = $.extend({}, FRAME_DEFAULTS, {
@@ -190,24 +199,23 @@ function charInBounds(row, col) {
     return row >= 0 && row < numRows() && col >= 0 && col < numCols();
 }
 
-// Aggregates all layers for the current frame
-export function layeredChars(frameIndex) {
-    let result;
+// Aggregates all visible layers for a frame
+export function layeredChars(frame) {
+    let result = create2dArray(numRows(), numCols(), '');
 
-    state.layers.forEach((layer, index) => {
-        const layerChars = cel(layer, state.frames[frameIndex]).chars;
+    state.layers.forEach(layer => {
+        if (!layer.visible) {
+            return;
+        }
 
-        if (index === 0) {
-            result = $.extend(true, [], layerChars);
-        }
-        else {
-            iterate2dArray(layerChars, (value, cell) => {
-                // Only overwriting char if it is not blank
-                if (value !== '') {
-                    result[cell.row][cell.col] = value;
-                }
-            });
-        }
+        const layerChars = cel(layer, frame).chars;
+
+        iterate2dArray(layerChars, (value, cell) => {
+            // Only overwriting char if it is not blank
+            if (value !== '') {
+                result[cell.row][cell.col] = value;
+            }
+        });
     });
 
     return result;
