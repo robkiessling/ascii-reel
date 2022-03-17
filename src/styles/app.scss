@@ -1,8 +1,11 @@
 @import 'simplebar/dist/simplebar.css';
 @import 'jquery-ui/themes/base/core';
+@import 'jquery-ui/themes/base/dialog';
 @import 'jquery-ui/themes/base/sortable';
 @import 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
 @import 'jquery-ui/themes/base/slider';
+
+$font: roboto, sans-serif;
 
 $highlight2: #4C8BF5;
 $highlight2-dark: #3873d7;
@@ -13,6 +16,7 @@ $darkest: #202124;
 $darker: #282C2F;
 $dark: #323639;
 $light: #868889; // custom
+$lighter: #c6c6c7; // custom
 $lightest: #D6D6D7;
 
 $main-spacing: 0.5rem;
@@ -27,7 +31,7 @@ html, body {
   width: 100%;
   margin: 0;
 
-  font-family: roboto, sans-serif;
+  font-family: $font;
 }
 
 body {
@@ -242,7 +246,7 @@ body {
   }
 
   .frame-list {
-    min-width: $frame-size + 2 * $frame-border-width + $scrollbar-width;
+    width: $frame-size + 2 * $frame-border-width + $scrollbar-width;
     max-height: calc(100vh - 2 * #{$main-spacing}); // TODO This should be needed, but simplebar messes up without it
 
     .simplebar-content-wrapper {
@@ -279,7 +283,7 @@ body {
   }
 
   .frame-list {
-    min-height: $frame-size + 2 * $frame-border-width + $scrollbar-width;
+    height: $frame-size + 2 * $frame-border-width + $scrollbar-width;
 
     .simplebar-content-wrapper {
       width: 100% !important; // note: this is not really needed, but the height:100% is needed in other orientation
@@ -294,6 +298,17 @@ body {
 
   .frame {
     margin-right: 6px;
+  }
+}
+
+#edit-layer-dialog {
+  > label, > div {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .opacity-slider {
+    margin: 0.5rem 1rem;
   }
 }
 
@@ -421,6 +436,85 @@ button {
 
     .ui-slider-handle {
       top: -0.3em;
+
+      &.with-text {
+        width: 2.2rem;
+        height: 1rem;
+        top: -0.3rem;
+        margin-left: -1.1rem;
+
+        font-size: 0.85rem;
+        color: white;
+        text-align: center;
+      }
     }
   }
+}
+
+.ui-widget {
+  font-family: $font;
+
+  button {
+    font-family: $font;
+  }
+}
+
+.ui-dialog {
+  background: $light;
+
+  &.ui-widget-content {
+    border: 2px solid $lightest;
+  }
+
+  .ui-widget-header {
+    background: $dark;
+    color: white;
+    margin-bottom: 0.5rem;
+
+    .ui-dialog-titlebar-close.hidden {
+      display: none;
+    }
+  }
+  .ui-dialog-content {
+    color: white;
+  }
+  .ui-dialog-buttonpane {
+    background: none;
+    padding: 0;
+
+    button {
+      margin: 0.5rem 0.3rem 0.5rem 0.2rem;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+}
+.ui-widget-overlay {
+  background: $darkest;
+  opacity: 0.75;
+}
+.ui-button {
+  background: $lightest;
+  color: $darkest;
+  border-color: $darkest;
+
+  &:hover {
+    background: $lighter;
+    border-color: $darkest;
+  }
+
+  &.call-out {
+    color: white;
+    background: $highlight2;
+
+    &:hover {
+      background: $highlight2-dark;
+    }
+  }
+}
+
+.ui-corner-all,
+.ui-corner-top,
+.ui-corner-left,
+.ui-corner-tl {
+  border-radius: 0;
 }

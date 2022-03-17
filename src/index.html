@@ -5,7 +5,7 @@
     <title>ASCII Art Maker</title>
 </head>
 <body>
-    <div id="main-content" class="">
+    <div id="main-content" class="frames-on-left">
         <div id="canvas-container">
             <canvas id="char-canvas" class="absolute-center full"></canvas>
             <canvas id="selection-canvas" class="absolute-center full"></canvas>
@@ -85,5 +85,20 @@
             <div class="layer-list"></div>
         </div>
     </div>
+
+    <div id="edit-layer-dialog" title="Edit Layer">
+        <label>
+            Name<br>
+            <input type="text" class="name">
+        </label>
+        <div>
+            Opacity<br>
+            <div class="opacity-slider">
+                <div class="ui-slider-handle"></div>
+            </div>
+        </div>
+    </div>
+
+
 </body>
 </html>

@@ -116,7 +116,7 @@ export function roundForComparison(number) {
 
 // Debounce window resize events
 let resizeId;
-$(window).resize(function() {
+$(window).on('resize', () => {
     clearTimeout(resizeId);
     resizeId = setTimeout(() => {
         $(window).trigger('resize:debounced');

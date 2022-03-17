@@ -3,7 +3,7 @@ import {create2dArray, eachWithObject, iterate2dArray} from "./utilities.js";
 
 const CONFIG_DEFAULTS = {
     dimensions: [9, 9],
-    fps: 1,
+    fps: 0,
     onion: false, // todo may add more options
     layerIndex: 0,
     frameIndex: 0,
@@ -116,6 +116,9 @@ export function deleteLayer(index) {
     const layer = state.layers[index];
     celIdsForLayer(layer).forEach(celId => delete state.cels[celId]);
     state.layers.splice(index, 1);
+}
+export function updateLayer(layer, updates) {
+    $.extend(layer, updates);
 }
 export function reorderLayer(oldIndex, newIndex) {
     state.layers.splice(newIndex, 0, state.layers.splice(oldIndex, 1)[0]);

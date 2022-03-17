@@ -12,7 +12,7 @@ let previewIndex;
 
 const $fpsValue = $('#preview-fps-value');
 
-const fpsSlider = $('#preview-fps-slider').slider({
+const $fpsSlider = $('#preview-fps-slider').slider({
     min: 0,
     max: MAX_FPS,
     slide: (event, ui) => {
@@ -22,7 +22,7 @@ const fpsSlider = $('#preview-fps-slider').slider({
 });
 
 export function configUpdated() {
-    fpsSlider.slider('value', state.config('fps'));
+    $fpsSlider.slider('value', state.config('fps'));
 }
 
 // Just refresh the current preview frame (e.g. if chars got updated)

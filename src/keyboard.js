@@ -4,10 +4,26 @@ import * as clipboard from "./clipboard.js";
 import * as state from "./state.js";
 import {refresh} from "./index.js";
 
-$(document).keydown(function(e) {
+let standard = false;
+
+export function toggleStandard(enable) {
+    standard = enable;
+}
+
+const $document = $(document);
+
+$document.keydown(function(e) {
     const code = e.which // Note: This is normalized by jQuery. Keycodes https://keycode.info/
     const char = e.key; // E.g. a A 1 Control Alt Shift Meta Enter [ { \ /
     console.log(code, char);
+
+    if (standard) {
+        if (char === 'Enter') {
+            $document.trigger('keyboard:enter');
+            e.preventDefault();
+        }
+        return;
+    }
 
     if (char === 'Unidentified') {
         console.warn(`Unidentified key for event: ${e}`);

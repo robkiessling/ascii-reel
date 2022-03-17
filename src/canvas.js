@@ -95,18 +95,26 @@ export class CanvasControl {
             }
         }
 
-        if (CHAR_BACKGROUND) {
-            this.context.beginPath();
-            this.context.fillStyle = CHAR_BACKGROUND;
-            iterate2dArray(chars, (value, cell) => {
-                if (value !== '') {
-                    this.context.rect(...cell.xywh);
-                }
-            });
-            this.context.fill();
-        }
+        // if (CHAR_BACKGROUND === false) {
+        //     iterate2dArray(chars, (value, cell) => {
+        //         if (value !== '') {
+        //             this._fillCheckerboard(cell);
+        //         }
+        //     });
+        // }
+        // else {
+        //     this.context.beginPath();
+        //     this.context.fillStyle = CHAR_BACKGROUND;
+        //     iterate2dArray(chars, (value, cell) => {
+        //         if (value !== '') {
+        //             this.context.rect(...cell.xywh);
+        //         }
+        //     });
+        //     this.context.fill();
+        // }
 
         // Draw all chars using fillText
+        // TODO Only render chars in the viewable window
         iterate2dArray(chars, (value, cell) => {
             this.context.fillStyle = TEXT_COLOR;
 

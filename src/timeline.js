@@ -3,8 +3,9 @@ import $ from "jquery";
 import {refresh, resize} from "./index.js";
 import SimpleBar from 'simplebar';
 import 'jquery-ui/ui/widgets/sortable.js';
+import 'jquery-ui/ui/widgets/dialog.js';
 import * as state from "./state.js";
-import {toggleAllLayerVisibility} from "./state.js";
+import * as keyboard from "./keyboard.js";
 
 export class Timeline {
     constructor($frameContainer, $layerContainer) {
@@ -38,6 +39,8 @@ export class Timeline {
             }
         });
 
+        this._setupLayerEditor();
+
         this.$layers.off('click', '.layer').on('click', '.layer', evt => {
             const newIndex = this._layerIndexFromDOM($(evt.currentTarget).index());
             if (newIndex !== state.layerIndex()) {
@@ -51,6 +54,10 @@ export class Timeline {
                 name: `Layer ${state.layers().length + 1}`
             });
             this._selectLayer(layerIndex);
+        });
+
+        this.$layerContainer.find('.edit-layer').off('click').on('click', () => {
+            this._editLayer();
         });
 
         this.$layerContainer.find('.delete-layer').off('click').on('click', () => {
@@ -125,11 +132,11 @@ export class Timeline {
 
         this.$frameContainer.find('.align-frames-left').off('click').on('click', () => {
             state.config('frameOrientation', 'left');
-            window.setTimeout(() => { resize() }, 1);
+            resize();
         });
         this.$frameContainer.find('.align-frames-bottom').off('click').on('click', () => {
             state.config('frameOrientation', 'bottom');
-            window.setTimeout(() => { resize() }, 1); // TODO For some reason it takes a little time for heights to update
+            resize();
         });
     }
 
@@ -172,6 +179,83 @@ export class Timeline {
     }
     get currentLayerComponent() {
         return this._layerComponents[state.layerIndex()];
+    }
+
+    _setupLayerEditor() {
+        this.$editLayerDialog = $( "#edit-layer-dialog" ).dialog({
+            autoOpen: false,
+            width: 350,
+            classes: {
+                // "ui-dialog-titlebar-close": "ri ri-fw ri-close-line"
+                "ui-dialog-titlebar-close": "hidden"
+            },
+            closeText: '',
+            draggable: false,
+            resizable: false,
+            modal: true,
+            open: () => {
+                $('.ui-widget-overlay').on('click', () => {
+                    this.$editLayerDialog.dialog('close');
+                })
+
+                keyboard.toggleStandard(true);
+                $(document).on('keyboard:enter.layerEditor', () => this._saveLayer());
+            },
+            close: () => {
+                console.log('close');
+                keyboard.toggleStandard(false);
+                $(document).off('keyboard:enter.layerEditor');
+            },
+            buttons: [
+                {
+                    text: 'Cancel',
+                    click: () => this.$editLayerDialog.dialog("close")
+                },
+                {
+                    text: 'Save',
+                    class: 'call-out',
+                    click: () => this._saveLayer()
+                }
+            ]
+        });
+
+        this.$layerName = this.$editLayerDialog.find('.name');
+
+        this.$layerOpacitySlider = this.$editLayerDialog.find('.opacity-slider');
+        const $layerOpacityHandler = this.$layerOpacitySlider.find('.ui-slider-handle');
+        this.$layerOpacitySlider.slider({
+            value: 0,
+            min: 0,
+            max: 1,
+            step: 0.01,
+            slide: (event, ui) => {
+                $layerOpacityHandler.text(ui.value);
+            },
+            change: (event, ui) => {
+                $layerOpacityHandler.text(ui.value);
+            },
+            classes: {
+                "ui-slider-handle": "with-text"
+            }
+        });
+    }
+
+    _editLayer() {
+        const layer = state.currentLayer();
+        this.$layerOpacitySlider.slider('value', layer.opacity);
+        this.$layerName.val(layer.name);
+        this.$editLayerDialog.dialog('open');
+    }
+
+    _saveLayer() {
+        state.updateLayer(state.currentLayer(), {
+            name: this.$layerName.val(),
+            opacity: this.$layerOpacitySlider.slider('value')
+        });
+
+        this.$editLayerDialog.dialog("close");
+
+        refresh();
     }
 
     // Layers are sorted backwards in the DOM
