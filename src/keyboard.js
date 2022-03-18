@@ -2,7 +2,9 @@ import $ from "jquery";
 import * as selection from "./selection.js";
 import * as clipboard from "./clipboard.js";
 import * as state from "./state.js";
+import * as editor from "./editor.js";
 import {refresh} from "./index.js";
+import {currentColorIndex} from "./editor.js";
 
 let standard = false;
 
@@ -83,14 +85,14 @@ $document.keydown(function(e) {
         case 'Backspace':
         case 'Delete':
             selection.getSelectedCells().forEach(cell => {
-                state.setCurrentCelChar(cell.row, cell.col, '');
+                state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
             });
             refresh('chars');
             break;
         default:
             if (producesText(code)) {
                 selection.getSelectedCells().forEach(cell => {
-                    state.setCurrentCelChar(cell.row, cell.col, char);
+                    state.setCurrentCelChar(cell.row, cell.col, [char, editor.currentColorIndex()]);
                 });
                 refresh('chars');
             }

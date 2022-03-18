@@ -19,6 +19,7 @@ const CELL_DEFAULTS = {
     chars: [[]],
     colors: [[]]
 }
+const DEFAULT_COLORS = ['#000000ff']; // TODO These currently have to match colorPicker format to avoid duplicates
 const SEQUENCES = ['layers', 'frames'];
 let state;
 let sequences;
@@ -27,7 +28,8 @@ export function loadState(data) {
     state = {
         config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure index is in bounds
         layers: data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
-        frames: data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame))
+        frames: data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame)),
+        colors: $.extend(true, [], data.colors ? data.colors : DEFAULT_COLORS)
     };
 
     // TODO Ensure every layer and frame has enough cels?
@@ -178,11 +180,27 @@ function normalizeCel(cel) {
 
     // Build chars array, making sure every row/col has a value, and boundaries are followed
     normalizedCel.chars = [];
-    for (let row = 0; row < numRows(); row++) {
+    let row, col, char, color;
+    for (row = 0; row < numRows(); row++) {
         normalizedCel.chars[row] = [];
 
-        for (let col = 0; col < numCols(); col++) {
-            normalizedCel.chars[row][col] = cel.chars && cel.chars[row] && cel.chars[row][col] ? cel.chars[row][col] : '';
+        for (col = 0; col < numCols(); col++) {
+            if (cel.chars && cel.chars[row] && cel.chars[row][col] !== undefined) {
+                if (Array.isArray(cel.chars[row][col])) {
+                    char = cel.chars[row][col][0];
+                    color = cel.chars[row][col][1];
+                }
+                else {
+                    char = cel.chars[row][col];
+                }
+            }
+            if (char === undefined) { char = ''; }
+            if (color === undefined) { color = 0; }
+
+            normalizedCel.chars[row][col] = [char, color];
+
+            char = undefined;
+            color = undefined;
         }
     }
 
@@ -194,7 +212,7 @@ export function getCurrentCelChar(row, col) {
 }
 export function setCurrentCelChar(row, col, value) {
     if (charInBounds(row, col)) {
-        currentCel().chars[row][col] = value;
+        currentCel().chars[row][col] = [value[0], value[1]]; // Cloning array
     }
 }
 
@@ -204,7 +222,7 @@ function charInBounds(row, col) {
 
 // Aggregates all visible layers for a frame
 export function layeredChars(frame) {
-    let result = create2dArray(numRows(), numCols(), '');
+    let result = create2dArray(numRows(), numCols(), () => ['', 0]);
 
     let l, layer, chars, r, c;
     for (l = 0; l < state.layers.length; l++) {
@@ -213,7 +231,7 @@ export function layeredChars(frame) {
         chars = cel(layer, frame).chars;
         for (r = 0; r < chars.length; r++) {
             for (c = 0; c < chars[r].length; c++) {
-                if (chars[r][c] !== '') {
+                if (chars[r][c][0] !== '') {
                     result[r][c] = chars[r][c];
                 }
             }
@@ -221,4 +239,16 @@ export function layeredChars(frame) {
     }
 
     return result;
+}
+
+export function colorStr(colorIndex) {
+    return state.colors[colorIndex];
+}
+export function findOrCreateColor(colorStr) {
+    let index = state.colors.indexOf(colorStr);
+    if (index === -1) {
+        state.colors.push(colorStr);
+        index = state.colors.length - 1;
+    }
+    return index;
 }

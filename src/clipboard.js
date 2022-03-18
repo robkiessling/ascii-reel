@@ -1,6 +1,6 @@
 import * as selection from "./selection.js";
 import * as state from "./state.js";
-import {convert2dArrayToText, convertTextTo2dArray, translate} from "./utilities.js";
+import {convertTextTo2dArray, translate} from "./utilities.js";
 
 // Necessary for clipboard read/write https://stackoverflow.com/a/61517521
 import "regenerator-runtime/runtime.js";
@@ -50,7 +50,7 @@ export function paste() {
 
 function copySelection() {
     copiedSelection = selection.getSelectedValues();
-    copiedText = convert2dArrayToText(copiedSelection);
+    copiedText = convertCharsToText(copiedSelection);
     writeClipboard(copiedText);
 }
 
@@ -58,7 +58,7 @@ function pasteArray(array) {
     // If cut was used, remove old cut
     if (cutCell) {
         translate(array, cutCell, (value, r, c) => {
-            if (value !== null) { state.setCurrentCelChar(r, c, ''); }
+            if (value !== null) { state.setCurrentCelChar(r, c, ['', 0]); }
         })
         cutCell = null;
     }
@@ -84,6 +84,19 @@ function pasteArray(array) {
     }
 
     refresh('chars');
+}
+
+function convertCharsToText(array) {
+    let char;
+    return array.map(row => {
+        return row.map(charObj => {
+            // Only care about the char, not the color
+            char = charObj[0];
+
+            // Convert empty cells to space char ' ' so when it is pasted to a text document the spacing is correct
+            return char === null || char === '' ? ' ' : char;
+        }).join('');
+    }).join('\n');
 }
 
 function readClipboard(callback) {

@@ -67,13 +67,6 @@ export function convertTextTo2dArray(text) {
     })
 }
 
-export function convert2dArrayToText(array) {
-    return array.map(row => {
-        // Convert empty cells to space char ' ' so when it is pasted to a text document the spacing is correct
-        return row.map(char => char === null || char === '' ? ' ' : char).join('')
-    }).join('\n');
-}
-
 const PRINTABLE_CHAR_RANGE = [33, 126];
 export function randomPrintableChar() {
     return String.fromCharCode(getRandomInt(PRINTABLE_CHAR_RANGE[0], PRINTABLE_CHAR_RANGE[1]));

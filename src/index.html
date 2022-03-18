@@ -6,9 +6,33 @@
 </head>
 <body>
     <div id="main-content" class="frames-on-left">
-        <div id="canvas-container">
-            <canvas id="char-canvas" class="absolute-center full"></canvas>
-            <canvas id="selection-canvas" class="absolute-center full"></canvas>
+        <div id="tools-and-canvas">
+            <div id="canvas-tools">
+                <div class="editing-tool" id="rectangle-selection">
+                    <span class="ri ri-fw ri-checkbox-blank-fill"></span>
+                </div>
+                <div class="editing-tool" id="circle-selection">
+                    <span class="ri ri-fw ri-checkbox-blank-circle-fill"></span>
+                </div>
+                <div class="editing-tool" id="lasso-selection">
+                    <span class="ri ri-fw ri-chat-3-fill"></span>
+                </div>
+                <div class="editing-tool" id="paint">
+                    <span class="ri ri-fw ri-paint-fill"></span>
+                </div>
+                <div class="editing-tool" id="move">
+                    <span class="ri ri-fw ri-drag-move-2-fill"></span>
+                </div>
+                <div class="spacer"></div>
+                <div class="spacer"></div>
+                <div class="editing-tool" id="current-color">
+
+                </div>
+            </div>
+            <div id="canvas-container">
+                <canvas id="char-canvas" class="absolute-center full"></canvas>
+                <canvas id="selection-canvas" class="absolute-center full"></canvas>
+            </div>
         </div>
         <div id="frame-controller">
             <div class="tools">
@@ -83,6 +107,11 @@
                 </button>
             </div>
             <div class="layer-list"></div>
+        </div>
+        <div id="color-controller">
+            <div class="tools">
+
+            </div>
         </div>
     </div>
 

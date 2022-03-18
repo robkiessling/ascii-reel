@@ -10,6 +10,7 @@ import './clipboard.js';
 import {Timeline} from "./timeline.js";
 import * as state from "./state.js";
 import * as preview from "./preview.js";
+import './editor.js';
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
@@ -75,8 +76,8 @@ function redrawCharCanvas() {
     }
 }
 
-const rows = 50;
-const columns = 100;
+const rows = 25;
+const columns = 50;
 window.setTimeout(() => {
     load({
         config: {
@@ -92,12 +93,18 @@ window.setTimeout(() => {
             { id: 3, duration: 0.5 },
         ],
         cels: [
-            { layerId: 1, frameId: 1, chars: create2dArray(rows, columns, () => randomPrintableChar()), colors: [[]] },
+            { layerId: 1, frameId: 1, chars: create2dArray(rows, columns, () => {
+                return [randomPrintableChar(), Math.round(Math.random())];
+                }), colors: [[]] },
             { layerId: 1, frameId: 2, chars: create2dArray(2, 5, () => randomPrintableChar()), colors: [[]] },
             { layerId: 1, frameId: 3, chars: create2dArray(5, 10, () => randomPrintableChar()), colors: [[]] },
             { layerId: 2, frameId: 1, chars: create2dArray(2, 5, 'x'), colors: [[]] },
             { layerId: 2, frameId: 2, chars: [[]], colors: [[]] },
             { layerId: 2, frameId: 3, chars: [[]], colors: [[]] },
+        ],
+        colors: [
+            '#ffffffff', // TODO These currently have to match colorPicker format to avoid duplicates
+            '#000000ff'
         ]
     });
 }, 1);

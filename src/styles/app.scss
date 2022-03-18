@@ -4,6 +4,7 @@
 @import 'jquery-ui/themes/base/sortable';
 @import 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
 @import 'jquery-ui/themes/base/slider';
+@import 'vanilla-picker/dist/vanilla-picker.csp.css';
 
 $font: roboto, sans-serif;
 
@@ -56,6 +57,37 @@ body {
 #side-content {
   min-width: $right-col-width;
   margin: $main-spacing $main-spacing $main-spacing 0;
+}
+
+#tools-and-canvas {
+  flex: 1;
+
+  display: flex;
+  flex-direction: row;
+}
+
+#canvas-tools {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  .editing-tool {
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: $dark;
+    border: 1px solid $darker;
+    color: white;
+    font-size: 2rem;
+    box-sizing: border-box;
+  }
+
+  #current-color {
+    border: 5px solid $dark;
+  }
 }
 
 #canvas-container {
@@ -119,7 +151,7 @@ body {
     align-items: center;
 
     max-width: $right-col-width - $scrollbar-width;
-    padding: 2px;
+    padding: 2px 2px 2px 6px;
 
     background: $dark;
     color: white;
@@ -131,10 +163,8 @@ body {
 
     &.selected {
       border-color: $highlight;
-      .frame-index {
-        color: black;
-        background: $highlight;
-      }
+      background: $highlight;
+      color: black;
     }
 
     &.layer-template {
@@ -517,4 +547,11 @@ button {
 .ui-corner-left,
 .ui-corner-tl {
   border-radius: 0;
+}
+
+
+.picker_wrapper {
+  .picker_done {
+    display: none;
+  }
 }

@@ -49,6 +49,7 @@
     "jquery-ui": "^1.13.1",
     "regenerator-runtime": "^0.13.9",
     "remixicon": "^2.5.0",
-    "simplebar": "^5.3.6"
+    "simplebar": "^5.3.6",
+    "vanilla-picker": "^2.12.1"
   }
 }

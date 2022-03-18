@@ -9,9 +9,9 @@ const GRID = false;
 const GRID_WIDTH = 0.25;
 const GRID_COLOR = '#fff';
 
-// const WINDOW_BORDER = '#f48225'; // TODO Get this from scss?
-const WINDOW_BORDER = '#4c8bf5';
-const WINDOW_WIDTH = 5;
+const WINDOW_BORDER_COLOR = '#fff';
+// const WINDOW_BORDER_COLOR = '#4c8bf5'; // TODO Get this from scss?
+const WINDOW_BORDER_WIDTH = 4;
 
 // const SELECTION_COLOR = '#0066cc88';
 const SELECTION_COLOR = '#4c8bf588';
@@ -92,19 +92,25 @@ export class CanvasControl {
         // Convert individual chars into lines of text (of matching color), so we can call fillText as few times as possible
         let lines = [];
         for (let row = 0; row < chars.length; row++) {
-            let line;
+            let line, colorIndex;
             for (let col = 0; col < chars[row].length; col++) {
-                // TODO if new color, push current line, and set line = null
+                colorIndex = chars[row][col][1];
+                if (line && colorIndex !== line.colorIndex) {
+                    // Have to make new line
+                    lines.push(line);
+                    line = null;
+                }
+
                 if (!line) {
                     // Increase row by 0.5 so it is centered in cell
-                    line = { x: Cell.x(col), y: Cell.y(row + 0.5), fillStyle: TEXT_COLOR, text: '' }
+                    line = { x: Cell.x(col), y: Cell.y(row + 0.5), colorIndex: colorIndex, text: '' }
                 }
-                line.text += (chars[row][col] === '' ? ' ' : chars[row][col]);
+                line.text += (chars[row][col][0] === '' ? ' ' : chars[row][col][0]);
             }
             if (line) { lines.push(line); }
         }
         lines.forEach(line => {
-            this.context.fillStyle = line.fillStyle;
+            this.context.fillStyle = state.colorStr(line.colorIndex);
             this.context.fillText(line.text, line.x, line.y);
         })
 
@@ -132,9 +138,15 @@ export class CanvasControl {
     }
 
     drawWindow(rect) {
-        this.context.strokeStyle = WINDOW_BORDER;
-        this.context.lineWidth = WINDOW_WIDTH / this._currentZoom();
-        this.context.strokeRect(...rect.xywh);
+        this.context.strokeStyle = WINDOW_BORDER_COLOR;
+        const scaledBorder = WINDOW_BORDER_WIDTH / this._currentZoom();
+        this.context.lineWidth = scaledBorder;
+        this.context.strokeRect(
+            rect.x - scaledBorder / 2, // Need to move the whole window outwards by 50% of the border width
+            rect.y - scaledBorder / 2,
+            rect.width + scaledBorder,
+            rect.height + scaledBorder
+        )
     }
 
     _drawGrid() {
