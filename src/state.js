@@ -1,5 +1,5 @@
 import $ from "jquery";
-import {create2dArray, eachWithObject, iterate2dArray} from "./utilities.js";
+import {create2dArray, eachWithObject} from "./utilities.js";
 
 const CONFIG_DEFAULTS = {
     dimensions: [9, 9],
@@ -206,20 +206,19 @@ function charInBounds(row, col) {
 export function layeredChars(frame) {
     let result = create2dArray(numRows(), numCols(), '');
 
-    state.layers.forEach(layer => {
-        if (!layer.visible) {
-            return;
-        }
-
-        const layerChars = cel(layer, frame).chars;
-
-        iterate2dArray(layerChars, (value, cell) => {
-            // Only overwriting char if it is not blank
-            if (value !== '') {
-                result[cell.row][cell.col] = value;
+    let l, layer, chars, r, c;
+    for (l = 0; l < state.layers.length; l++) {
+        layer = state.layers[l];
+        if (!layer.visible) { continue; }
+        chars = cel(layer, frame).chars;
+        for (r = 0; r < chars.length; r++) {
+            for (c = 0; c < chars[r].length; c++) {
+                if (chars[r][c] !== '') {
+                    result[r][c] = chars[r][c];
+                }
             }
-        });
-    });
+        }
+    }
 
     return result;
 }

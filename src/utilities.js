@@ -33,14 +33,6 @@ export function createArray(size, defaultValue = null) {
     return array;
 }
 
-export function iterate2dArray(array, callback) {
-    for (let row = 0; row < array.length; row++) {
-        for (let col = 0; col < array[row].length; col++) {
-            callback(array[row][col], new Cell(row, col));
-        }
-    }
-}
-
 // Used for converting an array into a new object (similar to ruby's each_with_object method)
 export function eachWithObject(array, initialObject = {}, callback) {
     return array.reduce((obj, element) => {

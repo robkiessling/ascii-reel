@@ -58,8 +58,8 @@ export function bindMouseToCanvas(canvasControl) {
 }
 
 /**
- * Returns a 2d array of values for the smallest CellArea that bounds all SelectionAreas. This 2d array will contain null values
- * for any gaps between selectionAreas (if any).
+ * Returns a 2d array of values for the smallest CellArea that bounds all SelectionAreas. This 2d array will contain
+ * empty strings for any gaps between selectionAreas (if any).
  *
  * E.g. If the selectionAreas (depicted by x's) were this:
  *
@@ -71,13 +71,13 @@ export function bindMouseToCanvas(canvasControl) {
  *      Returns:
  *
  *        [
- *          [x, x, null, null, null],
- *          [x, x, null, null, x]
+ *          ['x', 'x', '', '', ''],
+ *          ['x', 'x', '', '', 'x']
  *        ]
  *
  * By default, returned values are the displayed chars. Can pass a @processor parameter to return a custom value.
  */
-export function getSelectedValues(processor = function(r, c) { return state.getCurrentCelChar(r, c); }) {
+export function getSelectedValues() {
     if (!hasSelection()) {
         return [[]];
     }
@@ -87,13 +87,9 @@ export function getSelectedValues(processor = function(r, c) { return state.getC
     let values = create2dArray(selectedArea.numRows, selectedArea.numCols, null);
 
     // Iterate through selectionAreas, populating values with cell values
-    selectionAreas.forEach(selectionArea => {
-        selectionArea.toCellArea().iterate((r, c) => {
-            const relativeRow = r - selectedArea.topLeft.row;
-            const relativeCol = c - selectedArea.topLeft.col;
-            values[relativeRow][relativeCol] = processor(r, c);
-        })
-    })
+    processRelativeArea(selectedArea, (r, c, relativeRow, relativeCol) => {
+        values[relativeRow][relativeCol] = state.getCurrentCelChar(r, c);
+    });
 
     return values;
 }
@@ -110,12 +106,29 @@ export function getSelectedValues(processor = function(r, c) { return state.getC
  *
  *      Returns:
  *
- *        [Cell{row:1,col:2}, Cell{row:1,col:3}, Cell{row:2,col:2}, Cell{row:2,col:3}, Cell{row:2,col:6}]
+ *        [{row:1,col:2}, {row:1,col:3}, {row:2,col:2}, {row:2,col:3}, {row:2,col:6}]
  */
 export function getSelectedCells() {
-    return getSelectedValues((r, c) => {
-        return new Cell(r, c);
-    }).flat().filter(cell => cell !== null);
+    const result = [];
+    processRelativeArea(getSelectedArea(), (r, c) => {
+        // Note: Not making a full Cell object for performance reasons. We don't need the other attributes of a Cell
+        result.push({ row: r, col: c});
+    })
+    return result;
+}
+
+function processRelativeArea(relativeArea, processor) {
+    selectionAreas.forEach(selectionArea => {
+        selectionArea.toCellArea().iterate((r, c) => {
+            const relativeRow = r - relativeArea.topLeft.row;
+            const relativeCol = c - relativeArea.topLeft.col;
+            processor(r, c, relativeRow, relativeCol);
+        });
+    });
+}
+
+export function getSelectedAreas() {
+    return selectionAreas.map(selectionArea => selectionArea.toCellArea());
 }
 
 /**

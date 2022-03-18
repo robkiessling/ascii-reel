@@ -1,15 +1,9 @@
-import {iterate2dArray, roundForComparison} from "./utilities.js";
+import {roundForComparison} from "./utilities.js";
 import * as state from "./state.js";
 
 const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
 const CELL_WIDTH = CELL_HEIGHT * MONOSPACE_RATIO;
-
-// Since monospace ratio has denominator of 5, this should be a multiple a 5 if you want cells to align with checkers
-const CHECKERS_PER_CELL_COL = 5;
-const CHECKERS_PER_CELL_ROW = CHECKERS_PER_CELL_COL * MONOSPACE_RATIO;
-const CHECKER_WIDTH = CELL_WIDTH / CHECKERS_PER_CELL_ROW;
-const CHECKER_HEIGHT = CELL_HEIGHT / CHECKERS_PER_CELL_COL;
 
 const GRID = false;
 const GRID_WIDTH = 0.25;
@@ -26,8 +20,8 @@ const ONION_OPACITY = 0.25;
 
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
-const CHAR_BACKGROUND = false;//CHECKERBOARD_A; // false => transparent. We use non-transparent so you can see spaces
 const CANVAS_BACKGROUND = false; // false => transparent
+const CHECKER_SIZE = 20;
 
 const ZOOM_BOUNDARIES = [0.25, 30];
 const ZOOM_MARGIN = 1.2;
@@ -62,7 +56,7 @@ export class CanvasControl {
 
         // Set up font
         this.context.font = '1rem monospace';
-        this.context.textAlign = 'center';
+        this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
 
         this.buildBoundaries();
@@ -87,7 +81,7 @@ export class CanvasControl {
             this.clear();
 
             if (CANVAS_BACKGROUND === false) {
-                this._fillCheckerboard(CellArea.drawableArea());
+                this._fillCheckerboard();
             }
             else {
                 this.context.fillStyle = CANVAS_BACKGROUND;
@@ -95,35 +89,27 @@ export class CanvasControl {
             }
         }
 
-        // if (CHAR_BACKGROUND === false) {
-        //     iterate2dArray(chars, (value, cell) => {
-        //         if (value !== '') {
-        //             this._fillCheckerboard(cell);
-        //         }
-        //     });
-        // }
-        // else {
-        //     this.context.beginPath();
-        //     this.context.fillStyle = CHAR_BACKGROUND;
-        //     iterate2dArray(chars, (value, cell) => {
-        //         if (value !== '') {
-        //             this.context.rect(...cell.xywh);
-        //         }
-        //     });
-        //     this.context.fill();
-        // }
-
-        // Draw all chars using fillText
-        // TODO Only render chars in the viewable window
-        iterate2dArray(chars, (value, cell) => {
-            this.context.fillStyle = TEXT_COLOR;
-
-            // Translate by 50%, so we can draw char in center of cell
-            this.context.fillText(value, ...cell.translate(0.5, 0.5).xy);
-        });
+        // Convert individual chars into lines of text (of matching color), so we can call fillText as few times as possible
+        let lines = [];
+        for (let row = 0; row < chars.length; row++) {
+            let line;
+            for (let col = 0; col < chars[row].length; col++) {
+                // TODO if new color, push current line, and set line = null
+                if (!line) {
+                    // Increase row by 0.5 so it is centered in cell
+                    line = { x: Cell.x(col), y: Cell.y(row + 0.5), fillStyle: TEXT_COLOR, text: '' }
+                }
+                line.text += (chars[row][col] === '' ? ' ' : chars[row][col]);
+            }
+            if (line) { lines.push(line); }
+        }
+        lines.forEach(line => {
+            this.context.fillStyle = line.fillStyle;
+            this.context.fillText(line.text, line.x, line.y);
+        })
 
         if (GRID) {
-            this._drawGrid(chars);
+            this._drawGrid();
         }
     }
 
@@ -135,13 +121,13 @@ export class CanvasControl {
     }
 
     // Note: This conflicts with drawChars. We use different canvases for chars/selections stacked on top of each other.
-    highlightCells(cells) {
+    highlightAreas(areas) {
         this.clear();
 
         // Draw all selection rectangles
-        cells.forEach(cell => {
-            this.context.fillStyle = SELECTION_COLOR;
-            this.context.fillRect(...cell.xywh);
+        this.context.fillStyle = SELECTION_COLOR;
+        areas.forEach(area => {
+            this.context.fillRect(...area.xywh);
         });
     }
 
@@ -151,42 +137,69 @@ export class CanvasControl {
         this.context.strokeRect(...rect.xywh);
     }
 
-    _drawGrid(chars) {
+    _drawGrid() {
         this.context.strokeStyle = GRID_COLOR;
         this.context.lineWidth = GRID_WIDTH;
 
-        iterate2dArray(chars, (value, cell) => {
-            // Drawing a box around the cell. Only draw left/top borders for first cells in the row/col
+        for (let r = 0; r < state.numRows() + 1; r++) {
             this.context.beginPath();
-            this.context.moveTo(...cell.xy);
-            cell.col === 0 ? this.context.lineTo(...cell.translate(1, 0).xy) : this.context.moveTo(...cell.translate(1, 0).xy);
-            this.context.lineTo(...cell.translate(0, 1).xy);
-            this.context.lineTo(...cell.translate(-1, 0).xy);
-            cell.row === 0 ? this.context.lineTo(...cell.translate(0, -1).xy) : this.context.moveTo(...cell.translate(0, -1).xy)
+            this.context.moveTo(Cell.x(0), Cell.y(r));
+            this.context.lineTo(Cell.x(state.numCols()), Cell.y(r));
             this.context.stroke();
-        });
+        }
+
+        for (let c = 0; c < state.numCols() + 1; c++) {
+            this.context.beginPath();
+            this.context.moveTo(Cell.x(c), Cell.y(0));
+            this.context.lineTo(Cell.x(c), Cell.y(state.numRows()));
+            this.context.stroke();
+        }
     }
 
-    _fillCheckerboard(area) {
-        this.context.beginPath();
-        this.context.fillStyle = CHECKERBOARD_A;
-        this.context.rect(...area.xywh);
-        this.context.fill();
+    _fillCheckerboard() {
+        // First, draw a checkerboard over full area (checkerboard does not change depending on zoom; this way we have
+        // a static number of checkers and performance is consistent).
+        this.usingFullArea((fullArea) => {
+            this.context.beginPath();
+            this.context.fillStyle = CHECKERBOARD_A;
+            this.context.rect(...fullArea.xywh);
+            this.context.fill();
 
-        this.context.beginPath();
-        this.context.fillStyle = CHECKERBOARD_B;
-        let rowStartsOnB = false;
-        for (let x = area.x; roundForComparison(x) < roundForComparison(area.x + area.width); x += CHECKER_WIDTH) {
-            let isCheckered = rowStartsOnB;
-            for (let y = area.y; roundForComparison(y) < roundForComparison(area.y + area.height); y += CHECKER_HEIGHT) {
-                if (isCheckered) {
-                    this.context.rect(x, y, CHECKER_WIDTH, CHECKER_HEIGHT);
+            this.context.beginPath();
+            this.context.fillStyle = CHECKERBOARD_B;
+            let rowStartsOnB = false;
+            let x, y;
+            let maxX = roundForComparison(fullArea.x + fullArea.width);
+            let maxY = roundForComparison(fullArea.y + fullArea.height);
+
+            for (x = fullArea.x; roundForComparison(x) < maxX; x += CHECKER_SIZE) {
+                let isCheckered = rowStartsOnB;
+                for (y = fullArea.y; roundForComparison(y) < maxY; y += CHECKER_SIZE) {
+                    if (isCheckered) {
+                        this.context.rect(x, y, CHECKER_SIZE, CHECKER_SIZE);
+                    }
+                    isCheckered = !isCheckered;
                 }
-                isCheckered = !isCheckered;
+                rowStartsOnB = !rowStartsOnB;
             }
-            rowStartsOnB = !rowStartsOnB;
-        }
-        this.context.fill();
+            this.context.fill();
+        });
+
+        // Clear the 4 edges between the drawable area and the full area
+        const drawableArea = CellArea.drawableArea();
+        const topLeft = this.pointAtExternalXY(0, 0);
+        const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
+        this.context.clearRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, drawableArea.y - topLeft.y);
+        this.context.clearRect(topLeft.x, topLeft.y, drawableArea.x - topLeft.x, bottomRight.y - topLeft.y);
+        this.context.clearRect(
+            drawableArea.x + drawableArea.width, topLeft.y,
+            bottomRight.x - (drawableArea.x + drawableArea.width), bottomRight.y - topLeft.y
+        );
+        this.context.clearRect(
+            topLeft.x, drawableArea.y + drawableArea.height,
+            bottomRight.x - topLeft.x, bottomRight.y - (drawableArea.y + drawableArea.height)
+        );
+
     }
     
     
@@ -382,6 +395,15 @@ export class Cell extends Rect {
         super();
         this.row = row;
         this.col = col;
+    }
+
+    // Since x and y are based purely on col/row value, we have these static methods so you can calculate x/y without
+    // having to instantiate a new Cell() -- helps with performance
+    static x(col) {
+        return col * CELL_WIDTH;
+    }
+    static y(row) {
+        return row * CELL_HEIGHT;
     }
 
     clone() {
