@@ -27,7 +27,7 @@ export function configUpdated() {
 
 // Just refresh the current preview frame (e.g. if chars got updated)
 export function refresh() {
-    canvasControl.drawChars(state.layeredChars(state.frames()[previewIndex]));
+    canvasControl.drawChars(state.layeredChars(state.frames()[previewIndex], true));
     canvasControl.drawWindow(selectionCanvas.currentViewRect());
 }
 

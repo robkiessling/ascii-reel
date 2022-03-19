@@ -14,7 +14,7 @@ const WINDOW_BORDER_COLOR = '#fff';
 const WINDOW_BORDER_WIDTH = 4;
 
 const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles
-const ONION_OPACITY = 0.25;
+const ONION_OPACITY = 0.15;
 
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';

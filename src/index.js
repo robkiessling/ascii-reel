@@ -84,8 +84,8 @@ window.setTimeout(() => {
             dimensions: [columns, rows]
         },
         layers: [
-            { id: 1, name: 'Bottom Layer', opacity: 1 },
-            { id: 2, name: 'Top Layer', opacity: 1 }
+            { id: 1, name: 'Bottom Layer' },
+            { id: 2, name: 'Top Layer' }
         ],
         frames: [
             { id: 1, duration: 0.5 },

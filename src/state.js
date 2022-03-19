@@ -5,14 +5,14 @@ const CONFIG_DEFAULTS = {
     dimensions: [9, 9],
     fps: 0,
     onion: false, // todo may add more options
+    lockLayerVisibility: true,
     layerIndex: 0,
     frameIndex: 0,
     frameOrientation: 'left'
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',
-    visible: true,
-    opacity: 1
+    visible: true
 }
 const FRAME_DEFAULTS = {}
 const CELL_DEFAULTS = {
@@ -128,9 +128,6 @@ export function reorderLayer(oldIndex, newIndex) {
 export function toggleLayerVisibility(layer) {
     layer.visible = !layer.visible;
 }
-export function toggleAllLayerVisibility(visible) {
-    state.layers.forEach(layer => layer.visible = visible);
-}
 
 
 
@@ -221,18 +218,19 @@ export function charInBounds(row, col) {
 }
 
 // Aggregates all visible layers for a frame
-export function layeredChars(frame) {
+export function layeredChars(frame, forceAllLayers) {
     let result = create2dArray(numRows(), numCols(), () => ['', 0]);
 
     let l, layer, chars, r, c;
     for (l = 0; l < state.layers.length; l++) {
         layer = state.layers[l];
-        if (!layer.visible) { continue; }
-        chars = cel(layer, frame).chars;
-        for (r = 0; r < chars.length; r++) {
-            for (c = 0; c < chars[r].length; c++) {
-                if (chars[r][c][0] !== '') {
-                    result[r][c] = chars[r][c];
+        if (forceAllLayers || (state.config.lockLayerVisibility ? l === layerIndex() : layer.visible)) {
+            chars = cel(layer, frame).chars;
+            for (r = 0; r < chars.length; r++) {
+                for (c = 0; c < chars[r].length; c++) {
+                    if (chars[r][c][0] !== '') {
+                        result[r][c] = chars[r][c];
+                    }
                 }
             }
         }

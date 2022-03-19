@@ -65,13 +65,8 @@ export class Timeline {
             this._selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
         });
 
-        this.$layerContainer.find('.toggle-visibility-all').off('click').on('click', () => {
-            // const allVisible = state.layers().every(layer => layer.visible);
-            // state.toggleAllLayerVisibility(!allVisible);
-
-            const atLeastOneVisible = state.layers().some(layer => layer.visible);
-            state.toggleAllLayerVisibility(!atLeastOneVisible);
-
+        this.$layerContainer.find('.toggle-visibility-lock').off('click').on('click', () => {
+            state.config('lockLayerVisibility', !state.config('lockLayerVisibility'));
             refresh();
         });
 
@@ -220,37 +215,17 @@ export class Timeline {
         });
 
         this.$layerName = this.$editLayerDialog.find('.name');
-
-        this.$layerOpacitySlider = this.$editLayerDialog.find('.opacity-slider');
-        const $layerOpacityHandler = this.$layerOpacitySlider.find('.ui-slider-handle');
-        this.$layerOpacitySlider.slider({
-            value: 0,
-            min: 0,
-            max: 1,
-            step: 0.01,
-            slide: (event, ui) => {
-                $layerOpacityHandler.text(ui.value);
-            },
-            change: (event, ui) => {
-                $layerOpacityHandler.text(ui.value);
-            },
-            classes: {
-                "ui-slider-handle": "with-text"
-            }
-        });
     }
 
     _editLayer() {
         const layer = state.currentLayer();
-        this.$layerOpacitySlider.slider('value', layer.opacity);
         this.$layerName.val(layer.name);
         this.$editLayerDialog.dialog('open');
     }
 
     _saveLayer() {
         state.updateLayer(state.currentLayer(), {
-            name: this.$layerName.val(),
-            opacity: this.$layerOpacitySlider.slider('value')
+            name: this.$layerName.val()
         });
 
         this.$editLayerDialog.dialog("close");
@@ -277,11 +252,11 @@ export class Timeline {
         if (this._layerComponents) {
             this._layerComponents.forEach(layerComponent => layerComponent.refresh());
 
-            const atLeastOneVisible = state.layers().some(layer => layer.visible);
-            this.$layerContainer.find('.toggle-visibility-all').find('.ri')
-                .toggleClass('active', atLeastOneVisible)
-                .toggleClass('ri-eye-line', atLeastOneVisible)
-                .toggleClass('ri-eye-off-line', !atLeastOneVisible);
+            const locked = state.config('lockLayerVisibility');
+            this.$layerContainer.find('.toggle-visibility-lock').find('.ri')
+                .toggleClass('active', locked)
+                .toggleClass('ri-lock-line', locked)
+                .toggleClass('ri-lock-unlock-line', !locked);
 
         }
     }
@@ -322,7 +297,9 @@ class LayerComponent {
     }
 
     refresh() {
-        this._$container.find('.toggle-visibility').find('.ri')
+        this._$container.find('.toggle-visibility')
+            .toggleClass('invisible', state.config('lockLayerVisibility'))
+            .find('.ri')
             .toggleClass('active', this._layer.visible)
             .toggleClass('ri-eye-line', this._layer.visible)
             .toggleClass('ri-eye-off-line', !this._layer.visible);

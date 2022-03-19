@@ -341,10 +341,6 @@ body {
     display: block;
     margin-bottom: 1rem;
   }
-
-  .opacity-slider {
-    margin: 0.5rem 1rem;
-  }
 }
 
 #preview-controller {
@@ -387,6 +383,10 @@ body {
   left:50%;
   top:50%;
   transform: translate(-50%, -50%);
+}
+
+.invisible {
+  visibility: hidden; // Will still take up space, but be invisible
 }
 
 .prevent-selection {
