@@ -71,6 +71,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  margin-right: 0.5rem;
 
   .editing-tool {
     width: 3rem;
@@ -95,6 +96,10 @@ body {
   flex: 1;
 
   position: relative;
+
+  #selection-canvas {
+    opacity: 0.5;
+  }
 }
 
 .simplebar-scrollbar::before {
@@ -552,6 +557,18 @@ button {
 
 .picker_wrapper {
   .picker_done {
-    display: none;
+    &.hidden {
+      display: none;
+    }
+
+    button {
+      margin: 0;
+      background: $highlight2;
+      border-color: $dark;
+
+      &:hover {
+        background: $highlight2-dark;
+      }
+    }
   }
 }

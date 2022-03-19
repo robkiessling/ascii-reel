@@ -4,7 +4,6 @@ import * as clipboard from "./clipboard.js";
 import * as state from "./state.js";
 import * as editor from "./editor.js";
 import {refresh} from "./index.js";
-import {currentColorIndex} from "./editor.js";
 
 let standard = false;
 
@@ -17,7 +16,7 @@ const $document = $(document);
 $document.keydown(function(e) {
     const code = e.which // Note: This is normalized by jQuery. Keycodes https://keycode.info/
     const char = e.key; // E.g. a A 1 Control Alt Shift Meta Enter [ { \ /
-    console.log(code, char);
+    // console.log(code, char);
 
     if (standard) {
         if (char === 'Enter') {

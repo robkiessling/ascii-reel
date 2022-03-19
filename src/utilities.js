@@ -59,14 +59,6 @@ export function translate(array, cell, callback) {
 
 
 
-const MAX_TEXT_LENGTH = 100000; // Upper limit just in case the OS clipboard had a huge amount of text copied
-
-export function convertTextTo2dArray(text) {
-    return text.slice(0, MAX_TEXT_LENGTH).split(/\r?\n/).map(line => {
-        return line.split('');
-    })
-}
-
 const PRINTABLE_CHAR_RANGE = [33, 126];
 export function randomPrintableChar() {
     return String.fromCharCode(getRandomInt(PRINTABLE_CHAR_RANGE[0], PRINTABLE_CHAR_RANGE[1]));

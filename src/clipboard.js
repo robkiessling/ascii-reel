@@ -1,11 +1,12 @@
 import * as selection from "./selection.js";
 import * as state from "./state.js";
-import {convertTextTo2dArray, translate} from "./utilities.js";
+import {translate} from "./utilities.js";
 
 // Necessary for clipboard read/write https://stackoverflow.com/a/61517521
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
 import {timeline, refresh} from "./index.js";
+import * as editor from "./editor.js";
 
 let cutCell = null;
 let copiedSelection = null; // 2d array
@@ -39,7 +40,7 @@ export function paste() {
         if (copiedText !== text) {
             // External clipboard has changed; paste the external clipboard
             cutCell = null; // Disregard any previous cuts
-            pasteArray(convertTextTo2dArray(text));
+            pasteArray(convertTextToChars(text));
         }
         else if (copiedSelection) {
             // Write our stored selection
@@ -91,13 +92,20 @@ function convertCharsToText(array) {
     return array.map(row => {
         return row.map(charObj => {
             // Only care about the char, not the color
-            char = charObj[0];
-
             // Convert empty cells to space char ' ' so when it is pasted to a text document the spacing is correct
-            return char === null || char === '' ? ' ' : char;
+            return charObj === null || charObj[0] === '' ? ' ' : charObj[0];
         }).join('');
     }).join('\n');
 }
+
+const MAX_TEXT_LENGTH = 100000; // Upper limit just in case the OS clipboard had a huge amount of text copied
+
+export function convertTextToChars(text) {
+    return text.slice(0, MAX_TEXT_LENGTH).split(/\r?\n/).map(line => {
+        return line.split('').map(char => [char, editor.currentColorIndex()]);
+    })
+}
+
 
 function readClipboard(callback) {
     navigator.clipboard.readText().then(text => {

@@ -216,7 +216,7 @@ export function setCurrentCelChar(row, col, value) {
     }
 }
 
-function charInBounds(row, col) {
+export function charInBounds(row, col) {
     return row >= 0 && row < numRows() && col >= 0 && col < numCols();
 }
 

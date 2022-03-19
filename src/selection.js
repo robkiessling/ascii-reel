@@ -29,17 +29,15 @@ export function bindMouseToCanvas(canvasControl) {
 
         isSelecting = true;
 
-        if (!evt.metaKey && !evt.ctrlKey && !evt.shiftKey) {
+        if (!evt.shiftKey) {
             clear();
         }
 
-        if (evt.metaKey || evt.ctrlKey || !lastArea()) {
-            startArea(canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY));
-        }
-
-        if (evt.shiftKey) {
-            lastArea().end = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
-            refresh('selection');
+        if (evt.shiftKey || !lastArea()) {
+            const cell = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY, true);
+            if (cell) {
+                startArea(cell);
+            }
         }
     });
     canvasControl.$canvas.off('mousemove.selection').on('mousemove.selection', evt => {

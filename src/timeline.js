@@ -66,11 +66,11 @@ export class Timeline {
         });
 
         this.$layerContainer.find('.toggle-visibility-all').off('click').on('click', () => {
-            const allVisible = state.layers().every(layer => layer.visible);
-            state.toggleAllLayerVisibility(!allVisible);
+            // const allVisible = state.layers().every(layer => layer.visible);
+            // state.toggleAllLayerVisibility(!allVisible);
 
-            // const atLeastOneVisible = state.layers().some(layer => layer.visible);
-            // state.toggleAllLayerVisibility(!atLeastOneVisible);
+            const atLeastOneVisible = state.layers().some(layer => layer.visible);
+            state.toggleAllLayerVisibility(!atLeastOneVisible);
 
             refresh();
         });

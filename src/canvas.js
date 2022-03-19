@@ -13,9 +13,7 @@ const WINDOW_BORDER_COLOR = '#fff';
 // const WINDOW_BORDER_COLOR = '#4c8bf5'; // TODO Get this from scss?
 const WINDOW_BORDER_WIDTH = 4;
 
-// const SELECTION_COLOR = '#0066cc88';
-const SELECTION_COLOR = '#4c8bf588';
-const TEXT_COLOR = '#fff';
+const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles
 const ONION_OPACITY = 0.25;
 
 const CHECKERBOARD_A = '#4c4c4c';
@@ -248,9 +246,11 @@ export class CanvasControl {
         };
     }
 
-    cellAtExternalXY(x, y) {
+    cellAtExternalXY(x, y, checkBoundaries = false) {
         const point = this.pointAtExternalXY(x, y);
-        return new Cell(Math.floor(point.y / CELL_HEIGHT), Math.floor(point.x / CELL_WIDTH))
+        const row = Math.floor(point.y / CELL_HEIGHT);
+        const col = Math.floor(point.x / CELL_WIDTH);
+        return !checkBoundaries || state.charInBounds(row, col) ? new Cell(row, col) : null;
     }
 
     zoomTo(level) {

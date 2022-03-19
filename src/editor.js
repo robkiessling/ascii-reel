@@ -17,9 +17,15 @@ const colorPicker = new Picker({
     parent: colorPickerElement,
     color: currentColorStr,
     popup: 'top',
+    onOpen: () => {
+        $(colorPickerElement).find('.picker_done button').html('Fill'); // todo only show 'Fill' if has selection
+    },
     onChange: (color) => {
         colorPickerElement.style.background = color.hex;
         currentColorStr = color.hex;
         cachedColorIndex = null;
+    },
+    onDone: (color) => {
+
     }
 });
