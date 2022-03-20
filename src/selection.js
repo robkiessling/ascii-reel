@@ -3,6 +3,7 @@ import {create2dArray} from "./utilities.js";
 import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
+import bresenham from "bresenham";
 
 let polygons = [];
 
@@ -36,13 +37,12 @@ export function bindMouseToCanvas(canvasControl) {
             clear();
         }
 
-        if (evt.shiftKey || !lastPolygon()) {
-            const cell = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY, true);
-            if (cell) {
-                startRect(cell);
-            }
+        const cell = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY, true);
+        if (cell) {
+            startPolygon(cell)
         }
     });
+
     canvasControl.$canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
             lastPolygon().end = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
@@ -157,7 +157,6 @@ export function getSelectedCells() {
 // Move all polygons in a particular direction
 export function moveSelection(direction, amount, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
-        startRect(new Cell(0, 0));
         return;
     }
 
@@ -170,9 +169,19 @@ function lastPolygon() {
     return polygons[polygons.length - 1];
 }
 
-function startRect(cell) {
-    polygons.push(new SelectionRect(cell, cell.clone()));
-    triggerRefresh('selection');
+function startPolygon(cell) {
+    switch(state.config('tool')) {
+        case 'selection-rect':
+            polygons.push(new SelectionRect(cell, cell.clone()));
+            triggerRefresh('selection');
+            break;
+        case 'selection-line':
+            polygons.push(new SelectionLine(cell, cell.clone()));
+            triggerRefresh('selection');
+            break;
+        default:
+            console.log('No polygon for tool: ', state.config('tool'));
+    }
 }
 
 /**
@@ -233,10 +242,18 @@ class SelectionPolygon {
 
 class SelectionLine extends SelectionPolygon {
     iterateCells(callback) {
-
+        this._cells().forEach(cell => callback(cell.row, cell.col));
     }
-    draw(context) {
 
+    draw(context) {
+        this._cells().forEach(cell => context.fillRect(...cell.xywh));
+    }
+
+    _cells() {
+        // Using Bresenham line approximation https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+        return bresenham(this.start.col, this.start.row, this.end.col, this.end.row).map(coord => {
+            return new Cell(coord.y, coord.x);
+        });
     }
 }
 
