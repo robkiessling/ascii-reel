@@ -49,17 +49,17 @@ export function triggerRefresh(type = 'full') {
             timeline.currentFrameComponent.redrawChars();
             break;
         case 'selection':
-            selectionCanvas.highlightAreas(selection.getSelectedAreas());
+            selectionCanvas.highlightPolygons(selection.getPolygons());
             break;
         case 'zoom':
             redrawCharCanvas();
             preview.redraw();
-            selectionCanvas.highlightAreas(selection.getSelectedAreas());
+            selectionCanvas.highlightPolygons(selection.getPolygons());
             break;
         case 'full':
             redrawCharCanvas();
             preview.reset();
-            selectionCanvas.highlightAreas(selection.getSelectedAreas());
+            selectionCanvas.highlightPolygons(selection.getPolygons());
             timeline.rebuildLayers();
             timeline.rebuildFrames();
             timeline.refresh();

@@ -62,23 +62,23 @@ $document.keydown(function(e) {
             break;
         case 'ArrowLeft':
             // If shift key is pressed, we only want to move the end cell
-            selection.moveSelection('left', !e.shiftKey);
+            selection.moveSelection('left', 1, !e.shiftKey);
             break;
         case 'ArrowUp':
-            selection.moveSelection('up', !e.shiftKey);
+            selection.moveSelection('up', 1, !e.shiftKey);
             break;
         case 'ArrowRight':
-            selection.moveSelection('right', !e.shiftKey);
+            selection.moveSelection('right', 1, !e.shiftKey);
             break;
         case 'ArrowDown':
-            selection.moveSelection('down', !e.shiftKey);
+            selection.moveSelection('down', 1, !e.shiftKey);
             break;
         case 'Tab':
             // If shift key is pressed, we move in opposite direction
-            if (e.shiftKey) { selection.moveSelection('left'); } else { selection.moveSelection('right'); }
+            if (e.shiftKey) { selection.moveSelection('left', 1); } else { selection.moveSelection('right', 1); }
             break;
         case 'Enter':
-            if (e.shiftKey) { selection.moveSelection('up'); } else { selection.moveSelection('down'); }
+            if (e.shiftKey) { selection.moveSelection('up', 1); } else { selection.moveSelection('down', 1); }
             break;
 
         case 'Backspace':

@@ -125,14 +125,12 @@ export class CanvasControl {
     }
 
     // Note: This conflicts with drawChars. We use different canvases for chars/selections stacked on top of each other.
-    highlightAreas(areas) {
+    highlightPolygons(polygons) {
         this.clear();
 
         // Draw all selection rectangles
         this.context.fillStyle = SELECTION_COLOR;
-        areas.forEach(area => {
-            this.context.fillRect(...area.xywh);
-        });
+        polygons.forEach(polygon => polygon.draw(this.context));
     }
 
     drawWindow(rect) {
@@ -510,13 +508,6 @@ export class CellArea extends Rect {
                 callback(r, c);
             }
         }
-    }
-
-    mergeArea(otherRect) {
-        if (otherRect.topLeft.row < this.topLeft.row) { this.topLeft.row = otherRect.topLeft.row; }
-        if (otherRect.topLeft.col < this.topLeft.col) { this.topLeft.col = otherRect.topLeft.col; }
-        if (otherRect.bottomRight.row > this.bottomRight.row) { this.bottomRight.row = otherRect.bottomRight.row; }
-        if (otherRect.bottomRight.col > this.bottomRight.col) { this.bottomRight.col = otherRect.bottomRight.col; }
     }
 
     get x() {

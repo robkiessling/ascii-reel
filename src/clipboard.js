@@ -43,11 +43,11 @@ export function paste() {
     readClipboard(text => {
         if (copiedText !== text) {
             // External clipboard has changed; paste the external clipboard
-            pasteArray(convertTextToChars(text));
+            paste2dArray(convertTextToChars(text));
         }
         else if (copiedSelection) {
             // Write our stored selection
-            pasteArray(copiedSelection);
+            paste2dArray(copiedSelection);
         }
     });
 }
@@ -58,17 +58,16 @@ function copySelection() {
     writeClipboard(copiedText);
 }
 
-function pasteArray(array) {
-    console.log(array);
+function paste2dArray(array) {
     if (array.length === 1 && array[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         selection.getSelectedCells().forEach(cell => {
-            state.setCurrentCelChar(cell.row, cell.col, array[0][0])
+            state.setCurrentCelChar(cell.row, cell.col, array[0][0]);
         });
     }
     else {
         // Paste array once at topLeft of entire selected area
-        translate(array, selection.getSelectedArea().topLeft, (value, r, c) => {
+        translate(array, selection.getSelectedCellArea().topLeft, (value, r, c) => {
             if (value !== null) { state.setCurrentCelChar(r, c, value); }
         });
     }

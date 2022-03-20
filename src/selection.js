@@ -4,20 +4,23 @@ import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
 
-// The full selection is made up of 1 or more SelectionAreas. All SelectionAreas are highlighted in the editor.
-let selectionAreas = [];
+let polygons = [];
+
+export function getPolygons() {
+    return polygons;
+}
 
 export function hasSelection() {
-    return selectionAreas.length > 0;
+    return polygons.length > 0;
 }
 
 export function clear() {
-    selectionAreas = [];
+    polygons = [];
     triggerRefresh('selection');
 }
 
 export function selectAll() {
-    selectionAreas = [SelectionArea.drawableArea()];
+    polygons = [SelectionRect.drawableArea()];
     triggerRefresh('selection');
 }
 
@@ -33,16 +36,16 @@ export function bindMouseToCanvas(canvasControl) {
             clear();
         }
 
-        if (evt.shiftKey || !lastArea()) {
+        if (evt.shiftKey || !lastPolygon()) {
             const cell = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY, true);
             if (cell) {
-                startArea(cell);
+                startRect(cell);
             }
         }
     });
     canvasControl.$canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
-            lastArea().end = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
+            lastPolygon().end = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
             triggerRefresh('selection');
         }
     });
@@ -56,10 +59,10 @@ export function bindMouseToCanvas(canvasControl) {
 }
 
 /**
- * Returns a 2d array of values for the smallest CellArea that bounds all SelectionAreas. This 2d array will contain
- * empty strings for any gaps between selectionAreas (if any).
+ * Returns a 2d array of values for the smallest CellArea that bounds all polygons. This 2d array will contain
+ * empty strings for any gaps between polygons (if any).
  *
- * E.g. If the selectionAreas (depicted by x's) were this:
+ * E.g. If the polygons (depicted by x's) were this:
  *
  *        .......
  *        ..xx...
@@ -69,11 +72,10 @@ export function bindMouseToCanvas(canvasControl) {
  *      Returns:
  *
  *        [
- *          ['x', 'x', '', '', ''],
- *          ['x', 'x', '', '', 'x']
+ *          ['x', 'x', null, null, null],
+ *          ['x', 'x', null, null, 'x']
  *        ]
  *
- * By default, returned values are the displayed chars. Can pass a @processor parameter to return a custom value.
  */
 export function getSelectedValues() {
     if (!hasSelection()) {
@@ -81,21 +83,55 @@ export function getSelectedValues() {
     }
 
     // Start with 2d array of nulls
-    let selectedArea = getSelectedArea();
-    let values = create2dArray(selectedArea.numRows, selectedArea.numCols, null);
+    const cellArea = getSelectedCellArea();
+    let values = create2dArray(cellArea.numRows, cellArea.numCols, null);
 
-    // Iterate through selectionAreas, populating values with cell values
-    processRelativeArea(selectedArea, (r, c, relativeRow, relativeCol) => {
-        values[relativeRow][relativeCol] = state.getCurrentCelChar(r, c);
+    polygons.forEach(polygon => {
+        polygon.iterateCells((r, c) => {
+            values[r - cellArea.topLeft.row][c - cellArea.topLeft.col] = state.getCurrentCelChar(r, c);
+        });
     });
 
     return values;
 }
 
 /**
- * Returns a flat array of Cell objects for all selected cells.
+ * Returns the smallest possible CellArea that includes all polygons.
  *
- * E.g. If the selectionAreas (depicted by x's) were this:
+ * E.g. If the polygons (depicted by x's) were this:
+ *
+ *        .......
+ *        ..xx...
+ *        ..xx..x
+ *        .......
+ *
+ *      Returns:
+ *
+ *        CellArea{ topLeft: {row:1,col:2}, bottomRight: {row:2,col:6} }
+ *
+ */
+export function getSelectedCellArea() {
+    if (!hasSelection()) {
+        return null;
+    }
+
+    const topLeft = new Cell();
+    const bottomRight = new Cell();
+    
+    polygons.forEach(polygon => {
+        if (topLeft.row === undefined || polygon.topLeft.row < topLeft.row) { topLeft.row = polygon.topLeft.row; }
+        if (topLeft.col === undefined || polygon.topLeft.col < topLeft.col) { topLeft.col = polygon.topLeft.col; }
+        if (bottomRight.row === undefined || polygon.bottomRight.row > bottomRight.row) { bottomRight.row = polygon.bottomRight.row; }
+        if (bottomRight.col === undefined || polygon.bottomRight.col > bottomRight.col) { bottomRight.col = polygon.bottomRight.col; }
+    });
+
+    return new CellArea(topLeft, bottomRight);
+}
+
+/**
+ * Returns a 1d array of Cell-like objects for all selected cells.
+ *
+ * E.g. If the polygons (depicted by x's) were this:
  *
  *        .......
  *        ..xx...
@@ -108,96 +144,47 @@ export function getSelectedValues() {
  */
 export function getSelectedCells() {
     const result = [];
-    processRelativeArea(getSelectedArea(), (r, c) => {
-        // Note: Not making a full Cell object for performance reasons. We don't need the other attributes of a Cell
-        result.push({ row: r, col: c});
-    })
+    polygons.forEach(polygon => {
+        polygon.iterateCells((r, c) => {
+            // Note: Not making a full Cell object for performance reasons. We don't need the other attributes of a Cell
+            result.push({ row: r, col: c });
+        });
+    });
     return result;
 }
 
-function processRelativeArea(relativeArea, processor) {
-    selectionAreas.forEach(selectionArea => {
-        selectionArea.toCellArea().iterate((r, c) => {
-            const relativeRow = r - relativeArea.topLeft.row;
-            const relativeCol = c - relativeArea.topLeft.col;
-            processor(r, c, relativeRow, relativeCol);
-        });
-    });
-}
 
-export function getSelectedAreas() {
-    return selectionAreas.map(selectionArea => selectionArea.toCellArea());
-}
-
-/**
- * Returns the smallest possible CellArea that includes all SelectionAreas.
- *
- * E.g. If the selectionAreas (depicted by x's) were this:
- *
- *        .......
- *        ..xx...
- *        ..xx..x
- *        .......
- *
- *      Returns:
- *
- *        CellArea{ topLeft: {row:1,col:2}, bottomRight: {row:2,col:6} }
- *
- */
-export function getSelectedArea() {
-    let mergedArea;
-
-    selectionAreas.forEach(selectionArea => {
-        if (mergedArea) {
-            mergedArea.mergeArea(selectionArea.toCellArea());
-        }
-        else {
-            mergedArea = selectionArea.toCellArea();
-        }
-    });
-
-    return mergedArea;
-}
-
-// Move all selectionAreas in a particular direction
-export function moveSelection(direction, moveStart = true, moveEnd = true) {
+// Move all polygons in a particular direction
+export function moveSelection(direction, amount, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
-        startArea(new Cell(0, 0));
+        startRect(new Cell(0, 0));
         return;
     }
 
-    // if (selectionAreas.every(selectionArea => selectionArea.canMove(direction, moveStart, moveEnd))) {
-        selectionAreas.forEach(selectionArea => selectionArea.move(direction, moveStart, moveEnd));
-    // }
+    polygons.forEach(polygon => polygon.translate(direction, amount, moveStart, moveEnd));
 
     triggerRefresh('selection');
 }
 
-function lastArea() {
-    return selectionAreas[selectionAreas.length - 1];
+function lastPolygon() {
+    return polygons[polygons.length - 1];
 }
 
-function startArea(cell) {
-    selectionAreas.push(new SelectionArea(cell, cell.clone()));
+function startRect(cell) {
+    polygons.push(new SelectionRect(cell, cell.clone()));
     triggerRefresh('selection');
 }
 
 /**
- * A SelectionArea is like a CellArea, but instead of having topLeft and bottomRight Cells, it has start and end Cells.
- * The start Cell may be to the bottom or right of the end Cell, depending on how the user draws the rectangle.
- * You can still call the helper methods topLeft / bottomRight if you need the absolute end points.
+ * SelectionPolygon is the base class for many types of selection shapes. All polygons have a start value (where the
+ * user first clicked) and an end value (where the user's last mouse position was).
  *
- * It currently does NOT extend CellArea, and does not have any methods dealing with x/y/width/height (not needed at the
- * moment). Any time we need those values, we just convert it to a CellArea (using toCellArea).
+ * Subclasses must implement an 'iterateCells' function and a 'draw' function.
  */
-class SelectionArea {
+class SelectionPolygon {
     constructor(start, end) {
         this.start = start; // Cell
         this.end = end; // Cell
-    }
-
-    static drawableArea() {
-        return new SelectionArea(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
     }
 
     set start(cell) {
@@ -216,62 +203,57 @@ class SelectionArea {
     get topLeft() {
         return new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
     }
-
     get bottomRight() {
-        return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col))
+        return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
     }
 
-    toCellArea() {
+    translate(direction, amount, moveStart = true, moveEnd = true) {
+        switch(direction) {
+            case 'left':
+                if (moveStart) { this.start.col -= amount; }
+                if (moveEnd) { this.end.col -= amount; }
+                break;
+            case 'up':
+                if (moveStart) { this.start.row -= amount; }
+                if (moveEnd) { this.end.row -= amount; }
+                break;
+            case 'right':
+                if (moveStart) { this.start.col += amount; }
+                if (moveEnd) { this.end.col += amount; }
+                break;
+            case 'down':
+                if (moveStart) { this.start.row += amount; }
+                if (moveEnd) { this.end.row += amount; }
+                break;
+            default:
+                console.warn(`Invalid direction: ${direction}`);
+        }
+    }
+}
+
+class SelectionLine extends SelectionPolygon {
+    iterateCells(callback) {
+
+    }
+    draw(context) {
+
+    }
+}
+
+class SelectionRect extends SelectionPolygon {
+    static drawableArea() {
+        return new SelectionRect(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
+    }
+
+    iterateCells(callback) {
+        this._toCellArea().iterate(callback);
+    }
+
+    draw(context) {
+        context.fillRect(...this._toCellArea().xywh);
+    }
+
+    _toCellArea() {
         return new CellArea(this.topLeft, this.bottomRight);
-    }
-
-    // Returns true if this selectionArea can be moved 1 space in the given direction
-    canMove(direction, moveStart = true, moveEnd = true) {
-        switch(direction) {
-            case 'left':
-                if (moveStart && this.start.col <= 0) { return false; }
-                if (moveEnd && this.end.col <= 0) { return false; }
-                break;
-            case 'up':
-                if (moveStart && this.start.row <= 0) { return false; }
-                if (moveEnd && this.end.row <= 0) { return false; }
-                break;
-            case 'right':
-                if (moveStart && this.start.col >= state.numCols() - 1) { return false; }
-                if (moveEnd && this.end.col >= state.numCols() - 1) { return false; }
-                break;
-            case 'down':
-                if (moveStart && this.start.row >= state.numRows() - 1) { return false; }
-                if (moveEnd && this.end.row >= state.numRows() - 1) { return false; }
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-                return false;
-        }
-        return true;
-    }
-
-    // Move this selectionArea 1 space in the given direction. Does not respect boundaries (you should call canMove first)
-    move(direction, moveStart = true, moveEnd = true) {
-        switch(direction) {
-            case 'left':
-                if (moveStart) { this.start.col -= 1; }
-                if (moveEnd) { this.end.col -= 1; }
-                break;
-            case 'up':
-                if (moveStart) { this.start.row -= 1; }
-                if (moveEnd) { this.end.row -= 1; }
-                break;
-            case 'right':
-                if (moveStart) { this.start.col += 1; }
-                if (moveEnd) { this.end.col += 1; }
-                break;
-            case 'down':
-                if (moveStart) { this.start.row += 1; }
-                if (moveEnd) { this.end.row += 1; }
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-        }
     }
 }
