@@ -7,27 +7,28 @@
 <body>
     <div id="main-content" class="frames-on-left">
         <div id="tools-and-canvas">
-            <div id="canvas-tools">
-                <div class="editing-tool" id="rectangle-selection">
+            <div id="editing-tools">
+                <div class="editing-tool" data-tool="selection-rect">
                     <span class="ri ri-fw ri-checkbox-blank-fill"></span>
                 </div>
-                <div class="editing-tool" id="circle-selection">
+                <div class="editing-tool" data-tool="selection-line">
+                    <span class="ri ri-fw ri-edit-fill"></span>
+                </div>
+                <div class="editing-tool" data-tool="selection-circle">
                     <span class="ri ri-fw ri-checkbox-blank-circle-fill"></span>
                 </div>
-                <div class="editing-tool" id="lasso-selection">
+                <div class="editing-tool" data-tool="selection-lasso">
                     <span class="ri ri-fw ri-chat-3-fill"></span>
                 </div>
-                <div class="editing-tool" id="paint">
+                <div class="editing-tool" data-tool="paint">
                     <span class="ri ri-fw ri-paint-fill"></span>
                 </div>
-                <div class="editing-tool" id="move">
+                <div class="editing-tool" data-tool="move">
                     <span class="ri ri-fw ri-drag-move-2-fill"></span>
                 </div>
                 <div class="spacer"></div>
                 <div class="spacer"></div>
-                <div class="editing-tool" id="current-color">
-
-                </div>
+                <div class="color-picker" id="current-color"></div>
             </div>
             <div id="canvas-container">
                 <canvas id="char-canvas" class="absolute-center full"></canvas>

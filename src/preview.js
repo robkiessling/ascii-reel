@@ -21,12 +21,12 @@ const $fpsSlider = $('#preview-fps-slider').slider({
     }
 });
 
-export function configUpdated() {
+export function refresh() {
     $fpsSlider.slider('value', state.config('fps'));
 }
 
-// Just refresh the current preview frame (e.g. if chars got updated)
-export function refresh() {
+// Just redraw the current preview frame (e.g. if chars got updated)
+export function redraw() {
     canvasControl.drawChars(state.layeredChars(state.frames()[previewIndex], true));
     canvasControl.drawWindow(selectionCanvas.currentViewRect());
 }
@@ -38,7 +38,7 @@ export function reset() {
     $fpsValue.html(`${state.config('fps')} FPS`);
 
     previewIndex = state.frameIndex();
-    refresh();
+    redraw();
 
     if (state.config('fps') !== 0) {
         previewInterval = window.setInterval(() => {
@@ -46,7 +46,7 @@ export function reset() {
             if (previewIndex >= state.frames().length) {
                 previewIndex = 0;
             }
-            refresh();
+            redraw();
         }, 1000 / state.config('fps'));
     }
 }

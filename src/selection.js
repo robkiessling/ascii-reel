@@ -1,11 +1,11 @@
 import $ from "jquery";
 import {create2dArray} from "./utilities.js";
 import {Cell, CellArea} from "./canvas.js";
-import {refresh} from "./index.js";
+import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
 
 // The full selection is made up of 1 or more SelectionAreas. All SelectionAreas are highlighted in the editor.
-export let selectionAreas = [];
+let selectionAreas = [];
 
 export function hasSelection() {
     return selectionAreas.length > 0;
@@ -13,12 +13,12 @@ export function hasSelection() {
 
 export function clear() {
     selectionAreas = [];
-    refresh('selection');
+    triggerRefresh('selection');
 }
 
 export function selectAll() {
     selectionAreas = [SelectionArea.drawableArea()];
-    refresh('selection');
+    triggerRefresh('selection');
 }
 
 export function bindMouseToCanvas(canvasControl) {
@@ -43,14 +43,14 @@ export function bindMouseToCanvas(canvasControl) {
     canvasControl.$canvas.off('mousemove.selection').on('mousemove.selection', evt => {
         if (isSelecting) {
             lastArea().end = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
-            refresh('selection');
+            triggerRefresh('selection');
         }
     });
 
     $(document).off('mouseup.selection').on('mouseup.selection', evt => {
         if (isSelecting) {
             isSelecting = false;
-            refresh('selection');
+            triggerRefresh('selection');
         }
     });
 }
@@ -170,7 +170,7 @@ export function moveSelection(direction, moveStart = true, moveEnd = true) {
         selectionAreas.forEach(selectionArea => selectionArea.move(direction, moveStart, moveEnd));
     // }
 
-    refresh('selection');
+    triggerRefresh('selection');
 }
 
 function lastArea() {
@@ -179,7 +179,7 @@ function lastArea() {
 
 function startArea(cell) {
     selectionAreas.push(new SelectionArea(cell, cell.clone()));
-    refresh('selection');
+    triggerRefresh('selection');
 }
 
 /**

@@ -16,6 +16,7 @@ $highlight: #f48225;
 $darkest: #202124;
 $darker: #282C2F;
 $dark: #323639;
+$medium-dark: #424649; // custom
 $light: #868889; // custom
 $lighter: #c6c6c7; // custom
 $lightest: #D6D6D7;
@@ -66,14 +67,14 @@ body {
   flex-direction: row;
 }
 
-#canvas-tools {
+#editing-tools {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   margin-right: 0.5rem;
 
-  .editing-tool {
+  .editing-tool, .color-picker {
     width: 3rem;
     height: 3rem;
     display: flex;
@@ -84,6 +85,16 @@ body {
     color: white;
     font-size: 2rem;
     box-sizing: border-box;
+
+    &:hover:not(.selected) {
+      cursor: pointer;
+      background: $medium-dark;
+    }
+
+    &.selected {
+      border: 3px solid $highlight;
+      background: $medium-dark;
+    }
   }
 
   #current-color {

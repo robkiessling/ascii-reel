@@ -5,16 +5,20 @@ import {translate} from "./utilities.js";
 // Necessary for clipboard read/write https://stackoverflow.com/a/61517521
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
-import {timeline, refresh} from "./index.js";
+import {triggerRefresh} from "./index.js";
 import * as editor from "./editor.js";
 
-let cutCell = null;
 let copiedSelection = null; // 2d array
 let copiedText = null; // string
 
 export function cut() {
-    cutCell = selection.getSelectedArea().topLeft;
     copySelection();
+
+    // Clear out the currently selected area
+    selection.getSelectedCells().forEach(cell => {
+        state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
+    });
+    triggerRefresh('chars');
 }
 
 export function copy() {
@@ -39,7 +43,6 @@ export function paste() {
     readClipboard(text => {
         if (copiedText !== text) {
             // External clipboard has changed; paste the external clipboard
-            cutCell = null; // Disregard any previous cuts
             pasteArray(convertTextToChars(text));
         }
         else if (copiedSelection) {
@@ -56,14 +59,7 @@ function copySelection() {
 }
 
 function pasteArray(array) {
-    // If cut was used, remove old cut
-    if (cutCell) {
-        translate(array, cutCell, (value, r, c) => {
-            if (value !== null) { state.setCurrentCelChar(r, c, ['', 0]); }
-        })
-        cutCell = null;
-    }
-
+    console.log(array);
     if (array.length === 1 && array[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         selection.getSelectedCells().forEach(cell => {
@@ -71,24 +67,16 @@ function pasteArray(array) {
         });
     }
     else {
-        // Paste array once at topLeft of first selectionArea
-        translate(array, selection.selectionAreas[0].topLeft, (value, r, c) => {
+        // Paste array once at topLeft of entire selected area
+        translate(array, selection.getSelectedArea().topLeft, (value, r, c) => {
             if (value !== null) { state.setCurrentCelChar(r, c, value); }
         });
-
-        // Paste array at topLeft of each selectionArea TODO Has issues if your copiedSelection has multiple selectionAreas too
-        // selection.selectionAreas.forEach(selectionArea => {
-        //     translate(array, selectionArea.topLeft, (value, r, c) => {
-        //         if (value !== null) { state.setCurrentCelChar(r, c, value); }
-        //     });
-        // });
     }
 
-    refresh('chars');
+    triggerRefresh('chars');
 }
 
 function convertCharsToText(array) {
-    let char;
     return array.map(row => {
         return row.map(charObj => {
             // Only care about the char, not the color
@@ -99,7 +87,6 @@ function convertCharsToText(array) {
 }
 
 const MAX_TEXT_LENGTH = 100000; // Upper limit just in case the OS clipboard had a huge amount of text copied
-
 export function convertTextToChars(text) {
     return text.slice(0, MAX_TEXT_LENGTH).split(/\r?\n/).map(line => {
         return line.split('').map(char => [char, editor.currentColorIndex()]);

@@ -1,5 +1,5 @@
 import $ from "jquery";
-import {refresh} from "./index.js";
+import {triggerRefresh} from "./index.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 
@@ -86,7 +86,7 @@ function updateCanvases(callback) {
         callback(canvasControl);
     });
 
-    refresh('zoom');
+    triggerRefresh('zoom');
 }
 
 function disableRightClick(canvasControl) {

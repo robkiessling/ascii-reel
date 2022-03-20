@@ -10,7 +10,7 @@ import './clipboard.js';
 import {Timeline} from "./timeline.js";
 import * as state from "./state.js";
 import * as preview from "./preview.js";
-import './editor.js';
+import * as editor from "./editor.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
@@ -19,32 +19,33 @@ export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 selection.bindMouseToCanvas(selectionCanvas);
 zoomEvents.setup(selectionCanvas, preview.canvasControl, [selectionCanvas, charCanvas]);
 
-$(window).off('resize:debounced').on('resize:debounced', resize);
+$(window).off('resize:debounced').on('resize:debounced', triggerResize);
 
 function load(data) {
     state.loadState(data);
-    preview.configUpdated();
-    timeline.configUpdated();
-    resize();
+    preview.refresh();
+    editor.refresh();
+    timeline.refresh();
+    triggerResize();
 }
 
-export function resize() {
-    timeline.configUpdated(); // affects canvas boundaries
+export function triggerResize() {
+    timeline.refresh(); // affects canvas boundaries
 
     charCanvas.resize();
     selectionCanvas.resize();
     preview.canvasControl.resize();
-    // Note: timeline frames will be resized during refresh() since they all have to be rebuilt
+    // Note: timeline frames will be resized during triggerRefresh() since they all have to be rebuilt
 
     preview.canvasControl.zoomToFit(); // todo just do this once?
-    refresh();
+    triggerRefresh();
 }
 
-export function refresh(type = 'full') {
+export function triggerRefresh(type = 'full') {
     switch(type) {
         case 'chars':
             redrawCharCanvas();
-            preview.refresh();
+            preview.redraw();
             timeline.currentFrameComponent.redrawChars();
             break;
         case 'selection':
@@ -52,7 +53,7 @@ export function refresh(type = 'full') {
             break;
         case 'zoom':
             redrawCharCanvas();
-            preview.refresh();
+            preview.redraw();
             selectionCanvas.highlightAreas(selection.getSelectedAreas());
             break;
         case 'full':
@@ -61,10 +62,10 @@ export function refresh(type = 'full') {
             selectionCanvas.highlightAreas(selection.getSelectedAreas());
             timeline.rebuildLayers();
             timeline.rebuildFrames();
-            timeline.configUpdated();
+            timeline.refresh();
             break;
         default:
-            console.warn(`refresh("${type}") is not a valid type`);
+            console.warn(`triggerRefresh("${type}") is not a valid type`);
     }
 }
 

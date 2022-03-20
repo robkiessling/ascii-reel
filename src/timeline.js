@@ -1,6 +1,6 @@
 import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
-import {refresh, resize} from "./index.js";
+import {triggerRefresh, triggerResize} from "./index.js";
 import SimpleBar from 'simplebar';
 import 'jquery-ui/ui/widgets/sortable.js';
 import 'jquery-ui/ui/widgets/dialog.js';
@@ -67,7 +67,7 @@ export class Timeline {
 
         this.$layerContainer.find('.toggle-visibility-lock').off('click').on('click', () => {
             state.config('lockLayerVisibility', !state.config('lockLayerVisibility'));
-            refresh();
+            triggerRefresh();
         });
 
 
@@ -122,20 +122,20 @@ export class Timeline {
         this.$frameContainer.find('.toggle-onion').off('click').on('click', () => {
             state.config('onion', !state.config('onion'));
             this._refreshOnion(); // have to refresh this manually since just refreshing chars
-            refresh('chars');
+            triggerRefresh('chars');
         });
 
         this.$frameContainer.find('.align-frames-left').off('click').on('click', () => {
             state.config('frameOrientation', 'left');
-            resize();
+            triggerResize();
         });
         this.$frameContainer.find('.align-frames-bottom').off('click').on('click', () => {
             state.config('frameOrientation', 'bottom');
-            resize();
+            triggerResize();
         });
     }
 
-    configUpdated() {
+    refresh() {
         this._refreshVisibilities();
         this._alignFrames();
         this._refreshOnion();
@@ -230,7 +230,7 @@ export class Timeline {
 
         this.$editLayerDialog.dialog("close");
 
-        refresh();
+        triggerRefresh();
     }
 
     // Layers are sorted backwards in the DOM
@@ -240,12 +240,12 @@ export class Timeline {
 
     _selectLayer(index) {
         state.layerIndex(index);
-        refresh();
+        triggerRefresh();
     }
 
     _selectFrame(index) {
         state.frameIndex(index);
-        refresh();
+        triggerRefresh();
     }
 
     _refreshVisibilities() {
@@ -288,7 +288,7 @@ class LayerComponent {
 
         this._$container.find('.toggle-visibility').off('click').on('click', () => {
             state.toggleLayerVisibility(this._layer);
-            refresh(); // Note: This is index refresh
+            triggerRefresh();
         })
 
         this._layer = layer;

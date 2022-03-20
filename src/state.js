@@ -8,7 +8,8 @@ const CONFIG_DEFAULTS = {
     lockLayerVisibility: true,
     layerIndex: 0,
     frameIndex: 0,
-    frameOrientation: 'left'
+    frameOrientation: 'left',
+    tool: 'selection-rect'
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',
@@ -26,7 +27,7 @@ let sequences;
 
 export function loadState(data) {
     state = {
-        config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure index is in bounds
+        config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure indices are in bounds
         layers: data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
         frames: data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame)),
         colors: $.extend(true, [], data.colors ? data.colors : DEFAULT_COLORS)
@@ -205,11 +206,13 @@ function normalizeCel(cel) {
 }
 
 export function getCurrentCelChar(row, col) {
-    return charInBounds(row, col) ? currentCel().chars[row][col] : null;
+    return charInBounds(row, col) ? $.extend([], currentCel().chars[row][col]) : null;
 }
+
+// Parameter 'value' is an array of [char, color]. If an array element is undefined, that element will not be modified
 export function setCurrentCelChar(row, col, value) {
     if (charInBounds(row, col)) {
-        currentCel().chars[row][col] = [value[0], value[1]]; // Cloning array
+        $.extend(currentCel().chars[row][col], value);
     }
 }
 

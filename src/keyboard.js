@@ -3,7 +3,7 @@ import * as selection from "./selection.js";
 import * as clipboard from "./clipboard.js";
 import * as state from "./state.js";
 import * as editor from "./editor.js";
-import {refresh} from "./index.js";
+import {triggerRefresh} from "./index.js";
 
 let standard = false;
 
@@ -86,14 +86,14 @@ $document.keydown(function(e) {
             selection.getSelectedCells().forEach(cell => {
                 state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
             });
-            refresh('chars');
+            triggerRefresh('chars');
             break;
         default:
             if (producesText(code)) {
                 selection.getSelectedCells().forEach(cell => {
                     state.setCurrentCelChar(cell.row, cell.col, [char, editor.currentColorIndex()]);
                 });
-                refresh('chars');
+                triggerRefresh('chars');
             }
             else {
                 // Unrecognized input; let browser handle as normal
