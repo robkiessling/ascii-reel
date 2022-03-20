@@ -8,27 +8,25 @@
     <div id="main-content" class="frames-on-left">
         <div id="tools-and-canvas">
             <div id="editing-tools">
-                <div class="editing-tool" data-tool="selection-rect">
-                    <span class="ri ri-fw ri-checkbox-blank-fill"></span>
-                </div>
-                <div class="editing-tool" data-tool="selection-line">
-                    <span class="ri ri-fw ri-edit-fill"></span>
-                </div>
-                <div class="editing-tool" data-tool="selection-circle">
-                    <span class="ri ri-fw ri-checkbox-blank-circle-fill"></span>
-                </div>
-                <div class="editing-tool" data-tool="selection-lasso">
-                    <span class="ri ri-fw ri-chat-3-fill"></span>
-                </div>
-                <div class="editing-tool" data-tool="paint">
-                    <span class="ri ri-fw ri-paint-fill"></span>
-                </div>
-                <div class="editing-tool" data-tool="move">
-                    <span class="ri ri-fw ri-drag-move-2-fill"></span>
-                </div>
+                <div class="editing-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
+                <div class="editing-tool" data-tool="selection-line"><span class="icon-line-dashed"></span></div>
+                <div class="editing-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
+                <div class="editing-tool" data-tool="selection-wand"><span class="ri ri-fw ri-magic-line"></span></div>
+                <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
+                <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
+                <div class="editing-tool" data-tool="paint"><span class="icon-paint-bucket"></span></div>
+                <div class="editing-tool" data-tool="move"><span class="icon-move-hand"></span></div>
                 <div class="spacer"></div>
                 <div class="spacer"></div>
                 <div class="color-picker" id="current-color"></div>
+            </div>
+            <div id="selection-tools">
+                <div class="selection-tool" data-tool="cut"><span class="ri ri-fw ri-scissors-cut-line"></span></div>
+                <div class="selection-tool" data-tool="copy"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
+                <div class="selection-tool" data-tool="paste"><span class="ri ri-fw ri-clipboard-line"></span></div>
+                <div class="selection-tool" data-tool="flip-v"><span class="icon-flip-vertical"></span></div>
+                <div class="selection-tool" data-tool="flip-h"><span class="icon-flip-horizontal"></span></div>
+                <div class="selection-tool" data-tool="paint"><span class="icon-paint-bucket"></span></div>
             </div>
             <div id="canvas-container">
                 <canvas id="char-canvas" class="absolute-center full"></canvas>

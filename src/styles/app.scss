@@ -6,6 +6,8 @@
 @import 'jquery-ui/themes/base/slider';
 @import 'vanilla-picker/dist/vanilla-picker.csp.css';
 
+@import 'icon-fonts/style.css';
+
 $font: roboto, sans-serif;
 
 $highlight2: #4C8BF5;
@@ -65,8 +67,10 @@ body {
 
   display: flex;
   flex-direction: row;
+  position: relative;
 }
 
+$editing-tool-size: 3rem;
 #editing-tools {
   display: flex;
   flex-direction: column;
@@ -75,8 +79,8 @@ body {
   margin-right: 0.5rem;
 
   .editing-tool, .color-picker {
-    width: 3rem;
-    height: 3rem;
+    width: $editing-tool-size;
+    height: $editing-tool-size;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -100,6 +104,42 @@ body {
   #current-color {
     border: 5px solid $dark;
   }
+}
+
+$selection-tool-size: 2rem;
+#selection-tools {
+  position: absolute;
+  top: 50%;
+  left: $editing-tool-size + 0.5rem;
+  transform: translate(0, -50%);
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+
+
+  background: $light;
+  border: 3px solid $highlight2;
+  margin-left: 2px;
+
+  .selection-tool {
+    width: $selection-tool-size;
+    height: $selection-tool-size;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: $dark;
+    border: 1px solid $darker;
+    color: white;
+    font-size: 1.5rem;
+    box-sizing: border-box;
+
+    &:hover:not(.selected) {
+      cursor: pointer;
+      background: $medium-dark;
+    }
+  }
+
 }
 
 #canvas-container {
@@ -576,10 +616,20 @@ button {
       margin: 0;
       background: $highlight2;
       border-color: $dark;
+      padding: 0.2em 0.3em;
+      box-shadow: 0 0 0 1px $light;
+      border-radius: 0;
 
       &:hover {
         background: $highlight2-dark;
       }
     }
   }
+}
+
+.icon-line-dashed, .icon-line-solid {
+  transform: rotate(-45deg);
+}
+.icon-paint-bucket {
+  margin-left: 0.25rem;
 }
