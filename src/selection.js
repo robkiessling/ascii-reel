@@ -6,6 +6,7 @@ import * as state from "./state.js";
 import bresenham from "bresenham";
 
 let polygons = [];
+export let isSelecting = false;
 
 export function getPolygons() {
     return polygons;
@@ -26,8 +27,6 @@ export function selectAll() {
 }
 
 export function bindMouseToCanvas(canvasControl) {
-    let isSelecting = false;
-
     canvasControl.$canvas.off('mousedown.selection').on('mousedown.selection', evt => {
         if (evt.which !== 1) { return; } // Only apply to left-click
 
@@ -182,6 +181,52 @@ function startPolygon(cell) {
         default:
             console.log('No polygon for tool: ', state.config('tool'));
     }
+}
+
+export function flipVertically() {
+    flip(false, true);
+}
+export function flipHorizontally() {
+    flip(true, false);
+}
+
+function flip(horizontally = false, vertically = false) {
+    const cellArea = getSelectedCellArea();
+    const updates = []; // Have to batch the updates, and do them all at end (i.e. do not modify chars while iterating)
+
+    function flipRow(oldRow) {
+        return (cellArea.topLeft.row + cellArea.bottomRight.row) - oldRow;
+    }
+    function flipCol(oldCol) {
+        return (cellArea.topLeft.col + cellArea.bottomRight.col) - oldCol;
+    }
+
+    getSelectedCells().forEach(cell => {
+        updates.push({
+            row: vertically ? flipRow(cell.row) : cell.row,
+            col: horizontally ? flipCol(cell.col) : cell.col,
+            value: state.getCurrentCelChar(cell.row, cell.col)
+        });
+        state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
+    });
+
+    updates.forEach(update => {
+        state.setCurrentCelChar(update.row, update.col, update.value);
+    })
+
+    polygons.forEach(polygon => {
+        // TODO polygons might become more complicated than this
+        if (vertically) {
+            polygon.start.row = flipRow(polygon.start.row);
+            polygon.end.row = flipRow(polygon.end.row);
+        }
+        if (horizontally) {
+            polygon.start.col = flipCol(polygon.start.col);
+            polygon.end.col = flipCol(polygon.end.col);
+        }
+    });
+
+    triggerRefresh(['chars', 'selection']);
 }
 
 /**

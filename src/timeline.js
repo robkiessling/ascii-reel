@@ -230,7 +230,7 @@ export class Timeline {
 
         this.$editLayerDialog.dialog("close");
 
-        triggerRefresh();
+        triggerRefresh(); // todo maybe don't need to refresh, since opacity is unaffected now
     }
 
     // Layers are sorted backwards in the DOM

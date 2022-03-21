@@ -29,8 +29,11 @@ function load(data) {
     triggerResize();
 }
 
+/**
+ * Resizes the components that depend on window size. Then triggers a full refresh.
+ */
 export function triggerResize() {
-    timeline.refresh(); // affects canvas boundaries
+    timeline.refresh(); // This has to happen first, since its configuration can affect canvas boundaries
 
     charCanvas.resize();
     selectionCanvas.resize();
@@ -41,32 +44,45 @@ export function triggerResize() {
     triggerRefresh();
 }
 
+/**
+ * Triggers a refresh that cascades through the different components of the app.
+ *
+ * @param type Can be a single string value, or an Array of string values. This narrows does the refresh scope to just
+ *             refresh a subset of components.
+ */
 export function triggerRefresh(type = 'full') {
-    switch(type) {
-        case 'chars':
-            redrawCharCanvas();
-            preview.redraw();
-            timeline.currentFrameComponent.redrawChars();
-            break;
-        case 'selection':
-            selectionCanvas.highlightPolygons(selection.getPolygons());
-            break;
-        case 'zoom':
-            redrawCharCanvas();
-            preview.redraw();
-            selectionCanvas.highlightPolygons(selection.getPolygons());
-            break;
-        case 'full':
-            redrawCharCanvas();
-            preview.reset();
-            selectionCanvas.highlightPolygons(selection.getPolygons());
-            timeline.rebuildLayers();
-            timeline.rebuildFrames();
-            timeline.refresh();
-            break;
-        default:
-            console.warn(`triggerRefresh("${type}") is not a valid type`);
+    if (!Array.isArray(type)) {
+        type = [type];
     }
+    type.forEach(type => {
+        switch(type) {
+            case 'chars':
+                redrawCharCanvas();
+                preview.redraw();
+                timeline.currentFrameComponent.redrawChars();
+                break;
+            case 'selection':
+                selectionCanvas.highlightPolygons(selection.getPolygons());
+                editor.refresh();
+                break;
+            case 'zoom':
+                redrawCharCanvas();
+                preview.redraw();
+                selectionCanvas.highlightPolygons(selection.getPolygons());
+                break;
+            case 'full':
+                redrawCharCanvas();
+                preview.reset();
+                selectionCanvas.highlightPolygons(selection.getPolygons());
+                editor.refresh();
+                timeline.rebuildLayers();
+                timeline.rebuildFrames();
+                timeline.refresh();
+                break;
+            default:
+                console.warn(`triggerRefresh("${type}") is not a valid type`);
+        }
+    });
 }
 
 function redrawCharCanvas() {

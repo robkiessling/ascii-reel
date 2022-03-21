@@ -3,11 +3,15 @@ import Picker from 'vanilla-picker/csp';
 import * as state from './state.js';
 import * as selection from './selection.js';
 import {triggerRefresh} from "./index.js";
+import * as clipboard from "./clipboard.js";
 
 let currentColorStr = '#fff';
 let cachedColorIndex = null;
 const $tools = $('#editing-tools');
 const $canvasContainer = $('#canvas-container');
+
+let $selectionTools = $('#selection-tools');
+let selectionToolsWereVisible = false;
 
 export function currentColorIndex() {
     if (cachedColorIndex !== null) {
@@ -19,16 +23,45 @@ export function currentColorIndex() {
 export function refresh() {
     $tools.find('.editing-tool').removeClass('selected');
     $tools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
-
     $canvasContainer.css('cursor', cursorStyle());
+
+    // Note: This logic is kind of overkill to get what we want. Basically just want to show tools if there is a selection,
+    //       except for the initial down-click during a fresh selection
+    let selectionToolsAreVisible = selection.hasSelection() && (!selection.isSelecting || selectionToolsWereVisible);
+    $selectionTools.toggle(selectionToolsAreVisible);
+    if (!selection.isSelecting) { selectionToolsWereVisible = selectionToolsAreVisible; }
 }
 
 
 $tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
-    const $tool = $(evt.currentTarget);
-    state.config('tool', $tool.data('tool'));
-    refresh();
+    changeTool($(evt.currentTarget).data('tool'));
 });
+
+export function changeTool(newTool) {
+    state.config('tool', newTool);
+    selection.clear();
+    refresh();
+}
+
+function bindSelectionToolEvent(tool, onClick) {
+    $selectionTools.find(`.selection-tool[data-tool="${tool}"]`).off('click').on('click', evt => {
+        onClick(evt);
+    })
+}
+
+bindSelectionToolEvent('cut', clipboard.cut);
+bindSelectionToolEvent('copy', clipboard.copy);
+bindSelectionToolEvent('paste', clipboard.paste);
+bindSelectionToolEvent('flip-v', selection.flipVertically);
+bindSelectionToolEvent('flip-h', selection.flipHorizontally);
+bindSelectionToolEvent('paint', fillSelection);
+
+function fillSelection() {
+    selection.getSelectedCells().forEach(cell => {
+        state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
+    });
+    triggerRefresh('chars');
+}
 
 const colorPickerElement = document.querySelector('#current-color');
 const colorPicker = new Picker({
@@ -44,12 +77,7 @@ const colorPicker = new Picker({
         currentColorStr = color.hex;
         cachedColorIndex = null;
     },
-    onDone: () => {
-        selection.getSelectedCells().forEach(cell => {
-            state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
-        });
-        triggerRefresh('chars');
-    }
+    onDone: fillSelection
 });
 
 function cursorStyle() {
