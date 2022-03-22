@@ -49,12 +49,12 @@ function bindSelectionToolEvent(tool, onClick) {
     })
 }
 
-bindSelectionToolEvent('cut', clipboard.cut);
-bindSelectionToolEvent('copy', clipboard.copy);
-bindSelectionToolEvent('paste', clipboard.paste);
-bindSelectionToolEvent('flip-v', selection.flipVertically);
-bindSelectionToolEvent('flip-h', selection.flipHorizontally);
-bindSelectionToolEvent('paint', fillSelection);
+bindSelectionToolEvent('cut', () => clipboard.cut());
+bindSelectionToolEvent('copy', () => clipboard.copy());
+bindSelectionToolEvent('paste', () => clipboard.paste());
+bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.altKey));
+bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.altKey));
+bindSelectionToolEvent('paint', () => fillSelection());
 
 function fillSelection() {
     selection.getSelectedCells().forEach(cell => {
@@ -77,7 +77,7 @@ const colorPicker = new Picker({
         currentColorStr = color.hex;
         cachedColorIndex = null;
     },
-    onDone: fillSelection
+    onDone: () => fillSelection()
 });
 
 function cursorStyle() {

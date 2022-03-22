@@ -1,5 +1,6 @@
 import {roundForComparison} from "./utilities.js";
 import * as state from "./state.js";
+import bresenham from "bresenham";
 
 const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
@@ -19,7 +20,7 @@ const ONION_OPACITY = 0.15;
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
 const CANVAS_BACKGROUND = false; // false => transparent
-const CHECKER_SIZE = 20;
+const CHECKER_SIZE = 10;
 
 const ZOOM_BOUNDARIES = [0.25, 30];
 const ZOOM_MARGIN = 1.2;
@@ -417,7 +418,9 @@ export class Cell extends Rect {
     }
 
     clone() {
-        return new Cell(this.row, this.col);
+        const cell = new Cell(this.row, this.col);
+        cell.bindToDrawableArea(this._boundToDrawableArea);
+        return cell;
     }
 
     translate(rowDelta, colDelta) {
@@ -436,6 +439,31 @@ export class Cell extends Rect {
         }
 
         return this;
+    }
+
+    // Note: Diagonal is considered adjacent
+    isAdjacentTo(cell) {
+        return (cell.row !== this.row || cell.col !== this.col) && // Has to be a different cell
+            cell.row <= (this.row + 1) && cell.row >= (this.row - 1) &&
+            cell.col <= (this.col + 1) && cell.col >= (this.col - 1);
+    }
+
+    // Returns an array of Cells from this Cell's position to a target Cell's position
+    // Using Bresenham line approximation https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+    lineTo(cell, inclusive = true) {
+        const cells = bresenham(this.col, this.row, cell.col, cell.row).map(coord => {
+            return new Cell(coord.y, coord.x);
+        });
+
+        if (inclusive) {
+            return cells;
+        }
+        else {
+            // Remove endpoints. Note: If line is only 1 or 2 Cells long, an empty array will be returned
+            cells.shift();
+            cells.pop();
+            return cells;
+        }
     }
 
     get row() {

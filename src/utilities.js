@@ -8,7 +8,7 @@ export function isFunction(value) {
 // @param defaultValue can be a primitive value (like an integer or string) or a function that returns the desired value.
 // Do not pass an object as a default value; otherwise all the elements will be a reference to the same object. You 
 // should pass a function that returns a new object.
-export function create2dArray(numRows, numCols, defaultValue = null) {
+export function create2dArray(numRows, numCols, defaultValue) {
     let array = [];
 
     for (let row = 0; row < numRows; row++) {
@@ -88,6 +88,48 @@ export function roundToDecimal(number, numDecimals) {
 // Rounds a float to 5 decimals. This should be used before any numerical comparisons (e.g. < <= > >=) because of floating point rounding errors
 export function roundForComparison(number) {
     return roundToDecimal(number, 5);
+}
+
+const horizontalMirrors = {
+    '(': ')',
+    '/': '\\',
+    // '2': '5',
+    // '3': 'E',
+    // '9': 'P',
+    'b': 'd',
+    'p': 'q',
+    '<': '>',
+    '[': ']',
+    '{': '}'
+}
+for (let [key, value] of Object.entries(horizontalMirrors)) {
+    horizontalMirrors[value] = key;
+}
+const verticalMirrors = {
+    '!': 'i',
+    "'": '.',
+    ',': '`',
+    '/': '\\',
+    // '2': '5',
+    // '6': 'g',
+    // '9': 'd',
+    // 'A': 'V',
+    'M': 'W',
+    'd': 'q',
+    'm': 'w',
+    'n': 'u',
+    'p': 'b',
+    'v': '^'
+}
+for (let [key, value] of Object.entries(verticalMirrors)) {
+    verticalMirrors[value] = key;
+}
+
+export function mirrorCharHorizontally(char) {
+    return horizontalMirrors[char] === undefined ? char : horizontalMirrors[char];
+}
+export function mirrorCharVertically(char) {
+    return verticalMirrors[char] === undefined ? char : verticalMirrors[char];
 }
 
 

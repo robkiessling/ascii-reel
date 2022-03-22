@@ -68,7 +68,7 @@ function paste2dArray(array) {
     else {
         // Paste array once at topLeft of entire selected area
         translate(array, selection.getSelectedCellArea().topLeft, (value, r, c) => {
-            if (value !== null) { state.setCurrentCelChar(r, c, value); }
+            if (value !== undefined) { state.setCurrentCelChar(r, c, value); }
         });
     }
 
@@ -80,7 +80,7 @@ function convertCharsToText(array) {
         return row.map(charObj => {
             // Only care about the char, not the color
             // Convert empty cells to space char ' ' so when it is pasted to a text document the spacing is correct
-            return charObj === null || charObj[0] === '' ? ' ' : charObj[0];
+            return charObj === undefined || charObj[0] === '' ? ' ' : charObj[0];
         }).join('');
     }).join('\n');
 }

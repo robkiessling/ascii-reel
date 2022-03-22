@@ -206,7 +206,7 @@ function normalizeCel(cel) {
 }
 
 export function getCurrentCelChar(row, col) {
-    return charInBounds(row, col) ? $.extend([], currentCel().chars[row][col]) : null;
+    return charInBounds(row, col) ? $.extend([], currentCel().chars[row][col]) : undefined;
 }
 
 // Parameter 'value' is an array of [char, color]. If an array element is undefined, that element will not be modified
