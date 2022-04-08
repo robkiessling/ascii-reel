@@ -1,4 +1,3 @@
-import $ from "jquery";
 import {create2dArray, mirrorCharHorizontally, mirrorCharVertically} from "./utilities.js";
 import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
@@ -25,29 +24,52 @@ export function selectAll() {
     triggerRefresh('selection');
 }
 
-export function bindMouseToCanvas(canvasControl) {
-    canvasControl.$canvas.off('mousedown.selection').on('mousedown.selection', evt => {
-        if (evt.which !== 1) { return; } // Only apply to left-click
+export function setupMouseEvents(canvasControl) {
+    canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
+        switch(tool) {
+            case 'selection-rect':
+            case 'selection-line':
+            case 'selection-lasso':
+            case 'selection-wand':
+                break;
+            default:
+                return; // Ignore all other tools
+        }
 
-        if (!evt.shiftKey) {
+        if (!mouseEvent.shiftKey) {
             clear();
         }
 
-        const cell = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY, true);
-        if (cell) {
+        if (cell.isInBounds()) {
             isSelecting = true;
-            startPolygon(cell)
-        }
-    });
 
-    canvasControl.$canvas.off('mousemove.selection').on('mousemove.selection', evt => {
-        if (isSelecting) {
-            lastPolygon().end = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
+            switch(tool) {
+                case 'selection-rect':
+                    polygons.push(new SelectionRect(cell, cell.clone()));
+                    break;
+                case 'selection-line':
+                    polygons.push(new SelectionLine(cell, cell.clone()));
+                    break;
+                case 'selection-lasso':
+                    polygons.push(new SelectionLasso(cell, cell.clone()));
+                    break;
+                case 'selection-wand':
+                    polygons.push(new SelectionWand(cell, cell.clone(), { diagonal: mouseEvent.metaKey }));
+                    break;
+            }
+
             triggerRefresh('selection');
         }
     });
 
-    $(document).off('mouseup.selection').on('mouseup.selection', evt => {
+    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell) => {
+        if (isSelecting) {
+            lastPolygon().end = cell;
+            triggerRefresh('selection');
+        }
+    });
+
+    canvasControl.$canvas.on('editor:mouseup', () => {
         if (isSelecting) {
             lastPolygon().complete();
             isSelecting = false;
@@ -151,6 +173,12 @@ export function getSelectedCells() {
     return result;
 }
 
+// Returns all cells adjacent to (and sharing the same color as) the targeted cell
+export function getConnectedCells(cell, options) {
+    if (!cell.isInBounds()) { return []; }
+    return new SelectionWand(cell, options).cells;
+}
+
 
 // Move all polygons in a particular direction
 export function moveSelection(direction, amount, moveStart = true, moveEnd = true) {
@@ -165,25 +193,6 @@ export function moveSelection(direction, amount, moveStart = true, moveEnd = tru
 
 function lastPolygon() {
     return polygons[polygons.length - 1];
-}
-
-function startPolygon(cell) {
-    switch(state.config('tool')) {
-        case 'selection-rect':
-            polygons.push(new SelectionRect(cell, cell.clone()));
-            triggerRefresh('selection');
-            break;
-        case 'selection-line':
-            polygons.push(new SelectionLine(cell, cell.clone()));
-            triggerRefresh('selection');
-            break;
-        case 'selection-lasso':
-            polygons.push(new SelectionLasso(cell, cell.clone()));
-            triggerRefresh('selection');
-            break;
-        default:
-            console.log('No polygon for tool: ', state.config('tool'));
-    }
 }
 
 export function flipVertically(mirrorChars) {
@@ -242,9 +251,11 @@ function flip(horizontally, vertically, mirrorChars) {
  * Subclasses must implement an 'iterateCells' function and a 'draw' function.
  */
 class SelectionPolygon {
-    constructor(start, end) {
-        this.start = start; // Cell
-        this.end = end; // Cell
+    constructor(startCell, endCell, options = {}) {
+        this.start = startCell;
+        this.end = endCell;
+        this.options = options;
+        this.completed = false;
     }
 
     set start(cell) {
@@ -267,7 +278,9 @@ class SelectionPolygon {
         return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
     }
 
-    complete() {}
+    complete() {
+        this.completed = true;
+    }
 
     translate(direction, amount, moveStart = true, moveEnd = true) {
         switch(direction) {
@@ -447,6 +460,8 @@ class SelectionLasso extends SelectionPolygon {
         });
 
         this._cacheEndpoints();
+
+        super.complete();
     }
 
     _cacheEndpoints() {
@@ -462,11 +477,10 @@ class SelectionLasso extends SelectionPolygon {
         this._bottomRight = new Cell(maxRow, maxCol);
     }
 
-    translate(direction, amount, moveStart = true, moveEnd = true) {
+    translate(direction, amount) {
         switch(direction) {
             case 'left':
                 this._lassoAreas.forEach(area => {
-                    console.log(area.topLeft);
                     area.topLeft.col -= amount;
                     area.bottomRight.col -= amount;
                 });
@@ -495,6 +509,102 @@ class SelectionLasso extends SelectionPolygon {
 
         this._cacheEndpoints();
     }
+}
 
+
+
+class SelectionWand extends SelectionPolygon {
+    constructor(...args) {
+        super(...args);
+        this._findConnectedCells();
+        this.complete();
+    }
+
+    get cells() {
+        return this._cells;
+    }
+
+    iterateCells(callback) {
+        this._cells.forEach(cell => callback(cell.row, cell.col));
+    }
+
+    draw(context) {
+        this._cells.forEach(cell => context.fillRect(...new Cell(cell.row, cell.col).xywh));
+    }
+
+    get topLeft() {
+        return this._topLeft; // Using a cached value
+    }
+
+    get bottomRight() {
+        return this._bottomRight; // Using a cached value
+    }
+
+    translate(direction, amount) {
+        switch(direction) {
+            case 'left':
+                this._cells.forEach(cell => cell.col -= amount);
+                break;
+            case 'up':
+                this._cells.forEach(cell => cell.row -= amount);
+                break;
+            case 'right':
+                this._cells.forEach(cell => cell.col += amount);
+                break;
+            case 'down':
+                this._cells.forEach(cell => cell.row += amount);
+                break;
+            default:
+                console.warn(`Invalid direction: ${direction}`);
+        }
+
+        this._cacheEndpoints();
+    }
+
+    _findConnectedCells() {
+        const cellHash = {};
+        const startChar = state.getCurrentCelChar(this.start.row, this.start.col);
+        const isBlank = startChar[0] === '';
+        const diagonal = this.options.diagonal;
+
+        function spread(cell) {
+            const cellId = `${cell.row},${cell.col}`;
+            if (cellHash[cellId] === undefined) {
+                const charObj = state.getCurrentCelChar(cell.row, cell.col);
+                // If isBlank, keep any blank cells. Otherwise, keep any cells that are not blank and match the starting color
+                if (charObj && (isBlank ? charObj[0] === '' : (charObj[0] !== '' && charObj[1] === startChar[1]))) {
+                    cellHash[cellId] = new Cell(cell.row, cell.col);
+
+                    // Recursive call to adjacent cells (note: not instantiating full Cell objects for performance reasons)
+                    spread({ row: cell.row - 1, col: cell.col });
+                    spread({ row: cell.row, col: cell.col + 1 });
+                    spread({ row: cell.row + 1, col: cell.col });
+                    spread({ row: cell.row, col: cell.col - 1 });
+
+                    if (diagonal) {
+                        spread({ row: cell.row - 1, col: cell.col - 1 });
+                        spread({ row: cell.row - 1, col: cell.col + 1 });
+                        spread({ row: cell.row + 1, col: cell.col + 1 });
+                        spread({ row: cell.row + 1, col: cell.col - 1 });
+                    }
+                }
+            }
+        }
+
+        spread(this.start);
+
+        this._cells = Object.values(cellHash);
+        this._cacheEndpoints();
+    }
+
+    _cacheEndpoints() {
+        const minRow = Math.min(...this._cells.map(cell => cell.row));
+        const maxRow = Math.max(...this._cells.map(cell => cell.row));
+        const minCol = Math.min(...this._cells.map(cell => cell.col));
+        const maxCol = Math.min(...this._cells.map(cell => cell.col));
+
+        this._topLeft = new Cell(minRow, minCol);
+        this._bottomRight = new Cell(maxRow, maxCol);
+    }
 
 }

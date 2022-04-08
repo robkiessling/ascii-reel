@@ -5,7 +5,7 @@ import {create2dArray, randomPrintableChar} from "./utilities.js";
 import {CanvasControl} from './canvas.js';
 import './keyboard.js';
 import * as selection from './selection.js';
-import * as zoomEvents from './zoom_events.js';
+import * as zoom from './zoom.js';
 import './clipboard.js';
 import {Timeline} from "./timeline.js";
 import * as state from "./state.js";
@@ -16,8 +16,9 @@ export const timeline = new Timeline($('#frame-controller'), $('#layer-controlle
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
 export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
-selection.bindMouseToCanvas(selectionCanvas);
-zoomEvents.setup(selectionCanvas, preview.canvasControl, [selectionCanvas, charCanvas]);
+selection.setupMouseEvents(selectionCanvas);
+editor.setupMouseEvents(selectionCanvas);
+zoom.setupMouseEvents(selectionCanvas, preview.canvasControl, [selectionCanvas, charCanvas]);
 
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 

@@ -5,14 +5,14 @@ const ZOOM_SCROLL_FACTOR = 1.1;
 
 let source, preview, canvases;
 
-export function setup(sourceCanvas, previewCanvas, canvasControls) {
+export function setupMouseEvents(sourceCanvas, previewCanvas, canvasControls) {
     source = sourceCanvas;
     preview = previewCanvas;
     canvases = canvasControls;
 
     setupScroll();
-    setupMouse();
-    setupPreviewMouse();
+    setupPan();
+    setupPreviewPan();
 }
 
 function setupScroll() {
@@ -28,7 +28,7 @@ function setupScroll() {
     });
 }
 
-function setupMouse() {
+function setupPan() {
     let isSliding;
     let originalPoint;
 
@@ -56,7 +56,7 @@ function setupMouse() {
     });
 }
 
-function setupPreviewMouse() {
+function setupPreviewPan() {
     let isSliding;
 
     disableRightClick(preview);

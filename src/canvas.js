@@ -245,11 +245,11 @@ export class CanvasControl {
         };
     }
 
-    cellAtExternalXY(x, y, checkBoundaries = false) {
+    cellAtExternalXY(x, y) {
         const point = this.pointAtExternalXY(x, y);
         const row = Math.floor(point.y / CELL_HEIGHT);
         const col = Math.floor(point.x / CELL_WIDTH);
-        return !checkBoundaries || state.charInBounds(row, col) ? new Cell(row, col) : null;
+        return new Cell(row, col);
     }
 
     zoomTo(level) {
@@ -464,6 +464,10 @@ export class Cell extends Rect {
             cells.pop();
             return cells;
         }
+    }
+
+    isInBounds() {
+        return state.charInBounds(this.row, this.col);
     }
 
     get row() {

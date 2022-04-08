@@ -11,7 +11,6 @@ const $tools = $('#editing-tools');
 const $canvasContainer = $('#canvas-container');
 
 let $selectionTools = $('#selection-tools');
-let selectionToolsWereVisible = false;
 
 export function currentColorIndex() {
     if (cachedColorIndex !== null) {
@@ -25,11 +24,8 @@ export function refresh() {
     $tools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
     $canvasContainer.css('cursor', cursorStyle());
 
-    // Note: This logic is kind of overkill to get what we want. Basically just want to show tools if there is a selection,
-    //       except for the initial down-click during a fresh selection
-    let selectionToolsAreVisible = selection.hasSelection() && (!selection.isSelecting || selectionToolsWereVisible);
-    $selectionTools.toggle(selectionToolsAreVisible);
-    if (!selection.isSelecting) { selectionToolsWereVisible = selectionToolsAreVisible; }
+    $selectionTools.toggle(selection.hasSelection());
+    // $selectionTools.toggle(selection.hasSelection() && !selection.isSelecting);
 }
 
 
@@ -43,6 +39,42 @@ export function changeTool(newTool) {
     refresh();
 }
 
+
+export function setupMouseEvents(canvasControl) {
+    /*  ---------------------  Emitting Events  ---------------------  */
+    function _emitEvent(name, mouseEvent) {
+        const cell = canvasControl.cellAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+        canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.config('tool')])
+    }
+
+    canvasControl.$canvas.on('mousedown.editor', evt => {
+        if (evt.which !== 1) { return; } // Only apply to left-click
+        _emitEvent('editor:mousedown', evt);
+    });
+
+    canvasControl.$canvas.on('mousemove.editor', evt => {
+        _emitEvent('editor:mousemove', evt);
+    });
+
+    $(document).on('mouseup.editor', evt => {
+        _emitEvent('editor:mouseup', evt);
+    });
+
+    /*  ---------------------  Event Listeners  ---------------------  */
+    canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
+        switch(tool) {
+            case 'paint':
+                paintConnectedCells(cell, { diagonal: mouseEvent.metaKey });
+                break;
+            default:
+                return; // Ignore all other tools
+        }
+    });
+}
+
+
+
+
 function bindSelectionToolEvent(tool, onClick) {
     $selectionTools.find(`.selection-tool[data-tool="${tool}"]`).off('click').on('click', evt => {
         onClick(evt);
@@ -54,9 +86,9 @@ bindSelectionToolEvent('copy', () => clipboard.copy());
 bindSelectionToolEvent('paste', () => clipboard.paste());
 bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.altKey));
 bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.altKey));
-bindSelectionToolEvent('paint', () => fillSelection());
+bindSelectionToolEvent('paint', () => paintSelection());
 
-function fillSelection() {
+function paintSelection() {
     selection.getSelectedCells().forEach(cell => {
         state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
     });
@@ -77,7 +109,7 @@ const colorPicker = new Picker({
         currentColorStr = color.hex;
         cachedColorIndex = null;
     },
-    onDone: () => fillSelection()
+    onDone: () => paintSelection()
 });
 
 function cursorStyle() {
@@ -97,4 +129,14 @@ function cursorStyle() {
         default:
             return 'default';
     }
+}
+
+function paintConnectedCells(cell, options) {
+    if (!cell.isInBounds()) { return; }
+
+    selection.getConnectedCells(cell, options).forEach(cell => {
+        state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
+    })
+
+    triggerRefresh('chars');
 }
