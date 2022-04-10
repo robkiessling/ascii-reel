@@ -17,6 +17,9 @@ const WINDOW_BORDER_WIDTH = 4;
 const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles
 const ONION_OPACITY = 0.15;
 
+const DASH_OUTLINE_SIZE = 5;
+const DASH_OUTLINE_SPEED = 10; // updates per second
+
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
 const CANVAS_BACKGROUND = false; // false => transparent
@@ -59,6 +62,8 @@ export class CanvasControl {
         this.context.textBaseline = 'middle';
 
         this.buildBoundaries();
+
+        this.initialized = true;
     }
 
     get outerWidth() {
@@ -69,25 +74,26 @@ export class CanvasControl {
     }
 
     clear() {
+        // Clear any animation intervals
+        if (this._outlineInterval) { window.clearInterval(this._outlineInterval); }
+
+        // Clear entire canvas
         this.usingFullArea((fullArea) => {
             this.context.clearRect(...fullArea.xywh);
         });
     }
 
-    // Note: If numRows or numCols changes, canvas will need to be rezoomed
-    drawChars(chars, clearCanvas = true) {
-        if (clearCanvas) {
-            this.clear();
-
-            if (CANVAS_BACKGROUND === false) {
-                this._fillCheckerboard();
-            }
-            else {
-                this.context.fillStyle = CANVAS_BACKGROUND;
-                this.context.fillRect(...CellArea.drawableArea().xywh);
-            }
+    drawBackground() {
+        if (CANVAS_BACKGROUND === false) {
+            this._fillCheckerboard();
         }
+        else {
+            this.context.fillStyle = CANVAS_BACKGROUND;
+            this.context.fillRect(...CellArea.drawableArea().xywh);
+        }
+    }
 
+    drawChars(chars) {
         // Convert individual chars into lines of text (of matching color), so we can call fillText as few times as possible
         let lines = [];
         for (let row = 0; row < chars.length; row++) {
@@ -121,17 +127,44 @@ export class CanvasControl {
     drawOnion(chars) {
         this.context.save();
         this.context.globalAlpha = ONION_OPACITY;
-        this.drawChars(chars, false);
+        this.drawChars(chars);
         this.context.restore();
     }
 
-    // Note: This conflicts with drawChars. We use different canvases for chars/selections stacked on top of each other.
     highlightPolygons(polygons) {
-        this.clear();
-
-        // Draw all selection rectangles
         this.context.fillStyle = SELECTION_COLOR;
         polygons.forEach(polygon => polygon.draw(this.context));
+    }
+
+    outlinePolygon(polygon, isDashed) {
+        if (polygon) {
+            if (isDashed) {
+                if (this._outlineOffset === undefined) { this._outlineOffset = 0; }
+                this._drawDashedOutline(polygon);
+                this._outlineInterval = window.setInterval(() => {
+                    this._outlineOffset += 1;
+                    if (this._outlineOffset >= DASH_OUTLINE_SIZE * 2) { this._outlineOffset = 0; }
+                    this._drawDashedOutline(polygon);
+                }, 1000 / DASH_OUTLINE_SPEED);
+            }
+            else {
+                this.context.setLineDash([]);
+                this.context.strokeStyle = SELECTION_COLOR;
+                polygon.stroke(this.context);
+            }
+        }
+    }
+
+    _drawDashedOutline(polygon) {
+        this.context.lineDashOffset = this._outlineOffset;
+        this.context.setLineDash([DASH_OUTLINE_SIZE, DASH_OUTLINE_SIZE]);
+        this.context.strokeStyle = 'white';
+        polygon.stroke(this.context);
+
+        this.context.lineDashOffset = this._outlineOffset + DASH_OUTLINE_SIZE;
+        this.context.setLineDash([DASH_OUTLINE_SIZE, DASH_OUTLINE_SIZE]);
+        this.context.strokeStyle = 'black';
+        polygon.stroke(this.context);
     }
 
     drawWindow(rect) {
@@ -418,26 +451,12 @@ export class Cell extends Rect {
     }
 
     clone() {
-        const cell = new Cell(this.row, this.col);
-        cell.bindToDrawableArea(this._boundToDrawableArea);
-        return cell;
+        return new Cell(this.row, this.col);
     }
 
     translate(rowDelta, colDelta) {
         this.row += rowDelta;
         this.col += colDelta;
-        return this;
-    }
-
-    bindToDrawableArea(newValue) {
-        this._boundToDrawableArea = newValue;
-
-        // If turning on binding, immediately set the row/col values so the binding takes effect
-        if (newValue) {
-            this.row = this.row;
-            this.col = this.col;
-        }
-
         return this;
     }
 
@@ -476,10 +495,6 @@ export class Cell extends Rect {
 
     set row(newValue) {
         this._row = newValue;
-        if (this._boundToDrawableArea) {
-            if (this._row < 0) { this._row = 0; }
-            if (this._row > state.numRows() - 1) { this._row = state.numRows() - 1; }
-        }
     }
 
     get col() {
@@ -488,10 +503,6 @@ export class Cell extends Rect {
 
     set col(newValue) {
         this._col = newValue;
-        if (this._boundToDrawableArea) {
-            if (this._col < 0) { this._col = 0; }
-            if (this._col > state.numCols() - 1) { this._col = state.numCols() - 1; }
-        }
     }
 
     get x() {
@@ -532,6 +543,20 @@ export class CellArea extends Rect {
 
     clone() {
         return new CellArea(this.topLeft.clone(), this.bottomRight.clone());
+    }
+
+    bindToDrawableArea() {
+        if (this.topLeft.row < 0) { this.topLeft.row = 0; }
+        if (this.topLeft.col < 0) { this.topLeft.col = 0; }
+        if (this.topLeft.row > state.numRows() - 1) { this.topLeft.row = state.numRows(); } // Allow 1 space negative
+        if (this.topLeft.col > state.numCols() - 1) { this.topLeft.col = state.numCols(); } // Allow 1 space negative
+
+        if (this.bottomRight.row < 0) { this.bottomRight.row = -1; } // Allow 1 space negative
+        if (this.bottomRight.col < 0) { this.bottomRight.col = -1; } // Allow 1 space negative
+        if (this.bottomRight.row > state.numRows() - 1) { this.bottomRight.row = state.numRows() - 1; }
+        if (this.bottomRight.col > state.numCols() - 1) { this.bottomRight.col = state.numCols() - 1; }
+
+        return this;
     }
 
     iterate(callback) {

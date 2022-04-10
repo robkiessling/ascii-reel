@@ -1,22 +1,29 @@
-import {create2dArray, mirrorCharHorizontally, mirrorCharVertically} from "./utilities.js";
+import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translate} from "./utilities.js";
 import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
+import * as editor from "./editor.js";
 
-let polygons = [];
-export let isSelecting = false;
-
-export function getPolygons() {
-    return polygons;
-}
+export let polygons = [];
+export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
+export let isMoving = false; // Only true when mouse is down and polygon is being moved
+export let movableContent = null; // 2d array of content IF there is any (it will be surrounded by dashed outline)
 
 export function hasSelection() {
     return polygons.length > 0;
 }
 
 export function clear() {
+    if (movableContent) { finishMovingContent(); }
     polygons = [];
     triggerRefresh('selection');
+}
+
+// Empties the selection's contents
+export function empty() {
+    getSelectedCells().forEach(cell => {
+        state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
+    });
 }
 
 export function selectAll() {
@@ -25,6 +32,8 @@ export function selectAll() {
 }
 
 export function setupMouseEvents(canvasControl) {
+    let movingFrom = null;
+
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
         switch(tool) {
             case 'selection-rect':
@@ -36,12 +45,25 @@ export function setupMouseEvents(canvasControl) {
                 return; // Ignore all other tools
         }
 
+        if (isSelectedCell(cell)) {
+            isMoving = true;
+            movingFrom = cell;
+
+            if (mouseEvent.metaKey && !movableContent) {
+                startMovingContent();
+                return;
+            }
+
+            triggerRefresh('selection');
+            return;
+        }
+
         if (!mouseEvent.shiftKey) {
             clear();
         }
 
         if (cell.isInBounds()) {
-            isSelecting = true;
+            isDrawing = true;
 
             switch(tool) {
                 case 'selection-rect':
@@ -63,20 +85,56 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell) => {
-        if (isSelecting) {
+        if (isDrawing) {
             lastPolygon().end = cell;
             triggerRefresh('selection');
+        }
+        if (isMoving) {
+            moveDelta(cell.row - movingFrom.row, cell.col - movingFrom.col);
+            movingFrom = cell;
         }
     });
 
     canvasControl.$canvas.on('editor:mouseup', () => {
-        if (isSelecting) {
+        if (isDrawing) {
             lastPolygon().complete();
-            isSelecting = false;
+            isDrawing = false;
             triggerRefresh('selection');
+        }
+        if (isMoving) {
+            isMoving = false;
+            triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
         }
     });
 }
+
+
+function startMovingContent() {
+    movableContent = getSelectedValues();
+
+    empty();
+    triggerRefresh();
+}
+
+export function finishMovingContent() {
+    translate(movableContent, getSelectedCellArea().topLeft, (value, r, c) => {
+        if (value !== undefined) { state.setCurrentCelChar(r, c, value); }
+    });
+
+    movableContent = null;
+
+    triggerRefresh();
+}
+
+export function updateMovableContent(char, color) {
+    movableContent.forEach((rowValues, rowIndex) => {
+        rowValues.forEach((value, colIndex) => {
+            value[0] = char;
+            value[1] = color;
+        });
+    });
+}
+
 
 /**
  * Returns a 2d array of values for the smallest CellArea that bounds all polygons. This 2d array will contain
@@ -100,6 +158,10 @@ export function setupMouseEvents(canvasControl) {
 export function getSelectedValues() {
     if (!hasSelection()) {
         return [[]];
+    }
+
+    if (movableContent) {
+        return movableContent;
     }
 
     // Start with a 2d array of undefined elements
@@ -148,6 +210,15 @@ export function getSelectedCellArea() {
     return new CellArea(topLeft, bottomRight);
 }
 
+export function getSelectedRect() {
+    if (!hasSelection()) {
+        return null;
+    }
+
+    const cellArea = getSelectedCellArea();
+    return new SelectionRect(cellArea.topLeft, cellArea.bottomRight);
+}
+
 /**
  * Returns a 1d array of Cell-like objects for all selected cells.
  *
@@ -179,16 +250,52 @@ export function getConnectedCells(cell, options) {
     return new SelectionWand(cell, options).cells;
 }
 
+// Store a Set of selected cells so we can quickly look up if a cell is part of the selection
+let cachedSelection = new Set();
+export function cacheSelection() {
+    cachedSelection = new Set(getSelectedCells().map(cell => cellKey(cell)))
+}
+export function isSelectedCell(cell) {
+    return cachedSelection.has(cellKey(cell));
+}
+function cellKey(cell) {
+    return `${cell.row},${cell.col}`
+}
 
-// Move all polygons in a particular direction
-export function moveSelection(direction, amount, moveStart = true, moveEnd = true) {
+function moveDelta(rowDelta, colDelta) {
     if (!hasSelection()) {
         return;
     }
 
-    polygons.forEach(polygon => polygon.translate(direction, amount, moveStart, moveEnd));
+    polygons.forEach(polygon => polygon.translate(rowDelta, colDelta));
 
-    triggerRefresh('selection');
+    triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
+}
+
+// Move all polygons in a particular direction
+export function moveDirection(direction, amount, moveStart = true, moveEnd = true) {
+    if (!hasSelection()) {
+        return;
+    }
+
+    switch(direction) {
+        case 'left':
+            polygons.forEach(polygon => polygon.translate(0, -amount, moveStart, moveEnd));
+            break;
+        case 'up':
+            polygons.forEach(polygon => polygon.translate(-amount, 0, moveStart, moveEnd));
+            break;
+        case 'right':
+            polygons.forEach(polygon => polygon.translate(0, amount, moveStart, moveEnd));
+            break;
+        case 'down':
+            polygons.forEach(polygon => polygon.translate(amount, 0, moveStart, moveEnd));
+            break;
+        default:
+            console.warn(`Invalid direction: ${direction}`);
+    }
+
+    triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
 }
 
 function lastPolygon() {
@@ -230,15 +337,8 @@ function flip(horizontally, vertically, mirrorChars) {
     })
 
     polygons.forEach(polygon => {
-        // TODO polygons might become more complicated than this
-        if (vertically) {
-            polygon.start.row = flipRow(polygon.start.row);
-            polygon.end.row = flipRow(polygon.end.row);
-        }
-        if (horizontally) {
-            polygon.start.col = flipCol(polygon.start.col);
-            polygon.end.col = flipCol(polygon.end.col);
-        }
+        if (vertically) { polygon.flipVertically(flipRow); }
+        if (horizontally) { polygon.flipHorizontally(flipCol); }
     });
 
     triggerRefresh(['chars', 'selection']);
@@ -259,13 +359,13 @@ class SelectionPolygon {
     }
 
     set start(cell) {
-        this._start = cell.bindToDrawableArea(true);
+        this._start = cell;
     }
     get start() {
         return this._start;
     }
     set end(cell) {
-        this._end = cell.bindToDrawableArea(true);
+        this._end = cell;
     }
     get end() {
         return this._end;
@@ -282,28 +382,28 @@ class SelectionPolygon {
         this.completed = true;
     }
 
-    translate(direction, amount, moveStart = true, moveEnd = true) {
-        switch(direction) {
-            case 'left':
-                if (moveStart) { this.start.col -= amount; }
-                if (moveEnd) { this.end.col -= amount; }
-                break;
-            case 'up':
-                if (moveStart) { this.start.row -= amount; }
-                if (moveEnd) { this.end.row -= amount; }
-                break;
-            case 'right':
-                if (moveStart) { this.start.col += amount; }
-                if (moveEnd) { this.end.col += amount; }
-                break;
-            case 'down':
-                if (moveStart) { this.start.row += amount; }
-                if (moveEnd) { this.end.row += amount; }
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
+    translate(rowDelta, colDelta, moveStart = true, moveEnd = true) {
+        if (moveStart) {
+            this.start.row += rowDelta;
+            this.start.col += colDelta;
+        }
+        if (moveEnd) {
+            this.end.row += rowDelta;
+            this.end.col += colDelta;
         }
     }
+
+    flipVertically(flipRow) {
+        this.start.row = flipRow(this.start.row);
+        this.end.row = flipRow(this.end.row);
+    }
+
+    flipHorizontally(flipCol) {
+        this.start.col = flipCol(this.start.col);
+        this.end.col = flipCol(this.end.col);
+    }
+
+
 }
 
 class SelectionLine extends SelectionPolygon {
@@ -312,7 +412,11 @@ class SelectionLine extends SelectionPolygon {
     }
 
     draw(context) {
-        this.start.lineTo(this.end).forEach(cell => context.fillRect(...cell.xywh));
+        this.start.lineTo(this.end).forEach(cell => {
+            if (cell.isInBounds()) {
+                context.fillRect(...cell.xywh);
+            }
+        });
     }
 }
 
@@ -326,7 +430,14 @@ class SelectionRect extends SelectionPolygon {
     }
 
     draw(context) {
-        context.fillRect(...this._toCellArea().xywh);
+        context.fillRect(...this._toCellArea().clone().bindToDrawableArea().xywh);
+    }
+
+    // Note: SelectionRect is the only Polygon that needs to implement `stroke`
+    stroke(context) {
+        context.beginPath();
+        context.rect(...this._toCellArea().xywh);
+        context.stroke();
     }
 
     _toCellArea() {
@@ -351,11 +462,15 @@ class SelectionLasso extends SelectionPolygon {
     }
 
     draw(context) {
-        if (this._lassoAreas) {
-            this._lassoAreas.forEach(area => context.fillRect(...area.xywh));
+        if (this._boundedLassoAreas) {
+            this._boundedLassoAreas.forEach(area => context.fillRect(...area.xywh));
         }
         else {
-            this._lassoCells.forEach(cell => context.fillRect(...new Cell(cell.row, cell.col).xywh));
+            this._lassoCells.forEach(cell => {
+                if (cell.isInBounds()) {
+                    context.fillRect(...cell.xywh);
+                }
+            });
         }
     }
 
@@ -442,7 +557,6 @@ class SelectionLasso extends SelectionPolygon {
             for (let i = 0; i < rowOfLinks.length; i++) {
                 const link = rowOfLinks[i];
                 const cell = new Cell(link.row, link.col);
-                cell.bindToDrawableArea(true);
 
                 if (inside) {
                     this._lassoAreas[this._lassoAreas.length - 1].bottomRight = cell;
@@ -464,7 +578,40 @@ class SelectionLasso extends SelectionPolygon {
         super.complete();
     }
 
+    translate(rowDelta, colDelta) {
+        this._lassoAreas.forEach(area => {
+            area.topLeft.row += rowDelta;
+            area.topLeft.col += colDelta;
+            area.bottomRight.row += rowDelta;
+            area.bottomRight.col += colDelta;
+        })
+
+        this._cacheEndpoints();
+    }
+
+    flipVertically(flipRow) {
+        this._lassoAreas.forEach(area => {
+            const topLeftRow = area.topLeft.row, bottomRightRow = area.bottomRight.row;
+            area.topLeft.row = flipRow(bottomRightRow);
+            area.bottomRight.row = flipRow(topLeftRow);
+        });
+
+        this._cacheEndpoints();
+    }
+
+    flipHorizontally(flipCol) {
+        this._lassoAreas.forEach(area => {
+            const topLeftCol = area.topLeft.col, bottomRightCol = area.bottomRight.col;
+            area.topLeft.col = flipCol(bottomRightCol);
+            area.bottomRight.col = flipCol(topLeftCol);
+        });
+
+        this._cacheEndpoints();
+    }
+
     _cacheEndpoints() {
+        this._boundedLassoAreas = this._lassoAreas.map(area => area.clone().bindToDrawableArea(true));
+
         // _lassoAreas is sorted by row, so we can determine the min/max row just from the first/last areas
         const minRow = this._lassoAreas[0].topLeft.row;
         const maxRow = this._lassoAreas[this._lassoAreas.length - 1].bottomRight.row;
@@ -475,39 +622,6 @@ class SelectionLasso extends SelectionPolygon {
 
         this._topLeft = new Cell(minRow, minCol);
         this._bottomRight = new Cell(maxRow, maxCol);
-    }
-
-    translate(direction, amount) {
-        switch(direction) {
-            case 'left':
-                this._lassoAreas.forEach(area => {
-                    area.topLeft.col -= amount;
-                    area.bottomRight.col -= amount;
-                });
-                break;
-            case 'up':
-                this._lassoAreas.forEach(area => {
-                    area.topLeft.row -= amount;
-                    area.bottomRight.row -= amount;
-                });
-                break;
-            case 'right':
-                this._lassoAreas.forEach(area => {
-                    area.topLeft.col += amount;
-                    area.bottomRight.col += amount;
-                });
-                break;
-            case 'down':
-                this._lassoAreas.forEach(area => {
-                    area.topLeft.row += amount;
-                    area.bottomRight.row += amount;
-                });
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-        }
-
-        this._cacheEndpoints();
     }
 }
 
@@ -529,7 +643,11 @@ class SelectionWand extends SelectionPolygon {
     }
 
     draw(context) {
-        this._cells.forEach(cell => context.fillRect(...new Cell(cell.row, cell.col).xywh));
+        this._cells.forEach(cell => {
+            if (cell.isInBounds()) {
+                context.fillRect(...cell.xywh);
+            }
+        });
     }
 
     get topLeft() {
@@ -540,23 +658,27 @@ class SelectionWand extends SelectionPolygon {
         return this._bottomRight; // Using a cached value
     }
 
-    translate(direction, amount) {
-        switch(direction) {
-            case 'left':
-                this._cells.forEach(cell => cell.col -= amount);
-                break;
-            case 'up':
-                this._cells.forEach(cell => cell.row -= amount);
-                break;
-            case 'right':
-                this._cells.forEach(cell => cell.col += amount);
-                break;
-            case 'down':
-                this._cells.forEach(cell => cell.row += amount);
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-        }
+    translate(rowDelta, colDelta) {
+        this._cells.forEach(cell => {
+            cell.row += rowDelta;
+            cell.col += colDelta;
+        });
+
+        this._cacheEndpoints();
+    }
+
+    flipVertically(flipRow) {
+        this._cells.forEach(cell => {
+            cell.row = flipRow(cell.row);
+        })
+
+        this._cacheEndpoints();
+    }
+
+    flipHorizontally(flipCol) {
+        this._cells.forEach(cell => {
+            cell.col = flipCol(cell.col);
+        })
 
         this._cacheEndpoints();
     }
@@ -568,12 +690,11 @@ class SelectionWand extends SelectionPolygon {
         const diagonal = this.options.diagonal;
 
         function spread(cell) {
-            const cellId = `${cell.row},${cell.col}`;
-            if (cellHash[cellId] === undefined) {
+            if (cellHash[cellKey(cell)] === undefined) {
                 const charObj = state.getCurrentCelChar(cell.row, cell.col);
                 // If isBlank, keep any blank cells. Otherwise, keep any cells that are not blank and match the starting color
                 if (charObj && (isBlank ? charObj[0] === '' : (charObj[0] !== '' && charObj[1] === startChar[1]))) {
-                    cellHash[cellId] = new Cell(cell.row, cell.col);
+                    cellHash[cellKey(cell)] = new Cell(cell.row, cell.col);
 
                     // Recursive call to adjacent cells (note: not instantiating full Cell objects for performance reasons)
                     spread({ row: cell.row - 1, col: cell.col });
@@ -601,7 +722,7 @@ class SelectionWand extends SelectionPolygon {
         const minRow = Math.min(...this._cells.map(cell => cell.row));
         const maxRow = Math.max(...this._cells.map(cell => cell.row));
         const minCol = Math.min(...this._cells.map(cell => cell.col));
-        const maxCol = Math.min(...this._cells.map(cell => cell.col));
+        const maxCol = Math.max(...this._cells.map(cell => cell.col));
 
         this._topLeft = new Cell(minRow, minCol);
         this._bottomRight = new Cell(maxRow, maxCol);

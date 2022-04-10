@@ -22,10 +22,9 @@ export function currentColorIndex() {
 export function refresh() {
     $tools.find('.editing-tool').removeClass('selected');
     $tools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
-    $canvasContainer.css('cursor', cursorStyle());
 
     $selectionTools.toggle(selection.hasSelection());
-    // $selectionTools.toggle(selection.hasSelection() && !selection.isSelecting);
+    // $selectionTools.toggle(selection.hasSelection() && !selection.isDrawing);
 }
 
 
@@ -43,20 +42,21 @@ export function changeTool(newTool) {
 export function setupMouseEvents(canvasControl) {
     /*  ---------------------  Emitting Events  ---------------------  */
     function _emitEvent(name, mouseEvent) {
+        if (!canvasControl.initialized) { return; }
         const cell = canvasControl.cellAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
         canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.config('tool')])
     }
 
-    canvasControl.$canvas.on('mousedown.editor', evt => {
+    canvasControl.$canvas.on('mousedown', evt => {
         if (evt.which !== 1) { return; } // Only apply to left-click
         _emitEvent('editor:mousedown', evt);
     });
 
-    canvasControl.$canvas.on('mousemove.editor', evt => {
+    canvasControl.$canvas.on('mousemove', evt => {
         _emitEvent('editor:mousemove', evt);
     });
 
-    $(document).on('mouseup.editor', evt => {
+    $(document).on('mouseup', evt => {
         _emitEvent('editor:mouseup', evt);
     });
 
@@ -69,6 +69,10 @@ export function setupMouseEvents(canvasControl) {
             default:
                 return; // Ignore all other tools
         }
+    });
+
+    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
+        $canvasContainer.css('cursor', cursorStyle(tool, cell));
     });
 }
 
@@ -87,6 +91,7 @@ bindSelectionToolEvent('paste', () => clipboard.paste());
 bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.altKey));
 bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.altKey));
 bindSelectionToolEvent('paint', () => paintSelection());
+bindSelectionToolEvent('cancel', () => selection.clear());
 
 function paintSelection() {
     selection.getSelectedCells().forEach(cell => {
@@ -112,13 +117,13 @@ const colorPicker = new Picker({
     onDone: () => paintSelection()
 });
 
-function cursorStyle() {
-    switch (state.config('tool')) {
+function cursorStyle(tool, cell) {
+    switch (tool) {
         case 'selection-rect':
         case 'selection-line':
         case 'selection-lasso':
         case 'selection-wand':
-            return 'cell';
+            return selection.isSelectedCell(cell) ? 'grab' : 'cell';
         case 'draw-rect':
         case 'draw-line':
             return 'crosshair';

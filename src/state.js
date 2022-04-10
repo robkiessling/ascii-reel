@@ -1,5 +1,6 @@
 import $ from "jquery";
-import {create2dArray, eachWithObject} from "./utilities.js";
+import {create2dArray, eachWithObject, translate} from "./utilities.js";
+import * as selection from "./selection.js";
 
 const CONFIG_DEFAULTS = {
     dimensions: [9, 9],
@@ -221,13 +222,13 @@ export function charInBounds(row, col) {
 }
 
 // Aggregates all visible layers for a frame
-export function layeredChars(frame, forceAllLayers) {
+export function layeredChars(frame, options = {}) {
     let result = create2dArray(numRows(), numCols(), () => ['', 0]);
 
     let l, layer, chars, r, c;
     for (l = 0; l < state.layers.length; l++) {
         layer = state.layers[l];
-        if (forceAllLayers || (state.config.lockLayerVisibility ? l === layerIndex() : layer.visible)) {
+        if (options.showAllLayers || (state.config.lockLayerVisibility ? l === layerIndex() : layer.visible)) {
             chars = cel(layer, frame).chars;
             for (r = 0; r < chars.length; r++) {
                 for (c = 0; c < chars[r].length; c++) {
@@ -236,6 +237,13 @@ export function layeredChars(frame, forceAllLayers) {
                     }
                 }
             }
+        }
+
+        // If there is movableContent, we show it on top of the rest of the layer
+        if (options.showMovingContent && l === layerIndex() && selection.movableContent) {
+            translate(selection.movableContent, selection.getSelectedCellArea().topLeft, (value, r, c) => {
+                if (value !== undefined && charInBounds(r, c)) { result[r][c] = value; }
+            });
         }
     }
 

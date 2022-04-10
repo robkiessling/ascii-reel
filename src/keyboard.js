@@ -46,6 +46,11 @@ $document.keydown(function(e) {
             case 'v':
                 clipboard.paste();
                 break;
+            case 'Enter':
+                if (selection.movableContent) {
+                    selection.finishMovingContent();
+                }
+                break;
             default:
                 // Unrecognized command; let browser handle as normal
                 return;
@@ -62,37 +67,51 @@ $document.keydown(function(e) {
             break;
         case 'ArrowLeft':
             // If shift key is pressed, we only want to move the end cell
-            selection.moveSelection('left', 1, !e.shiftKey);
+            selection.moveDirection('left', 1, !e.shiftKey);
             break;
         case 'ArrowUp':
-            selection.moveSelection('up', 1, !e.shiftKey);
+            selection.moveDirection('up', 1, !e.shiftKey);
             break;
         case 'ArrowRight':
-            selection.moveSelection('right', 1, !e.shiftKey);
+            selection.moveDirection('right', 1, !e.shiftKey);
             break;
         case 'ArrowDown':
-            selection.moveSelection('down', 1, !e.shiftKey);
+            selection.moveDirection('down', 1, !e.shiftKey);
             break;
         case 'Tab':
             // If shift key is pressed, we move in opposite direction
-            if (e.shiftKey) { selection.moveSelection('left', 1); } else { selection.moveSelection('right', 1); }
+            if (e.shiftKey) { selection.moveDirection('left', 1); } else { selection.moveDirection('right', 1); }
             break;
         case 'Enter':
-            if (e.shiftKey) { selection.moveSelection('up', 1); } else { selection.moveSelection('down', 1); }
+            if (selection.movableContent) {
+                selection.finishMovingContent();
+            }
+            else {
+                if (e.shiftKey) { selection.moveDirection('up', 1); } else { selection.moveDirection('down', 1); }
+            }
             break;
 
         case 'Backspace':
         case 'Delete':
-            selection.getSelectedCells().forEach(cell => {
-                state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
-            });
+            if (selection.movableContent) {
+                selection.updateMovableContent('', 0);
+            }
+            else {
+                selection.empty();
+            }
             triggerRefresh('chars');
             break;
         default:
             if (producesText(code)) {
-                selection.getSelectedCells().forEach(cell => {
-                    state.setCurrentCelChar(cell.row, cell.col, [char, editor.currentColorIndex()]);
-                });
+                if (selection.movableContent) {
+                    selection.updateMovableContent(char, editor.currentColorIndex());
+                }
+                else {
+                    selection.getSelectedCells().forEach(cell => {
+                        state.setCurrentCelChar(cell.row, cell.col, [char, editor.currentColorIndex()]);
+                    });
+                }
+
                 triggerRefresh('chars');
             }
             else {

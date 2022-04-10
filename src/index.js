@@ -14,11 +14,12 @@ import * as editor from "./editor.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
+export const selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
 export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
 selection.setupMouseEvents(selectionCanvas);
 editor.setupMouseEvents(selectionCanvas);
-zoom.setupMouseEvents(selectionCanvas, preview.canvasControl, [selectionCanvas, charCanvas]);
+zoom.setupMouseEvents(selectionCanvas, preview.canvasControl, [selectionCanvas, selectionBorderCanvas, charCanvas]);
 
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 
@@ -37,6 +38,7 @@ export function triggerResize() {
     timeline.refresh(); // This has to happen first, since its configuration can affect canvas boundaries
 
     charCanvas.resize();
+    selectionBorderCanvas.resize();
     selectionCanvas.resize();
     preview.canvasControl.resize();
     // Note: timeline frames will be resized during triggerRefresh() since they all have to be rebuilt
@@ -63,18 +65,20 @@ export function triggerRefresh(type = 'full') {
                 timeline.currentFrameComponent.redrawChars();
                 break;
             case 'selection':
-                selectionCanvas.highlightPolygons(selection.getPolygons());
+                selection.cacheSelection();
+                drawSelection();
                 editor.refresh();
                 break;
             case 'zoom':
                 redrawCharCanvas();
                 preview.redraw();
-                selectionCanvas.highlightPolygons(selection.getPolygons());
+                drawSelection();
                 break;
             case 'full':
+                selection.cacheSelection();
                 redrawCharCanvas();
                 preview.reset();
-                selectionCanvas.highlightPolygons(selection.getPolygons());
+                drawSelection();
                 editor.refresh();
                 timeline.rebuildLayers();
                 timeline.rebuildFrames();
@@ -87,10 +91,22 @@ export function triggerRefresh(type = 'full') {
 }
 
 function redrawCharCanvas() {
-    charCanvas.drawChars(state.layeredChars(state.currentFrame()));
+    charCanvas.clear();
+    charCanvas.drawBackground();
+    charCanvas.drawChars(state.layeredChars(state.currentFrame(), { showMovingContent: true }));
 
     if (state.config('onion')) {
         charCanvas.drawOnion(state.layeredChars(state.previousFrame()));
+    }
+}
+
+function drawSelection() {
+    selectionCanvas.clear();
+    selectionCanvas.highlightPolygons(selection.polygons);
+
+    selectionBorderCanvas.clear();
+    if (selection.hasSelection() && !selection.isDrawing) {
+        selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
     }
 }
 

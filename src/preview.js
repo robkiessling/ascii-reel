@@ -27,7 +27,9 @@ export function refresh() {
 
 // Just redraw the current preview frame (e.g. if chars got updated)
 export function redraw() {
-    canvasControl.drawChars(state.layeredChars(state.frames()[previewIndex], true));
+    canvasControl.clear();
+    canvasControl.drawBackground();
+    canvasControl.drawChars(state.layeredChars(state.frames()[previewIndex], { showAllLayers: true }));
     canvasControl.drawWindow(selectionCanvas.currentViewRect());
 }
 

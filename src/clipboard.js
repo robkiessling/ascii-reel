@@ -12,12 +12,11 @@ let copiedSelection = null; // 2d array
 let copiedText = null; // string
 
 export function cut() {
-    copySelection();
+    // If we're moving content, immediately finish it so that it's more intuitive as to what is being cut
+    if (selection.movableContent) { selection.finishMovingContent(); }
 
-    // Clear out the currently selected area
-    selection.getSelectedCells().forEach(cell => {
-        state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
-    });
+    copySelection();
+    selection.empty();
     triggerRefresh('chars');
 }
 

@@ -1,4 +1,3 @@
-import {Cell} from "./canvas.js";
 import $ from "jquery";
 
 export function isFunction(value) {
