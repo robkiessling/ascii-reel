@@ -204,3 +204,37 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
         ]
     }, overrides));
 }
+
+function componentToHex(c) {
+    const hex = c.toString(16);
+    return hex.length === 1 ? "0" + hex : hex;
+}
+
+export function rgbaToHex(r, g, b, a) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
+}
+
+export function hexToRgba(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+        a: parseInt(result[4], 16)
+    } : null;
+}
+
+// Note: Indentation is purposely left-aligned since it gets put exactly as is into HTML file
+export function createHTMLFile(title, script, body) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <script>${script}</script>
+</head>
+<body>
+    ${body}
+</body>
+</html>`;
+}

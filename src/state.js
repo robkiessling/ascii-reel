@@ -20,8 +20,7 @@ const LAYER_DEFAULTS = {
 }
 const FRAME_DEFAULTS = {}
 const CELL_DEFAULTS = {
-    chars: [[]],
-    colors: [[]]
+    chars: [[]]
 }
 const DEFAULT_COLORS = ['#000000ff']; // TODO These currently have to match colorPicker format to avoid duplicates
 const SEQUENCES = ['layers', 'frames'];
@@ -264,6 +263,9 @@ export function layeredChars(frame, options = {}) {
     return result;
 }
 
+export function colors() {
+    return state.colors;
+}
 export function colorStr(colorIndex) {
     return state.colors[colorIndex];
 }

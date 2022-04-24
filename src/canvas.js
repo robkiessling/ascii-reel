@@ -121,7 +121,7 @@ export class CanvasControl {
         lines.forEach(line => {
             this.context.fillStyle = state.colorStr(line.colorIndex);
             this.context.fillText(line.text, line.x, line.y);
-        })
+        });
 
         if (GRID) {
             this._drawGrid();

@@ -5,22 +5,18 @@ import * as selection from './selection.js';
 import {triggerRefresh} from "./index.js";
 import * as clipboard from "./clipboard.js";
 
-let currentColorStr = '#fff';
-let cachedColorIndex = null;
 const $tools = $('#editing-tools');
 const $canvasContainer = $('#canvas-container');
 
 let $selectionTools = $('#selection-tools');
 let $canvasDetails = $('#canvas-details');
 
-export function currentColorIndex() {
-    if (cachedColorIndex !== null) {
-        return cachedColorIndex;
-    }
-    return state.findOrCreateColor(currentColorStr);
-}
-
 export function refresh() {
+    if (currentColorStr === null) {
+        // initial color picker state
+        colorPicker.setColor(state.colors()[0]);
+    }
+
     $tools.find('.editing-tool').removeClass('selected');
     $tools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
 
@@ -115,17 +111,26 @@ function paintSelection() {
     triggerRefresh('chars');
 }
 
+let currentColorStr = null;
+let cachedColorIndex = null;
+
+export function currentColorIndex() {
+    if (cachedColorIndex !== null) {
+        return cachedColorIndex;
+    }
+    return state.findOrCreateColor(currentColorStr);
+}
+
 const colorPickerElement = document.querySelector('#current-color');
 const colorPicker = new Picker({
     parent: colorPickerElement,
-    color: currentColorStr,
     popup: 'top',
     onOpen: () => {
         const $done = $(colorPickerElement).find('.picker_done');
         $done.toggle(selection.hasSelection()).find('button').html("<span class='icon-paint-bucket'></span>")
     },
     onChange: (color) => {
-        colorPickerElement.style.background = color.hex;
+        colorPickerElement.style.background = color.rgbaString;
         currentColorStr = color.hex;
         cachedColorIndex = null;
     },
