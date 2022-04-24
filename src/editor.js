@@ -11,6 +11,7 @@ const $tools = $('#editing-tools');
 const $canvasContainer = $('#canvas-container');
 
 let $selectionTools = $('#selection-tools');
+let $canvasDetails = $('#canvas-details');
 
 export function currentColorIndex() {
     if (cachedColorIndex !== null) {
@@ -25,6 +26,12 @@ export function refresh() {
 
     $selectionTools.toggle(selection.hasSelection());
     // $selectionTools.toggle(selection.hasSelection() && !selection.isDrawing);
+
+    $canvasDetails.find('.dimensions').html(`[${state.numCols()}x${state.numRows()}]`);
+}
+
+export function updateMouseCoords(cell) {
+    $canvasDetails.find('.mouse-coordinates').html(cell && cell.isInBounds() ? `${cell.col}:${cell.row}` : '&nbsp;');
 }
 
 
@@ -60,6 +67,14 @@ export function setupMouseEvents(canvasControl) {
         _emitEvent('editor:mouseup', evt);
     });
 
+    canvasControl.$canvas.on('mouseenter', evt => {
+        _emitEvent('editor:mouseenter', evt);
+    });
+
+    canvasControl.$canvas.on('mouseleave', evt => {
+        _emitEvent('editor:mouseleave', evt);
+    });
+
     /*  ---------------------  Event Listeners  ---------------------  */
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
         switch(tool) {
@@ -87,9 +102,9 @@ function bindSelectionToolEvent(tool, onClick) {
 
 bindSelectionToolEvent('cut', () => clipboard.cut());
 bindSelectionToolEvent('copy', () => clipboard.copy());
-bindSelectionToolEvent('paste', () => clipboard.paste());
-bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.altKey));
-bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.altKey));
+bindSelectionToolEvent('paste', (e) => clipboard.paste(e.shiftKey));
+bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.shiftKey));
+bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.shiftKey));
 bindSelectionToolEvent('paint', () => paintSelection());
 bindSelectionToolEvent('cancel', () => selection.clear());
 

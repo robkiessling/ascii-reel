@@ -44,7 +44,7 @@ $document.keydown(function(e) {
                 clipboard.copy();
                 break;
             case 'v':
-                clipboard.paste();
+                clipboard.paste(e.shiftKey);
                 break;
             case 'Enter':
                 if (selection.movableContent) {

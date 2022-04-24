@@ -3,9 +3,8 @@ import $ from "jquery";
 import {triggerRefresh, triggerResize} from "./index.js";
 import SimpleBar from 'simplebar';
 import 'jquery-ui/ui/widgets/sortable.js';
-import 'jquery-ui/ui/widgets/dialog.js';
 import * as state from "./state.js";
-import * as keyboard from "./keyboard.js";
+import {createDialog} from "./utilities.js";
 
 export class Timeline {
     constructor($frameContainer, $layerContainer) {
@@ -177,42 +176,8 @@ export class Timeline {
     }
 
     _setupLayerEditor() {
-        this.$editLayerDialog = $( "#edit-layer-dialog" ).dialog({
-            autoOpen: false,
-            width: 350,
-            classes: {
-                // "ui-dialog-titlebar-close": "ri ri-fw ri-close-line"
-                "ui-dialog-titlebar-close": "hidden"
-            },
-            closeText: '',
-            draggable: false,
-            resizable: false,
-            modal: true,
-            open: () => {
-                $('.ui-widget-overlay').on('click', () => {
-                    this.$editLayerDialog.dialog('close');
-                })
-
-                keyboard.toggleStandard(true);
-                $(document).on('keyboard:enter.layerEditor', () => this._saveLayer());
-            },
-            close: () => {
-                console.log('close');
-                keyboard.toggleStandard(false);
-                $(document).off('keyboard:enter.layerEditor');
-            },
-            buttons: [
-                {
-                    text: 'Cancel',
-                    click: () => this.$editLayerDialog.dialog("close")
-                },
-                {
-                    text: 'Save',
-                    class: 'call-out',
-                    click: () => this._saveLayer()
-                }
-            ]
-        });
+        this.$editLayerDialog = $("#edit-layer-dialog");
+        createDialog(this.$editLayerDialog, () => this._saveLayer());
 
         this.$layerName = this.$editLayerDialog.find('.name');
     }
@@ -263,7 +228,7 @@ export class Timeline {
 
     _alignFrames() {
         const orientation = state.config('frameOrientation');
-        $('#main-content')
+        $('#frames-and-canvas')
             .toggleClass('frames-on-left', orientation === 'left')
             .toggleClass('frames-on-bottom', orientation === 'bottom');
         this.$frameContainer.find('.align-frames-left').prop('disabled', orientation === 'left')

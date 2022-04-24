@@ -15,10 +15,14 @@ const WINDOW_BORDER_COLOR = '#fff';
 const WINDOW_BORDER_WIDTH = 4;
 
 const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles
-const ONION_OPACITY = 0.15;
+const ONION_OPACITY = 0.25;
 
-const DASH_OUTLINE_SIZE = 5;
+const DASH_OUTLINE_LENGTH = 5;
+const DASH_OUTLINE_WIDTH = 0.5;
 const DASH_OUTLINE_SPEED = 10; // updates per second
+
+const HIGHLIGHT_CELL_COLOR = '#fff';
+const HIGHLIGHT_CELL_OPACITY = 0.15;
 
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
@@ -136,33 +140,39 @@ export class CanvasControl {
         polygons.forEach(polygon => polygon.draw(this.context));
     }
 
+    highlightCell(cell) {
+        this.context.fillStyle = HIGHLIGHT_CELL_COLOR;
+        this.context.globalAlpha = HIGHLIGHT_CELL_OPACITY;
+        this.context.fillRect(...cell.xywh);
+    }
+
     outlinePolygon(polygon, isDashed) {
-        if (polygon) {
-            if (isDashed) {
-                if (this._outlineOffset === undefined) { this._outlineOffset = 0; }
+        this.context.lineWidth = DASH_OUTLINE_WIDTH;
+
+        if (isDashed) {
+            if (this._outlineOffset === undefined) { this._outlineOffset = 0; }
+            this._drawDashedOutline(polygon);
+            this._outlineInterval = window.setInterval(() => {
+                this._outlineOffset += 1;
+                if (this._outlineOffset >= DASH_OUTLINE_LENGTH * 2) { this._outlineOffset = 0; }
                 this._drawDashedOutline(polygon);
-                this._outlineInterval = window.setInterval(() => {
-                    this._outlineOffset += 1;
-                    if (this._outlineOffset >= DASH_OUTLINE_SIZE * 2) { this._outlineOffset = 0; }
-                    this._drawDashedOutline(polygon);
-                }, 1000 / DASH_OUTLINE_SPEED);
-            }
-            else {
-                this.context.setLineDash([]);
-                this.context.strokeStyle = SELECTION_COLOR;
-                polygon.stroke(this.context);
-            }
+            }, 1000 / DASH_OUTLINE_SPEED);
+        }
+        else {
+            this.context.setLineDash([]);
+            this.context.strokeStyle = SELECTION_COLOR;
+            polygon.stroke(this.context);
         }
     }
 
     _drawDashedOutline(polygon) {
         this.context.lineDashOffset = this._outlineOffset;
-        this.context.setLineDash([DASH_OUTLINE_SIZE, DASH_OUTLINE_SIZE]);
+        this.context.setLineDash([DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH]);
         this.context.strokeStyle = 'white';
         polygon.stroke(this.context);
 
-        this.context.lineDashOffset = this._outlineOffset + DASH_OUTLINE_SIZE;
-        this.context.setLineDash([DASH_OUTLINE_SIZE, DASH_OUTLINE_SIZE]);
+        this.context.lineDashOffset = this._outlineOffset + DASH_OUTLINE_LENGTH;
+        this.context.setLineDash([DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH]);
         this.context.strokeStyle = 'black';
         polygon.stroke(this.context);
     }

@@ -1,4 +1,6 @@
 import $ from "jquery";
+import * as keyboard from "./keyboard.js";
+import 'jquery-ui/ui/widgets/dialog.js';
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -140,3 +142,65 @@ $(window).on('resize', () => {
         $(window).trigger('resize:debounced');
     }, 500);
 });
+
+const $confirmDialog = $('#confirm-dialog');
+createDialog($confirmDialog, null);
+
+export function confirmDialog(title, description, onAccept, acceptText = 'Ok') {
+    $confirmDialog.dialog('option', 'title', title);
+    $confirmDialog.find('p').html(description);
+
+    $confirmDialog.dialog('option', 'buttons', [
+        {
+            text: 'Cancel',
+            click: () => $confirmDialog.dialog("close")
+        },
+        {
+            text: acceptText,
+            class: 'call-out',
+            click: onAccept
+        }
+    ]);
+
+    $confirmDialog.dialog('open');
+}
+
+export function createDialog($dialog, onAccept, acceptText = 'Save', overrides = {}) {
+    $dialog.dialog($.extend({
+        autoOpen: false,
+        width: 350,
+        classes: {
+            // "ui-dialog-titlebar-close": "ri ri-fw ri-close-line"
+            "ui-dialog-titlebar-close": "hidden"
+        },
+        closeText: '',
+        draggable: false,
+        resizable: false,
+        modal: true,
+        open: () => {
+            $('.ui-widget-overlay').on('click', () => {
+                $dialog.dialog('close');
+            })
+
+            keyboard.toggleStandard(true);
+            $(document).on('keyboard:enter.dialog', onAccept);
+
+            $dialog.find('.highlight:first').select();
+        },
+        close: () => {
+            keyboard.toggleStandard(false);
+            $(document).off('keyboard:enter.dialog');
+        },
+        buttons: [
+            {
+                text: 'Cancel',
+                click: () => $dialog.dialog("close")
+            },
+            {
+                text: acceptText,
+                class: 'call-out',
+                click: onAccept
+            }
+        ]
+    }, overrides));
+}

@@ -1,6 +1,7 @@
 import $ from "jquery";
 import './styles/app.scss'
 import 'remixicon/fonts/remixicon.css';
+
 import {create2dArray, randomPrintableChar} from "./utilities.js";
 import {CanvasControl} from './canvas.js';
 import './keyboard.js';
@@ -11,24 +12,29 @@ import {Timeline} from "./timeline.js";
 import * as state from "./state.js";
 import * as preview from "./preview.js";
 import * as editor from "./editor.js";
+import * as file from "./file.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
 export const selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
+export const selectionCellCanvas = new CanvasControl($('#selection-cell-canvas'), {});
 export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
 selection.setupMouseEvents(selectionCanvas);
 editor.setupMouseEvents(selectionCanvas);
-zoom.setupMouseEvents(selectionCanvas, preview.canvasControl, [selectionCanvas, selectionBorderCanvas, charCanvas]);
+zoom.setupMouseEvents(selectionCanvas, preview.canvasControl,
+    [selectionCanvas, selectionBorderCanvas, selectionCellCanvas, charCanvas]
+);
 
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 
-function load(data) {
-    state.loadState(data);
+export function onStateLoaded() {
     preview.refresh();
     editor.refresh();
     timeline.refresh();
     triggerResize();
+
+    selection.clear();
 }
 
 /**
@@ -39,6 +45,7 @@ export function triggerResize() {
 
     charCanvas.resize();
     selectionBorderCanvas.resize();
+    selectionCellCanvas.resize();
     selectionCanvas.resize();
     preview.canvasControl.resize();
     // Note: timeline frames will be resized during triggerRefresh() since they all have to be rebuilt
@@ -67,18 +74,24 @@ export function triggerRefresh(type = 'full') {
             case 'selection':
                 selection.cacheSelection();
                 drawSelection();
+                drawSelectionCell();
                 editor.refresh();
+                break;
+            case 'selectionCell': // Separate from 'selection' for performance reasons
+                drawSelectionCell();
                 break;
             case 'zoom':
                 redrawCharCanvas();
                 preview.redraw();
                 drawSelection();
+                drawSelectionCell()
                 break;
             case 'full':
                 selection.cacheSelection();
                 redrawCharCanvas();
                 preview.reset();
                 drawSelection();
+                drawSelectionCell();
                 editor.refresh();
                 timeline.rebuildLayers();
                 timeline.rebuildFrames();
@@ -110,35 +123,45 @@ function drawSelection() {
     }
 }
 
-const rows = 25;
-const columns = 50;
+function drawSelectionCell() {
+    selectionCellCanvas.clear();
+
+    if (selection.hoveredCell && !selection.isDrawing && selection.hoveredCell.isInBounds() &&
+        !selection.isSelectedCell(selection.hoveredCell)) {
+        selectionCellCanvas.highlightCell(selection.hoveredCell);
+    }
+
+    editor.updateMouseCoords(selection.hoveredCell);
+}
+
+// const rows = 25;
+// const columns = 50;
 window.setTimeout(() => {
-    load({
-        config: {
-            dimensions: [columns, rows]
-        },
-        layers: [
-            { id: 1, name: 'Bottom Layer' },
-            { id: 2, name: 'Top Layer' }
-        ],
-        frames: [
-            { id: 1, duration: 0.5 },
-            { id: 2, duration: 0.5 },
-            { id: 3, duration: 0.5 },
-        ],
-        cels: [
-            { layerId: 1, frameId: 1, chars: create2dArray(rows, columns, () => {
-                return [randomPrintableChar(), Math.round(Math.random())];
-                }), colors: [[]] },
-            { layerId: 1, frameId: 2, chars: create2dArray(2, 5, () => randomPrintableChar()), colors: [[]] },
-            { layerId: 1, frameId: 3, chars: create2dArray(5, 10, () => randomPrintableChar()), colors: [[]] },
-            { layerId: 2, frameId: 1, chars: create2dArray(2, 5, 'x'), colors: [[]] },
-            { layerId: 2, frameId: 2, chars: [[]], colors: [[]] },
-            { layerId: 2, frameId: 3, chars: [[]], colors: [[]] },
-        ],
-        colors: [
-            '#ffffffff', // TODO These currently have to match colorPicker format to avoid duplicates
-            '#000000ff'
-        ]
-    });
+    state.loadNew();
+    // state.load({
+    //     config: {
+    //         dimensions: [columns, rows]
+    //     },
+    //     layers: [
+    //         { id: 1, name: 'Bottom Layer' },
+    //         { id: 2, name: 'Top Layer' }
+    //     ],
+    //     frames: [
+    //         { id: 1 },
+    //         { id: 2 },
+    //         { id: 3 },
+    //     ],
+    //     cels: {
+    //         '1,1': { chars: create2dArray(rows, columns, () => [randomPrintableChar(), Math.round(Math.random())]) },
+    //         '1,2': { chars: create2dArray(2, 5, () => randomPrintableChar()) },
+    //         '1,3': { chars: create2dArray(5, 10, () => randomPrintableChar()) },
+    //         '2,1': { chars: create2dArray(2, 5, 'x') },
+    //         '2,2': { chars: [[]] },
+    //         '2,3': { chars: [[]] },
+    //     },
+    //     colors: [
+    //         '#ffffffff', // TODO These currently have to match colorPicker format to avoid duplicates
+    //         '#000000ff'
+    //     ]
+    // });
 }, 1);

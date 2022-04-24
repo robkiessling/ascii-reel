@@ -2,12 +2,12 @@ import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translate} 
 import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
-import * as editor from "./editor.js";
 
 export let polygons = [];
 export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
 export let isMoving = false; // Only true when mouse is down and polygon is being moved
 export let movableContent = null; // 2d array of content IF there is any (it will be surrounded by dashed outline)
+export let hoveredCell;
 
 export function hasSelection() {
     return polygons.length > 0;
@@ -85,6 +85,9 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell) => {
+        hoveredCell = cell;
+        triggerRefresh('selectionCell');
+
         if (isDrawing) {
             lastPolygon().end = cell;
             triggerRefresh('selection');
@@ -106,6 +109,15 @@ export function setupMouseEvents(canvasControl) {
             triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
         }
     });
+
+    canvasControl.$canvas.on('editor:mouseenter', (evt, mouseEvent, cell) => {
+        hoveredCell = cell;
+        triggerRefresh('selectionCell');
+    })
+    canvasControl.$canvas.on('editor:mouseleave', () => {
+        hoveredCell = null;
+        triggerRefresh('selectionCell');
+    })
 }
 
 
@@ -122,15 +134,16 @@ export function finishMovingContent() {
     });
 
     movableContent = null;
-
     triggerRefresh();
 }
 
 export function updateMovableContent(char, color) {
     movableContent.forEach((rowValues, rowIndex) => {
         rowValues.forEach((value, colIndex) => {
-            value[0] = char;
-            value[1] = color;
+            if (value !== undefined) {
+                value[0] = char;
+                value[1] = color;
+            }
         });
     });
 }
@@ -247,7 +260,7 @@ export function getSelectedCells() {
 // Returns all cells adjacent to (and sharing the same color as) the targeted cell
 export function getConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return []; }
-    return new SelectionWand(cell, options).cells;
+    return new SelectionWand(cell, cell.clone(), options).cells;
 }
 
 // Store a Set of selected cells so we can quickly look up if a cell is part of the selection

@@ -1,11 +1,13 @@
 import $ from "jquery";
 import {create2dArray, eachWithObject, translate} from "./utilities.js";
 import * as selection from "./selection.js";
+import {onStateLoaded} from "./index.js";
 
 const CONFIG_DEFAULTS = {
-    dimensions: [9, 9],
+    name: 'New Sprite',
+    dimensions: [10, 5],
     fps: 0,
-    onion: false, // todo may add more options
+    onion: false,
     lockLayerVisibility: true,
     layerIndex: 0,
     frameIndex: 0,
@@ -26,25 +28,37 @@ const SEQUENCES = ['layers', 'frames'];
 let state;
 let sequences;
 
-export function loadState(data) {
+export function loadNew() {
+    load({
+        layers: [{ id: 1 }],
+        frames: [{ id: 1 }],
+        cels: { '1,1': { chars: [[]] } }
+    });
+}
+
+export function load(data) {
     state = {
         config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure indices are in bounds
         layers: data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
         frames: data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame)),
-        colors: $.extend(true, [], data.colors ? data.colors : DEFAULT_COLORS)
+        colors: $.extend(true, [], data.colors ? data.colors : DEFAULT_COLORS),
+        cels: {}
     };
 
     // TODO Ensure every layer and frame has enough cels?
-    state.cels = eachWithObject(data.cels.map(cel => normalizeCel(cel)), {}, (cel, obj) => {
-        obj[getCelId(cel.layerId, cel.frameId)] = cel;
-    });
+    for (let [celId, celData] of Object.entries(data.cels)) {
+        state.cels[celId] = normalizeCel(celData);
+    }
 
     sequences = eachWithObject(SEQUENCES, {}, (className, obj) => {
         obj[className] = Math.max.apply(Math, state[className].map(e => e.id));
     });
+
+    onStateLoaded();
 }
-export function saveState() {
-    // TODO
+
+export function stringify() {
+    return JSON.stringify(state);
 }
 
 export function numRows() {
@@ -184,6 +198,9 @@ function normalizeCel(cel) {
         normalizedCel.chars[row] = [];
 
         for (col = 0; col < numCols(); col++) {
+            char = undefined;
+            color = undefined;
+
             if (cel.chars && cel.chars[row] && cel.chars[row][col] !== undefined) {
                 if (Array.isArray(cel.chars[row][col])) {
                     char = cel.chars[row][col][0];
@@ -197,9 +214,6 @@ function normalizeCel(cel) {
             if (color === undefined) { color = 0; }
 
             normalizedCel.chars[row][col] = [char, color];
-
-            char = undefined;
-            color = undefined;
         }
     }
 

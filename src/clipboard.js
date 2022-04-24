@@ -33,7 +33,7 @@ export function copy() {
  * - If the pasted content is a single character, repeat that character across current selection
  * - Otherwise, paste content relative to topLeft of selection
  */
-export function paste() {
+export function paste(limitToSelection) {
     if (!selection.hasSelection()) {
         // There is no where to paste the text
         return;
@@ -42,11 +42,11 @@ export function paste() {
     readClipboard(text => {
         if (copiedText !== text) {
             // External clipboard has changed; paste the external clipboard
-            paste2dArray(convertTextToChars(text));
+            paste2dArray(convertTextToChars(text), limitToSelection);
         }
         else if (copiedSelection) {
             // Write our stored selection
-            paste2dArray(copiedSelection);
+            paste2dArray(copiedSelection, limitToSelection);
         }
     });
 }
@@ -57,7 +57,7 @@ function copySelection() {
     writeClipboard(copiedText);
 }
 
-function paste2dArray(array) {
+function paste2dArray(array, limitToSelection) {
     if (array.length === 1 && array[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         selection.getSelectedCells().forEach(cell => {
@@ -67,7 +67,9 @@ function paste2dArray(array) {
     else {
         // Paste array once at topLeft of entire selected area
         translate(array, selection.getSelectedCellArea().topLeft, (value, r, c) => {
-            if (value !== undefined) { state.setCurrentCelChar(r, c, value); }
+            if (value !== undefined && (!limitToSelection || selection.isSelectedCell({row: r, col: c}))) {
+                state.setCurrentCelChar(r, c, value);
+            }
         });
     }
 

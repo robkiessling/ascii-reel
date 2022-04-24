@@ -23,11 +23,13 @@ $light: #868889; // custom
 $lighter: #c6c6c7; // custom
 $lightest: #D6D6D7;
 
+$header-height: 36px;
+$header-border-size: 3px;
 $main-spacing: 0.5rem;
 $right-col-width: 220px;
 $preview-size: $right-col-width;
 $frame-size: 85px;
-$frame-border-width: 3px;
+$frame-border-size: 3px;
 $scrollbar-width: 18px;
 
 html, body {
@@ -40,10 +42,54 @@ html, body {
 
 body {
   display: flex;
+  flex-direction: column;
   background: $darkest;
 }
 
-#main-content {
+#header-content {
+  height: $header-height;
+  border-bottom: $header-border-size solid black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  #file-name {
+    margin-left: 1rem;
+    color: white;
+  }
+
+  #file-menu {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+
+    .file-menu-item {
+      font-size: 1rem;
+      line-height: 2;
+
+      display: flex;
+      justify-content: space-between;
+      color: white;
+      margin: 0;
+      padding: 0 0.75rem;
+      height: 100%;
+      align-items: center;
+      border-radius: 0;
+
+      .ri {
+        margin-right: 2px;
+      }
+    }
+  }
+}
+
+#body-content {
+  flex: 1; // Fill remaining width
+
+  display: flex;
+}
+
+#frames-and-canvas {
   flex: 1; // Fill remaining width
   margin: $main-spacing;
 
@@ -60,6 +106,9 @@ body {
 #side-content {
   min-width: $right-col-width;
   margin: $main-spacing $main-spacing $main-spacing 0;
+
+  display: flex;
+  flex-direction: column;
 }
 
 #tools-and-canvas {
@@ -229,7 +278,7 @@ $selection-tool-size: 2rem;
 
     &.placeholder {
       background: $dark;
-      border: $frame-border-width dashed $highlight;
+      border: $frame-border-size dashed $highlight;
       height: 1.5rem;
     }
 
@@ -275,14 +324,14 @@ $selection-tool-size: 2rem;
     max-height: $frame-size;
 
     cursor: pointer;
-    border: $frame-border-width solid $light;
+    border: $frame-border-size solid $light;
     background: $lightest;
 
     .frame-index {
       display: flex;
       position: absolute;
-      top: -#{$frame-border-width};
-      left: -#{$frame-border-width};
+      top: -#{$frame-border-size};
+      left: -#{$frame-border-size};
       z-index: 2;
       width: 25px;
       height: 25px;
@@ -306,7 +355,7 @@ $selection-tool-size: 2rem;
 
     &.placeholder {
       background: $dark;
-      border: $frame-border-width dashed $highlight;
+      border: $frame-border-size dashed $highlight;
     }
   }
 
@@ -332,8 +381,8 @@ $selection-tool-size: 2rem;
   }
 
   .frame-list {
-    width: $frame-size + 2 * $frame-border-width + $scrollbar-width;
-    max-height: calc(100vh - 2 * #{$main-spacing}); // TODO This should be needed, but simplebar messes up without it
+    width: $frame-size + 2 * $frame-border-size + $scrollbar-width;
+    max-height: calc(100vh - #{$header-height} - #{$header-border-size} - 2 * #{$main-spacing}); // TODO This should be needed, but simplebar messes up without it
 
     .simplebar-content-wrapper {
       height: 100% !important;
@@ -369,7 +418,7 @@ $selection-tool-size: 2rem;
   }
 
   .frame-list {
-    height: $frame-size + 2 * $frame-border-width + $scrollbar-width;
+    height: $frame-size + 2 * $frame-border-size + $scrollbar-width;
 
     .simplebar-content-wrapper {
       width: 100% !important; // note: this is not really needed, but the height:100% is needed in other orientation
@@ -384,13 +433,6 @@ $selection-tool-size: 2rem;
 
   .frame {
     margin-right: 6px;
-  }
-}
-
-#edit-layer-dialog {
-  > label, > div {
-    display: block;
-    margin-bottom: 1rem;
   }
 }
 
@@ -422,6 +464,18 @@ $selection-tool-size: 2rem;
       margin: 0.5rem;
     }
   }
+}
+
+#color-controller {
+  flex: 1; // fill remaining space
+}
+
+#canvas-details {
+  display: flex;
+  flex-direction: row;
+
+  font-family: monospace;
+  color: white;
 }
 
 .full {
@@ -563,6 +617,12 @@ button {
   }
   .ui-dialog-content {
     color: white;
+
+    > label, > div {
+      display: block;
+      margin-bottom: 1rem;
+    }
+
   }
   .ui-dialog-buttonpane {
     background: none;
@@ -571,6 +631,7 @@ button {
     button {
       margin: 0.5rem 0.3rem 0.5rem 0.2rem;
       padding: 0.25rem 0.5rem;
+      min-width: 5rem;
     }
   }
 }

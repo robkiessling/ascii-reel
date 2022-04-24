@@ -2,127 +2,178 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ASCII Art Maker</title>
+    <title>canv/\scii</title>
 </head>
 <body>
-    <div id="main-content" class="frames-on-left">
-        <div id="tools-and-canvas">
-            <div id="editing-tools">
-                <div class="editing-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
-                <div class="editing-tool" data-tool="selection-line"><span class="icon-line-dashed"></span></div>
-                <div class="editing-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
-                <div class="editing-tool" data-tool="selection-wand"><span class="ri ri-fw ri-magic-line"></span></div>
-                <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
-                <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
-                <div class="editing-tool" data-tool="paint"><span class="icon-paint-bucket"></span></div>
-                <div class="editing-tool" data-tool="move"><span class="icon-move-hand"></span></div>
-                <div class="spacer"></div>
-                <div class="spacer"></div>
-                <div class="color-picker" id="current-color"></div>
-            </div>
-            <div id="selection-tools" style="display: none;">
-                <div class="selection-tool" data-tool="cut"><span class="ri ri-fw ri-scissors-cut-line"></span></div>
-                <div class="selection-tool" data-tool="copy"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
-                <div class="selection-tool" data-tool="paste"><span class="ri ri-fw ri-clipboard-line"></span></div>
-                <div class="selection-tool" data-tool="flip-v"><span class="icon-flip-vertical"></span></div>
-                <div class="selection-tool" data-tool="flip-h"><span class="icon-flip-horizontal"></span></div>
-                <div class="selection-tool" data-tool="paint"><span class="icon-paint-bucket"></span></div>
-                <div class="selection-tool" data-tool="cancel"><span class="ri ri-fw ri-close-line"></span></div>
-            </div>
-            <div id="canvas-container">
-                <canvas id="char-canvas" class="absolute-center full"></canvas>
-                <canvas id="selection-border-canvas" class="absolute-center full"></canvas>
-                <canvas id="selection-canvas" class="absolute-center full"></canvas>
-            </div>
+
+    <div id="header-content">
+        <div id="file-name">
+<!--            <span>/\ S C I I</span>&nbsp;&nbsp;-->
+<!--            <span>/\ R T</span>&nbsp;&nbsp;-->
+<!--            <span>M /\ K E R</span>-->
+
+            <span>c a n v /\ s c i i</span>
+
+<!--            <span>/\ S C I I b o a r d</span>-->
         </div>
-        <div id="frame-controller">
-            <div class="tools">
-                <div>
-                    <span class="section-header">Frames</span>
-                    <button class="add-blank-frame">
-                        <span class="ri ri-fw ri-add-line"></span>
-                    </button>
-                    <button class="duplicate-frame">
-                        <span class="ri ri-fw ri-file-copy-2-line"></span>
-                    </button>
-                    <button class="delete-frame">
-                        <span class="ri ri-fw ri-delete-bin-line"></span>
-                    </button>
-                    <span class="spacer"></span>
-                    <button class="toggle-onion">
-                        <span class="ri ri-fw ri-stack-line"></span>
-                    </button>
-                </div>
-                <div>
-                    <button class="align-frames-left">
-                        <span class="ri ri-fw ri-layout-left-line"></span>
-                    </button>
-                    <button class="align-frames-bottom">
-                        <span class="ri ri-fw ri-layout-bottom-line"></span>
-                    </button>
-                </div>
-            </div>
-            <div class="frame-template frame">
-                <span class="frame-index"></span>
-                <canvas class="absolute-center full"></canvas>
-            </div>
-            <div class="frame-list"></div>
+        <div id="file-menu">
+            <button class="file-menu-item" data-item="new">
+                <span class="ri ri-fw ri-file-add-line"></span> New
+            </button>
+            <button class="file-menu-item" data-item="open">
+                <span class="ri ri-fw ri-folder-open-line"></span> Open
+            </button>
+            <input id="upload-file" type="file" hidden>
+
+            <button class="file-menu-item" data-item="save">
+                <span class="ri ri-fw ri-save-3-line"></span> Save
+            </button>
+            <button class="file-menu-item" data-item="export">
+                <span class="ri ri-fw ri-image-line"></span> Export
+            </button>
+            <button class="file-menu-item" data-item="settings">
+                <span class="ri ri-fw ri-settings-5-line"></span> Settings
+            </button>
         </div>
     </div>
-    <div id="side-content">
-        <div id="preview-controller">
-            <span class="section-header">Preview</span>
-            <div id="preview-canvas-container">
-                <canvas id="preview-canvas" class="absolute-center full draggable"></canvas>
+
+    <div id="body-content">
+
+        <div id="frames-and-canvas" class="frames-on-left">
+            <div id="tools-and-canvas">
+                <div id="editing-tools">
+                    <div class="editing-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
+                    <div class="editing-tool" data-tool="selection-line"><span class="icon-line-dashed"></span></div>
+                    <div class="editing-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
+                    <div class="editing-tool" data-tool="selection-wand"><span class="ri ri-fw ri-magic-line"></span></div>
+    <!--                <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>-->
+    <!--                <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>-->
+                    <div class="editing-tool" data-tool="paint"><span class="icon-paint-bucket"></span></div>
+    <!--                <div class="editing-tool" data-tool="move"><span class="icon-move-hand"></span></div>-->
+                    <div class="spacer"></div>
+                    <div class="spacer"></div>
+                    <div class="color-picker" id="current-color"></div>
+                </div>
+                <div id="selection-tools" style="display: none;">
+                    <div class="selection-tool" data-tool="cut"><span class="ri ri-fw ri-scissors-cut-line"></span></div>
+                    <div class="selection-tool" data-tool="copy"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
+                    <div class="selection-tool" data-tool="paste"><span class="ri ri-fw ri-clipboard-line"></span></div>
+                    <div class="selection-tool" data-tool="flip-v"><span class="icon-flip-vertical"></span></div>
+                    <div class="selection-tool" data-tool="flip-h"><span class="icon-flip-horizontal"></span></div>
+                    <div class="selection-tool" data-tool="paint"><span class="icon-paint-bucket"></span></div>
+                    <div class="selection-tool" data-tool="cancel"><span class="ri ri-fw ri-close-line"></span></div>
+                </div>
+                <div id="canvas-container">
+                    <canvas id="char-canvas" class="absolute-center full"></canvas>
+                    <canvas id="selection-border-canvas" class="absolute-center full"></canvas>
+                    <canvas id="selection-cell-canvas" class="absolute-center full"></canvas>
+                    <canvas id="selection-canvas" class="absolute-center full"></canvas>
+                </div>
             </div>
-            <div id="preview-fps-container">
-                <div id="preview-fps-value"></div>
-                <div id="preview-fps-slider"></div>
+            <div id="frame-controller">
+                <div class="tools">
+                    <div>
+                        <span class="section-header">Frames</span>
+                        <button class="add-blank-frame">
+                            <span class="ri ri-fw ri-add-line"></span>
+                        </button>
+                        <button class="duplicate-frame">
+                            <span class="ri ri-fw ri-file-copy-2-line"></span>
+                        </button>
+                        <button class="delete-frame">
+                            <span class="ri ri-fw ri-delete-bin-line"></span>
+                        </button>
+                        <span class="spacer"></span>
+                        <button class="toggle-onion">
+                            <span class="ri ri-fw ri-stack-line"></span>
+                        </button>
+                    </div>
+                    <div>
+                        <button class="align-frames-left">
+                            <span class="ri ri-fw ri-layout-left-line"></span>
+                        </button>
+                        <button class="align-frames-bottom">
+                            <span class="ri ri-fw ri-layout-bottom-line"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="frame-template frame">
+                    <span class="frame-index"></span>
+                    <canvas class="absolute-center full"></canvas>
+                </div>
+                <div class="frame-list"></div>
             </div>
         </div>
-        <hr>
-        <div id="layer-controller">
-            <div class="tools">
-                <div>
-                    <span class="section-header">Layers</span>
-                    <button class="add-blank-layer">
-                        <span class="ri ri-fw ri-add-line"></span>
-                    </button>
-                    <button class="edit-layer">
-                        <span class="ri ri-fw ri-pencil-line"></span>
-                    </button>
-                    <button class="delete-layer">
-                        <span class="ri ri-fw ri-delete-bin-line"></span>
-                    </button>
+        <div id="side-content">
+            <div id="preview-controller">
+                <span class="section-header">Preview</span>
+                <div id="preview-canvas-container">
+                    <canvas id="preview-canvas" class="absolute-center full draggable"></canvas>
                 </div>
-                <div>
-                    <button class="toggle-visibility-lock">
+                <div id="preview-fps-container">
+                    <div id="preview-fps-value"></div>
+                    <div id="preview-fps-slider"></div>
+                </div>
+            </div>
+            <hr>
+            <div id="layer-controller">
+                <div class="tools">
+                    <div>
+                        <span class="section-header">Layers</span>
+                        <button class="add-blank-layer">
+                            <span class="ri ri-fw ri-add-line"></span>
+                        </button>
+                        <button class="edit-layer">
+                            <span class="ri ri-fw ri-pencil-line"></span>
+                        </button>
+                        <button class="delete-layer">
+                            <span class="ri ri-fw ri-delete-bin-line"></span>
+                        </button>
+                    </div>
+                    <div>
+                        <button class="toggle-visibility-lock">
+                            <span class="ri ri-fw"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="layer-template layer">
+                    <span class="layer-name"></span>
+                    <button class="toggle-visibility">
                         <span class="ri ri-fw"></span>
                     </button>
                 </div>
+                <div class="layer-list"></div>
             </div>
-            <div class="layer-template layer">
-                <span class="layer-name"></span>
-                <button class="toggle-visibility">
-                    <span class="ri ri-fw"></span>
-                </button>
-            </div>
-            <div class="layer-list"></div>
-        </div>
-        <div id="color-controller">
-            <div class="tools">
+            <div id="color-controller">
+                <div class="tools">
 
+                </div>
+            </div>
+            <div id="canvas-details">
+                <span class="dimensions"></span>
+                <span>&nbsp;</span>
+                <span class="mouse-coordinates">0:0</span>
             </div>
         </div>
+    </div>
+
+    <div id="confirm-dialog">
+        <p></p>
+    </div>
+
+    <div id="save-file-dialog" title="Save As...">
+        <label>
+            File Name<br>
+            <input type="text" class="name highlight"><span class="extension"></span>
+        </label>
     </div>
 
     <div id="edit-layer-dialog" title="Edit Layer">
         <label>
             Name<br>
-            <input type="text" class="name">
+            <input type="text" class="name highlight">
         </label>
     </div>
-
 
 </body>
 </html>
