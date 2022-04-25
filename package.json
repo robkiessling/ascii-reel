@@ -47,6 +47,7 @@
     "core-js": "^3.21.1",
     "express": "^4.17.3",
     "file-saver": "^2.0.5",
+    "gif.js.optimized": "^1.0.1",
     "jquery": "^3.6.0",
     "jquery-ui": "^1.13.1",
     "jszip": "^3.9.1",

@@ -2,6 +2,8 @@ import * as state from "./state.js";
 import $ from "jquery";
 import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
+// import GIF from 'gif.js.optimized/dist/gif.js';
+import GIF from './vendor/gif.cjs';
 
 import {confirmDialog, createDialog, createHTMLFile, hexToRgba} from "./utilities.js";
 import {CanvasControl, MONOSPACE_RATIO} from "./canvas.js";
@@ -82,7 +84,7 @@ function openSaveDialog() {
 }
 
 // --------------------------------------------------------------- Export
-bindFileMenuItem('export', () => exportFile({ format: 'png', frames: 'zip' }));
+bindFileMenuItem('export', () => exportFile({ format: 'gif' }));
 
 const $exportCanvasContainer = $('#export-canvas-container');
 const $exportCanvas = $('#export-canvas');
@@ -91,17 +93,15 @@ const exportCanvas = new CanvasControl($exportCanvas, {});
 function exportFile(options) {
     switch(options.format) {
         case 'txt':
-            exportTxt(options);
-            break;
+            return exportTxt(options);
         case 'rtf':
-            exportRtf(options);
-            break;
+            return exportRtf(options);
         case 'html':
-            exportHtml(options);
-            break;
+            return exportHtml(options);
         case 'png':
-            exportPng(options);
-            break;
+            return exportPng(options);
+        case 'gif':
+            return exportGif(options);
         default:
             console.warn(`Invalid export format: ${options.format}`);
     }
@@ -224,6 +224,48 @@ function exportHtml(options) {
     const html = createHTMLFile(state.config('name'), script, body);
     const blob = new Blob([html], {type: "text/plain;charset=utf-8"});
     saveAs(blob, `${state.config('name')}.html`);
+}
+
+/**
+ *
+ * Limitations: Does not work with alpha. #000000 does not work, have to change to #010101
+ */
+function exportGif(options) {
+    const width = 800;
+    const height = width / state.numCols() * state.numRows() / MONOSPACE_RATIO;
+    const fps = state.config('fps') === 0 ? 1 : state.config('fps');
+
+    $exportCanvasContainer.toggleClass('is-exporting', true)
+        .width(width / window.devicePixelRatio)
+        .height(height / window.devicePixelRatio);
+
+    exportCanvas.resize();
+    exportCanvas.zoomToFit();
+
+    const gif = new GIF({
+        debug: true,
+        width: width,
+        height: height,
+        background: 'rgba(255,0,0,255)',
+        transparent: 'rgba(255,255,255,255)',
+        workers: 2,
+        quality: 5,
+        // workerScript: new URL('gif.js.optimized/dist/gif.worker.js', import.meta.url)
+        workerScript: new URL('./vendor/gif.worker.cjs', import.meta.url)
+    });
+
+    state.frames().forEach(frame => {
+        exportCanvas.clear();
+        exportCanvas.drawChars(state.layeredChars(frame, { showAllLayers: true }));
+        gif.addFrame(exportCanvas.context, {copy: true, delay: 1000 / fps });
+    });
+
+    gif.on('finished', function(blob) {
+        // window.open(URL.createObjectURL(blob));
+        saveAs(blob, `${state.config('name')}.gif`);
+    });
+
+    gif.render();
 }
 
 function exportPng(options) {
