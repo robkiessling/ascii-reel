@@ -2,7 +2,7 @@ import {roundForComparison} from "./utilities.js";
 import * as state from "./state.js";
 import bresenham from "bresenham";
 
-const MONOSPACE_RATIO = 3/5;
+export const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
 const CELL_WIDTH = CELL_HEIGHT * MONOSPACE_RATIO;
 

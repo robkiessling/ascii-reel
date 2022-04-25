@@ -466,6 +466,19 @@ $selection-tool-size: 2rem;
   }
 }
 
+#export-canvas-container {
+  display: none;
+
+  &.is-exporting {
+    display: block; // Show so canvas has correct width/height dimentions
+    visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
+
 #color-controller {
   flex: 1; // fill remaining space
 }
