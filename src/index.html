@@ -157,9 +157,7 @@
         </div>
     </div>
 
-    <div id="confirm-dialog">
-        <p></p>
-    </div>
+    <div id="confirm-dialog"><p></p></div>
 
     <div id="save-file-dialog" title="Save As...">
         <label>
@@ -168,15 +166,73 @@
         </label>
     </div>
 
+    <div id="export-file-dialog" title="Export">
+        <label>
+            Format:
+            <select id="export-file-format">
+                <option value="png">PNG</option>
+                <option value="txt">Plain Text</option>
+                <option value="rtf">Rich Text</option>
+                <option value="html">HTML</option>
+                <option value="gif">GIF</option>
+            </select>
+        </label>
+        <hr>
+        <div id="export-options">
+            <label>
+                Font size: <input type="text" name="fontSize">
+            </label>
+            <label>
+                Dimensions:
+                <input type="text" name="width" placeholder="width"> x
+                <input type="text" name="height" placeholder="height">
+            </label>
+            <label>
+                FPS: <input type="text" name="fps">
+            </label>
+            <label>
+                <input type="checkbox" name="background" checked="checked"> Include Background
+            </label>
+            <label>
+                <input type="checkbox" name="loop" checked="checked"> Loop
+            </label>
+            <label>
+                Frames:
+                <select name="frames">
+                    <option value="spritesheet">Spritesheet</option>
+                    <option value="current">Current Frame</option>
+                    <option value="zip">ZIP</option>
+                </select>
+            </label>
+            <label>
+                Spritesheet layout:
+                <input type="number" name="spritesheetColumns"> columns,
+                <input type="number" name="spritesheetRows"> rows
+            </label>
+            <label>
+                Frame Separator:
+                <select name="frameSeparator">
+                    <option value="none">None</option>
+                    <option value="space">          </option>
+                    <option value="spaceNumbered">#          </option>
+                    <option value="dash">----------</option>
+                    <option value="dashNumbered">#---------</option>
+                    <option value="asterisk">**********</option>
+                    <option value="asteriskNumbered">#*********</option>
+                </select>
+            </label>
+        </div>
+    </div>
+
+    <div id="export-canvas-container">
+        <canvas id="export-canvas"></canvas>
+    </div>
+
     <div id="edit-layer-dialog" title="Edit Layer">
         <label>
             Name<br>
             <input type="text" class="name highlight">
         </label>
-    </div>
-
-    <div id="export-canvas-container">
-        <canvas id="export-canvas"></canvas>
     </div>
 
 </body>

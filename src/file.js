@@ -90,33 +90,193 @@ function openSaveDialog() {
 }
 
 // --------------------------------------------------------------- Export
-bindFileMenuItem('export', () => exportFile({ format: 'gif' }));
+bindFileMenuItem('export', () => openExportDialog());
+
+const $exportFileDialog = $('#export-file-dialog');
+const $exportFormat = $exportFileDialog.find('#export-file-format');
+const $exportOptions = $exportFileDialog.find('#export-options');
+
+createDialog($exportFileDialog, () => {
+    exportFile(() => {
+        $exportFileDialog.dialog('close');
+    });
+}, 'Export', {
+    minWidth: 500,
+    maxWidth: 500,
+    minHeight: 500,
+    maxHeight: 500
+});
+setupExportDialog();
+
+const DEFAULT_FONT_SIZE = 16;
+
+const EXPORT_OPTIONS = {
+    png: ['width', 'height', 'frames', 'spritesheetColumns', 'spritesheetRows'],
+    txt: ['frames', 'frameSeparator'],
+    rtf: ['fontSize', 'frames', 'frameSeparator'],
+    html: ['fontSize', 'fps', 'background', 'loop'],
+    gif: ['width', 'height', 'fps', 'background', 'loop'],
+}
+
+// The following options are visible only if 'frames' is set to the given value
+const EXPORT_FRAMES_DEPENDENCIES = {
+    spritesheetColumns: 'spritesheet',
+    spritesheetRows: 'spritesheet',
+    frameSeparator: 'spritesheet'
+}
+
+const EXPORT_OPTION_VALIDATORS = {
+    fontSize: { type: 'float' },
+    width: { type: 'integer' },
+    height: { type: 'integer' },
+    fps: { type: 'integer' }, // todo if > 1
+    spritesheetColumns: { type: 'integer' },
+    spritesheetRows: { type: 'integer' }
+}
+
+function setupExportDialog() {
+    $exportFormat.on('change', evt => {
+        const format = $(evt.currentTarget).val();
+        $exportOptions.find('label').hide();
+
+        EXPORT_OPTIONS[format].forEach(option => {
+            $exportOptions.find(`[name="${option}"]`).closest('label').show();
+        });
+
+        $exportOptions.find('[name="frames"]').trigger('change');
+    });
+
+    $exportOptions.find('[name="frames"]').on('change', evt => {
+        const framesValue = $(evt.currentTarget).val();
+        for (let [option, dependency] of Object.entries(EXPORT_FRAMES_DEPENDENCIES)) {
+            $exportOptions.find(`[name="${option}"]`).closest('label').toggle(
+                EXPORT_OPTIONS[$exportFormat.val()].includes(option) && framesValue === dependency
+            );
+        }
+    });
+
+    // const height = width / state.numCols() * state.numRows() / MONOSPACE_RATIO;
+    $exportOptions.find('[name="width"]').on('input', evt => {
+        const width = $(evt.currentTarget).val();
+        const height = Math.round(width / state.numCols() * state.numRows() / MONOSPACE_RATIO);
+        $exportOptions.find('[name="height"]').val(height);
+    });
+    $exportOptions.find('[name="height"]').on('input', evt => {
+        const height = $(evt.currentTarget).val();
+        const width = Math.round(height / state.numRows() * state.numCols() * MONOSPACE_RATIO);
+        $exportOptions.find('[name="width"]').val(width);
+    });
+}
+
+
+function openExportDialog() {
+    $exportFileDialog.dialog('open');
+
+    $exportOptions.find(`[name="fps"]`).val(state.config('fps'));
+
+    const $width = $exportOptions.find(`[name="width"]`);
+    if (!$width.val()) {
+        $width.val(state.numCols() * DEFAULT_FONT_SIZE).trigger('input');
+    }
+
+    const $fontSize = $exportOptions.find(`[name="fontSize"]`);
+    if (!$fontSize.val()) {
+        $fontSize.val(DEFAULT_FONT_SIZE);
+    }
+
+    $exportFormat.trigger('change');
+}
+
+function exportFile(onSuccess) {
+    const { isValid, options } = validateExportOptions();
+
+    if (!isValid) {
+        return;
+    }
+
+    switch($exportFormat.val()) {
+        case 'png':
+            exportPng(options);
+            break;
+        case 'txt':
+            exportTxt(options);
+            break;
+        case 'rtf':
+            exportRtf(options);
+            break;
+        case 'html':
+            exportHtml(options);
+            break;
+        case 'gif':
+            exportGif(options);
+            break;
+        default:
+            console.warn(`Invalid export format: ${options.format}`);
+    }
+
+    onSuccess();
+}
+
+function validateExportOptions() {
+    $exportOptions.find('.error').removeClass('error');
+
+    let options = {};
+    let isValid = true;
+
+    EXPORT_OPTIONS[$exportFormat.val()].forEach(option => {
+        // Special case: skip option if it is dependent on a different 'frames' value
+        if (EXPORT_FRAMES_DEPENDENCIES[option] !== undefined) {
+            const framesValue = $exportOptions.find(`[name="frames"]`).val();
+            if (EXPORT_FRAMES_DEPENDENCIES[option] !== framesValue) {
+                return;
+            }
+        }
+
+        const $input = $exportOptions.find(`[name="${option}"]`);
+        let value = $input.val();
+        if ($input.is(':checkbox')) {
+            value = $input.is(':checked');
+        }
+
+        if (EXPORT_OPTION_VALIDATORS[option]) {
+            switch(EXPORT_OPTION_VALIDATORS[option].type) {
+                case 'integer':
+                    value = parseInt(value);
+                    if (isNaN(value)) {
+                        $input.addClass('error');
+                        isValid = false;
+                    }
+                    break;
+                case 'float':
+                    value = parseFloat(value);
+                    if (isNaN(value)) {
+                        $input.addClass('error');
+                        isValid = false;
+                    }
+                    break;
+                default:
+                    console.warn(`No validator found for: ${EXPORT_OPTION_VALIDATORS[option].type}`);
+            }
+        }
+
+        options[option] = value;
+    });
+
+    return {
+        isValid: isValid,
+        options: options
+    };
+}
 
 const $exportCanvasContainer = $('#export-canvas-container');
 const $exportCanvas = $('#export-canvas');
 const exportCanvas = new CanvasControl($exportCanvas, {});
 
-function exportFile(options) {
-    switch(options.format) {
-        case 'txt':
-            return exportTxt(options);
-        case 'rtf':
-            return exportRtf(options);
-        case 'html':
-            return exportHtml(options);
-        case 'png':
-            return exportPng(options);
-        case 'gif':
-            return exportGif(options);
-        default:
-            console.warn(`Invalid export format: ${options.format}`);
-    }
-}
 
 /**
  * options:
  *  - frames: ['current', 'zip', 'spritesheet']
- *  - frameSeparator: (only applicable if frames:spritesheet) character to separate frames with
+ *  - frameSeparator: (only applicable if frames:spritesheet) characters to separate frames with
  */
 function exportTxt(options = {}) {
     let txt, blob;
@@ -141,8 +301,11 @@ function exportTxt(options = {}) {
             saveAs(blob, `${state.config('name')}.txt`);
             break;
         case 'spritesheet':
-            const frameSeparator = options.frameSeparator ? options.frameSeparator.repeat(state.numCols()) + '\n' : '';
-            txt = state.frames().map(frame => _frameToTxt(frame)).join(frameSeparator);
+            txt = '';
+            state.frames().forEach((frame, index) => {
+                txt += buildFrameSeparator(options, index, '\n');
+                txt += _frameToTxt(frame);
+            });
             blob = new Blob([txt], {type: "text/plain;charset=utf-8"});
             saveAs(blob, `${state.config('name')}.txt`);
             break;
@@ -153,6 +316,7 @@ function exportTxt(options = {}) {
 
 /**
  * options:
+ *  - fontSize: font size
  *  - frames: ['current', 'zip', 'spritesheet']
  *  - frameSeparator: (only applicable if frames:spritesheet) character to separate frames with
  *
@@ -164,17 +328,21 @@ function exportRtf(options) {
     const rtfColors = state.colors().map(color => {
         const rgba = hexToRgba(color);
         return `\\red${rgba.r}\\green${rgba.g}\\blue${rgba.b}`; // Note: alpha cannot be shown in rtf
-    })
+    });
+    rtfColors.unshift(`\\red0\\green0\\blue0`); // Always have black as first color, for frameSeparators
     const colorTable = `{\\colortbl ${rtfColors.join(';')};}`;
+
     const font = 'Courier New';
-    const fontSize = 14;
+    const fontSize = options.fontSize;
 
     function _buildRtfFile(content) {
+        // rtf fontSize is in half pt, so multiply by 2. See oreilly document linked above for more information
         return `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 ${font};}}${colorTable}\\f0\\fs${fontSize * 2} ${content}}`;
     }
 
     function _frameToRtf(frame) {
-        return exportableFrameString(frame, '\\line ', line => `{\\cf${line.colorIndex} ${line.text}}`)
+        // Add 1 to colorIndex, since we prepended black color
+        return exportableFrameString(frame, '\\line ', line => `{\\cf${line.colorIndex + 1} ${line.text}}`)
     }
 
     switch(options.frames) {
@@ -193,8 +361,12 @@ function exportRtf(options) {
             saveAs(blob, `${state.config('name')}.rtf`);
             break;
         case 'spritesheet':
-            const frameSeparator = options.frameSeparator ? options.frameSeparator.repeat(state.numCols()) + '\\line ' : '';
-            rtf = _buildRtfFile(state.frames().map(frame => _frameToRtf(frame)).join(frameSeparator));
+            rtf = '';
+            state.frames().forEach((frame, index) => {
+                rtf += `{\\cf0 ${buildFrameSeparator(options, index, '\\line ')}}`; // Always cf0 (black)
+                rtf += _frameToRtf(frame);
+            });
+            rtf = _buildRtfFile(rtf);
             blob = new Blob([rtf], {type: "text/plain;charset=utf-8"});
             saveAs(blob, `${state.config('name')}.rtf`);
             break;
@@ -203,6 +375,13 @@ function exportRtf(options) {
     }
 }
 
+/**
+ * options:
+ *  - fontSize: font size
+ *  - fps: frames per second
+ *  - background: (boolean) whether to include background or not TODO
+ *  - loop: (boolean) whether to loop the animation continuously
+ */
 function exportHtml(options) {
     const frames = state.frames().map(frame => {
         return exportableFrameString(frame, '<br>', line => `<span style="color:${state.colorStr(line.colorIndex)};">${line.text}</span>`)
@@ -213,33 +392,48 @@ function exportHtml(options) {
         document.addEventListener("DOMContentLoaded", function() {
             var sprite = document.getElementById('sprite');
             var frames = ${JSON.stringify(frames)};
+            var fps = ${options.fps};
+            var loop = ${options.loop};
             var frameIndex = 0;
-            var fps = ${state.config('fps')};
-            
+
             function draw() {
                 sprite.innerHTML = frames[frameIndex];
                 frameIndex++;
-                if (frameIndex >= frames.length) { frameIndex = 0; }
-                if (fps !== 0) { setTimeout(draw, 1000 / fps); }
+                if (frameIndex >= frames.length) { 
+                    frameIndex = 0;
+                }
+                if (fps !== 0 && (loop || frameIndex !== 0)) { 
+                    setTimeout(draw, 1000 / fps); 
+                }
             }
             
             draw();
         });
     `;
-    const body = `<pre id="sprite" style="font-family: monospace;"></pre>`;
+
+    const width = state.numCols() * options.fontSize * MONOSPACE_RATIO;
+    const background = options.background ? `background: ${'#ff00ff'};` : ''; // TODO
+
+    const body = `<pre id="sprite" style="font-family: monospace;font-size: ${options.fontSize}px;width:${width}px;${background}"></pre>`;
     const html = createHTMLFile(state.config('name'), script, body);
     const blob = new Blob([html], {type: "text/plain;charset=utf-8"});
     saveAs(blob, `${state.config('name')}.html`);
 }
 
 /**
+ * options:
+ *  - width: width of result
+ *  - height: height of result
+ *  - fps: frames per second
+ *  - background: (boolean) whether to include background or not TODO
+ *  - loop: (boolean) whether to loop the animation continuously
  *
- * Limitations: Does not work with alpha. #000000 does not work, have to change to #010101
+ * TODO Limitations: Does not work with alpha. #000000 does not work, have to change to #010101
  */
 function exportGif(options) {
-    const width = 800;
-    const height = width / state.numCols() * state.numRows() / MONOSPACE_RATIO;
-    const fps = state.config('fps') === 0 ? 1 : state.config('fps');
+    const width = options.width;
+    const height = options.height;
+    const fps = options.fps;
 
     $exportCanvasContainer.toggleClass('is-exporting', true)
         .width(width / window.devicePixelRatio)
@@ -249,12 +443,13 @@ function exportGif(options) {
     exportCanvas.zoomToFit();
 
     const gif = new GIF({
-        debug: true,
+        // debug: true,
         width: width,
         height: height,
+        repeat: options.loop ? 0 : -1,
         background: 'rgba(0,0,0,0)',
         transparent: 'rgba(0,0,0,0)',
-        workers: 2,
+        workers: 5,
         quality: 5,
         // workerScript: new URL('gif.js.optimized/dist/gif.worker.js', import.meta.url)
         workerScript: new URL('./vendor/gif.worker.cjs', import.meta.url)
@@ -275,9 +470,17 @@ function exportGif(options) {
     gif.render();
 }
 
+/**
+ * options:
+ *  - width: width of result
+ *  - height: height of result
+ *  - frames: ['current', 'zip', 'spritesheet']
+ *  - spritesheetColumns: # of columns in the spritesheet todo
+ *  - spritesheetRows: # of rows in the spritesheet todo
+ */
 function exportPng(options) {
-    const width = 800;
-    const height = width / state.numCols() * state.numRows() / MONOSPACE_RATIO;
+    const width = options.width;
+    const height = options.height;
 
     $exportCanvasContainer.toggleClass('is-exporting', true)
         .width(width / window.devicePixelRatio)
@@ -327,6 +530,7 @@ function exportPng(options) {
             });
             break;
         case 'spritesheet':
+            // TODO implement this
             console.error('not yet implemented');
             break;
         default:
@@ -367,4 +571,42 @@ function exportableFrameString(frame, newLineChar, lineFormatter = function(line
     }
 
     return image;
+}
+
+
+function buildFrameSeparator(options, index, newLineChar) {
+    let char;
+    let numbered = false;
+
+    switch(options.frameSeparator) {
+        case 'none':
+            return '';
+        case 'space':
+            char = ' ';
+            break;
+        case 'spaceNumbered':
+            char = ' ';
+            numbered = true;
+            break;
+        case 'dash':
+            char = '-';
+            break;
+        case 'dashNumbered':
+            char = '-';
+            numbered = true;
+            break;
+        case 'asterisk':
+            char = '*';
+            break;
+        case 'asteriskNumbered':
+            char = '*';
+            numbered = true;
+            break;
+        default:
+            console.warn(`Invalid frameSeparator: ${options.frameSeparator}`);
+            return '';
+    }
+
+    return numbered ? index.toString() + char.repeat(state.numCols() - index.toString().length) + newLineChar :
+        char.repeat(state.numCols()) + newLineChar;
 }

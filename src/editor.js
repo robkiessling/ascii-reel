@@ -4,6 +4,7 @@ import * as state from './state.js';
 import * as selection from './selection.js';
 import {triggerRefresh} from "./index.js";
 import * as clipboard from "./clipboard.js";
+import * as keyboard from "./keyboard.js";
 
 const $tools = $('#editing-tools');
 const $canvasContainer = $('#canvas-container');
@@ -127,7 +128,12 @@ const colorPicker = new Picker({
     popup: 'top',
     onOpen: () => {
         const $done = $(colorPickerElement).find('.picker_done');
-        $done.toggle(selection.hasSelection()).find('button').html("<span class='icon-paint-bucket'></span>")
+        $done.toggle(selection.hasSelection()).find('button').html("<span class='icon-paint-bucket'></span>");
+
+        keyboard.toggleStandard(true);
+    },
+    onClose: () => {
+        keyboard.toggleStandard(false);
     },
     onChange: (color) => {
         colorPickerElement.style.background = color.rgbaString;

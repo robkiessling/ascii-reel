@@ -466,6 +466,27 @@ $selection-tool-size: 2rem;
   }
 }
 
+#export-file-dialog {
+  #export-file-format {
+    width: 7rem;
+  }
+
+  #export-options {
+    label {
+      display: block;
+      margin-bottom: 1rem;
+    }
+  }
+
+  input[type="text"], input[type="number"] {
+    width: 4rem;
+
+    &.error {
+      outline: 1px solid red;
+    }
+  }
+}
+
 #export-canvas-container {
   display: none;
 
