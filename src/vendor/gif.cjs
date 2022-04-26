@@ -126,7 +126,31 @@
                 return t.getImageData(0, 0, this.options.width, this.options.height).data
             }, e.prototype.getImageData = function(t) {
                 var e;
-                return null == this._canvas && (this._canvas = document.createElement("canvas"), this._canvas.width = this.options.width, this._canvas.height = this.options.height), e = this._canvas.getContext("2d"), e.setFill = this.options.background, e.fillRect(0, 0, this.options.width, this.options.height), e.drawImage(t, 0, 0), this.getContextData(e)
+                if (this._canvas == null) {
+                    this._canvas = document.createElement("canvas");
+                    this._canvas.width = this.options.width;
+                    this._canvas.height = this.options.height;
+                }
+
+                e = this._canvas.getContext("2d");
+                // e.clearRect(0, 0, this.options.width, this.options.height);
+                e.fillStyle = this.options.background;
+                e.fillRect(0, 0, this.options.width, this.options.height);
+                // if (t instanceof ImageData) {
+                //     e.putImageData(t, 0, 0);
+                //     return t;
+                // }
+                e.drawImage(t, 0, 0);
+                return this.getContextData(e);
+            // }, e.prototype.getBgImageData = function() {
+            //     var bg_canvas = document.createElement("canvas");
+            //     bg_canvas.width = this.options.width;
+            //     bg_canvas.height = this.options.height;
+            //     var bg_ctx = bg_canvas.getContext("2d");
+            //     bg_ctx.fillStyle = '#ffffff';
+            //     bg_ctx.fillRect(0, 0, this.options.width, this.options.height);
+            //     bg_ctx.drawImage(this._canvas, 0, 0);
+            //     return this.getContextData(bg_ctx);
             }, e.prototype.getTask = function(t) {
                 var e, i;
                 if (e = this.frames.indexOf(t), i = {
@@ -141,11 +165,19 @@
                     globalPalette: this.options.globalPalette,
                     repeat: this.options.repeat,
                     canTransfer: !0
-                }, null != t.data) i.data = t.data;
-                else if (null != t.context) i.data = this.getContextData(t.context);
+                }, null != t.data) {
+                    i.data = t.data;
+                    // i.data = this.getContextData(t.data);
+                    // i.bg_data = this.getBgImageData();
+                }
+                else if (null != t.context) {
+                    i.data = this.getContextData(t.context);
+                    // i.bg_data = this.getBgImageData();
+                }
                 else {
                     if (null == t.image) throw new Error("Invalid frame");
-                    i.data = this.getImageData(t.image)
+                    i.data = this.getImageData(t.image);
+                    // i.bg_data = this.getBgImageData();
                 }
                 return i
             }, e.prototype.log = function(t) {

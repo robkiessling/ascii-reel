@@ -2,6 +2,12 @@ import * as state from "./state.js";
 import $ from "jquery";
 import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
+
+// TODO HACK Had to override gif.js, background option wasn't working.
+//           Fix background: https://github.com/jnordberg/gif.js/pull/46
+//           Fix typo: https://github.com/jnordberg/gif.js/pull/74
+//           Fix transparency: https://github.com/jnordberg/gif.js/pull
+//              - This didn't seem to work no matter what I tried
 // import GIF from 'gif.js.optimized/dist/gif.js';
 import GIF from './vendor/gif.cjs';
 
@@ -246,8 +252,8 @@ function exportGif(options) {
         debug: true,
         width: width,
         height: height,
-        background: 'rgba(255,0,0,255)',
-        transparent: 'rgba(255,255,255,255)',
+        background: 'rgba(0,0,0,0)',
+        transparent: 'rgba(0,0,0,0)',
         workers: 2,
         quality: 5,
         // workerScript: new URL('gif.js.optimized/dist/gif.worker.js', import.meta.url)
@@ -257,6 +263,7 @@ function exportGif(options) {
     state.frames().forEach(frame => {
         exportCanvas.clear();
         exportCanvas.drawChars(state.layeredChars(frame, { showAllLayers: true }));
+        // gif.addFrame(exportCanvas.canvas, { delay: 1000 / fps }); // doesn't work with multiple frames
         gif.addFrame(exportCanvas.context, {copy: true, delay: 1000 / fps });
     });
 

@@ -14,7 +14,7 @@
     var r, s;
     r = i(1), s = function(t) {
         var e, i, s, o;
-        return e = new r(t.width, t.height), 0 === t.index ? e.writeHeader() : e.firstFrame = !1, e.setTransparent(t.transparent), e.setRepeat(t.repeat), e.setDelay(t.delay), e.setQuality(t.quality), e.setDither(t.dither), e.setGlobalPalette(t.globalPalette), e.addFrame(t.data), t.last && e.finish(), t.globalPalette === !0 && (t.globalPalette = e.getGlobalPalette()), s = e.stream(), t.data = s.pages, t.cursor = s.cursor, t.pageSize = s.constructor.pageSize, t.canTransfer ? (o = function() {
+        return e = new r(t.width, t.height), 0 === t.index ? e.writeHeader() : e.firstFrame = !1, e.setTransparent(t.transparent), e.setRepeat(t.repeat), e.setDelay(t.delay), e.setQuality(t.quality), e.setDither(t.dither), e.setGlobalPalette(t.globalPalette), e.addFrame(t.data/*, t.bg_data */), t.last && e.finish(), t.globalPalette === !0 && (t.globalPalette = e.getGlobalPalette()), s = e.stream(), t.data = s.pages, t.cursor = s.cursor, t.pageSize = s.constructor.pageSize, t.canTransfer ? (o = function() {
             var e, r, s, o;
             for (s = t.data, o = [], e = 0, r = s.length; e < r; e++) i = s[e], o.push(i.buffer);
             return o
@@ -28,7 +28,9 @@
     }
 
     function s(t, e) {
-        this.width = ~~t, this.height = ~~e, this.transparent = null, this.transIndex = 0, this.repeat = -1, this.delay = 0, this.image = null, this.pixels = null, this.indexedPixels = null, this.colorDepth = null, this.colorTab = null, this.neuQuant = null, this.usedEntry = new Array, this.palSize = 7, this.dispose = -1, this.firstFrame = !0, this.sample = 10, this.dither = !1, this.globalPalette = !1, this.out = new r
+        this.width = ~~t, this.height = ~~e, this.transparent = null, this.transIndex = 0, this.repeat = -1, this.delay = 0,
+            /*this.image = null, this.no_bg_image = null,*/
+            this.pixels = null, this.indexedPixels = null, this.colorDepth = null, this.colorTab = null, this.neuQuant = null, this.usedEntry = new Array, this.palSize = 7, this.dispose = -1, this.firstFrame = !0, this.sample = 10, this.dither = !1, this.globalPalette = !1, this.out = new r
     }
     var o = i(2),
         n = i(3);
@@ -56,8 +58,10 @@
         this.repeat = t
     }, s.prototype.setTransparent = function(t) {
         this.transparent = t
-    }, s.prototype.addFrame = function(t) {
-        this.image = t, this.colorTab = this.globalPalette && this.globalPalette.slice ? this.globalPalette : null, this.getImagePixels(), this.analyzePixels(), this.globalPalette === !0 && (this.globalPalette = this.colorTab), this.firstFrame && (this.writeLSD(), this.writePalette(), this.repeat >= 0 && this.writeNetscapeExt()), this.writeGraphicCtrlExt(), this.writeImageDesc(), this.firstFrame || this.globalPalette || this.writePalette(), this.writePixels(), this.firstFrame = !1
+    }, s.prototype.addFrame = function(t/*, bgImageData*/) {
+        /*this.image = bgImageData, this.no_bg_image = t,*/
+        this.image = t,
+            this.colorTab = this.globalPalette && this.globalPalette.slice ? this.globalPalette : null, this.getImagePixels(), this.analyzePixels(), this.globalPalette === !0 && (this.globalPalette = this.colorTab), this.firstFrame && (this.writeLSD(), this.writePalette(), this.repeat >= 0 && this.writeNetscapeExt()), this.writeGraphicCtrlExt(), this.writeImageDesc(), this.firstFrame || this.globalPalette || this.writePalette(), this.writePixels(), this.firstFrame = !1
     }, s.prototype.finish = function() {
         this.out.writeByte(59)
     }, s.prototype.setQuality = function(t) {
@@ -71,7 +75,19 @@
     }, s.prototype.writeHeader = function() {
         this.out.writeUTFBytes("GIF89a")
     }, s.prototype.analyzePixels = function() {
-        this.colorTab || (this.neuQuant = new o(this.pixels, this.sample), this.neuQuant.buildColormap(), this.colorTab = this.neuQuant.getColormap()), this.dither ? this.ditherPixels(this.dither.replace("-serpentine", ""), null !== this.dither.match(/-serpentine/)) : this.indexPixels(), this.pixels = null, this.colorDepth = 8, this.palSize = 7, null !== this.transparent && (this.transIndex = this.findClosest(this.transparent, !0))
+        // var len = this.pixels.length; var nPix = len / 3;
+        this.colorTab || (this.neuQuant = new o(this.pixels, this.sample), this.neuQuant.buildColormap(), this.colorTab = this.neuQuant.getColormap()),
+            this.dither ? this.ditherPixels(this.dither.replace("-serpentine", ""), null !== this.dither.match(/-serpentine/)) : this.indexPixels(),
+            this.pixels = null,
+            this.colorDepth = 8, this.palSize = 7;
+        if (this.transparent !== null) {
+            this.transIndex = this.findClosest(this.transparent, !0);
+            // for (var pixelIndex = 0; pixelIndex < nPix; pixelIndex++) {
+            //     if (this.no_bg_image[pixelIndex * 4 + 3] == 0) {
+            //         this.indexedPixels[pixelIndex] = this.transIndex;
+            //     }
+            // }
+        }
     }, s.prototype.indexPixels = function() {
         var t = this.pixels.length / 3;
         this.indexedPixels = new Uint8Array(t);
@@ -164,7 +180,7 @@
     }, s.prototype.writeGraphicCtrlExt = function() {
         this.out.writeByte(33), this.out.writeByte(249), this.out.writeByte(4);
         var t, e;
-        null === this.transparent ? (t = 0, e = 0) : (t = 1, e = 2), this.dispose >= 0 && (e = 7 & dispose), e <<= 2, this.out.writeByte(0 | e | 0 | t), this.writeShort(this.delay), this.out.writeByte(this.transIndex), this.out.writeByte(0)
+        null === this.transparent ? (t = 0, e = 0) : (t = 1, e = 2), this.dispose >= 0 && (e = 7 & this.dispose), e <<= 2, this.out.writeByte(0 | e | 0 | t), this.writeShort(this.delay), this.out.writeByte(this.transIndex), this.out.writeByte(0)
     }, s.prototype.writeImageDesc = function() {
         this.out.writeByte(44), this.writeShort(0), this.writeShort(0), this.writeShort(this.width), this.writeShort(this.height), this.firstFrame || this.globalPalette ? this.out.writeByte(0) : this.out.writeByte(128 | this.palSize)
     }, s.prototype.writeLSD = function() {
