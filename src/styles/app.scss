@@ -183,9 +183,17 @@ $selection-tool-size: 2rem;
     font-size: 1.5rem;
     box-sizing: border-box;
 
-    &:hover {
+    &:hover:not(.disabled) {
       cursor: pointer;
       background: $medium-dark;
+    }
+
+    &.disabled {
+      color: $light;
+    }
+
+    &.active {
+      color: $highlight;
     }
   }
 
@@ -528,11 +536,15 @@ $selection-tool-size: 2rem;
   visibility: hidden; // Will still take up space, but be invisible
 }
 
-.prevent-selection {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -khtml-user-select: none;
-  -ms-user-select: none;
+// Remove text highlighting https://stackoverflow.com/a/4407335
+.no-select {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
 }
 
 .draggable {

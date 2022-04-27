@@ -55,25 +55,27 @@
                     <div class="color-picker" id="current-color"></div>
                 </div>
                 <div id="selection-tools" style="display: none;">
+                    <div class="selection-tool" data-tool="move"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
+                    <div class="selection-tool" data-tool="typewriter"><span class="ri ri-fw ri-text-direction-l"></span></div>
                     <div class="selection-tool" data-tool="cut"><span class="ri ri-fw ri-scissors-cut-line"></span></div>
                     <div class="selection-tool" data-tool="copy"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
                     <div class="selection-tool" data-tool="paste"><span class="ri ri-fw ri-clipboard-line"></span></div>
                     <div class="selection-tool" data-tool="flip-v"><span class="icon-flip-vertical"></span></div>
                     <div class="selection-tool" data-tool="flip-h"><span class="icon-flip-horizontal"></span></div>
                     <div class="selection-tool" data-tool="paint"><span class="icon-paint-bucket"></span></div>
-                    <div class="selection-tool" data-tool="cancel"><span class="ri ri-fw ri-close-line"></span></div>
+                    <div class="selection-tool" data-tool="close"><span class="ri ri-fw ri-close-line"></span></div>
                 </div>
                 <div id="canvas-container">
                     <canvas id="char-canvas" class="absolute-center full"></canvas>
                     <canvas id="selection-border-canvas" class="absolute-center full"></canvas>
-                    <canvas id="selection-cell-canvas" class="absolute-center full"></canvas>
+                    <canvas id="hovered-cell-canvas" class="absolute-center full"></canvas>
                     <canvas id="selection-canvas" class="absolute-center full"></canvas>
                 </div>
             </div>
             <div id="frame-controller">
                 <div class="tools">
                     <div>
-                        <span class="section-header">Frames</span>
+                        <span class="section-header no-select">Frames</span>
                         <button class="add-blank-frame">
                             <span class="ri ri-fw ri-add-line"></span>
                         </button>

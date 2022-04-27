@@ -17,13 +17,13 @@ import * as file from "./file.js";
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
 export const selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
-export const selectionCellCanvas = new CanvasControl($('#selection-cell-canvas'), {});
+export const hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
 export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
 selection.setupMouseEvents(selectionCanvas);
 editor.setupMouseEvents(selectionCanvas);
 zoom.setupMouseEvents(selectionCanvas, preview.canvasControl,
-    [selectionCanvas, selectionBorderCanvas, selectionCellCanvas, charCanvas]
+    [selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas]
 );
 
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
@@ -45,7 +45,7 @@ export function triggerResize() {
 
     charCanvas.resize();
     selectionBorderCanvas.resize();
-    selectionCellCanvas.resize();
+    hoveredCellCanvas.resize();
     selectionCanvas.resize();
     preview.canvasControl.resize();
     // Note: timeline frames will be resized during triggerRefresh() since they all have to be rebuilt
@@ -72,26 +72,30 @@ export function triggerRefresh(type = 'full') {
                 timeline.currentFrameComponent.redrawChars();
                 break;
             case 'selection':
-                selection.cacheSelection();
+                selection.clearCaches();
                 drawSelection();
-                drawSelectionCell();
+                drawHoveredCell();
                 editor.refresh();
                 break;
-            case 'selectionCell': // Separate from 'selection' for performance reasons
-                drawSelectionCell();
+            case 'hoveredCell': // Can be called separately from 'selection' for performance reasons
+                drawHoveredCell();
+                break;
+            case 'cursorCell': // Can be called separately from 'selection' for performance reasons
+                drawSelection();
+                editor.refresh();
                 break;
             case 'zoom':
                 redrawCharCanvas();
                 preview.redraw();
                 drawSelection();
-                drawSelectionCell()
+                drawHoveredCell()
                 break;
             case 'full':
-                selection.cacheSelection();
+                selection.clearCaches();
                 redrawCharCanvas();
                 preview.reset();
                 drawSelection();
-                drawSelectionCell();
+                drawHoveredCell();
                 editor.refresh();
                 timeline.rebuildLayers();
                 timeline.rebuildFrames();
@@ -115,20 +119,29 @@ function redrawCharCanvas() {
 
 function drawSelection() {
     selectionCanvas.clear();
-    selectionCanvas.highlightPolygons(selection.polygons);
-
     selectionBorderCanvas.clear();
-    if (selection.hasSelection() && !selection.isDrawing) {
-        selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
+
+    // Not showing selection polygons if the only selection is the single cursor cell
+    const skipPolygonRender = selection.cursorCell && selection.selectingSingleCell();
+
+    if (!skipPolygonRender) {
+        selectionCanvas.highlightPolygons(selection.polygons);
+
+        if (selection.hasSelection() && !selection.isDrawing) {
+            selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
+        }
+    }
+
+    if (selection.cursorCell) {
+        selectionCanvas.drawCursorCell(selection.cursorCell);
     }
 }
 
-function drawSelectionCell() {
-    selectionCellCanvas.clear();
+function drawHoveredCell() {
+    hoveredCellCanvas.clear();
 
-    if (selection.hoveredCell && !selection.isDrawing && selection.hoveredCell.isInBounds() &&
-        !selection.isSelectedCell(selection.hoveredCell)) {
-        selectionCellCanvas.highlightCell(selection.hoveredCell);
+    if (selection.hoveredCell && !selection.isDrawing && !selection.isMoving && selection.hoveredCell.isInBounds()) {
+        hoveredCellCanvas.highlightCell(selection.hoveredCell);
     }
 
     editor.updateMouseCoords(selection.hoveredCell);

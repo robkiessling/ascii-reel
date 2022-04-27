@@ -12,6 +12,12 @@ const $canvasContainer = $('#canvas-container');
 let $selectionTools = $('#selection-tools');
 let $canvasDetails = $('#canvas-details');
 
+$tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
+    changeTool($(evt.currentTarget).data('tool'));
+});
+
+// -------------------------------------------------------------------------------- Main External API
+
 export function refresh() {
     if (currentColorStr === null) {
         // initial color picker state
@@ -22,7 +28,7 @@ export function refresh() {
     $tools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
 
     $selectionTools.toggle(selection.hasSelection());
-    // $selectionTools.toggle(selection.hasSelection() && !selection.isDrawing);
+    refreshSelectionTools();
 
     $canvasDetails.find('.dimensions').html(`[${state.numCols()}x${state.numRows()}]`);
 }
@@ -31,17 +37,14 @@ export function updateMouseCoords(cell) {
     $canvasDetails.find('.mouse-coordinates').html(cell && cell.isInBounds() ? `${cell.col}:${cell.row}` : '&nbsp;');
 }
 
-
-$tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
-    changeTool($(evt.currentTarget).data('tool'));
-});
-
 export function changeTool(newTool) {
     state.config('tool', newTool);
     selection.clear();
     refresh();
 }
 
+
+// -------------------------------------------------------------------------------- Events
 
 export function setupMouseEvents(canvasControl) {
     /*  ---------------------  Emitting Events  ---------------------  */
@@ -55,22 +58,11 @@ export function setupMouseEvents(canvasControl) {
         if (evt.which !== 1) { return; } // Only apply to left-click
         _emitEvent('editor:mousedown', evt);
     });
-
-    canvasControl.$canvas.on('mousemove', evt => {
-        _emitEvent('editor:mousemove', evt);
-    });
-
-    $(document).on('mouseup', evt => {
-        _emitEvent('editor:mouseup', evt);
-    });
-
-    canvasControl.$canvas.on('mouseenter', evt => {
-        _emitEvent('editor:mouseenter', evt);
-    });
-
-    canvasControl.$canvas.on('mouseleave', evt => {
-        _emitEvent('editor:mouseleave', evt);
-    });
+    canvasControl.$canvas.on('mousemove', evt => _emitEvent('editor:mousemove', evt));
+    $(document).on('mouseup', evt => _emitEvent('editor:mouseup', evt));
+    canvasControl.$canvas.on('dblclick', evt => _emitEvent('editor:dblclick', evt));
+    canvasControl.$canvas.on('mouseenter', evt => _emitEvent('editor:mouseenter', evt));
+    canvasControl.$canvas.on('mouseleave', evt => _emitEvent('editor:mouseleave', evt));
 
     /*  ---------------------  Event Listeners  ---------------------  */
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
@@ -90,20 +82,56 @@ export function setupMouseEvents(canvasControl) {
 
 
 
+// -------------------------------------------------------------------------------- Selection Editor
 
 function bindSelectionToolEvent(tool, onClick) {
     $selectionTools.find(`.selection-tool[data-tool="${tool}"]`).off('click').on('click', evt => {
-        onClick(evt);
+        if (!$(evt.currentTarget).hasClass('disabled')) {
+            onClick(evt);
+        }
     })
 }
 
+bindSelectionToolEvent('move', () => selection.toggleMovingContent());
+bindSelectionToolEvent('typewriter', () => selection.toggleCursor());
 bindSelectionToolEvent('cut', () => clipboard.cut());
 bindSelectionToolEvent('copy', () => clipboard.copy());
 bindSelectionToolEvent('paste', (e) => clipboard.paste(e.shiftKey));
 bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.shiftKey));
 bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.shiftKey));
 bindSelectionToolEvent('paint', () => paintSelection());
-bindSelectionToolEvent('cancel', () => selection.clear());
+bindSelectionToolEvent('close', () => selection.clear());
+
+// Tools that are allowed when the given tool is selected
+const MOVE_TOOLS = ['move'];
+const TYPEWRITER_TOOLS = ['typewriter', 'cut', 'copy', 'paste'];
+
+function refreshSelectionTools() {
+    $selectionTools.find('.selection-tool').toggleClass('disabled', false);
+    $selectionTools.find('.selection-tool').toggleClass('active', false);
+
+    if (selection.movableContent) {
+        $selectionTools.find('.selection-tool').each((i, element) => {
+            const $element = $(element);
+            if (!MOVE_TOOLS.includes($element.data('tool'))) {
+                $element.toggleClass('disabled', true);
+            }
+        })
+
+        $selectionTools.find('.selection-tool[data-tool="move"]').toggleClass('active', true);
+    }
+
+    if (selection.cursorCell) {
+        $selectionTools.find('.selection-tool').each((i, element) => {
+            const $element = $(element);
+            if (!TYPEWRITER_TOOLS.includes($element.data('tool'))) {
+                $element.toggleClass('disabled', true);
+            }
+        })
+        $selectionTools.find('.selection-tool[data-tool="typewriter"]').toggleClass('active', true);
+    }
+
+}
 
 function paintSelection() {
     selection.getSelectedCells().forEach(cell => {
@@ -111,6 +139,19 @@ function paintSelection() {
     });
     triggerRefresh('chars');
 }
+
+function paintConnectedCells(cell, options) {
+    if (!cell.isInBounds()) { return; }
+
+    selection.getConnectedCells(cell, options).forEach(cell => {
+        state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
+    })
+
+    triggerRefresh('chars');
+}
+
+
+// -------------------------------------------------------------------------------- Color Picker
 
 let currentColorStr = null;
 let cachedColorIndex = null;
@@ -160,14 +201,4 @@ function cursorStyle(tool, cell) {
         default:
             return 'default';
     }
-}
-
-function paintConnectedCells(cell, options) {
-    if (!cell.isInBounds()) { return; }
-
-    selection.getConnectedCells(cell, options).forEach(cell => {
-        state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
-    })
-
-    triggerRefresh('chars');
 }

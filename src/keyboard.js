@@ -63,31 +63,40 @@ $document.keydown(function(e) {
     // Standard input
     switch (char) {
         case 'Escape':
-            selection.clear();
+            // If cursor is showing, escape just hides the cursor but keeps the selection intact
+            selection.cursorCell ? selection.hideCursor() : selection.clear();
             break;
         case 'ArrowLeft':
-            // If shift key is pressed, we only want to move the end cell
-            selection.moveDirection('left', 1, !e.shiftKey);
+            selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1, !e.shiftKey);
             break;
         case 'ArrowUp':
-            selection.moveDirection('up', 1, !e.shiftKey);
+            selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1, !e.shiftKey);
             break;
         case 'ArrowRight':
-            selection.moveDirection('right', 1, !e.shiftKey);
+            selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1, !e.shiftKey);
             break;
         case 'ArrowDown':
-            selection.moveDirection('down', 1, !e.shiftKey);
+            selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1, !e.shiftKey);
             break;
         case 'Tab':
-            // If shift key is pressed, we move in opposite direction
-            if (e.shiftKey) { selection.moveDirection('left', 1); } else { selection.moveDirection('right', 1); }
+            if (e.shiftKey) {
+                // If shift key is pressed, we move in opposite direction
+                selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1);
+            } else {
+                selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1);
+            }
             break;
         case 'Enter':
             if (selection.movableContent) {
                 selection.finishMovingContent();
             }
             else {
-                if (e.shiftKey) { selection.moveDirection('up', 1); } else { selection.moveDirection('down', 1); }
+                if (e.shiftKey) {
+                    // If shift key is pressed, we move in opposite direction
+                    selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1);
+                } else {
+                    selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1);
+                }
             }
             break;
 
@@ -95,6 +104,12 @@ $document.keydown(function(e) {
         case 'Delete':
             if (selection.movableContent) {
                 selection.updateMovableContent('', 0);
+            }
+            else if (selection.cursorCell) {
+                state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, ['', 0]);
+                if (char === 'Backspace') {
+                    selection.moveCursorInDirection('left');
+                }
             }
             else {
                 selection.empty();
@@ -106,7 +121,13 @@ $document.keydown(function(e) {
                 if (selection.movableContent) {
                     selection.updateMovableContent(char, editor.currentColorIndex());
                 }
+                else if (selection.cursorCell) {
+                    // update cursor cell and then move to next cell
+                    state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, [char, editor.currentColorIndex()]);
+                    selection.moveCursorInDirection('right');
+                }
                 else {
+                    // update entire selection
                     selection.getSelectedCells().forEach(cell => {
                         state.setCurrentCelChar(cell.row, cell.col, [char, editor.currentColorIndex()]);
                     });

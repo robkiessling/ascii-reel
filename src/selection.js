@@ -3,11 +3,17 @@ import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
 
+
+
+// -------------------------------------------------------------------------------- Main API
+
 export let polygons = [];
 export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
 export let isMoving = false; // Only true when mouse is down and polygon is being moved
 export let movableContent = null; // 2d array of content IF there is any (it will be surrounded by dashed outline)
 export let hoveredCell;
+export let cursorCell;
+// export let cursorTabCell; // Where to move from on return key
 
 export function hasSelection() {
     return polygons.length > 0;
@@ -15,138 +21,42 @@ export function hasSelection() {
 
 export function clear() {
     if (movableContent) { finishMovingContent(); }
+    if (cursorCell) { hideCursor(); }
     polygons = [];
     triggerRefresh('selection');
 }
 
-// Empties the selection's contents
+// Empties the selection's contents. Does not clear the selection.
 export function empty() {
     getSelectedCells().forEach(cell => {
         state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
     });
 }
 
+// Select entire canvas
 export function selectAll() {
     polygons = [SelectionRect.drawableArea()];
     triggerRefresh('selection');
 }
 
-export function setupMouseEvents(canvasControl) {
-    let movingFrom = null;
+// Returns true if the given Cell is part of the selection
+export function isSelectedCell(cell) {
+    cacheSelectedCells();
+    return caches.selectedCells.has(cellKey(cell));
+}
 
-    canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
-        switch(tool) {
-            case 'selection-rect':
-            case 'selection-line':
-            case 'selection-lasso':
-            case 'selection-wand':
-                break;
-            default:
-                return; // Ignore all other tools
-        }
-
-        if (isSelectedCell(cell)) {
-            isMoving = true;
-            movingFrom = cell;
-
-            if (mouseEvent.metaKey && !movableContent) {
-                startMovingContent();
-                return;
-            }
-
-            triggerRefresh('selection');
-            return;
-        }
-
-        if (!mouseEvent.shiftKey) {
-            clear();
-        }
-
-        if (cell.isInBounds()) {
-            isDrawing = true;
-
-            switch(tool) {
-                case 'selection-rect':
-                    polygons.push(new SelectionRect(cell, cell.clone()));
-                    break;
-                case 'selection-line':
-                    polygons.push(new SelectionLine(cell, cell.clone()));
-                    break;
-                case 'selection-lasso':
-                    polygons.push(new SelectionLasso(cell, cell.clone()));
-                    break;
-                case 'selection-wand':
-                    polygons.push(new SelectionWand(cell, cell.clone(), { diagonal: mouseEvent.metaKey }));
-                    break;
-            }
-
-            triggerRefresh('selection');
-        }
-    });
-
-    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell) => {
-        hoveredCell = cell;
-        triggerRefresh('selectionCell');
-
-        if (isDrawing) {
-            lastPolygon().end = cell;
-            triggerRefresh('selection');
-        }
-        if (isMoving) {
-            moveDelta(cell.row - movingFrom.row, cell.col - movingFrom.col);
-            movingFrom = cell;
-        }
-    });
-
-    canvasControl.$canvas.on('editor:mouseup', () => {
-        if (isDrawing) {
-            lastPolygon().complete();
-            isDrawing = false;
-            triggerRefresh('selection');
-        }
-        if (isMoving) {
-            isMoving = false;
-            triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
-        }
-    });
-
-    canvasControl.$canvas.on('editor:mouseenter', (evt, mouseEvent, cell) => {
-        hoveredCell = cell;
-        triggerRefresh('selectionCell');
-    })
-    canvasControl.$canvas.on('editor:mouseleave', () => {
-        hoveredCell = null;
-        triggerRefresh('selectionCell');
-    })
+// Returns true if the selection is comprised by a single 1x1 Cell
+export function selectingSingleCell() {
+    if (isDrawing) {
+        return false;
+    }
+    const area = getSelectedCellArea();
+    return area && area.topLeft.equals(area.bottomRight);
 }
 
 
-function startMovingContent() {
-    movableContent = getSelectedValues();
 
-    empty();
-    triggerRefresh();
-}
-
-export function finishMovingContent() {
-    translate(movableContent, getSelectedCellArea().topLeft, (value, r, c) => {
-        if (value !== undefined) { state.setCurrentCelChar(r, c, value); }
-    });
-
-    movableContent = null;
-    triggerRefresh();
-}
-
-export function updateMovableContent(char, color) {
-    movableContent.forEach((rowValues, rowIndex) => {
-        rowValues.forEach((value, colIndex) => {
-            if (value !== undefined) {
-                value[0] = char;
-                value[1] = color;
-            }
-        });
-    });
-}
+// -------------------------------------------------------------------------------- Selection Results
 
 
 /**
@@ -257,23 +167,285 @@ export function getSelectedCells() {
     return result;
 }
 
-// Returns all cells adjacent to (and sharing the same color as) the targeted cell
+/**
+ * Returns all cells adjacent to (and sharing the same color as) the targeted cell
+  */
 export function getConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return []; }
     return new SelectionWand(cell, cell.clone(), options).cells;
 }
 
-// Store a Set of selected cells so we can quickly look up if a cell is part of the selection
-let cachedSelection = new Set();
-export function cacheSelection() {
-    cachedSelection = new Set(getSelectedCells().map(cell => cellKey(cell)))
+
+
+// -------------------------------------------------------------------------------- Events
+
+export function setupMouseEvents(canvasControl) {
+    let movingFrom = null;
+
+    canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
+        switch(tool) {
+            case 'selection-rect':
+            case 'selection-line':
+            case 'selection-lasso':
+            case 'selection-wand':
+                break;
+            default:
+                return; // Ignore all other tools
+        }
+
+        if (isSelectedCell(cell)) {
+            isMoving = true;
+            movingFrom = cell;
+
+            if (mouseEvent.metaKey && !movableContent) {
+                startMovingContent();
+                return;
+            }
+
+            triggerRefresh('selection');
+            return;
+        }
+
+        if (!mouseEvent.shiftKey) {
+            clear();
+        }
+
+        if (cell.isInBounds()) {
+            isDrawing = true;
+
+            switch(tool) {
+                case 'selection-rect':
+                    polygons.push(new SelectionRect(cell, cell.clone()));
+                    break;
+                case 'selection-line':
+                    polygons.push(new SelectionLine(cell, cell.clone()));
+                    break;
+                case 'selection-lasso':
+                    polygons.push(new SelectionLasso(cell, cell.clone()));
+                    break;
+                case 'selection-wand':
+                    polygons.push(new SelectionWand(cell, cell.clone(), { diagonal: mouseEvent.metaKey, colorblind: mouseEvent.altKey }));
+                    break;
+            }
+
+            triggerRefresh('selection');
+        }
+    });
+
+    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell) => {
+        hoveredCell = cell;
+        triggerRefresh('hoveredCell');
+
+        if (isDrawing) {
+            lastPolygon().end = cell;
+            triggerRefresh('selection');
+        }
+        if (isMoving) {
+            moveDelta(cell.row - movingFrom.row, cell.col - movingFrom.col);
+            movingFrom = cell;
+        }
+    });
+
+    canvasControl.$canvas.on('editor:mouseup', () => {
+        if (isDrawing) {
+            lastPolygon().complete();
+            isDrawing = false;
+            triggerRefresh('selection');
+        }
+        if (isMoving) {
+            isMoving = false;
+            const refresh = ['selection'];
+            if (movableContent) { refresh.push('chars'); }
+            if (cursorCell) { refresh.push('cursorCell'); }
+            triggerRefresh(refresh);
+        }
+    });
+
+    canvasControl.$canvas.on('editor:mouseenter', (evt, mouseEvent, cell) => {
+        hoveredCell = cell;
+        triggerRefresh('hoveredCell');
+    });
+
+    canvasControl.$canvas.on('editor:mouseleave', () => {
+        hoveredCell = null;
+        triggerRefresh('hoveredCell');
+    });
+
+    canvasControl.$canvas.on('editor:dblclick', (evt, mouseEvent, cell, tool) => {
+        switch(tool) {
+            case 'selection-rect':
+            case 'selection-line':
+            case 'selection-lasso':
+            case 'selection-wand':
+                break;
+            default:
+                return; // Ignore all other tools
+        }
+
+        moveCursorTo(cell);
+    });
 }
-export function isSelectedCell(cell) {
-    return cachedSelection.has(cellKey(cell));
+
+
+// -------------------------------------------------------------------------------- Moving Content
+
+export function toggleMovingContent() {
+    movableContent ? finishMovingContent() : startMovingContent();
 }
-function cellKey(cell) {
-    return `${cell.row},${cell.col}`
+
+export function startMovingContent() {
+    if (cursorCell) { hideCursor(); } // Cannot move content and show cursor at the same time
+
+    movableContent = getSelectedValues();
+
+    empty();
+    triggerRefresh();
 }
+
+export function finishMovingContent() {
+    translate(movableContent, getSelectedCellArea().topLeft, (value, r, c) => {
+        if (value !== undefined) { state.setCurrentCelChar(r, c, value); }
+    });
+
+    movableContent = null;
+    triggerRefresh();
+}
+
+export function updateMovableContent(char, color) {
+    movableContent.forEach((rowValues, rowIndex) => {
+        rowValues.forEach((value, colIndex) => {
+            if (value !== undefined) {
+                value[0] = char;
+                value[1] = color;
+            }
+        });
+    });
+}
+
+
+// -------------------------------------------------------------------------------- Cursor
+
+export function toggleCursor() {
+    cursorCell ? hideCursor() : moveCursorToStart();
+}
+
+export function moveCursorTo(cell) {
+    if (movableContent) { finishMovingContent(); } // Cannot move content and show cursor at the same time
+
+    cursorCell = cell;
+    triggerRefresh('cursorCell');
+}
+
+export function moveCursorToStart() {
+    cacheUniqueSortedCells();
+    const cellData = caches.cellsLeftToRight[0];
+
+    if (cellData) {
+        const cell = new Cell(cellData[0], cellData[1]);
+        moveCursorTo(cell);
+    }
+}
+
+// Steps the cursor forward or backward one space
+export function moveCursorInDirection(direction) {
+    if (cursorCell) {
+        if (selectingSingleCell()) {
+            // Entire canvas is the domain to traverse through
+
+            let col = cursorCell.col, row = cursorCell.row;
+
+            if (direction === 'left') { col -= 1; }
+            if (direction === 'up') { row -= 1; }
+            if (direction === 'right') { col += 1; }
+            if (direction === 'down') { row += 1; }
+
+            if (col >= state.numCols()) { col = 0; row += 1; }
+            if (col < 0) { col = state.numCols() - 1; row -= 1; }
+            if (row >= state.numRows()) { row = 0; }
+            if (row < 0) { row = state.numRows() - 1; }
+
+            moveCursorTo(new Cell(row, col));
+
+            // Also update underlying single selection cell.
+            // Don't have to refresh selection since the selection is hidden if selecting single cells
+            polygons = [new SelectionRect(cursorCell.clone(), cursorCell.clone())];
+            clearCaches();
+        }
+        else {
+            // The current selection is the domain to traverse through
+
+            cacheUniqueSortedCells();
+
+            // Find the current targeted cell index
+            let i,
+                cells = (direction === 'left' || direction === 'right') ? caches.cellsLeftToRight : caches.cellsTopToBottom;
+            length = cells.length;
+            for (i = 0; i < length; i++) {
+                if (cursorCell.row === cells[i][0] && cursorCell.col === cells[i][1]) {
+                    break;
+                }
+            }
+
+            // Step forward/backward
+            (direction === 'right' || direction === 'down') ? i++ : i--;
+
+            // Wrap around if necessary
+            if (i >= length) { i = 0; }
+            if (i < 0) { i = length - 1; }
+
+            moveCursorTo(new Cell(cells[i][0], cells[i][1]));
+        }
+    }
+}
+
+export function hideCursor() {
+    cursorCell = null;
+    triggerRefresh('cursorCell');
+}
+
+
+
+
+// -------------------------------------------------------------------------------- Caching
+// We cache some selection results to improve lookup times. Caches must be cleared whenever the selection changes.
+
+let caches = {};
+
+export function clearCaches() {
+    caches = {};
+}
+
+function cacheUniqueSortedCells() {
+    if (caches.cellsLeftToRight === undefined) {
+        // using Set to find unique cell keys
+        caches.cellsLeftToRight = new Set(getSelectedCells().map(cell => cellKey(cell)));
+
+        // Convert cell keys to pairs of [row, col]
+        caches.cellsLeftToRight = [...caches.cellsLeftToRight].map(cellKey => cellKeyToRowCol(cellKey));
+
+        // Sort by row, then column
+        caches.cellsLeftToRight.sort((a,b) => a[0] === b[0] ? a[1] - b[1] : a[0] - b[0]);
+    }
+    if (caches.cellsTopToBottom === undefined) {
+        // using Set to find unique cell keys
+        caches.cellsTopToBottom = new Set(getSelectedCells().map(cell => cellKey(cell)));
+
+        // Convert cell keys to pairs of [row, col]
+        caches.cellsTopToBottom = [...caches.cellsTopToBottom].map(cellKey => cellKeyToRowCol(cellKey));
+
+        // Sort by column, then row
+        caches.cellsTopToBottom.sort((a,b) => a[1] === b[1] ? a[0] - b[0] : a[1] - b[1]);
+    }
+}
+
+function cacheSelectedCells() {
+    if (caches.selectedCells === undefined) {
+        caches.selectedCells = new Set(getSelectedCells().map(selectedCell => cellKey(selectedCell)));
+    }
+}
+
+
+// -------------------------------------------------------------------------------- Translating/Modifying Polygons
 
 function moveDelta(rowDelta, colDelta) {
     if (!hasSelection()) {
@@ -282,11 +454,19 @@ function moveDelta(rowDelta, colDelta) {
 
     polygons.forEach(polygon => polygon.translate(rowDelta, colDelta));
 
-    triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
+    if (cursorCell) {
+        cursorCell.row += rowDelta;
+        cursorCell.col += colDelta;
+    }
+
+    const refresh = ['selection'];
+    if (movableContent) { refresh.push('chars'); }
+    if (cursorCell) { refresh.push('cursorCell'); }
+    triggerRefresh(refresh);
 }
 
 // Move all polygons in a particular direction
-export function moveDirection(direction, amount, moveStart = true, moveEnd = true) {
+export function moveInDirection(direction, amount, moveStart = true, moveEnd = true) {
     if (!hasSelection()) {
         return;
     }
@@ -309,10 +489,6 @@ export function moveDirection(direction, amount, moveStart = true, moveEnd = tru
     }
 
     triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
-}
-
-function lastPolygon() {
-    return polygons[polygons.length - 1];
 }
 
 export function flipVertically(mirrorChars) {
@@ -356,6 +532,30 @@ function flip(horizontally, vertically, mirrorChars) {
 
     triggerRefresh(['chars', 'selection']);
 }
+
+
+
+// -------------------------------------------------------------------------------- Helpers
+
+function lastPolygon() {
+    return polygons[polygons.length - 1];
+}
+
+// A unique way of identifying a cell (for Set lookup purposes)
+function cellKey(cell) {
+    return `${cell.row},${cell.col}`
+}
+
+// The inverse of cellKey
+function cellKeyToRowCol(cellKey) {
+    return cellKey.split(',').map(int => parseInt(int));
+}
+
+
+
+
+
+// -------------------------------------------------------------------------------- Polygon Classes
 
 /**
  * SelectionPolygon is the base class for many types of selection shapes. All polygons have a start value (where the
@@ -700,27 +900,34 @@ class SelectionWand extends SelectionPolygon {
         const cellHash = {};
         const startChar = state.getCurrentCelChar(this.start.row, this.start.col);
         const isBlank = startChar[0] === '';
+        const colorblind = this.options.colorblind;
         const diagonal = this.options.diagonal;
 
         function spread(cell) {
             if (cellHash[cellKey(cell)] === undefined) {
                 const charObj = state.getCurrentCelChar(cell.row, cell.col);
-                // If isBlank, keep any blank cells. Otherwise, keep any cells that are not blank and match the starting color
-                if (charObj && (isBlank ? charObj[0] === '' : (charObj[0] !== '' && charObj[1] === startChar[1]))) {
-                    cellHash[cellKey(cell)] = new Cell(cell.row, cell.col);
+                if (!charObj) { return; }
 
-                    // Recursive call to adjacent cells (note: not instantiating full Cell objects for performance reasons)
-                    spread({ row: cell.row - 1, col: cell.col });
-                    spread({ row: cell.row, col: cell.col + 1 });
-                    spread({ row: cell.row + 1, col: cell.col });
-                    spread({ row: cell.row, col: cell.col - 1 });
+                // If starting character was blank, only keep blank cells. Otherwise only keep non-blank cells
+                if (isBlank ? charObj[0] !== '' : charObj[0] === '') { return; }
 
-                    if (diagonal) {
-                        spread({ row: cell.row - 1, col: cell.col - 1 });
-                        spread({ row: cell.row - 1, col: cell.col + 1 });
-                        spread({ row: cell.row + 1, col: cell.col + 1 });
-                        spread({ row: cell.row + 1, col: cell.col - 1 });
-                    }
+                // Character colors have to match unless colorblind option is true
+                if (!isBlank && !colorblind && charObj[1] !== startChar[1]) { return; }
+
+                // Add cell to result
+                cellHash[cellKey(cell)] = new Cell(cell.row, cell.col);
+
+                // Recursive call to adjacent cells (note: not instantiating full Cell objects for performance reasons)
+                spread({ row: cell.row - 1, col: cell.col });
+                spread({ row: cell.row, col: cell.col + 1 });
+                spread({ row: cell.row + 1, col: cell.col });
+                spread({ row: cell.row, col: cell.col - 1 });
+
+                if (diagonal) {
+                    spread({ row: cell.row - 1, col: cell.col - 1 });
+                    spread({ row: cell.row - 1, col: cell.col + 1 });
+                    spread({ row: cell.row + 1, col: cell.col + 1 });
+                    spread({ row: cell.row + 1, col: cell.col - 1 });
                 }
             }
         }

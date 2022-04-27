@@ -17,9 +17,13 @@ const WINDOW_BORDER_WIDTH = 4;
 const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles
 const ONION_OPACITY = 0.25;
 
+const OUTLINE_WIDTH = 0.5;
+
+const CURSOR_CELL_COLOR = '#f48225';
+const CURSOR_WIDTH = 0.35;
+
 const DASH_OUTLINE_LENGTH = 5;
-const DASH_OUTLINE_WIDTH = 0.5;
-const DASH_OUTLINE_SPEED = 10; // updates per second
+const DASH_OUTLINE_FPS = 60;
 
 const HIGHLIGHT_CELL_COLOR = '#fff';
 const HIGHLIGHT_CELL_OPACITY = 0.15;
@@ -80,6 +84,7 @@ export class CanvasControl {
     clear() {
         // Clear any animation intervals
         if (this._outlineInterval) { window.clearInterval(this._outlineInterval); }
+        if (this._cursorInterval) { window.clearInterval(this._cursorInterval); }
 
         // Clear entire canvas
         this.usingFullArea((fullArea) => {
@@ -140,6 +145,50 @@ export class CanvasControl {
         polygons.forEach(polygon => polygon.draw(this.context));
     }
 
+    drawCursorCell(cell) {
+        this.context.strokeStyle = CURSOR_CELL_COLOR;
+        this.context.lineWidth = OUTLINE_WIDTH;
+
+        // Clear out targeted cell and surround it with a border
+        this.context.clearRect(...cell.xywh);
+        // this.context.strokeRect(...cell.xywh);
+
+        this._drawCursor(cell);
+        this._cursorInterval = window.setInterval(() => {
+            this._drawCursor(cell);
+        }, 1000 / 5);
+    }
+
+    _drawCursor(cell) {
+        const now = new Date().getMilliseconds();
+
+        // If a new cell is being targeted, we want to immediately show the cursor
+        if (this._textCursorCell === undefined || !this._textCursorCell.equals(cell)) {
+            this._textCursorCell = cell;
+            this._textCursorCellTime = now;
+        }
+
+        const elapsed = (now >= this._textCursorCellTime ? now : now + 1000) - this._textCursorCellTime;
+
+        // Alternate cursor every 500ms
+        if (elapsed <= 500) {
+            this.context.strokeStyle = CURSOR_CELL_COLOR;
+            this.context.lineWidth = CURSOR_WIDTH;
+
+            this.context.beginPath();
+            cell = cell.clone();
+            this.context.moveTo(cell.x + OUTLINE_WIDTH + CURSOR_WIDTH, cell.y + OUTLINE_WIDTH + CURSOR_WIDTH);
+            cell.translate(1, 0);
+            this.context.lineTo(cell.x + OUTLINE_WIDTH + CURSOR_WIDTH, cell.y - OUTLINE_WIDTH - CURSOR_WIDTH);
+            this.context.stroke();
+        }
+        else {
+            // Reduce rect size by half an outline width
+            const innerRect = new Rect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
+            this.context.clearRect(...innerRect.xywh);
+        }
+    }
+
     highlightCell(cell) {
         this.context.fillStyle = HIGHLIGHT_CELL_COLOR;
         this.context.globalAlpha = HIGHLIGHT_CELL_OPACITY;
@@ -147,16 +196,13 @@ export class CanvasControl {
     }
 
     outlinePolygon(polygon, isDashed) {
-        this.context.lineWidth = DASH_OUTLINE_WIDTH;
+        this.context.lineWidth = OUTLINE_WIDTH;
 
         if (isDashed) {
-            if (this._outlineOffset === undefined) { this._outlineOffset = 0; }
             this._drawDashedOutline(polygon);
             this._outlineInterval = window.setInterval(() => {
-                this._outlineOffset += 1;
-                if (this._outlineOffset >= DASH_OUTLINE_LENGTH * 2) { this._outlineOffset = 0; }
                 this._drawDashedOutline(polygon);
-            }, 1000 / DASH_OUTLINE_SPEED);
+            }, 1000 / DASH_OUTLINE_FPS);
         }
         else {
             this.context.setLineDash([]);
@@ -166,12 +212,15 @@ export class CanvasControl {
     }
 
     _drawDashedOutline(polygon) {
-        this.context.lineDashOffset = this._outlineOffset;
+        const now = new Date();
+        const offset = (now.getMilliseconds() / 1000.0) * DASH_OUTLINE_LENGTH * 2;
+
+        this.context.lineDashOffset = offset;
         this.context.setLineDash([DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH]);
         this.context.strokeStyle = 'white';
         polygon.stroke(this.context);
 
-        this.context.lineDashOffset = this._outlineOffset + DASH_OUTLINE_LENGTH;
+        this.context.lineDashOffset = offset + DASH_OUTLINE_LENGTH;
         this.context.setLineDash([DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH]);
         this.context.strokeStyle = 'black';
         polygon.stroke(this.context);
@@ -462,6 +511,10 @@ export class Cell extends Rect {
 
     clone() {
         return new Cell(this.row, this.col);
+    }
+
+    equals(cell) {
+        return this.row === cell.row && this.col === cell.col;
     }
 
     translate(rowDelta, colDelta) {
