@@ -327,8 +327,8 @@ function exportRtf(options) {
     let rtf, blob;
 
     const rtfColors = state.colorTable().map(colorStr => {
-        const rgba = new Color(colorStr).rgba; // Break colorStr into rgba components
-        return `\\red${rgba.r}\\green${rgba.g}\\blue${rgba.b}`; // Note: alpha cannot be shown in rtf
+        const [r, g, b, a] = new Color(colorStr).rgba; // Break colorStr into rgba components
+        return `\\red${r}\\green${g}\\blue${b}`; // Note: alpha cannot be shown in rtf
     });
     rtfColors.unshift(`\\red0\\green0\\blue0`); // Always have black as first color, for frameSeparators
     const colorTable = `{\\colortbl ${rtfColors.join(';')};}`;

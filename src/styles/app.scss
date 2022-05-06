@@ -14,6 +14,7 @@ $highlight2: #4C8BF5;
 $highlight2-dark: #3873d7;
 
 $highlight: #f48225;
+$highlight-dark: #e67920;
 
 $darkest: #202124;
 $darker: #282C2F;
@@ -30,9 +31,11 @@ $right-col-width: 220px;
 $preview-size: $right-col-width;
 $frame-size: 85px;
 $frame-border-size: 3px;
+$layers-height: 125px;
 $scrollbar-width: 18px;
-$palette-icon-size: 24px;
-$sidebar-header-length: 70px;
+$palette-icon-size: 30px;
+$palette-triangle-size: 7px;
+$palette-icon-spacing: 4px;
 
 html, body {
   height: 100%;
@@ -90,6 +93,7 @@ body {
 
 #body-content {
   flex: 1; // Fill remaining width
+  height: calc(100vh - #{$header-height} - #{$header-border-size} - 2 * #{$main-spacing});
 
   display: flex;
 }
@@ -118,10 +122,6 @@ body {
 
   .side-separator {
     height: 1rem;
-  }
-
-  .section-header {
-    min-width: $sidebar-header-length;
   }
 }
 
@@ -256,8 +256,7 @@ $selection-tool-size: 2rem;
   }
 
   .layer-list {
-    height: 150px;
-    //max-height: 150px;
+    height: $layers-height;
 
     .simplebar-content {
       display: flex;
@@ -400,7 +399,10 @@ $selection-tool-size: 2rem;
 
   .frame-list {
     width: $frame-size + 2 * $frame-border-size + $scrollbar-width;
-    max-height: calc(100vh - #{$header-height} - #{$header-border-size} - 2 * #{$main-spacing}); // TODO This should be needed, but simplebar messes up without it
+
+    // https://github.com/Grsmto/simplebar/issues/473#issuecomment-653741529
+    overflow-y: auto;
+    height: 100%;
 
     .simplebar-content-wrapper {
       height: 100% !important;
@@ -486,6 +488,7 @@ $selection-tool-size: 2rem;
 
 #palette-controller {
   flex: 1; // fill remaining space
+  overflow-y: hidden;
 
   display: flex;
   flex-direction: column;
@@ -506,18 +509,58 @@ $selection-tool-size: 2rem;
   }
 
   .color-list {
+    max-width: $right-col-width;
+    flex: 1;
+
+    // https://github.com/Grsmto/simplebar/issues/473#issuecomment-653741529
+    overflow-y: auto;
+    height: 100%;
+
+    .simplebar-content {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .simplebar-track.simplebar-vertical {
+      background-color: $dark;
+    }
+
     .color {
       display: inline-block;
       width: $palette-icon-size;
       height: $palette-icon-size;
-      margin-right: 4px;
-      margin-bottom: 4px;
+      margin-right: $palette-icon-spacing;
+      margin-bottom: $palette-icon-spacing;
       cursor: pointer;
 
-      border: 2px double transparent;
-
+      // Make a small triangle in the top-left corner of the square
       &.selected {
-        border-color: white;
+        position: relative;
+
+        &::before, &::after {
+          content: '';
+          position: absolute;
+          border-color: transparent;
+          border-style: solid;
+        }
+
+        &::before {
+          top: 0;
+          left: 0;
+
+          border-width: $palette-triangle-size;
+          border-left-color: $highlight;
+          border-top-color: $highlight;
+        }
+
+        &::after {
+          top: 1px;
+          left: 1px;
+
+          border-width: $palette-triangle-size - 2px;
+          border-left-color: #000;
+          border-top-color: #000;
+        }
       }
     }
   }
@@ -562,6 +605,7 @@ $selection-tool-size: 2rem;
 #canvas-details {
   display: flex;
   flex-direction: row;
+  margin-top: 1rem;
 
   font-family: monospace;
   color: white;
@@ -765,24 +809,50 @@ button {
 
 
 .picker_wrapper {
+  .picker_editor {
+    width: 7rem;
+  }
+
   .picker_done {
-    &.hidden {
-      display: none;
+    display: none;
+  }
+
+  .picker_sample {
+    &.add-to-palette {
+      cursor: pointer;
     }
 
-    button {
-      margin: 0;
-      background: $highlight2;
-      border-color: $dark;
-      padding: 0.2em 0.3em;
-      box-shadow: 0 0 0 1px $light;
-      border-radius: 0;
-
-      &:hover {
-        background: $highlight2-dark;
-      }
+    .ri {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1rem;
     }
   }
+
+  //.add-to-palette {
+  //  &.hidden {
+  //    display: none;
+  //    //visibility: hidden;
+  //  }
+  //  order: 1;
+  //
+  //  button {
+  //    margin: 0;
+  //    width: 20px;
+  //    padding: 0.2em 0;
+  //
+  //    background: $highlight;
+  //    box-shadow: 0 0 0 1px silver;
+  //
+  //    border-radius: 0;
+  //
+  //    &:hover {
+  //      background: $highlight-dark;
+  //    }
+  //  }
+  //}
 }
 
 .icon-line-dashed, .icon-line-solid {

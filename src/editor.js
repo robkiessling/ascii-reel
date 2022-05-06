@@ -5,6 +5,7 @@ import * as selection from './selection.js';
 import {triggerRefresh} from "./index.js";
 import * as clipboard from "./clipboard.js";
 import * as keyboard from "./keyboard.js";
+import Color from "@sphinxxxx/color-conversion";
 
 const $tools = $('#editing-tools');
 const $canvasContainer = $('#canvas-container');
@@ -161,7 +162,7 @@ export function currentColorIndex() {
     if (cachedColorIndex !== null) {
         return cachedColorIndex;
     }
-    return state.findOrCreateColor(cachedColorString);
+    return state.colorIndex(cachedColorString);
 }
 
 // Returns color string of currently selected color. Note: color might not yet be a part of state's colorTable
@@ -174,14 +175,31 @@ export function selectColor(colorStr) {
 }
 
 const colorPickerElement = document.querySelector('#current-color');
+let $addToPalette;
+
+const SHOW_ADD_ICON = false; // todo decide how I want to do this. Note: there is also associated css to uncomment
+
 const colorPicker = new Picker({
     parent: colorPickerElement,
     popup: 'top',
     onOpen: () => {
-        const $done = $(colorPickerElement).find('.picker_done');
-        $done.toggle(selection.hasSelection()).find('button').html("<span class='icon-paint-bucket'></span>");
-
         keyboard.toggleStandard(true);
+
+        if (SHOW_ADD_ICON) {
+            if (!$addToPalette) {
+                $addToPalette = $('<div>', {
+                    class: 'add-to-palette',
+                    html: '<button><span class="ri ri-fw ri-alert-line"></span></button>'
+                }).appendTo($(colorPickerElement).find('.picker_wrapper'));
+            }
+        }
+        else {
+            if (!$addToPalette) {
+                $addToPalette = $(colorPickerElement).find('.picker_sample');
+            }
+        }
+
+        refreshAddToPalette();
     },
     onClose: () => {
         keyboard.toggleStandard(false);
@@ -191,10 +209,42 @@ const colorPicker = new Picker({
         cachedColorString = color[state.COLOR_FORMAT];
         cachedColorIndex = null;
 
-        triggerRefresh('palette');
+        refreshAddToPalette();
+        triggerRefresh('paletteSelection');
     },
-    onDone: () => paintSelection()
 });
+
+function refreshAddToPalette() {
+    if ($addToPalette) {
+        if (SHOW_ADD_ICON) {
+            $addToPalette.toggleClass('hidden', !state.isNewColor(cachedColorString));
+        }
+        else {
+            $addToPalette.empty();
+
+            if (state.isNewColor(cachedColorString)) {
+                $addToPalette.addClass('add-to-palette');
+
+                const [h, s, l, a] = new Color(cachedColorString).hsla; // Break colorStr into hsla components
+
+                $('<span>', {
+                    css: { color: l <= 0.5 ? 'white' : 'black' },
+                    class: 'ri ri-fw ri-alert-line'
+                }).appendTo($addToPalette);
+            }
+            else {
+                $addToPalette.removeClass('add-to-palette');
+            }
+        }
+    }
+}
+
+$(colorPickerElement).on('click', '.add-to-palette', () => {
+    state.addColor(cachedColorString);
+
+    refreshAddToPalette();
+    triggerRefresh('palette');
+})
 
 
 

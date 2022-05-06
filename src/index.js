@@ -68,7 +68,6 @@ export function triggerRefresh(type = 'full') {
     type.forEach(type => {
         switch(type) {
             case 'chars':
-                palette.recalculate();
                 redrawCharCanvas();
                 preview.redraw();
                 timeline.currentFrameComponent.redrawChars();
@@ -93,10 +92,12 @@ export function triggerRefresh(type = 'full') {
                 drawHoveredCell()
                 break;
             case 'palette':
-                palette.refresh(); // Don't need to recalculate
+                palette.refresh();
+                break;
+            case 'paletteSelection':
+                palette.refreshSelection(); // less intensive that refreshing whole palette
                 break;
             case 'full':
-                palette.recalculate();
                 selection.clearCaches();
                 redrawCharCanvas();
                 preview.reset();
@@ -106,6 +107,7 @@ export function triggerRefresh(type = 'full') {
                 timeline.rebuildLayers();
                 timeline.rebuildFrames();
                 timeline.refresh();
+                palette.refresh();
                 break;
             default:
                 console.warn(`triggerRefresh("${type}") is not a valid type`);

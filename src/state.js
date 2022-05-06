@@ -2,6 +2,8 @@ import $ from "jquery";
 import {create2dArray, eachWithObject, transformValues, translate} from "./utilities.js";
 import * as selection from "./selection.js";
 import {onStateLoaded} from "./index.js";
+import * as editor from "./editor.js";
+import Color from "@sphinxxxx/color-conversion";
 
 const CONFIG_DEFAULTS = {
     name: 'New Sprite',
@@ -11,7 +13,6 @@ const CONFIG_DEFAULTS = {
     lockLayerVisibility: true,
     layerIndex: 0,
     frameIndex: 0,
-    paletteIndex: 0,
     frameOrientation: 'left',
     tool: 'selection-rect'
 }
@@ -25,8 +26,16 @@ const CELL_DEFAULTS = {
 }
 const SEQUENCES = ['layers', 'frames'];
 
-export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and display
-export const DEFAULT_COLOR = 'rgba(0,0,0,255)';
+const DEFAULT_PALETTE = ['rgba(0,0,0,1)', 'rgba(255,255,255,1)', 'rgba(255,0,0,1)',
+    'rgba(30,55,20,1)', 'rgba(30,20,111,1)', 'rgba(30,20,222,1)', 'rgba(30,44,44,1)',
+    'rgba(30,180,20,1)', 'rgba(30,333,20,1)', 'rgba(30,222,223,1)', 'rgba(30,111,20,1)',
+    'rgba(199,20,20,1)', 'rgba(299,20,44,1)', 'rgba(30,20,200,1)', 'rgba(199,20,20,1)',
+    'rgba(80,20,20,1)', 'rgba(299,90,44,1)', 'rgba(30,20,100,1)', 'rgba(199,20,129,1)',
+    'rgba(199,80,20,1)', 'rgba(299,20,90,1)', 'rgba(30,100,200,1)', 'rgba(199,200,20,1)',
+    'rgba(77,80,77,1)', 'rgba(10,20,38,1)', 'rgba(30,100,250,1)', 'rgba(222,233,20,1)',
+];
+export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and use to display
+export const DEFAULT_COLOR = 'rgba(0,0,0,1)';
 
 let state;
 let sequences;
@@ -44,8 +53,7 @@ export function load(data) {
         config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure indices are in bounds
         layers: data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
         frames: data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame)),
-        colorTable: data.colorTable ? [...data.colorTable] : [],
-        palettes: [] // todo import from settings? or does this get saved with file
+        colorTable: data.colorTable ? [...data.colorTable] : []
     };
 
     state.cels = transformValues(data.cels || {}, (v) => normalizeCel(v));
@@ -53,6 +61,8 @@ export function load(data) {
     sequences = eachWithObject(SEQUENCES, {}, (className, obj) => {
         obj[className] = Math.max.apply(Math, state[className].map(e => e.id));
     });
+
+    importPalette(data.palette && data.palette.length ? data.palette : DEFAULT_PALETTE, true);
 
     onStateLoaded();
 }
@@ -278,8 +288,7 @@ export function colorTable() {
 export function colorStr(colorIndex) {
     return state.colorTable[colorIndex] === undefined ? DEFAULT_COLOR : state.colorTable[colorIndex];
 }
-
-export function findOrCreateColor(colorStr) {
+export function colorIndex(colorStr) {
     let index = state.colorTable.indexOf(colorStr);
 
     if (index === -1) {
@@ -291,10 +300,26 @@ export function findOrCreateColor(colorStr) {
 }
 
 
-export function currentPalette() {
-    return state.palettes[config('paletteIndex')];
+export function palette() {
+    return state.palette;
 }
+export function isNewColor(colorStr) {
+    return !state.palette.includes(colorStr);
+}
+export function addColor(colorStr) {
+    if (isNewColor(colorStr)) {
+        state.palette.push(colorStr);
+    }
+}
+function importPalette(palette, replace) {
+    if (replace) {
+        state.palette = [];
+    }
 
-export function updatePalette(index, palette) {
-    state.palettes[index] = palette;
+    const existingColors = new Set(state.palette);
+
+    // parse incoming palette and remove duplicates
+    palette.forEach(colorStr => existingColors.add(new Color(colorStr)[COLOR_FORMAT]));
+
+    state.palette = [...existingColors];
 }
