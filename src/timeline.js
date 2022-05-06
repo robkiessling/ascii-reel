@@ -47,7 +47,7 @@ export class Timeline {
             }
         });
 
-        this.$layerContainer.find('.add-blank-layer').off('click').on('click', () => {
+        this.$layerContainer.find('.add-layer').off('click').on('click', () => {
             const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
             state.createLayer(layerIndex, {
                 name: `Layer ${state.layers().length + 1}`

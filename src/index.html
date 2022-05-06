@@ -18,21 +18,21 @@
         </div>
         <div id="file-menu">
             <button class="file-menu-item" data-item="new">
-                <span class="ri ri-fw ri-file-add-line"></span> New
+                <span><span class="ri ri-fw ri-file-add-line"></span> New</span>
             </button>
             <button class="file-menu-item" data-item="open">
-                <span class="ri ri-fw ri-folder-open-line"></span> Open
+                <span><span class="ri ri-fw ri-folder-open-line"></span> Open</span>
             </button>
             <input id="upload-file" type="file" hidden>
 
             <button class="file-menu-item" data-item="save">
-                <span class="ri ri-fw ri-save-3-line"></span> Save
+                <span><span class="ri ri-fw ri-save-3-line"></span> Save</span>
             </button>
             <button class="file-menu-item" data-item="export">
-                <span class="ri ri-fw ri-image-line"></span> Export
+                <span><span class="ri ri-fw ri-image-line"></span> Export</span>
             </button>
             <button class="file-menu-item" data-item="settings">
-                <span class="ri ri-fw ri-settings-5-line"></span> Settings
+                <span><span class="ri ri-fw ri-settings-5-line"></span> Settings</span>
             </button>
         </div>
     </div>
@@ -117,12 +117,16 @@
                     <div id="preview-fps-slider"></div>
                 </div>
             </div>
-            <hr>
+
+            <div class="side-separator"></div>
+
             <div id="layer-controller">
                 <div class="tools">
                     <div>
                         <span class="section-header">Layers</span>
-                        <button class="add-blank-layer">
+                    </div>
+                    <div>
+                        <button class="add-layer">
                             <span class="ri ri-fw ri-add-line"></span>
                         </button>
                         <button class="edit-layer">
@@ -131,8 +135,6 @@
                         <button class="delete-layer">
                             <span class="ri ri-fw ri-delete-bin-line"></span>
                         </button>
-                    </div>
-                    <div>
                         <button class="toggle-visibility-lock">
                             <span class="ri ri-fw"></span>
                         </button>
@@ -146,8 +148,27 @@
                 </div>
                 <div class="layer-list"></div>
             </div>
-            <div id="color-controller">
+
+            <div class="side-separator"></div>
+
+            <div id="palette-controller">
                 <div class="tools">
+                    <div>
+                        <span class="section-header">Palette</span>
+                    </div>
+                    <div>
+                        <button class="edit-color">
+                            <span class="ri ri-fw ri-pencil-line"></span>
+                        </button>
+                        <button class="delete-color">
+                            <span class="ri ri-fw ri-delete-bin-line"></span>
+                        </button>
+                        <button class="palette-settings">
+                            <span class="ri ri-fw ri-settings-5-line"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="color-list">
 
                 </div>
             </div>

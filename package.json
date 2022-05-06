@@ -43,6 +43,7 @@
     "webpack-dev-server": "^4.7.4"
   },
   "dependencies": {
+    "@sphinxxxx/color-conversion": "^2.2.2",
     "bresenham": "^0.0.4",
     "core-js": "^3.21.1",
     "express": "^4.17.3",

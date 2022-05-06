@@ -34,12 +34,21 @@ export function createArray(size, defaultValue = null) {
     return array;
 }
 
-// Used for converting an array into a new object (similar to ruby's each_with_object method)
+// Builds an object while iterating over an array (similar to ruby's each_with_object method)
 export function eachWithObject(array, initialObject = {}, callback) {
     return array.reduce((obj, element) => {
         callback(element, obj);
         return obj;
     }, initialObject);
+}
+
+// Returns a new object while transforming the object values (similar to ruby's transform_values method)
+export function transformValues(obj, callback) {
+    return Object.fromEntries(
+        Object.entries(obj).map(
+            ([k, v], i) => [k, callback(v, k, i)]
+        )
+    );
 }
 
 /**
@@ -158,7 +167,10 @@ export function confirmDialog(title, description, onAccept, acceptText = 'Ok') {
         {
             text: acceptText,
             class: 'call-out',
-            click: onAccept
+            click: () => {
+                $confirmDialog.dialog('close');
+                onAccept();
+            }
         }
     ]);
 
@@ -203,25 +215,6 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
             }
         ]
     }, overrides));
-}
-
-function componentToHex(c) {
-    const hex = c.toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
-}
-
-export function rgbaToHex(r, g, b, a) {
-    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
-}
-
-export function hexToRgba(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-        a: parseInt(result[4], 16)
-    } : null;
 }
 
 // Note: Indentation is purposely left-aligned since it gets put exactly as is into HTML file

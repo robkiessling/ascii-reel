@@ -1,5 +1,5 @@
 import $ from "jquery";
-import {create2dArray, eachWithObject, translate} from "./utilities.js";
+import {create2dArray, eachWithObject, transformValues, translate} from "./utilities.js";
 import * as selection from "./selection.js";
 import {onStateLoaded} from "./index.js";
 
@@ -11,6 +11,7 @@ const CONFIG_DEFAULTS = {
     lockLayerVisibility: true,
     layerIndex: 0,
     frameIndex: 0,
+    paletteIndex: 0,
     frameOrientation: 'left',
     tool: 'selection-rect'
 }
@@ -22,8 +23,11 @@ const FRAME_DEFAULTS = {}
 const CELL_DEFAULTS = {
     chars: [[]]
 }
-const DEFAULT_COLORS = ['#000000ff']; // TODO These currently have to match colorPicker format to avoid duplicates
 const SEQUENCES = ['layers', 'frames'];
+
+export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and display
+export const DEFAULT_COLOR = 'rgba(0,0,0,255)';
+
 let state;
 let sequences;
 
@@ -40,14 +44,11 @@ export function load(data) {
         config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure indices are in bounds
         layers: data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
         frames: data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame)),
-        colors: $.extend(true, [], data.colors ? data.colors : DEFAULT_COLORS),
-        cels: {}
+        colorTable: data.colorTable ? [...data.colorTable] : [],
+        palettes: [] // todo import from settings? or does this get saved with file
     };
 
-    // TODO Ensure every layer and frame has enough cels?
-    for (let [celId, celData] of Object.entries(data.cels)) {
-        state.cels[celId] = normalizeCel(celData);
-    }
+    state.cels = transformValues(data.cels || {}, (v) => normalizeCel(v));
 
     sequences = eachWithObject(SEQUENCES, {}, (className, obj) => {
         obj[className] = Math.max.apply(Math, state[className].map(e => e.id));
@@ -58,6 +59,10 @@ export function load(data) {
 
 export function stringify() {
     return JSON.stringify(state);
+}
+
+function vacuumColorTable() {
+    // todo
 }
 
 export function numRows() {
@@ -219,6 +224,10 @@ function normalizeCel(cel) {
     return normalizedCel;
 }
 
+export function iterateCels(callback) {
+    Object.values(state.cels).forEach((cel, i) => callback(cel, i));
+}
+
 export function getCurrentCelChar(row, col) {
     return charInBounds(row, col) ? $.extend([], currentCel().chars[row][col]) : undefined;
 }
@@ -263,17 +272,29 @@ export function layeredChars(frame, options = {}) {
     return result;
 }
 
-export function colors() {
-    return state.colors;
+export function colorTable() {
+    return state.colorTable;
 }
 export function colorStr(colorIndex) {
-    return state.colors[colorIndex];
+    return state.colorTable[colorIndex] === undefined ? DEFAULT_COLOR : state.colorTable[colorIndex];
 }
+
 export function findOrCreateColor(colorStr) {
-    let index = state.colors.indexOf(colorStr);
+    let index = state.colorTable.indexOf(colorStr);
+
     if (index === -1) {
-        state.colors.push(colorStr);
-        index = state.colors.length - 1;
+        state.colorTable.push(colorStr);
+        index = state.colorTable.length - 1;
     }
+
     return index;
+}
+
+
+export function currentPalette() {
+    return state.palettes[config('paletteIndex')];
+}
+
+export function updatePalette(index, palette) {
+    state.palettes[index] = palette;
 }

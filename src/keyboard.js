@@ -106,10 +106,10 @@ $document.keydown(function(e) {
                 selection.updateMovableContent('', 0);
             }
             else if (selection.cursorCell) {
-                state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, ['', 0]);
                 if (char === 'Backspace') {
                     selection.moveCursorInDirection('left');
                 }
+                state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, ['', 0]);
             }
             else {
                 selection.empty();

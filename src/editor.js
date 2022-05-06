@@ -19,9 +19,9 @@ $tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
 // -------------------------------------------------------------------------------- Main External API
 
 export function refresh() {
-    if (currentColorStr === null) {
+    if (cachedColorString === null) {
         // initial color picker state
-        colorPicker.setColor(state.colors()[0]);
+        selectColor(state.DEFAULT_COLOR);
     }
 
     $tools.find('.editing-tool').removeClass('selected');
@@ -153,14 +153,24 @@ function paintConnectedCells(cell, options) {
 
 // -------------------------------------------------------------------------------- Color Picker
 
-let currentColorStr = null;
+let cachedColorString = null;
 let cachedColorIndex = null;
 
+// Returns the currently selected colorIndex, or creates a new index if a new color is selected
 export function currentColorIndex() {
     if (cachedColorIndex !== null) {
         return cachedColorIndex;
     }
-    return state.findOrCreateColor(currentColorStr);
+    return state.findOrCreateColor(cachedColorString);
+}
+
+// Returns color string of currently selected color. Note: color might not yet be a part of state's colorTable
+export function currentColorString() {
+    return cachedColorString;
+}
+
+export function selectColor(colorStr) {
+    colorPicker.setColor(colorStr, false);
 }
 
 const colorPickerElement = document.querySelector('#current-color');
@@ -177,12 +187,18 @@ const colorPicker = new Picker({
         keyboard.toggleStandard(false);
     },
     onChange: (color) => {
-        colorPickerElement.style.background = color.rgbaString;
-        currentColorStr = color.hex;
+        colorPickerElement.style.background = color[state.COLOR_FORMAT];
+        cachedColorString = color[state.COLOR_FORMAT];
         cachedColorIndex = null;
+
+        triggerRefresh('palette');
     },
     onDone: () => paintSelection()
 });
+
+
+
+// -------------------------------------------------------------------------------- Misc.
 
 function cursorStyle(tool, cell) {
     switch (tool) {

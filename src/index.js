@@ -12,6 +12,7 @@ import {Timeline} from "./timeline.js";
 import * as state from "./state.js";
 import * as preview from "./preview.js";
 import * as editor from "./editor.js";
+import * as palette from "./palette.js";
 import * as file from "./file.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
@@ -67,6 +68,7 @@ export function triggerRefresh(type = 'full') {
     type.forEach(type => {
         switch(type) {
             case 'chars':
+                palette.recalculate();
                 redrawCharCanvas();
                 preview.redraw();
                 timeline.currentFrameComponent.redrawChars();
@@ -90,7 +92,11 @@ export function triggerRefresh(type = 'full') {
                 drawSelection();
                 drawHoveredCell()
                 break;
+            case 'palette':
+                palette.refresh(); // Don't need to recalculate
+                break;
             case 'full':
+                palette.recalculate();
                 selection.clearCaches();
                 redrawCharCanvas();
                 preview.reset();

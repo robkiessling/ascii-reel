@@ -13,7 +13,7 @@ export let isMoving = false; // Only true when mouse is down and polygon is bein
 export let movableContent = null; // 2d array of content IF there is any (it will be surrounded by dashed outline)
 export let hoveredCell;
 export let cursorCell;
-// export let cursorTabCell; // Where to move from on return key
+// export let cursorTabCell; // TODO Where to move from on return key
 
 export function hasSelection() {
     return polygons.length > 0;

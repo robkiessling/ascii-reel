@@ -11,8 +11,9 @@ import JSZip from 'jszip';
 // import GIF from 'gif.js.optimized/dist/gif.js';
 import GIF from './vendor/gif.cjs';
 
-import {confirmDialog, createDialog, createHTMLFile, hexToRgba} from "./utilities.js";
+import {confirmDialog, createDialog, createHTMLFile} from "./utilities.js";
 import {CanvasControl, MONOSPACE_RATIO} from "./canvas.js";
+import Color from "@sphinxxxx/color-conversion";
 
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
@@ -325,8 +326,8 @@ function exportTxt(options = {}) {
 function exportRtf(options) {
     let rtf, blob;
 
-    const rtfColors = state.colors().map(color => {
-        const rgba = hexToRgba(color);
+    const rtfColors = state.colorTable().map(colorStr => {
+        const rgba = new Color(colorStr).rgba; // Break colorStr into rgba components
         return `\\red${rgba.r}\\green${rgba.g}\\blue${rgba.b}`; // Note: alpha cannot be shown in rtf
     });
     rtfColors.unshift(`\\red0\\green0\\blue0`); // Always have black as first color, for frameSeparators

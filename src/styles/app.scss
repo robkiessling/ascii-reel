@@ -31,6 +31,8 @@ $preview-size: $right-col-width;
 $frame-size: 85px;
 $frame-border-size: 3px;
 $scrollbar-width: 18px;
+$palette-icon-size: 24px;
+$sidebar-header-length: 70px;
 
 html, body {
   height: 100%;
@@ -67,14 +69,17 @@ body {
       font-size: 1rem;
       line-height: 2;
 
-      display: flex;
-      justify-content: space-between;
       color: white;
       margin: 0;
       padding: 0 0.75rem;
-      height: 100%;
-      align-items: center;
       border-radius: 0;
+
+      > span {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 100%;
+      }
 
       .ri {
         margin-right: 2px;
@@ -100,6 +105,7 @@ body {
   }
   &.frames-on-left {
     flex-direction: row-reverse;
+    margin-left: 0.15rem;
   }
 }
 
@@ -109,6 +115,14 @@ body {
 
   display: flex;
   flex-direction: column;
+
+  .side-separator {
+    height: 1rem;
+  }
+
+  .section-header {
+    min-width: $sidebar-header-length;
+  }
 }
 
 #tools-and-canvas {
@@ -238,10 +252,6 @@ $selection-tool-size: 2rem;
       display: flex;
       flex-direction: row;
       align-items: center;
-    }
-
-    .section-header {
-      margin-right: 0.5rem;
     }
   }
 
@@ -474,6 +484,46 @@ $selection-tool-size: 2rem;
   }
 }
 
+#palette-controller {
+  flex: 1; // fill remaining space
+
+  display: flex;
+  flex-direction: column;
+
+  .tools {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-right: $scrollbar-width;
+
+    > div {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .color-list {
+    .color {
+      display: inline-block;
+      width: $palette-icon-size;
+      height: $palette-icon-size;
+      margin-right: 4px;
+      margin-bottom: 4px;
+      cursor: pointer;
+
+      border: 2px double transparent;
+
+      &.selected {
+        border-color: white;
+      }
+    }
+  }
+}
+
+
 #export-file-dialog {
   #export-file-format {
     width: 7rem;
@@ -508,9 +558,6 @@ $selection-tool-size: 2rem;
 }
 
 
-#color-controller {
-  flex: 1; // fill remaining space
-}
 
 #canvas-details {
   display: flex;
@@ -585,15 +632,19 @@ hr {
   margin: 0.75rem 0;
 }
 
+.ri-fw {
+  display: inline-block;
+}
+
 button {
   background: none;
   border: none;
   color: white;
   cursor: pointer;
   border-radius: 2px;
-  padding: 4px 4px;
-  margin: 2px 4px;
-  display: inline-block;
+  padding: 4px;
+  margin: 4px;
+  line-height: 1;
 
   &:hover {
     background: $dark;
