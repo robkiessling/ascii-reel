@@ -3,6 +3,7 @@ import {create2dArray, eachWithObject, transformValues, translate} from "./utili
 import * as selection from "./selection.js";
 import {onStateLoaded} from "./index.js";
 import * as editor from "./editor.js";
+import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
 
 const CONFIG_DEFAULTS = {
@@ -26,16 +27,7 @@ const CELL_DEFAULTS = {
 }
 const SEQUENCES = ['layers', 'frames'];
 
-const DEFAULT_PALETTE = ['rgba(0,0,0,1)', 'rgba(255,255,255,1)', 'rgba(255,0,0,1)',
-    'rgba(30,55,20,1)', 'rgba(30,20,111,1)', 'rgba(30,20,222,1)', 'rgba(30,44,44,1)',
-    'rgba(30,180,20,1)', 'rgba(30,333,20,1)', 'rgba(30,222,223,1)', 'rgba(30,111,20,1)',
-    'rgba(199,20,20,1)', 'rgba(299,20,44,1)', 'rgba(30,20,200,1)', 'rgba(199,20,20,1)',
-    'rgba(80,20,20,1)', 'rgba(299,90,44,1)', 'rgba(30,20,100,1)', 'rgba(199,20,129,1)',
-    'rgba(199,80,20,1)', 'rgba(299,20,90,1)', 'rgba(30,100,200,1)', 'rgba(199,200,20,1)',
-    'rgba(77,80,77,1)', 'rgba(10,20,38,1)', 'rgba(30,100,250,1)', 'rgba(222,233,20,1)',
-];
 export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and use to display
-export const DEFAULT_COLOR = 'rgba(0,0,0,1)';
 
 let state;
 let sequences;
@@ -62,17 +54,13 @@ export function load(data) {
         obj[className] = Math.max.apply(Math, state[className].map(e => e.id));
     });
 
-    importPalette(data.palette && data.palette.length ? data.palette : DEFAULT_PALETTE, true);
+    importPalette(data.palette && data.palette.length ? data.palette : palette.DEFAULT_PALETTE, true);
 
     onStateLoaded();
 }
 
 export function stringify() {
     return JSON.stringify(state);
-}
-
-function vacuumColorTable() {
-    // todo
 }
 
 export function numRows() {
@@ -286,7 +274,7 @@ export function colorTable() {
     return state.colorTable;
 }
 export function colorStr(colorIndex) {
-    return state.colorTable[colorIndex] === undefined ? DEFAULT_COLOR : state.colorTable[colorIndex];
+    return state.colorTable[colorIndex] === undefined ? palette.DEFAULT_COLOR : state.colorTable[colorIndex];
 }
 export function colorIndex(colorStr) {
     let index = state.colorTable.indexOf(colorStr);
@@ -300,7 +288,7 @@ export function colorIndex(colorStr) {
 }
 
 
-export function palette() {
+export function currentPalette() {
     return state.palette;
 }
 export function isNewColor(colorStr) {
@@ -310,6 +298,9 @@ export function addColor(colorStr) {
     if (isNewColor(colorStr)) {
         state.palette.push(colorStr);
     }
+}
+export function deleteColor(colorStr) {
+    state.palette = state.palette.filter(paletteColorStr => paletteColorStr !== colorStr);
 }
 function importPalette(palette, replace) {
     if (replace) {

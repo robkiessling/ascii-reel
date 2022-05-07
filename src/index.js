@@ -155,34 +155,6 @@ function drawHoveredCell() {
     editor.updateMouseCoords(selection.hoveredCell);
 }
 
-// const rows = 25;
-// const columns = 50;
 window.setTimeout(() => {
     state.loadNew();
-    // state.load({
-    //     config: {
-    //         dimensions: [columns, rows]
-    //     },
-    //     layers: [
-    //         { id: 1, name: 'Bottom Layer' },
-    //         { id: 2, name: 'Top Layer' }
-    //     ],
-    //     frames: [
-    //         { id: 1 },
-    //         { id: 2 },
-    //         { id: 3 },
-    //     ],
-    //     cels: {
-    //         '1,1': { chars: create2dArray(rows, columns, () => [randomPrintableChar(), Math.round(Math.random())]) },
-    //         '1,2': { chars: create2dArray(2, 5, () => randomPrintableChar()) },
-    //         '1,3': { chars: create2dArray(5, 10, () => randomPrintableChar()) },
-    //         '2,1': { chars: create2dArray(2, 5, 'x') },
-    //         '2,2': { chars: [[]] },
-    //         '2,3': { chars: [[]] },
-    //     },
-    //     colors: [
-    //         '#ffffffff', // TODO These currently have to match colorPicker format to avoid duplicates
-    //         '#000000ff'
-    //     ]
-    // });
 }, 1);

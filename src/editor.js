@@ -5,6 +5,7 @@ import * as selection from './selection.js';
 import {triggerRefresh} from "./index.js";
 import * as clipboard from "./clipboard.js";
 import * as keyboard from "./keyboard.js";
+import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
 
 const $tools = $('#editing-tools');
@@ -22,7 +23,7 @@ $tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
 export function refresh() {
     if (cachedColorString === null) {
         // initial color picker state
-        selectColor(state.DEFAULT_COLOR);
+        selectColor(palette.DEFAULT_COLOR);
     }
 
     $tools.find('.editing-tool').removeClass('selected');
@@ -68,7 +69,16 @@ export function setupMouseEvents(canvasControl) {
     /*  ---------------------  Event Listeners  ---------------------  */
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
         switch(tool) {
-            case 'paint':
+            case 'write-text':
+                selection.moveCursorTo(cell);
+                break;
+            case 'draw-freeform':
+                drawCellChar(cell);
+                break;
+            case 'paint-brush':
+                paintCell(cell);
+                break;
+            case 'paint-bucket':
                 paintConnectedCells(cell, { diagonal: mouseEvent.metaKey });
                 break;
             default:
@@ -78,6 +88,21 @@ export function setupMouseEvents(canvasControl) {
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
         $canvasContainer.css('cursor', cursorStyle(tool, cell));
+
+        switch(tool) {
+            case 'draw-freeform':
+                if (mouseEvent.which === 1) {
+                    drawCellChar(cell);
+                }
+                break;
+            case 'paint-brush':
+                if (mouseEvent.which === 1) {
+                    paintCell(cell);
+                }
+                break;
+            default:
+                return; // Ignore all other tools
+        }
     });
 }
 
@@ -100,7 +125,7 @@ bindSelectionToolEvent('copy', () => clipboard.copy());
 bindSelectionToolEvent('paste', (e) => clipboard.paste(e.shiftKey));
 bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.shiftKey));
 bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.shiftKey));
-bindSelectionToolEvent('paint', () => paintSelection());
+bindSelectionToolEvent('paint-bucket', () => paintSelection());
 bindSelectionToolEvent('close', () => selection.clear());
 
 // Tools that are allowed when the given tool is selected
@@ -141,6 +166,28 @@ function paintSelection() {
     triggerRefresh('chars');
 }
 
+// -------------------------------------------------------------------------------- Non-selection tools
+
+function drawCellChar(cell) {
+    const char = state.getCurrentCelChar(cell.row, cell.col);
+
+    // Only updating char if it is actually different (needs to be efficient since we call this on mousemove)
+    if (char && char[0] !== freeformChar) {
+        state.setCurrentCelChar(cell.row, cell.col, [freeformChar, undefined]);
+        triggerRefresh('chars');
+    }
+}
+
+function paintCell(cell) {
+    const char = state.getCurrentCelChar(cell.row, cell.col);
+
+    // Only refreshing if color is actually different (needs to be efficient since we call this on mousemove)
+    if (char && char[1] !== currentColorIndex()) {
+        state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
+        triggerRefresh('chars');
+    }
+}
+
 function paintConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return; }
 
@@ -152,12 +199,26 @@ function paintConnectedCells(cell, options) {
 }
 
 
+// -------------------------------------------------------------------------------- Freeform Char
+
+let freeformChar;
+let $freeformChar = $('.freeform-char');
+
+export function setFreeformChar(char) {
+    freeformChar = char;
+    $freeformChar.html(freeformChar);
+}
+
+setFreeformChar('A'); // initial value
+
+
 // -------------------------------------------------------------------------------- Color Picker
 
 let cachedColorString = null;
 let cachedColorIndex = null;
 
-// Returns the currently selected colorIndex, or creates a new index if a new color is selected
+// Returns the currently selected colorIndex, or creates a new index if a new color is selected.
+// Also caching the result for faster performance since this gets called a lot in a loop
 export function currentColorIndex() {
     if (cachedColorIndex !== null) {
         return cachedColorIndex;
@@ -259,8 +320,10 @@ function cursorStyle(tool, cell) {
             return selection.isSelectedCell(cell) ? 'grab' : 'cell';
         case 'draw-rect':
         case 'draw-line':
-            return 'crosshair';
-        case 'paint':
+        case 'draw-freeform':
+            return 'cell';
+        case 'paint-brush':
+        case 'paint-bucket':
             return 'cell';
         case 'move':
             return 'grab';

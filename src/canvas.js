@@ -11,7 +11,6 @@ const GRID_WIDTH = 0.25;
 const GRID_COLOR = '#fff';
 
 const WINDOW_BORDER_COLOR = '#fff';
-// const WINDOW_BORDER_COLOR = '#4c8bf5'; // TODO Get this from scss?
 const WINDOW_BORDER_WIDTH = 4;
 
 const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles

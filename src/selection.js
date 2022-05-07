@@ -349,7 +349,7 @@ export function moveCursorToStart() {
 // Steps the cursor forward or backward one space
 export function moveCursorInDirection(direction) {
     if (cursorCell) {
-        if (selectingSingleCell()) {
+        if (selectingSingleCell() || state.config('tool') === 'write-text') {
             // Entire canvas is the domain to traverse through
 
             let col = cursorCell.col, row = cursorCell.row;
@@ -366,10 +366,12 @@ export function moveCursorInDirection(direction) {
 
             moveCursorTo(new Cell(row, col));
 
-            // Also update underlying single selection cell.
-            // Don't have to refresh selection since the selection is hidden if selecting single cells
-            polygons = [new SelectionRect(cursorCell.clone(), cursorCell.clone())];
-            clearCaches();
+            if (selectingSingleCell()) {
+                // Also update underlying single selection cell.
+                // Don't have to refresh selection since the selection is hidden if selecting single cells
+                polygons = [new SelectionRect(cursorCell.clone(), cursorCell.clone())];
+                clearCaches();
+            }
         }
         else {
             // The current selection is the domain to traverse through
@@ -377,9 +379,9 @@ export function moveCursorInDirection(direction) {
             cacheUniqueSortedCells();
 
             // Find the current targeted cell index
-            let i,
-                cells = (direction === 'left' || direction === 'right') ? caches.cellsLeftToRight : caches.cellsTopToBottom;
-            length = cells.length;
+            let i;
+            let cells = (direction === 'left' || direction === 'right') ? caches.cellsLeftToRight : caches.cellsTopToBottom;
+            let length = cells.length;
             for (i = 0; i < length; i++) {
                 if (cursorCell.row === cells[i][0] && cursorCell.col === cells[i][1]) {
                     break;

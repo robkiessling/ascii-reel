@@ -148,10 +148,12 @@ $editing-tool-size: 3rem;
     justify-content: center;
     align-items: center;
     background: $dark;
-    border: 1px solid $darker;
+    border: 3px solid transparent;
     color: white;
     font-size: 2rem;
     box-sizing: border-box;
+    position: relative;
+    margin-bottom: 1px;
 
     &:hover:not(.selected) {
       cursor: pointer;
@@ -159,8 +161,23 @@ $editing-tool-size: 3rem;
     }
 
     &.selected {
-      border: 3px solid $highlight;
+      border-color: $highlight;
       background: $medium-dark;
+    }
+
+    &[data-tool="draw-freeform"] {
+      > span:not(.freeform-char) {
+        position: absolute;
+        top: 6px;
+        left: 2px;
+        font-size: 1.5rem;
+      }
+      > .freeform-char {
+        position: absolute;
+        bottom: 5px;
+        right: 7px;
+        font-size: 1rem;
+      }
     }
   }
 
@@ -562,6 +579,12 @@ $selection-tool-size: 2rem;
           border-top-color: #000;
         }
       }
+    }
+
+    .message {
+      color: $light;
+      font-size: 0.875rem;
+      font-style: italic;
     }
   }
 }

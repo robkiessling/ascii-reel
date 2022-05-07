@@ -35,6 +35,7 @@ $document.keydown(function(e) {
     if (e.metaKey || e.ctrlKey) {
         switch (char) {
             case 'a':
+                editor.changeTool('selection-rect');
                 selection.selectAll();
                 break;
             case 'x':
@@ -118,6 +119,10 @@ $document.keydown(function(e) {
             break;
         default:
             if (producesText(code)) {
+                if (state.config('tool') === 'draw-freeform') {
+                    editor.setFreeformChar(char);
+                }
+
                 if (selection.movableContent) {
                     selection.updateMovableContent(char, editor.currentColorIndex());
                 }
