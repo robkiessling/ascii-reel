@@ -2,6 +2,7 @@ import * as state from "./state.js";
 import $ from "jquery";
 import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
+// import 'jquery-ui/ui/widgets/tabs.js';
 
 // TODO HACK Had to override gif.js, background option wasn't working.
 //           Fix background: https://github.com/jnordberg/gif.js/pull/46
@@ -18,7 +19,10 @@ import Color from "@sphinxxxx/color-conversion";
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
 
+// --------------------------------------------------------------- Menu
+
 const $fileMenu = $('#file-menu');
+
 function bindFileMenuItem(item, onClick) {
     $fileMenu.find(`.file-menu-item[data-item="${item}"]`).off('click').on('click', evt => {
         onClick(evt);
@@ -38,10 +42,10 @@ function newFile() {
 
 
 // --------------------------------------------------------------- Uploading
-bindFileMenuItem('open', () => uploadFile());
-
 const $uploadInput = $('#upload-file');
 $uploadInput.attr('accept', `.${FILE_EXTENSION}`);
+
+bindFileMenuItem('open', () => $uploadInput.trigger('click'));
 
 $uploadInput.off('change').on('change', function(evt) {
     const file = evt.target.files[0];
@@ -64,20 +68,20 @@ $uploadInput.off('change').on('change', function(evt) {
     }
 });
 
-function uploadFile() {
-    $uploadInput.trigger('click');
-}
-
 
 // --------------------------------------------------------------- Saving
+const $saveFileDialog = $('#save-file-dialog');
+
+setupSaveDialog();
 bindFileMenuItem('save', () => openSaveDialog());
 
-const $saveFileDialog = $('#save-file-dialog');
-createDialog($saveFileDialog, () => {
-    state.config('name', $saveFileDialog.find('.name').val());
-    saveFile();
-    $saveFileDialog.dialog('close');
-});
+function setupSaveDialog() {
+    createDialog($saveFileDialog, () => {
+        state.config('name', $saveFileDialog.find('.name').val());
+        saveFile();
+        $saveFileDialog.dialog('close');
+    });
+}
 
 function saveFile() {
     const blob = new Blob([state.stringify()], {type: "text/plain;charset=utf-8"});
@@ -90,24 +94,87 @@ function openSaveDialog() {
     $saveFileDialog.dialog('open');
 }
 
-// --------------------------------------------------------------- Export
-bindFileMenuItem('export', () => openExportDialog());
+// --------------------------------------------------------------- Resize
+const $resizeDialog = $('#resize-dialog');
 
-const $exportFileDialog = $('#export-file-dialog');
-const $exportFormat = $exportFileDialog.find('#export-file-format');
-const $exportOptions = $exportFileDialog.find('#export-options');
+setupResizeDialog();
+bindFileMenuItem('resize', () => openResizeDialog());
 
-createDialog($exportFileDialog, () => {
-    exportFile(() => {
-        $exportFileDialog.dialog('close');
+function setupResizeDialog() {
+    createDialog($resizeDialog, () => {
+        resize(() => {
+            $exportOptions.find(`[name="width"]`); // resetting export width field in case it was set previously
+            $resizeDialog.dialog('close');
+        })
+    }, 'Resize', {
+        minWidth: 400,
+        maxWidth: 400,
+        minHeight: 400,
+        maxHeight: 400
     });
-}, 'Export', {
-    minWidth: 500,
-    maxWidth: 500,
-    minHeight: 500,
-    maxHeight: 500
-});
-setupExportDialog();
+
+    $resizeDialog.find('[name="aspect-ratio"]').on('change', evt => {
+        const $rows = $resizeDialog.find('[name="rows"]');
+        const $columns = $resizeDialog.find('[name="columns"]');
+
+        $rows.off('input.ratio');
+        $columns.off('input.ratio');
+
+        if ($(evt.currentTarget).is(':checked')) {
+            $rows.on('input.ratio', evt => {
+                const rows = $(evt.currentTarget).val();
+                const columns = Math.round(rows / state.numRows() * state.numCols());
+                $columns.val(columns);
+            }).trigger('input.ratio');
+            $columns.on('input.ratio', evt => {
+                const columns = $(evt.currentTarget).val();
+                const rows = Math.round(columns / state.numCols() * state.numRows());
+                $rows.val(rows);
+            });
+        }
+    });
+
+    $resizeDialog.on('click', '.anchor-option', evt => {
+        $resizeDialog.find('.anchor-option').removeClass('selected');
+        $(evt.currentTarget).addClass('selected');
+    });
+
+    // Initial option: middle/middle
+    $resizeDialog.find('.anchor-option').removeClass('selected');
+    $resizeDialog.find('.anchor-option[data-row-anchor="middle"][data-col-anchor="middle"]').addClass('selected');
+}
+
+function openResizeDialog() {
+    $resizeDialog.find('[name="rows"]').val(state.numRows());
+    $resizeDialog.find('[name="aspect-ratio"]').prop('checked', true).trigger('change');
+
+    $resizeDialog.dialog('open');
+}
+
+function resize(onSuccess) {
+    let isValid = true;
+
+    const rows = parseInt($resizeDialog.find('[name="rows"]').val());
+    if (isNaN(rows)) {
+        $resizeDialog.find('[name="rows"]').addClass('error');
+        isValid = false;
+    }
+
+    const columns = parseInt($resizeDialog.find('[name="columns"]').val());
+    if (isNaN(columns)) {
+        $resizeDialog.find('[name="columns"]').addClass('error');
+        isValid = false;
+    }
+
+    if (isValid) {
+        const $anchor = $resizeDialog.find('.anchor-option.selected');
+        state.resize([columns, rows], $anchor.data('row-anchor'), $anchor.data('col-anchor'));
+        onSuccess();
+    }
+}
+
+
+// --------------------------------------------------------------- Export
 
 const DEFAULT_FONT_SIZE = 16;
 
@@ -135,7 +202,25 @@ const EXPORT_OPTION_VALIDATORS = {
     spritesheetRows: { type: 'integer' }
 }
 
+const $exportFileDialog = $('#export-file-dialog');
+const $exportFormat = $exportFileDialog.find('#export-file-format');
+const $exportOptions = $exportFileDialog.find('#export-options');
+
+setupExportDialog();
+bindFileMenuItem('export', () => openExportDialog());
+
 function setupExportDialog() {
+    createDialog($exportFileDialog, () => {
+        exportFile(() => {
+            $exportFileDialog.dialog('close');
+        });
+    }, 'Export', {
+        minWidth: 500,
+        maxWidth: 500,
+        minHeight: 500,
+        maxHeight: 500
+    });
+
     $exportFormat.on('change', evt => {
         const format = $(evt.currentTarget).val();
         $exportOptions.find('label').hide();

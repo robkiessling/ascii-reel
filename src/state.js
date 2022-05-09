@@ -314,3 +314,64 @@ function importPalette(palette, replace) {
 
     state.palette = [...existingColors];
 }
+
+
+export function resize(newDimensions, rowAnchor, colAnchor) {
+    let rowOffset;
+    switch(rowAnchor) {
+        case 'top':
+            rowOffset = 0;
+            break;
+        case 'middle':
+            // Use ceil when growing and floor when shrinking, so content stays in the same place if you do one after the other
+            rowOffset = newDimensions[1] > numRows() ?
+                Math.ceil((numRows() - newDimensions[1]) / 2) :
+                Math.floor((numRows() - newDimensions[1]) / 2)
+            break;
+        case 'bottom':
+            rowOffset = numRows() - newDimensions[1];
+            break;
+        default:
+            console.error(`Invalid rowAnchor: ${rowAnchor}`);
+            return;
+    }
+
+    let colOffset;
+    switch(colAnchor) {
+        case 'left':
+            colOffset = 0;
+            break;
+        case 'middle':
+            // Use ceil when growing and floor when shrinking, so content stays in the same place if you do one after the other
+            colOffset = newDimensions[0] > numCols() ?
+                Math.ceil((numCols() - newDimensions[0]) / 2) :
+                Math.floor((numCols() - newDimensions[0]) / 2)
+            break;
+        case 'right':
+            colOffset = numCols() - newDimensions[0];
+            break;
+        default:
+            console.error(`Invalid colAnchor: ${colAnchor}`);
+            return;
+    }
+
+    Object.values(state.cels).forEach(cel => {
+        let resizedChars = [];
+
+        for (let r = 0; r < newDimensions[1]; r++) {
+            for (let c = 0; c < newDimensions[0]; c++) {
+                if (resizedChars[r] === undefined) { resizedChars[r] = []; }
+
+                resizedChars[r][c] = cel.chars[r + rowOffset] && cel.chars[r + rowOffset][c + colOffset] ?
+                    cel.chars[r + rowOffset][c + colOffset] :
+                    ['', 0];
+            }
+        }
+
+        cel.chars = resizedChars;
+    });
+
+    state.config.dimensions = newDimensions;
+
+    onStateLoaded();
+}

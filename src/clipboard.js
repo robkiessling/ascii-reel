@@ -1,10 +1,10 @@
-import * as selection from "./selection.js";
-import * as state from "./state.js";
-import {translate} from "./utilities.js";
-
 // Necessary for clipboard read/write https://stackoverflow.com/a/61517521
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
+
+import * as selection from "./selection.js";
+import * as state from "./state.js";
+import {translate} from "./utilities.js";
 import {triggerRefresh} from "./index.js";
 import * as editor from "./editor.js";
 

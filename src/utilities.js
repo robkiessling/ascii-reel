@@ -192,7 +192,11 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
         open: () => {
             $('.ui-widget-overlay').on('click', () => {
                 $dialog.dialog('close');
-            })
+            });
+
+            if ($dialog.parent().find('.ui-dialog-title').text().trim() === '') {
+                $dialog.parent().find('.ui-dialog-titlebar').hide();
+            }
 
             keyboard.toggleStandard(true);
             $(document).on('keyboard:enter.dialog', onAccept);

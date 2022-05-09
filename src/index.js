@@ -13,7 +13,7 @@ import * as state from "./state.js";
 import * as preview from "./preview.js";
 import * as editor from "./editor.js";
 import * as palette from "./palette.js";
-import * as file from "./file.js";
+import "./file.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
@@ -29,6 +29,7 @@ zoom.setupMouseEvents(selectionCanvas, preview.canvasControl,
 
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 
+// TODO Is this needed? Describe the function
 export function onStateLoaded() {
     preview.refresh();
     editor.refresh();

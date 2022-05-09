@@ -2,8 +2,9 @@
 @import 'jquery-ui/themes/base/core';
 @import 'jquery-ui/themes/base/dialog';
 @import 'jquery-ui/themes/base/sortable';
-@import 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
 @import 'jquery-ui/themes/base/slider';
+@import 'jquery-ui/themes/base/tabs';
+@import 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
 @import 'vanilla-picker/dist/vanilla-picker.csp.css';
 
 @import 'icon-fonts/style.css';
@@ -589,17 +590,39 @@ $selection-tool-size: 2rem;
   }
 }
 
+#resize-dialog {
+  .anchor-options {
+    display: flex;
+    flex-direction: column;
+    height: 100px;
+    width: 100px;
 
-#export-file-dialog {
-  #export-file-format {
-    width: 7rem;
-  }
+    > div {
+      flex: 1 1 auto;
 
-  #export-options {
-    label {
-      display: block;
-      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: row;
+
+      > div {
+        flex: 1 1 auto;
+
+        margin: 2px;
+        background: white;
+        cursor: pointer;
+
+        &.selected {
+          background: $highlight2;
+        }
+      }
     }
+  }
+}
+
+
+.dialog-form {
+  label {
+    display: block;
+    margin-bottom: 1rem;
   }
 
   input[type="text"], input[type="number"] {
@@ -608,6 +631,12 @@ $selection-tool-size: 2rem;
     &.error {
       outline: 1px solid red;
     }
+  }
+}
+
+@for $i from 0 through 20 {
+  .w-#{$i} {
+    width: #{$i}rem;
   }
 }
 
@@ -676,6 +705,10 @@ $selection-tool-size: 2rem;
   }
 }
 
+.ri-fw {
+  display: inline-block;
+}
+
 .spacer {
   display: inline-block;
   width: 1rem;
@@ -697,10 +730,6 @@ $selection-tool-size: 2rem;
 hr {
   border-color: $lightest !important;
   margin: 0.75rem 0;
-}
-
-.ri-fw {
-  display: inline-block;
 }
 
 button {
@@ -787,6 +816,28 @@ button {
       margin-bottom: 1rem;
     }
 
+    // Special formatting if we're showing ui-tabs inside of a dialog
+    &.ui-tabs {
+      padding-top: 0;
+      border: none;
+
+      .ui-tabs-nav {
+        margin: 0 -1rem;
+        padding: 1rem 1rem 0 1rem;
+
+        border-bottom: 2px solid $highlight2;
+
+        li.ui-tab {
+          border: none;
+          //border-bottom: 1px solid $highlight2;
+        }
+
+        li.ui-state-active {
+          background: $highlight2;
+        }
+      }
+    }
+
   }
   .ui-dialog-buttonpane {
     background: none;
@@ -828,6 +879,13 @@ button {
 .ui-corner-left,
 .ui-corner-tl {
   border-radius: 0;
+}
+
+.ui-tabs {
+  .ui-tabs-panel {
+    padding: 1rem 0.5rem;
+    margin: 0;
+  }
 }
 
 

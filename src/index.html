@@ -31,8 +31,8 @@
             <button class="file-menu-item" data-item="export">
                 <span><span class="ri ri-fw ri-image-line"></span> Export</span>
             </button>
-            <button class="file-menu-item" data-item="settings">
-                <span><span class="ri ri-fw ri-settings-5-line"></span> Settings</span>
+            <button class="file-menu-item" data-item="resize">
+                <span><span class="ri ri-fw ri-crop-line"></span> Resize</span>
             </button>
         </div>
     </div>
@@ -204,10 +204,61 @@
         </label>
     </div>
 
-    <div id="export-file-dialog" title="Export">
+    <div id="resize-dialog" title="Resize Canvas" class="dialog-form">
+        <label>
+            <input type="checkbox" name="aspect-ratio" checked="checked"> Maintain aspect ratio
+        </label>
+        <label>
+            Width:
+            <input type="text" name="columns"> columns
+        </label>
+        <label>
+            Height:
+            <input type="text" name="rows"> rows
+        </label>
+        <div>
+            Anchor:
+            <div class="anchor-options">
+                <div>
+                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="left"></div>
+                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="middle"></div>
+                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="right"></div>
+                </div>
+                <div>
+                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="left"></div>
+                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="middle"></div>
+                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="right"></div>
+                </div>
+                <div>
+                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="left"></div>
+                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="middle"></div>
+                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="right"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!--    <div id="settings-dialog">-->
+<!--        <ul>-->
+<!--            <li><a href="#settings-general">General</a></li>-->
+<!--            <li><a href="#settings-dimensions">Resize</a></li>-->
+<!--            <li><a href="#settings-keyboard">Keyboard</a></li>-->
+<!--        </ul>-->
+<!--        <div id="settings-general">-->
+<!--            general-->
+<!--        </div>-->
+<!--        <div id="settings-dimensions">-->
+<!--            dimensions-->
+<!--        </div>-->
+<!--        <div id="settings-keyboard">-->
+<!--            keyboard-->
+<!--        </div>-->
+<!--    </div>-->
+
+    <div id="export-file-dialog" title="Export" class="dialog-form">
         <label>
             Format:
-            <select id="export-file-format">
+            <select id="export-file-format" class="w-7">
                 <option value="png">PNG</option>
                 <option value="txt">Plain Text</option>
                 <option value="rtf">Rich Text</option>
