@@ -37,7 +37,7 @@ $document.keydown(function(e) {
         let modifiers = [];
         if (e.shiftKey) { modifiers.push('shift'); }
         if (e.altKey) { modifiers.push('alt'); }
-        if (actions.callShortcut({ char: char, modifiers: modifiers })) {
+        if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
             e.preventDefault();
         }
         return;

@@ -120,9 +120,9 @@ function bindSelectionToolEvent(tool, onClick) {
 
 bindSelectionToolEvent('move', () => selection.toggleMovingContent());
 bindSelectionToolEvent('typewriter', () => selection.toggleCursor());
-bindSelectionToolEvent('cut', () => clipboard.cut());
-bindSelectionToolEvent('copy', () => clipboard.copy());
-bindSelectionToolEvent('paste', (e) => clipboard.paste(e.shiftKey));
+// bindSelectionToolEvent('cut', () => clipboard.cut());
+// bindSelectionToolEvent('copy', () => clipboard.copy());
+// bindSelectionToolEvent('paste', (e) => clipboard.paste(e.shiftKey));
 bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.shiftKey));
 bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.shiftKey));
 bindSelectionToolEvent('paint-bucket', () => paintSelection());
@@ -130,7 +130,7 @@ bindSelectionToolEvent('close', () => selection.clear());
 
 // Tools that are allowed when the given tool is selected
 const MOVE_TOOLS = ['move'];
-const TYPEWRITER_TOOLS = ['typewriter', 'cut', 'copy', 'paste'];
+const TYPEWRITER_TOOLS = ['typewriter'];//, 'cut', 'copy', 'paste'];
 
 function refreshSelectionTools() {
     $selectionTools.find('.selection-tool').toggleClass('disabled', false);

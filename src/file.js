@@ -22,47 +22,50 @@ const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 // --------------------------------------------------------------- Menu
 
 const $mainMenu = $('#main-menu');
-createHorizontalMenu($mainMenu, $li => {
-    $li.find('.action-item').each((index, item) => {
-        const $item = $(item);
-        const action = actions.getAction($item.data('action'));
+const mainMenu = createHorizontalMenu($mainMenu, $li => refreshMenu());
 
-        if (action) {
-            let html = `<span>${action.name}</span>`;
-            if (action.shortcut) {
-                html += `<span class="shortcut">${actions.shortcutAbbr(action.shortcut)}</span>`;
+export function refreshMenu() {
+    if (mainMenu.isShowing()) {
+        $mainMenu.find('.action-item').each((index, item) => {
+            const $item = $(item);
+            const action = actions.getActionInfo($item.data('action'));
+
+            if (action) {
+                let html = `<span>${action.name}</span>`;
+                if (action.shortcut) {
+                    html += `<span class="shortcut">${actions.shortcutAbbr(action.shortcut)}</span>`;
+                }
+                $item.html(html);
+                $item.off('click').on('click', () => actions.callActionByKey(action.key));
+                $item.toggleClass('disabled', !(action.enabled === undefined || action.enabled()))
             }
-            $item.html(html);
-            $item.off('click').on('click', () => {
-                action.callback();
-            });
-            $item.toggleClass('disabled', !(action.enabled === undefined || action.enabled()))
-        }
-        else {
-            $item.empty();
-            $item.off('click');
-        }
-    })
-});
+            else {
+                $item.empty();
+                $item.off('click');
+            }
+        });
+    }
+    else {
+        console.log('skip');
+    }
+}
 
 
 // --------------------------------------------------------------- New
 
-export function newFile() {
-    // TODO ask for dimensions, etc.
-    confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew())
-}
-
+actions.createAction('new-file', {
+    name: 'New File',
+    callback: () => {
+        // TODO ask for dimensions, etc.
+        confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew());
+    },
+    shortcut: 'n'
+});
 
 
 // --------------------------------------------------------------- Uploading
 const $uploadInput = $('#upload-file');
 $uploadInput.attr('accept', `.${FILE_EXTENSION}`);
-
-export function openFile() {
-    // Doing asynchronously so main menu has time to close
-    window.setTimeout(() => $uploadInput.trigger('click'), 1);
-}
 
 $uploadInput.off('change').on('change', function(evt) {
     const file = evt.target.files[0];
@@ -85,6 +88,15 @@ $uploadInput.off('change').on('change', function(evt) {
     }
 });
 
+actions.createAction('open-file', {
+    name: 'Open File',
+    callback: () => {
+        // Doing asynchronously so main menu has time to close
+        window.setTimeout(() => $uploadInput.trigger('click'), 1);
+    },
+    shortcut: 'o'
+});
+
 
 // --------------------------------------------------------------- Saving
 const $saveFileDialog = $('#save-file-dialog');
@@ -94,26 +106,34 @@ setupSaveDialog();
 function setupSaveDialog() {
     createDialog($saveFileDialog, () => {
         state.config('name', $saveFileDialog.find('.name').val());
-        saveFile();
+        const blob = new Blob([state.stringify()], {type: "text/plain;charset=utf-8"});
+        saveAs(blob, `${state.config('name')}.${FILE_EXTENSION}`)
         $saveFileDialog.dialog('close');
     });
 }
 
-function saveFile() {
-    const blob = new Blob([state.stringify()], {type: "text/plain;charset=utf-8"});
-    saveAs(blob, `${state.config('name')}.${FILE_EXTENSION}`)
-}
-
-export function openSaveDialog() {
+function openSaveDialog() {
     $saveFileDialog.find('.name').val(state.config('name'));
     $saveFileDialog.find('.extension').html(`.${FILE_EXTENSION}`);
     $saveFileDialog.dialog('open');
 }
 
+actions.createAction('save-file', {
+    name: 'Save File',
+    callback: () => openSaveDialog(),
+    shortcut: 's'
+});
+
+
 // --------------------------------------------------------------- Resize
 const $resizeDialog = $('#resize-dialog');
 
 setupResizeDialog();
+
+actions.createAction('resize-canvas', {
+    name: 'Resize Canvas',
+    callback: () => openResizeDialog()
+});
 
 function setupResizeDialog() {
     createDialog($resizeDialog, () => {
@@ -159,7 +179,7 @@ function setupResizeDialog() {
     $resizeDialog.find('.anchor-option[data-row-anchor="middle"][data-col-anchor="middle"]').addClass('selected');
 }
 
-export function openResizeDialog() {
+function openResizeDialog() {
     $resizeDialog.find('[name="rows"]').val(state.numRows());
     $resizeDialog.find('[name="aspect-ratio"]').prop('checked', true).trigger('change');
 
@@ -223,6 +243,12 @@ const $exportOptions = $exportFileDialog.find('#export-options');
 
 setupExportDialog();
 
+actions.createAction('export-file', {
+    name: 'Export File',
+    callback: () => openExportDialog(),
+    shortcut: 'e'
+});
+
 function setupExportDialog() {
     createDialog($exportFileDialog, () => {
         exportFile(() => {
@@ -269,7 +295,7 @@ function setupExportDialog() {
 }
 
 
-export function openExportDialog() {
+function openExportDialog() {
     $exportFileDialog.dialog('open');
 
     $exportOptions.find(`[name="fps"]`).val(state.config('fps'));

@@ -14,7 +14,7 @@ import * as preview from "./preview.js";
 import * as editor from "./editor.js";
 import * as palette from "./palette.js";
 import "./file.js";
-import "./actions.js";
+import * as actions from "./actions.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
@@ -156,6 +156,29 @@ function drawHoveredCell() {
 
     editor.updateMouseCoords(selection.hoveredCell);
 }
+
+// TODO move these somewhere else
+actions.createAction('font-settings', {
+    name: 'Font Settings',
+    callback: () => {},
+    enabled: () => false
+});
+actions.createAction('background-settings', {
+    name: 'Background',
+    callback: () => {},
+    enabled: () => false
+});
+actions.createAction('preferences', {
+    name: 'Preferences',
+    callback: () => {},
+    enabled: () => false
+});
+actions.createAction('keyboard-shortcuts', {
+    name: 'Keyboard Shortcuts',
+    callback: () => {},
+    enabled: () => false
+});
+
 
 window.setTimeout(() => {
     state.loadNew();

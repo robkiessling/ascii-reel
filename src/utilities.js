@@ -197,6 +197,12 @@ export function createHorizontalMenu($menu, onOpen) {
             }
         }
     }
+
+    // Return a small API we can use
+    return {
+        isShowing: () => isShowing,
+        close: () => { isShowing = false; $li = null; updateMenu(); }
+    }
 }
 
 

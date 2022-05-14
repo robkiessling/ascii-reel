@@ -1,9 +1,36 @@
 import $ from "jquery";
 import {triggerRefresh} from "./index.js";
+import * as actions from "./actions.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 
 let source, preview, canvases;
+
+actions.createAction('toggle-grid', {
+    name: 'Show Grid',
+    callback: () => {},
+    enabled: () => false,
+    shortcut: 'g'
+});
+actions.createAction('zoom-in', {
+    name: 'Zoom In',
+    callback: () => {},
+    enabled: () => false,
+    shortcut: { displayChar: '+', char: '=', modifiers: ['shift'] }
+});
+actions.createAction('zoom-out', {
+    name: 'Zoom Out',
+    callback: () => {},
+    enabled: () => false,
+    shortcut: { displayChar: '-', char: '-', modifiers: ['shift'] }
+});
+actions.createAction('zoom-fit', {
+    name: 'Zoom Fit',
+    callback: () => {},
+    enabled: () => false,
+    shortcut: { char: '0', modifiers: ['shift'] }
+});
+
 
 export function setupMouseEvents(sourceCanvas, previewCanvas, canvasControls) {
     source = sourceCanvas;

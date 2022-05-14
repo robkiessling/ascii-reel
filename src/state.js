@@ -2,7 +2,7 @@ import $ from "jquery";
 import {create2dArray, eachWithObject, transformValues, translate} from "./utilities.js";
 import * as selection from "./selection.js";
 import {onStateLoaded} from "./index.js";
-import * as editor from "./editor.js";
+import * as actions from "./actions.js";
 import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
 
@@ -375,3 +375,28 @@ export function resize(newDimensions, rowAnchor, colAnchor) {
 
     onStateLoaded();
 }
+
+
+
+
+function undo() {
+
+}
+
+function redo() {
+
+}
+
+actions.createAction('undo', {
+    name: 'Undo',
+    callback: () => undo(),
+    enabled: () => false,
+    shortcut: 'z'
+});
+
+actions.createAction('redo', {
+    name: 'Redo',
+    callback: () => redo(),
+    enabled: () => false,
+    shortcut: { char: 'z', modifiers: ['shift'] }
+});

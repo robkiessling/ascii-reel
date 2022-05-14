@@ -1,24 +1,52 @@
 import $ from "jquery";
-import * as selection from "./selection.js";
-import * as file from "./file.js";
-import * as clipboard from "./clipboard.js";
+// import * as file from "./file.js"; // todo this doesn't work
 
-export function callShortcut(shortcut) {
-    const action = shortcutLookup[shortcutKey(shortcut)];
+let actions;
+let shortcutLookup;
 
-    if (action) {
-        if (action.enabled === undefined || action.enabled()) {
-            action.callback();
-            return true;
-        }
+/**
+ * @param key Unique string that can be used to call an action at a later time
+ * @param data Object with attributes:
+ *
+ *     name: string             Display name
+ *     description: string      (optional) Text used for tooltips
+ *     callback: function       Function to call when action is performed
+ *     enabled: function        (optional) If given, the function must return true for action to be called
+ *     shortcut: char OR obj    (optional) If a char, pressing this char will call the action.
+ *                                         If an obj, object should be of format { char: 'x', modifiers: ['alt', 'shift'] }
+ *                                         (modifiers are optional). Pressing the char while correct modifiers are also
+ *                                         pressed will call the action.
+ */
+export function createAction(key, data) {
+    if (actions === undefined) {
+        actions = {}; shortcutLookup = {};
     }
 
-    return false;
+    data.key = key;
+    actions[key] = data;
+
+    if (data.shortcut) {
+        const shortcutKey = getShortcutKey(data.shortcut);
+        if (shortcutLookup[shortcutKey]) {
+            console.warn(`There is already a shortcut for: ${shortcutKey}`);
+        }
+        shortcutLookup[shortcutKey] = data;
+    }
 }
 
-export function getAction(key) {
-    return ACTIONS[key];
+export function getActionInfo(key) {
+    return actions[key];
 }
+
+export function callActionByKey(key) {
+    return callAction(getActionInfo(key));
+}
+
+export function callActionByShortcut(shortcut) {
+    const action = shortcutLookup[getShortcutKey(shortcut)];
+    return callAction(action)
+}
+
 
 // todo ctrl if windows
 export function shortcutAbbr(shortcut) {
@@ -52,167 +80,18 @@ export function shortcutAbbr(shortcut) {
     return result;
 }
 
-/**
- * Action format:
- *
- * key: {                       The key is how the action is referred to throughout the app
- *     name: string             Display name
- *     description: string      (optional) Text used for tooltips
- *     callback: function       Function to call when action is performed
- *     enabled: function        (optional) If given, the function must return true for action to be called
- *     shortcut: char OR obj    (optional) If a char, pressing this char will call the action.
- *                                         If an obj, object should be of format { char: 'x', modifiers: ['alt', 'shift'] }
- *                                         (modifiers are optional). Pressing the char while correct modifiers are also
- *                                         pressed will call the action.
- * }
- *
- */
-const ACTIONS = {
-    // ---------------------------------------------------------------- File
-    'new-file': {
-        name: 'New File',
-        callback: () => file.newFile(),
-        shortcut: 'n',
-    },
-    'open-file': {
-        name: 'Open File',
-        callback: () => file.openFile(),
-        shortcut: 'o'
-    },
-    'save-file': {
-        name: 'Save File',
-        callback: () => file.openSaveDialog(),
-        shortcut: 's'
-    },
-    'export-file': {
-        name: 'Export File',
-        callback: () => file.openExportDialog(),
-        shortcut: 'e'
-    },
+// Returns true if the action is successfully called
+function callAction(action) {
+    if (action && (action.enabled === undefined || action.enabled())) {
+        action.callback();
+        // file.refreshMenu();
+        return true;
+    }
 
-    // ---------------------------------------------------------------- Edit
-    undo: {
-        name: 'Undo',
-        description: '',
-        callback: () => {}, // todo
-        enabled: () => false,
-        shortcut: 'z'
-    },
-    redo: {
-        name: 'Redo',
-        description: '',
-        callback: () => {}, // todo
-        enabled: () => false,
-        shortcut: { char: 'z', modifiers: ['shift'] }
-    },
-    cut: {
-        name: 'Cut',
-        description: '',
-        callback: () => clipboard.cut(),
-        enabled: () => selection.hasSelection() && !selection.movableContent,
-        shortcut: 'x'
-    },
-    copy: {
-        name: 'Copy',
-        description: '',
-        callback: () => clipboard.copy(),
-        enabled: () => selection.hasSelection() && !selection.movableContent,
-        shortcut: 'c'
-    },
-    paste: {
-        name: 'Paste',
-        description: '',
-        callback: () => clipboard.paste(),
-        enabled: () => selection.hasSelection() && !selection.movableContent,
-        shortcut: 'v'
-    },
-    'paste-in-selection': {
-        name: 'Paste In Selection',
-        description: '',
-        callback: () => clipboard.paste(true),
-        enabled: () => selection.hasSelection() && !selection.movableContent,
-        shortcut: { char: 'v', modifiers: ['shift'] }
-    },
-    'commit-selection': {
-        name: 'Commit Selection',
-        description: '',
-        callback: () => selection.finishMovingContent(),
-        enabled: () => !!selection.movableContent
-    },
-    'select-all': {
-        name: 'Select All',
-        callback: () => selection.selectAll(),
-        shortcut: 'a'
-    },
+    return false;
+}
 
-    // ---------------------------------------------------------------- Edit
-    'toggle-grid': {
-        name: 'Show Grid',
-        description: '',
-        callback: () => {},
-        enabled: () => false,
-        shortcut: 'g'
-    },
-    'zoom-in': {
-        name: 'Zoom In',
-        description: '',
-        callback: () => {},
-        enabled: () => false,
-        shortcut: { displayChar: '+', char: '=', modifiers: ['shift'] }
-    },
-    'zoom-out': {
-        name: 'Zoom Out',
-        description: '',
-        callback: () => {},
-        enabled: () => false,
-        shortcut: { displayChar: '-', char: '-', modifiers: ['shift'] }
-    },
-    'zoom-fit': {
-        name: 'Zoom Fit',
-        description: '',
-        callback: () => {},
-        enabled: () => false,
-        shortcut: { char: '0', modifiers: ['shift'] }
-    },
-
-    // ---------------------------------------------------------------- Tools
-    'font-settings': {
-        name: 'Font Settings',
-        description: '',
-        callback: () => {},
-        enabled: () => false
-    },
-    'background-settings': {
-        name: 'Background',
-        description: '',
-        callback: () => {},
-        enabled: () => false
-    },
-    'resize-canvas': {
-        name: 'Resize Canvas',
-        description: '',
-        callback: () => file.openResizeDialog()
-    },
-    'preferences': {
-        name: 'Preferences',
-        description: '',
-        callback: () => {},
-        enabled: () => false
-    },
-    'keyboard-shortcuts': {
-        name: 'Keyboard Shortcuts',
-        description: '',
-        callback: () => {},
-        enabled: () => false
-    },
-
-};
-
-
-let shortcutLookup;
-buildShortcutLookup();
-
-function shortcutKey(shortcut) {
+function getShortcutKey(shortcut) {
     let char, modifiers;
 
     if ($.isPlainObject(shortcut)) {
@@ -224,18 +103,4 @@ function shortcutKey(shortcut) {
     }
 
     return modifiers && modifiers.length ? `${modifiers.sort().join('-')}-${char}` : char;
-}
-
-function buildShortcutLookup() {
-    shortcutLookup = {};
-
-    for (let [action, data] of Object.entries(ACTIONS)) {
-        if (data.shortcut) {
-            const key = shortcutKey(data.shortcut);
-            if (shortcutLookup[key]) {
-                console.warn(`There is already a shortcut for: ${key}`);
-            }
-            shortcutLookup[key] = data;
-        }
-    }
 }

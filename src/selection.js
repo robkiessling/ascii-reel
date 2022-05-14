@@ -3,6 +3,7 @@ import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
 import * as editor from "./editor.js";
+import * as actions from "./actions.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -54,6 +55,20 @@ export function selectingSingleCell() {
     const area = getSelectedCellArea();
     return area && area.topLeft.equals(area.bottomRight);
 }
+
+actions.createAction('commit-selection', {
+    name: 'Commit Move',
+    callback: () => finishMovingContent(),
+    enabled: () => !!movableContent,
+    shortcut: 'Enter'
+});
+
+actions.createAction('select-all', {
+    name: 'Select All',
+    callback: () => selectAll(),
+    shortcut: 'a'
+});
+
 
 
 

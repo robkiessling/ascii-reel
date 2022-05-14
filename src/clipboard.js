@@ -7,11 +7,38 @@ import * as state from "./state.js";
 import {translate} from "./utilities.js";
 import {triggerRefresh} from "./index.js";
 import * as editor from "./editor.js";
+import * as actions from "./actions.js";
 
 let copiedSelection = null; // 2d array
 let copiedText = null; // string
 
-export function cut() {
+actions.createAction('cut', {
+    name: 'Cut',
+    callback: () => cut(),
+    enabled: () => selection.hasSelection() && !selection.movableContent,
+    shortcut: 'x'
+});
+actions.createAction('copy', {
+    name: 'Copy',
+    callback: () => copy(),
+    enabled: () => selection.hasSelection() && !selection.movableContent,
+    shortcut: 'c'
+});
+actions.createAction('paste', {
+    name: 'Paste',
+    callback: () => paste(),
+    enabled: () => selection.hasSelection() && !selection.movableContent,
+    shortcut: 'v'
+});
+actions.createAction('paste-in-selection', {
+    name: 'Paste In Selection',
+    callback: () => paste(true),
+    enabled: () => selection.hasSelection() && !selection.movableContent,
+    shortcut: { char: 'v', modifiers: ['shift'] }
+});
+
+
+function cut() {
     // If we're moving content, immediately finish it so that it's more intuitive as to what is being cut
     if (selection.movableContent) { selection.finishMovingContent(); }
 
@@ -20,7 +47,7 @@ export function cut() {
     triggerRefresh('chars');
 }
 
-export function copy() {
+function copy() {
     copySelection();
 }
 
@@ -33,7 +60,7 @@ export function copy() {
  * - If the pasted content is a single character, repeat that character across current selection
  * - Otherwise, paste content relative to topLeft of selection
  */
-export function paste(limitToSelection) {
+function paste(limitToSelection) {
     if (!selection.hasSelection()) {
         // There is no where to paste the text
         return;
