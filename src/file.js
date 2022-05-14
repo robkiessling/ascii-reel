@@ -1,8 +1,8 @@
 import * as state from "./state.js";
+import * as actions from "./actions.js";
 import $ from "jquery";
 import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
-// import 'jquery-ui/ui/widgets/tabs.js';
 
 // TODO HACK Had to override gif.js, background option wasn't working.
 //           Fix background: https://github.com/jnordberg/gif.js/pull/46
@@ -12,7 +12,7 @@ import JSZip from 'jszip';
 // import GIF from 'gif.js.optimized/dist/gif.js';
 import GIF from './vendor/gif.cjs';
 
-import {confirmDialog, createDialog, createHTMLFile} from "./utilities.js";
+import {confirmDialog, createDialog, createHTMLFile, createHorizontalMenu} from "./utilities.js";
 import {CanvasControl, MONOSPACE_RATIO} from "./canvas.js";
 import Color from "@sphinxxxx/color-conversion";
 
@@ -21,20 +21,34 @@ const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
 // --------------------------------------------------------------- Menu
 
-const $fileMenu = $('#file-menu');
+const $mainMenu = $('#main-menu');
+createHorizontalMenu($mainMenu, $li => {
+    $li.find('.action-item').each((index, item) => {
+        const $item = $(item);
+        const action = actions.getAction($item.data('action'));
 
-function bindFileMenuItem(item, onClick) {
-    $fileMenu.find(`.file-menu-item[data-item="${item}"]`).off('click').on('click', evt => {
-        onClick(evt);
+        if (action) {
+            let html = `<span>${action.name}</span>`;
+            if (action.shortcut) {
+                html += `<span class="shortcut">${actions.shortcutAbbr(action.shortcut)}</span>`;
+            }
+            $item.html(html);
+            $item.off('click').on('click', () => {
+                action.callback();
+            });
+            $item.toggleClass('disabled', !(action.enabled === undefined || action.enabled()))
+        }
+        else {
+            $item.empty();
+            $item.off('click');
+        }
     })
-}
-
+});
 
 
 // --------------------------------------------------------------- New
-bindFileMenuItem('new', () => newFile());
 
-function newFile() {
+export function newFile() {
     // TODO ask for dimensions, etc.
     confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew())
 }
@@ -45,7 +59,10 @@ function newFile() {
 const $uploadInput = $('#upload-file');
 $uploadInput.attr('accept', `.${FILE_EXTENSION}`);
 
-bindFileMenuItem('open', () => $uploadInput.trigger('click'));
+export function openFile() {
+    // Doing asynchronously so main menu has time to close
+    window.setTimeout(() => $uploadInput.trigger('click'), 1);
+}
 
 $uploadInput.off('change').on('change', function(evt) {
     const file = evt.target.files[0];
@@ -73,7 +90,6 @@ $uploadInput.off('change').on('change', function(evt) {
 const $saveFileDialog = $('#save-file-dialog');
 
 setupSaveDialog();
-bindFileMenuItem('save', () => openSaveDialog());
 
 function setupSaveDialog() {
     createDialog($saveFileDialog, () => {
@@ -88,7 +104,7 @@ function saveFile() {
     saveAs(blob, `${state.config('name')}.${FILE_EXTENSION}`)
 }
 
-function openSaveDialog() {
+export function openSaveDialog() {
     $saveFileDialog.find('.name').val(state.config('name'));
     $saveFileDialog.find('.extension').html(`.${FILE_EXTENSION}`);
     $saveFileDialog.dialog('open');
@@ -98,7 +114,6 @@ function openSaveDialog() {
 const $resizeDialog = $('#resize-dialog');
 
 setupResizeDialog();
-bindFileMenuItem('resize', () => openResizeDialog());
 
 function setupResizeDialog() {
     createDialog($resizeDialog, () => {
@@ -144,7 +159,7 @@ function setupResizeDialog() {
     $resizeDialog.find('.anchor-option[data-row-anchor="middle"][data-col-anchor="middle"]').addClass('selected');
 }
 
-function openResizeDialog() {
+export function openResizeDialog() {
     $resizeDialog.find('[name="rows"]').val(state.numRows());
     $resizeDialog.find('[name="aspect-ratio"]').prop('checked', true).trigger('change');
 
@@ -207,7 +222,6 @@ const $exportFormat = $exportFileDialog.find('#export-file-format');
 const $exportOptions = $exportFileDialog.find('#export-options');
 
 setupExportDialog();
-bindFileMenuItem('export', () => openExportDialog());
 
 function setupExportDialog() {
     createDialog($exportFileDialog, () => {
@@ -255,7 +269,7 @@ function setupExportDialog() {
 }
 
 
-function openExportDialog() {
+export function openExportDialog() {
     $exportFileDialog.dialog('open');
 
     $exportOptions.find(`[name="fps"]`).val(state.config('fps'));

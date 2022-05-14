@@ -1,8 +1,8 @@
 import $ from "jquery";
 import * as selection from "./selection.js";
-import * as clipboard from "./clipboard.js";
 import * as state from "./state.js";
 import * as editor from "./editor.js";
+import * as actions from "./actions.js";
 import {triggerRefresh} from "./index.js";
 
 let standard = false;
@@ -31,33 +31,15 @@ $document.keydown(function(e) {
         return;
     }
 
-    // Commands
+    // Shortcuts
+    // TODO Make sure everything in the app considers metaKey === ctrlKey
     if (e.metaKey || e.ctrlKey) {
-        switch (char) {
-            case 'a':
-                editor.changeTool('selection-rect');
-                selection.selectAll();
-                break;
-            case 'x':
-                clipboard.cut();
-                break;
-            case 'c':
-                clipboard.copy();
-                break;
-            case 'v':
-                clipboard.paste(e.shiftKey);
-                break;
-            case 'Enter':
-                if (selection.movableContent) {
-                    selection.finishMovingContent();
-                }
-                break;
-            default:
-                // Unrecognized command; let browser handle as normal
-                return;
+        let modifiers = [];
+        if (e.shiftKey) { modifiers.push('shift'); }
+        if (e.altKey) { modifiers.push('alt'); }
+        if (actions.callShortcut({ char: char, modifiers: modifiers })) {
+            e.preventDefault();
         }
-
-        e.preventDefault(); // One of our commands was used, prevent default browser command (if there was one)
         return;
     }
 

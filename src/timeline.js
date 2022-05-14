@@ -1,8 +1,8 @@
-import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
-import {triggerRefresh, triggerResize} from "./index.js";
-import SimpleBar from 'simplebar';
 import 'jquery-ui/ui/widgets/sortable.js';
+import SimpleBar from 'simplebar';
+import {CanvasControl} from "./canvas.js";
+import {triggerRefresh, triggerResize} from "./index.js";
 import * as state from "./state.js";
 import {createDialog} from "./utilities.js";
 

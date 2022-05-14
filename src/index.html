@@ -7,34 +7,56 @@
 <body>
 
     <div id="header-content">
-        <div id="file-name">
-<!--            <span>/\ S C I I</span>&nbsp;&nbsp;-->
-<!--            <span>/\ R T</span>&nbsp;&nbsp;-->
-<!--            <span>M /\ K E R</span>-->
-
-            <span>c a n v /\ s c i i</span>
-
-<!--            <span>/\ S C I I b o a r d</span>-->
-        </div>
-        <div id="file-menu">
-            <button class="file-menu-item" data-item="new">
-                <span><span class="ri ri-fw ri-file-add-line"></span> New</span>
-            </button>
-            <button class="file-menu-item" data-item="open">
-                <span><span class="ri ri-fw ri-folder-open-line"></span> Open</span>
-            </button>
-            <input id="upload-file" type="file" hidden>
-
-            <button class="file-menu-item" data-item="save">
-                <span><span class="ri ri-fw ri-save-3-line"></span> Save</span>
-            </button>
-            <button class="file-menu-item" data-item="export">
-                <span><span class="ri ri-fw ri-image-line"></span> Export</span>
-            </button>
-            <button class="file-menu-item" data-item="resize">
-                <span><span class="ri ri-fw ri-crop-line"></span> Resize</span>
-            </button>
-        </div>
+<!--        <div id="file-name">-->
+<!--            <span>c a n v /\ s c i i</span>-->
+<!--        </div>-->
+        <ul id="main-menu" class="horizontal-menu">
+            <li>
+                <span>File</span>
+                <ul>
+                    <li class="action-item" data-action="new-file"></li>
+                    <li class="action-item" data-action="open-file"></li>
+                    <li class="action-item" data-action="save-file"></li>
+                    <li class="action-item" data-action="export-file"></li>
+                </ul>
+            </li>
+            <li>
+                <span>Edit</span>
+                <ul>
+                    <li class="action-item" data-action="undo"></li>
+                    <li class="action-item" data-action="redo"></li>
+                    <li class="break"></li>
+                    <li class="action-item" data-action="cut"></li>
+                    <li class="action-item" data-action="copy"></li>
+                    <li class="action-item" data-action="paste"></li>
+                    <li class="action-item" data-action="paste-in-selection"></li>
+                    <li class="break"></li>
+                    <li class="action-item" data-action="select-all"></li>
+                </ul>
+            </li>
+            <li>
+                <span>View</span>
+                <ul>
+                    <li class="action-item" data-action="toggle-grid"></li>
+                    <li class="break"></li>
+                    <li class="action-item" data-action="zoom-in"></li>
+                    <li class="action-item" data-action="zoom-out"></li>
+                    <li class="action-item" data-action="zoom-fit"></li>
+                </ul>
+            </li>
+            <li>
+                <span>Tools</span>
+                <ul>
+                    <li class="action-item" data-action="font-settings"></li>
+                    <li class="action-item" data-action="background-settings"></li>
+                    <li class="action-item" data-action="resize-canvas"></li>
+                    <li class="break"></li>
+                    <li class="action-item" data-action="preferences"></li>
+                    <li class="action-item" data-action="keyboard-shortcuts"></li>
+                </ul>
+            </li>
+        </ul>
+        <input id="upload-file" type="file" hidden>
     </div>
 
     <div id="body-content">
@@ -89,7 +111,7 @@
             <div id="frame-controller">
                 <div class="tools">
                     <div>
-                        <span class="section-header no-select">Frames</span>
+<!--                        <span class="section-header no-select">Frames</span>-->
                         <button class="add-blank-frame">
                             <span class="ri ri-fw ri-add-line"></span>
                         </button>

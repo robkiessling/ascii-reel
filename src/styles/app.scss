@@ -64,32 +64,6 @@ body {
     color: white;
   }
 
-  #file-menu {
-    display: flex;
-    flex-direction: row;
-    height: 100%;
-
-    .file-menu-item {
-      font-size: 1rem;
-      line-height: 2;
-
-      color: white;
-      margin: 0;
-      padding: 0 0.75rem;
-      border-radius: 0;
-
-      > span {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        height: 100%;
-      }
-
-      .ri {
-        margin-right: 2px;
-      }
-    }
-  }
 }
 
 #body-content {
@@ -618,11 +592,91 @@ $selection-tool-size: 2rem;
   }
 }
 
+.horizontal-menu {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: default;
+
+  > li {
+    position: relative;
+    display: inline-block;
+    height: 100%;
+
+    &.hovered {
+      background-color: $dark;
+      cursor: pointer;
+    }
+    &.visible {
+      > ul {
+        display: block;
+      }
+    }
+
+    > span {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+
+      color: white;
+    }
+
+    > ul {
+      display: none;
+      position: absolute;
+      background-color: $dark;
+      color: white;
+      list-style: none;
+      padding: 0;
+
+      min-width: 12rem;
+      box-shadow: 0 0.5rem 1rem 0 rgba(0,0,0,0.2);
+      z-index: 3;
+      cursor: default;
+
+      > li {
+        padding: 0.75rem 1rem;
+        white-space: nowrap;
+        display: flex;
+        justify-content: space-between;
+
+        &.disabled {
+          pointer-events: none;
+          color: $light;
+        }
+
+        &:hover {
+          background: $medium-dark;
+          cursor: pointer;
+        }
+
+        &.break {
+          pointer-events: none;
+          cursor: default;
+          border-bottom: 1px solid $light;
+          padding: 0;
+          margin: 0.5rem 0;
+        }
+      }
+    }
+  }
+}
+
+#main-menu {
+  .shortcut {
+    color: $light;
+    margin-left: 1rem;
+  }
+}
 
 .dialog-form {
   label {
     display: block;
     margin-bottom: 1rem;
+    cursor: pointer;
   }
 
   input[type="text"], input[type="number"] {

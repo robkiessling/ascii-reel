@@ -9,7 +9,7 @@ import Color from "@sphinxxxx/color-conversion";
 const CONFIG_DEFAULTS = {
     name: 'New Sprite',
     dimensions: [10, 5],
-    fps: 0,
+    fps: 12,
     onion: false,
     lockLayerVisibility: true,
     layerIndex: 0,

@@ -2,7 +2,7 @@ import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translate} 
 import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
-
+import * as editor from "./editor.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -35,6 +35,7 @@ export function empty() {
 
 // Select entire canvas
 export function selectAll() {
+    editor.changeTool('selection-rect');
     polygons = [SelectionRect.drawableArea()];
     triggerRefresh('selection');
 }

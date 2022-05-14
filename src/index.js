@@ -2,7 +2,7 @@ import $ from "jquery";
 import './styles/app.scss'
 import 'remixicon/fonts/remixicon.css';
 
-import {create2dArray, randomPrintableChar} from "./utilities.js";
+import "./utilities.js";
 import {CanvasControl} from './canvas.js';
 import './keyboard.js';
 import * as selection from './selection.js';
@@ -14,6 +14,7 @@ import * as preview from "./preview.js";
 import * as editor from "./editor.js";
 import * as palette from "./palette.js";
 import "./file.js";
+import "./actions.js";
 
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});

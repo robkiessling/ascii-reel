@@ -1,7 +1,8 @@
-import * as state from "./state.js";
-import {CanvasControl} from "./canvas.js";
 import $ from "jquery";
 import 'jquery-ui/ui/widgets/slider.js';
+
+import * as state from "./state.js";
+import {CanvasControl} from "./canvas.js";
 import {selectionCanvas} from "./index.js";
 
 const MAX_FPS = 30;

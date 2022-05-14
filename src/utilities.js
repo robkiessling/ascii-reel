@@ -1,6 +1,6 @@
 import $ from "jquery";
-import * as keyboard from "./keyboard.js";
 import 'jquery-ui/ui/widgets/dialog.js';
+import * as keyboard from "./keyboard.js";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -151,6 +151,58 @@ $(window).on('resize', () => {
         $(window).trigger('resize:debounced');
     }, 500);
 });
+
+
+
+export function createHorizontalMenu($menu, onOpen) {
+    let isShowing = false;
+    let $li = null;
+    updateMenu();
+
+    $menu.children('li').off('click').on('click', evt => {
+        evt.stopPropagation();
+        $li = $(evt.currentTarget);
+        isShowing = !isShowing;
+        updateMenu();
+    });
+
+    $menu.children('li').off('mouseenter').on('mouseenter', evt => {
+        $li = $(evt.currentTarget);
+        updateMenu();
+    });
+
+    $menu.children('li').off('mouseleave').on('mouseleave', evt => {
+        if (!isShowing) {
+            $li = null;
+        }
+        updateMenu();
+    });
+
+    function updateMenu() {
+        $menu.find('li').removeClass('hovered visible');
+        $(document).off('click.menu');
+
+        if ($li) {
+            $li.addClass('hovered');
+
+            if (isShowing) {
+                $li.addClass('visible');
+                $(document).on('click.menu', evt => {
+                    isShowing = false;
+                    $li = null;
+                    updateMenu();
+                });
+                if (onOpen) { onOpen($li); }
+                // todo keybind 'esc' to close menu
+            }
+        }
+    }
+}
+
+
+
+
+
 
 const $confirmDialog = $('#confirm-dialog');
 createDialog($confirmDialog, null);
