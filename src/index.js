@@ -158,22 +158,22 @@ function drawHoveredCell() {
 }
 
 // TODO move these somewhere else
-actions.createAction('font-settings', {
+actions.registerAction('font-settings', {
     name: 'Font Settings',
     callback: () => {},
     enabled: () => false
 });
-actions.createAction('background-settings', {
+actions.registerAction('background-settings', {
     name: 'Background',
     callback: () => {},
     enabled: () => false
 });
-actions.createAction('preferences', {
+actions.registerAction('preferences', {
     name: 'Preferences',
     callback: () => {},
     enabled: () => false
 });
-actions.createAction('keyboard-shortcuts', {
+actions.registerAction('keyboard-shortcuts', {
     name: 'Keyboard Shortcuts',
     callback: () => {},
     enabled: () => false

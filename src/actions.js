@@ -17,7 +17,7 @@ let shortcutLookup;
  *                                         (modifiers are optional). Pressing the char while correct modifiers are also
  *                                         pressed will call the action.
  */
-export function createAction(key, data) {
+export function registerAction(key, data) {
     if (actions === undefined) {
         actions = {}; shortcutLookup = {};
     }

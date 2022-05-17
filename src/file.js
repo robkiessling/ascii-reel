@@ -53,7 +53,7 @@ export function refreshMenu() {
 
 // --------------------------------------------------------------- New
 
-actions.createAction('new-file', {
+actions.registerAction('new-file', {
     name: 'New File',
     callback: () => {
         // TODO ask for dimensions, etc.
@@ -88,7 +88,7 @@ $uploadInput.off('change').on('change', function(evt) {
     }
 });
 
-actions.createAction('open-file', {
+actions.registerAction('open-file', {
     name: 'Open File',
     callback: () => {
         // Doing asynchronously so main menu has time to close
@@ -118,7 +118,7 @@ function openSaveDialog() {
     $saveFileDialog.dialog('open');
 }
 
-actions.createAction('save-file', {
+actions.registerAction('save-file', {
     name: 'Save File',
     callback: () => openSaveDialog(),
     shortcut: 's'
@@ -130,7 +130,7 @@ const $resizeDialog = $('#resize-dialog');
 
 setupResizeDialog();
 
-actions.createAction('resize-canvas', {
+actions.registerAction('resize-canvas', {
     name: 'Resize Canvas',
     callback: () => openResizeDialog()
 });
@@ -243,7 +243,7 @@ const $exportOptions = $exportFileDialog.find('#export-options');
 
 setupExportDialog();
 
-actions.createAction('export-file', {
+actions.registerAction('export-file', {
     name: 'Export File',
     callback: () => openExportDialog(),
     shortcut: 'e'

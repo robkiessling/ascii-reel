@@ -387,14 +387,14 @@ function redo() {
 
 }
 
-actions.createAction('undo', {
+actions.registerAction('undo', {
     name: 'Undo',
     callback: () => undo(),
     enabled: () => false,
     shortcut: 'z'
 });
 
-actions.createAction('redo', {
+actions.registerAction('redo', {
     name: 'Redo',
     callback: () => redo(),
     enabled: () => false,

@@ -12,25 +12,25 @@ import * as actions from "./actions.js";
 let copiedSelection = null; // 2d array
 let copiedText = null; // string
 
-actions.createAction('cut', {
+actions.registerAction('cut', {
     name: 'Cut',
     callback: () => cut(),
     enabled: () => selection.hasSelection() && !selection.movableContent,
     shortcut: 'x'
 });
-actions.createAction('copy', {
+actions.registerAction('copy', {
     name: 'Copy',
     callback: () => copy(),
     enabled: () => selection.hasSelection() && !selection.movableContent,
     shortcut: 'c'
 });
-actions.createAction('paste', {
+actions.registerAction('paste', {
     name: 'Paste',
     callback: () => paste(),
     enabled: () => selection.hasSelection() && !selection.movableContent,
     shortcut: 'v'
 });
-actions.createAction('paste-in-selection', {
+actions.registerAction('paste-in-selection', {
     name: 'Paste In Selection',
     callback: () => paste(true),
     enabled: () => selection.hasSelection() && !selection.movableContent,

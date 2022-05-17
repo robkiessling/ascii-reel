@@ -6,25 +6,25 @@ const ZOOM_SCROLL_FACTOR = 1.1;
 
 let source, preview, canvases;
 
-actions.createAction('toggle-grid', {
+actions.registerAction('toggle-grid', {
     name: 'Show Grid',
     callback: () => {},
     enabled: () => false,
     shortcut: 'g'
 });
-actions.createAction('zoom-in', {
+actions.registerAction('zoom-in', {
     name: 'Zoom In',
     callback: () => {},
     enabled: () => false,
     shortcut: { displayChar: '+', char: '=', modifiers: ['shift'] }
 });
-actions.createAction('zoom-out', {
+actions.registerAction('zoom-out', {
     name: 'Zoom Out',
     callback: () => {},
     enabled: () => false,
     shortcut: { displayChar: '-', char: '-', modifiers: ['shift'] }
 });
-actions.createAction('zoom-fit', {
+actions.registerAction('zoom-fit', {
     name: 'Zoom Fit',
     callback: () => {},
     enabled: () => false,

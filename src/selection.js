@@ -56,14 +56,14 @@ export function selectingSingleCell() {
     return area && area.topLeft.equals(area.bottomRight);
 }
 
-actions.createAction('commit-selection', {
+actions.registerAction('commit-selection', {
     name: 'Commit Move',
     callback: () => finishMovingContent(),
     enabled: () => !!movableContent,
     shortcut: 'Enter'
 });
 
-actions.createAction('select-all', {
+actions.registerAction('select-all', {
     name: 'Select All',
     callback: () => selectAll(),
     shortcut: 'a'
