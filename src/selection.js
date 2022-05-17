@@ -16,6 +16,23 @@ export let hoveredCell;
 export let cursorCell;
 // export let cursorTabCell; // TODO Where to move from on return key
 
+export function init() {
+    actions.registerAction('commit-selection', {
+        name: 'Commit Move',
+        callback: () => finishMovingContent(),
+        enabled: () => !!movableContent,
+        shortcut: 'Enter'
+    });
+
+    actions.registerAction('select-all', {
+        name: 'Select All',
+        callback: () => selectAll(),
+        shortcut: 'a'
+    });
+
+    clearCaches();
+}
+
 export function hasSelection() {
     return polygons.length > 0;
 }
@@ -55,19 +72,6 @@ export function selectingSingleCell() {
     const area = getSelectedCellArea();
     return area && area.topLeft.equals(area.bottomRight);
 }
-
-actions.registerAction('commit-selection', {
-    name: 'Commit Move',
-    callback: () => finishMovingContent(),
-    enabled: () => !!movableContent,
-    shortcut: 'Enter'
-});
-
-actions.registerAction('select-all', {
-    name: 'Select All',
-    callback: () => selectAll(),
-    shortcut: 'a'
-});
 
 
 
@@ -427,7 +431,7 @@ export function hideCursor() {
 // -------------------------------------------------------------------------------- Caching
 // We cache some selection results to improve lookup times. Caches must be cleared whenever the selection changes.
 
-let caches = {};
+let caches;
 
 export function clearCaches() {
     caches = {};

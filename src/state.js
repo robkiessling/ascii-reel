@@ -32,6 +32,22 @@ export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and 
 let state;
 let sequences;
 
+export function init() {
+    actions.registerAction('undo', {
+        name: 'Undo',
+        callback: () => undo(),
+        enabled: () => false,
+        shortcut: 'z'
+    });
+
+    actions.registerAction('redo', {
+        name: 'Redo',
+        callback: () => redo(),
+        enabled: () => false,
+        shortcut: { char: 'z', modifiers: ['shift'] }
+    });
+}
+
 export function loadNew() {
     load({
         layers: [{ id: 1 }],
@@ -386,17 +402,3 @@ function undo() {
 function redo() {
 
 }
-
-actions.registerAction('undo', {
-    name: 'Undo',
-    callback: () => undo(),
-    enabled: () => false,
-    shortcut: 'z'
-});
-
-actions.registerAction('redo', {
-    name: 'Redo',
-    callback: () => redo(),
-    enabled: () => false,
-    shortcut: { char: 'z', modifiers: ['shift'] }
-});

@@ -5,131 +5,139 @@ import * as editor from "./editor.js";
 import * as actions from "./actions.js";
 import {triggerRefresh} from "./index.js";
 
-let standard = false;
-
-export function toggleStandard(enable) {
-    standard = enable;
-}
-
+let standardKeyboard = false;
 const $document = $(document);
 
-$document.keydown(function(e) {
-    const code = e.which // Note: This is normalized by jQuery. Keycodes https://keycode.info/
-    const char = e.key; // E.g. a A 1 Control Alt Shift Meta Enter [ { \ /
-    // console.log(code, char);
+export function init() {
+    setupKeydownListener();
+}
 
-    if (standard) {
-        if (char === 'Enter') {
-            $document.trigger('keyboard:enter');
-            e.preventDefault();
+export function toggleStandard(enable) {
+    standardKeyboard = enable;
+}
+
+function setupKeydownListener() {
+    $document.keydown(function(e) {
+        const code = e.which // Note: This is normalized by jQuery. Keycodes https://keycode.info/
+        const char = e.key; // E.g. a A 1 Control Alt Shift Meta Enter [ { \ /
+        // console.log(code, char);
+
+        if (standardKeyboard) {
+            handleStandardKeyboard(char, e);
+            return;
         }
-        return;
-    }
 
-    if (char === 'Unidentified') {
-        console.warn(`Unidentified key for event: ${e}`);
-        return;
-    }
-
-    // Shortcuts
-    // TODO Make sure everything in the app considers metaKey === ctrlKey
-    if (e.metaKey || e.ctrlKey) {
-        let modifiers = [];
-        if (e.shiftKey) { modifiers.push('shift'); }
-        if (e.altKey) { modifiers.push('alt'); }
-        if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
-            e.preventDefault();
+        if (char === 'Unidentified') {
+            console.warn(`Unidentified key for event: ${e}`);
+            return;
         }
-        return;
-    }
 
-    // Standard input
-    switch (char) {
-        case 'Escape':
-            // If cursor is showing, escape just hides the cursor but keeps the selection intact
-            selection.cursorCell ? selection.hideCursor() : selection.clear();
-            break;
-        case 'ArrowLeft':
-            selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1, !e.shiftKey);
-            break;
-        case 'ArrowUp':
-            selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1, !e.shiftKey);
-            break;
-        case 'ArrowRight':
-            selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1, !e.shiftKey);
-            break;
-        case 'ArrowDown':
-            selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1, !e.shiftKey);
-            break;
-        case 'Tab':
-            if (e.shiftKey) {
-                // If shift key is pressed, we move in opposite direction
-                selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1);
-            } else {
-                selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1);
+        // Shortcuts
+        // TODO Make sure everything in the app considers metaKey === ctrlKey
+        if (e.metaKey || e.ctrlKey) {
+            let modifiers = [];
+            if (e.shiftKey) { modifiers.push('shift'); }
+            if (e.altKey) { modifiers.push('alt'); }
+            if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
+                e.preventDefault();
             }
-            break;
-        case 'Enter':
-            if (selection.movableContent) {
-                selection.finishMovingContent();
-            }
-            else {
+            return;
+        }
+
+        switch (char) {
+            case 'Escape':
+                // If cursor is showing, escape just hides the cursor but keeps the selection intact
+                selection.cursorCell ? selection.hideCursor() : selection.clear();
+                break;
+            case 'ArrowLeft':
+                selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1, !e.shiftKey);
+                break;
+            case 'ArrowUp':
+                selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1, !e.shiftKey);
+                break;
+            case 'ArrowRight':
+                selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1, !e.shiftKey);
+                break;
+            case 'ArrowDown':
+                selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1, !e.shiftKey);
+                break;
+            case 'Tab':
                 if (e.shiftKey) {
                     // If shift key is pressed, we move in opposite direction
-                    selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1);
+                    selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1);
                 } else {
-                    selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1);
+                    selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1);
                 }
-            }
-            break;
-
-        case 'Backspace':
-        case 'Delete':
-            if (selection.movableContent) {
-                selection.updateMovableContent('', 0);
-            }
-            else if (selection.cursorCell) {
-                if (char === 'Backspace') {
-                    selection.moveCursorInDirection('left');
-                }
-                state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, ['', 0]);
-            }
-            else {
-                selection.empty();
-            }
-            triggerRefresh('chars');
-            break;
-        default:
-            if (producesText(code)) {
-                if (state.config('tool') === 'draw-freeform') {
-                    editor.setFreeformChar(char);
-                }
-
+                break;
+            case 'Enter':
                 if (selection.movableContent) {
-                    selection.updateMovableContent(char, editor.currentColorIndex());
-                }
-                else if (selection.cursorCell) {
-                    // update cursor cell and then move to next cell
-                    state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, [char, editor.currentColorIndex()]);
-                    selection.moveCursorInDirection('right');
+                    selection.finishMovingContent();
                 }
                 else {
-                    // update entire selection
-                    selection.getSelectedCells().forEach(cell => {
-                        state.setCurrentCelChar(cell.row, cell.col, [char, editor.currentColorIndex()]);
-                    });
+                    if (e.shiftKey) {
+                        // If shift key is pressed, we move in opposite direction
+                        selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1);
+                    } else {
+                        selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1);
+                    }
                 }
+                break;
 
+            case 'Backspace':
+            case 'Delete':
+                if (selection.movableContent) {
+                    selection.updateMovableContent('', 0);
+                }
+                else if (selection.cursorCell) {
+                    if (char === 'Backspace') {
+                        selection.moveCursorInDirection('left');
+                    }
+                    state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, ['', 0]);
+                }
+                else {
+                    selection.empty();
+                }
                 triggerRefresh('chars');
-            }
-            else {
-                // Unrecognized input; let browser handle as normal
-                return;
-            }
-    }
+                break;
+            default:
+                if (producesText(code)) {
+                    if (state.config('tool') === 'draw-freeform') {
+                        editor.setFreeformChar(char);
+                    }
 
-    e.preventDefault();
-});
+                    if (selection.movableContent) {
+                        selection.updateMovableContent(char, editor.currentColorIndex());
+                    }
+                    else if (selection.cursorCell) {
+                        // update cursor cell and then move to next cell
+                        state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, [char, editor.currentColorIndex()]);
+                        selection.moveCursorInDirection('right');
+                    }
+                    else {
+                        // update entire selection
+                        selection.getSelectedCells().forEach(cell => {
+                            state.setCurrentCelChar(cell.row, cell.col, [char, editor.currentColorIndex()]);
+                        });
+                    }
+
+                    triggerRefresh('chars');
+                }
+                else {
+                    // Unrecognized input; let browser handle as normal
+                    return;
+                }
+        }
+
+        e.preventDefault();
+    });
+}
+
+function handleStandardKeyboard(char, e) {
+    if (char === 'Enter') {
+        $document.trigger('keyboard:enter');
+        e.preventDefault();
+    }
+}
 
 // Returns true if the keycode produces some kind of text character
 function producesText(code) {

@@ -2,38 +2,84 @@ import $ from "jquery";
 import './styles/app.scss'
 import 'remixicon/fonts/remixicon.css';
 
-import "./utilities.js";
-import {CanvasControl} from './canvas.js';
-import './keyboard.js';
+import { registerAction } from "./actions.js";
+import { CanvasControl } from "./canvas.js";
+import { init as initClipboard } from "./clipboard.js"
+import { init as initEditor, setupMouseEvents as setupEditorMouse, refresh as refreshEditor, updateMouseCoords } from "./editor.js"
+import { init as initFile } from "./file.js";
+import { init as initKeyboard } from "./keyboard.js";
+import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./palette.js";
+import {
+    init as initPreview, canvasControl as previewCanvas,
+    refresh as refreshPreview, redraw as redrawPreview, reset as resetPreview
+} from "./preview.js";
 import * as selection from './selection.js';
-import * as zoom from './zoom.js';
-import './clipboard.js';
-import {Timeline} from "./timeline.js";
 import * as state from "./state.js";
-import * as preview from "./preview.js";
-import * as editor from "./editor.js";
-import * as palette from "./palette.js";
-import "./file.js";
-import * as actions from "./actions.js";
+import { Timeline } from "./timeline.js";
+import { init as initZoom, setupMouseEvents as setupZoomMouse } from './zoom.js';
 
+// Note: The order of these initializers does not matter (they should not depend on other modules being initialized)
+initClipboard();
+initEditor();
+initFile();
+initKeyboard();
+initPalette();
+initPreview();
+selection.init();
+state.init();
+initZoom();
+
+
+// Set up various controller instances
 export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
 export const selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
 export const hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
 export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
+// Bind mouse events to controllers
 selection.setupMouseEvents(selectionCanvas);
-editor.setupMouseEvents(selectionCanvas);
-zoom.setupMouseEvents(selectionCanvas, preview.canvasControl,
+setupEditorMouse(selectionCanvas);
+setupZoomMouse(selectionCanvas, previewCanvas,
     [selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas]
 );
 
+// TODO These will be moved to other files, such as a settings.js file, once they've been made
+registerAction('font-settings', {
+    name: 'Font Settings',
+    callback: () => {},
+    enabled: () => false
+});
+registerAction('background-settings', {
+    name: 'Background',
+    callback: () => {},
+    enabled: () => false
+});
+registerAction('preferences', {
+    name: 'Preferences',
+    callback: () => {},
+    enabled: () => false
+});
+registerAction('keyboard-shortcuts', {
+    name: 'Keyboard Shortcuts',
+    callback: () => {},
+    enabled: () => false
+});
+
+// Attach window resize listener
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
+
+// Load initial empty page
+window.setTimeout(() => {
+    state.loadNew();
+}, 1);
+
+
 
 // TODO Is this needed? Describe the function
 export function onStateLoaded() {
-    preview.refresh();
-    editor.refresh();
+    refreshPreview();
+    refreshEditor();
     timeline.refresh();
     triggerResize();
 
@@ -50,10 +96,10 @@ export function triggerResize() {
     selectionBorderCanvas.resize();
     hoveredCellCanvas.resize();
     selectionCanvas.resize();
-    preview.canvasControl.resize();
+    previewCanvas.resize();
     // Note: timeline frames will be resized during triggerRefresh() since they all have to be rebuilt
 
-    preview.canvasControl.zoomToFit(); // todo just do this once?
+    previewCanvas.zoomToFit(); // todo just do this once?
     triggerRefresh();
 }
 
@@ -71,45 +117,45 @@ export function triggerRefresh(type = 'full') {
         switch(type) {
             case 'chars':
                 redrawCharCanvas();
-                preview.redraw();
+                redrawPreview();
                 timeline.currentFrameComponent.redrawChars();
                 break;
             case 'selection':
                 selection.clearCaches();
                 drawSelection();
                 drawHoveredCell();
-                editor.refresh();
+                refreshEditor();
                 break;
             case 'hoveredCell': // Can be called separately from 'selection' for performance reasons
                 drawHoveredCell();
                 break;
             case 'cursorCell': // Can be called separately from 'selection' for performance reasons
                 drawSelection();
-                editor.refresh();
+                refreshEditor();
                 break;
             case 'zoom':
                 redrawCharCanvas();
-                preview.redraw();
+                redrawPreview();
                 drawSelection();
                 drawHoveredCell()
                 break;
             case 'palette':
-                palette.refresh();
+                refreshPalette();
                 break;
             case 'paletteSelection':
-                palette.refreshSelection(); // less intensive that refreshing whole palette
+                refreshPaletteSelection(); // less intensive that refreshing whole palette
                 break;
             case 'full':
                 selection.clearCaches();
                 redrawCharCanvas();
-                preview.reset();
+                resetPreview();
                 drawSelection();
                 drawHoveredCell();
-                editor.refresh();
+                refreshEditor();
                 timeline.rebuildLayers();
                 timeline.rebuildFrames();
                 timeline.refresh();
-                palette.refresh();
+                refreshPalette();
                 break;
             default:
                 console.warn(`triggerRefresh("${type}") is not a valid type`);
@@ -154,32 +200,5 @@ function drawHoveredCell() {
         hoveredCellCanvas.highlightCell(selection.hoveredCell);
     }
 
-    editor.updateMouseCoords(selection.hoveredCell);
+    updateMouseCoords(selection.hoveredCell);
 }
-
-// TODO move these somewhere else
-actions.registerAction('font-settings', {
-    name: 'Font Settings',
-    callback: () => {},
-    enabled: () => false
-});
-actions.registerAction('background-settings', {
-    name: 'Background',
-    callback: () => {},
-    enabled: () => false
-});
-actions.registerAction('preferences', {
-    name: 'Preferences',
-    callback: () => {},
-    enabled: () => false
-});
-actions.registerAction('keyboard-shortcuts', {
-    name: 'Keyboard Shortcuts',
-    callback: () => {},
-    enabled: () => false
-});
-
-
-window.setTimeout(() => {
-    state.loadNew();
-}, 1);

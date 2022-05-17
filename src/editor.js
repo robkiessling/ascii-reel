@@ -3,22 +3,28 @@ import Picker from 'vanilla-picker/csp';
 import * as state from './state.js';
 import * as selection from './selection.js';
 import {triggerRefresh} from "./index.js";
-import * as clipboard from "./clipboard.js";
 import * as keyboard from "./keyboard.js";
 import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
 
-const $tools = $('#editing-tools');
-const $canvasContainer = $('#canvas-container');
-
-let $selectionTools = $('#selection-tools');
-let $canvasDetails = $('#canvas-details');
-
-$tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
-    changeTool($(evt.currentTarget).data('tool'));
-});
-
 // -------------------------------------------------------------------------------- Main External API
+
+let $tools, $canvasContainer, $selectionTools, $canvasDetails;
+
+export function init() {
+    $tools = $('#editing-tools');
+    $canvasContainer = $('#canvas-container');
+    $selectionTools = $('#selection-tools');
+    $canvasDetails = $('#canvas-details');
+    
+    $tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
+        changeTool($(evt.currentTarget).data('tool'));
+    });
+
+    setupFreeformChar();
+    setupSelectionTools();
+    setupColorPicker();
+}
 
 export function refresh() {
     if (cachedColorString === null) {
@@ -109,6 +115,21 @@ export function setupMouseEvents(canvasControl) {
 
 
 // -------------------------------------------------------------------------------- Selection Editor
+// Tools that are allowed when the given tool is selected
+const MOVE_TOOLS = ['move'];
+const TYPEWRITER_TOOLS = ['typewriter'];//, 'cut', 'copy', 'paste'];
+
+function setupSelectionTools() {
+    bindSelectionToolEvent('move', () => selection.toggleMovingContent());
+    bindSelectionToolEvent('typewriter', () => selection.toggleCursor());
+    // bindSelectionToolEvent('cut', () => clipboard.cut());
+    // bindSelectionToolEvent('copy', () => clipboard.copy());
+    // bindSelectionToolEvent('paste', (e) => clipboard.paste(e.shiftKey));
+    bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.shiftKey));
+    bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.shiftKey));
+    bindSelectionToolEvent('paint-bucket', () => paintSelection());
+    bindSelectionToolEvent('close', () => selection.clear());
+}
 
 function bindSelectionToolEvent(tool, onClick) {
     $selectionTools.find(`.selection-tool[data-tool="${tool}"]`).off('click').on('click', evt => {
@@ -117,20 +138,6 @@ function bindSelectionToolEvent(tool, onClick) {
         }
     })
 }
-
-bindSelectionToolEvent('move', () => selection.toggleMovingContent());
-bindSelectionToolEvent('typewriter', () => selection.toggleCursor());
-// bindSelectionToolEvent('cut', () => clipboard.cut());
-// bindSelectionToolEvent('copy', () => clipboard.copy());
-// bindSelectionToolEvent('paste', (e) => clipboard.paste(e.shiftKey));
-bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.shiftKey));
-bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.shiftKey));
-bindSelectionToolEvent('paint-bucket', () => paintSelection());
-bindSelectionToolEvent('close', () => selection.clear());
-
-// Tools that are allowed when the given tool is selected
-const MOVE_TOOLS = ['move'];
-const TYPEWRITER_TOOLS = ['typewriter'];//, 'cut', 'copy', 'paste'];
 
 function refreshSelectionTools() {
     $selectionTools.find('.selection-tool').toggleClass('disabled', false);
@@ -156,7 +163,6 @@ function refreshSelectionTools() {
         })
         $selectionTools.find('.selection-tool[data-tool="typewriter"]').toggleClass('active', true);
     }
-
 }
 
 function paintSelection() {
@@ -201,21 +207,25 @@ function paintConnectedCells(cell, options) {
 
 // -------------------------------------------------------------------------------- Freeform Char
 
-let freeformChar;
-let $freeformChar = $('.freeform-char');
+let freeformChar, $freeformChar;
+
+function setupFreeformChar() {
+    $freeformChar = $('.freeform-char');
+    setFreeformChar('A'); // initial value
+}
 
 export function setFreeformChar(char) {
     freeformChar = char;
     $freeformChar.html(freeformChar);
 }
 
-setFreeformChar('A'); // initial value
 
 
 // -------------------------------------------------------------------------------- Color Picker
 
 let cachedColorString = null;
 let cachedColorIndex = null;
+let colorPickerElement, $addToPalette, colorPicker;
 
 // Returns the currently selected colorIndex, or creates a new index if a new color is selected.
 // Also caching the result for faster performance since this gets called a lot in a loop
@@ -235,45 +245,53 @@ export function selectColor(colorStr) {
     colorPicker.setColor(colorStr, false);
 }
 
-const colorPickerElement = document.querySelector('#current-color');
-let $addToPalette;
-
 const SHOW_ADD_ICON = false; // todo decide how I want to do this. Note: there is also associated css to uncomment
 
-const colorPicker = new Picker({
-    parent: colorPickerElement,
-    popup: 'top',
-    onOpen: () => {
-        keyboard.toggleStandard(true);
+function setupColorPicker() {
+    colorPickerElement = document.querySelector('#current-color');
 
-        if (SHOW_ADD_ICON) {
-            if (!$addToPalette) {
-                $addToPalette = $('<div>', {
-                    class: 'add-to-palette',
-                    html: '<button><span class="ri ri-fw ri-alert-line"></span></button>'
-                }).appendTo($(colorPickerElement).find('.picker_wrapper'));
+    colorPicker = new Picker({
+        parent: colorPickerElement,
+        popup: 'top',
+        onOpen: () => {
+            keyboard.toggleStandard(true);
+
+            if (SHOW_ADD_ICON) {
+                if (!$addToPalette) {
+                    $addToPalette = $('<div>', {
+                        class: 'add-to-palette',
+                        html: '<button><span class="ri ri-fw ri-alert-line"></span></button>'
+                    }).appendTo($(colorPickerElement).find('.picker_wrapper'));
+                }
             }
-        }
-        else {
-            if (!$addToPalette) {
-                $addToPalette = $(colorPickerElement).find('.picker_sample');
+            else {
+                if (!$addToPalette) {
+                    $addToPalette = $(colorPickerElement).find('.picker_sample');
+                }
             }
-        }
+
+            refreshAddToPalette();
+        },
+        onClose: () => {
+            keyboard.toggleStandard(false);
+        },
+        onChange: (color) => {
+            colorPickerElement.style.background = color[state.COLOR_FORMAT];
+            cachedColorString = color[state.COLOR_FORMAT];
+            cachedColorIndex = null;
+
+            refreshAddToPalette();
+            triggerRefresh('paletteSelection');
+        },
+    });
+
+    $(colorPickerElement).on('click', '.add-to-palette', () => {
+        state.addColor(cachedColorString);
 
         refreshAddToPalette();
-    },
-    onClose: () => {
-        keyboard.toggleStandard(false);
-    },
-    onChange: (color) => {
-        colorPickerElement.style.background = color[state.COLOR_FORMAT];
-        cachedColorString = color[state.COLOR_FORMAT];
-        cachedColorIndex = null;
-
-        refreshAddToPalette();
-        triggerRefresh('paletteSelection');
-    },
-});
+        triggerRefresh('palette');
+    })
+}
 
 function refreshAddToPalette() {
     if ($addToPalette) {
@@ -299,13 +317,6 @@ function refreshAddToPalette() {
         }
     }
 }
-
-$(colorPickerElement).on('click', '.add-to-palette', () => {
-    state.addColor(cachedColorString);
-
-    refreshAddToPalette();
-    triggerRefresh('palette');
-})
 
 
 

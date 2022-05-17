@@ -6,30 +6,32 @@ const ZOOM_SCROLL_FACTOR = 1.1;
 
 let source, preview, canvases;
 
-actions.registerAction('toggle-grid', {
-    name: 'Show Grid',
-    callback: () => {},
-    enabled: () => false,
-    shortcut: 'g'
-});
-actions.registerAction('zoom-in', {
-    name: 'Zoom In',
-    callback: () => {},
-    enabled: () => false,
-    shortcut: { displayChar: '+', char: '=', modifiers: ['shift'] }
-});
-actions.registerAction('zoom-out', {
-    name: 'Zoom Out',
-    callback: () => {},
-    enabled: () => false,
-    shortcut: { displayChar: '-', char: '-', modifiers: ['shift'] }
-});
-actions.registerAction('zoom-fit', {
-    name: 'Zoom Fit',
-    callback: () => {},
-    enabled: () => false,
-    shortcut: { char: '0', modifiers: ['shift'] }
-});
+export function init() {
+    actions.registerAction('toggle-grid', {
+        name: 'Show Grid',
+        callback: () => {},
+        enabled: () => false,
+        shortcut: 'g'
+    });
+    actions.registerAction('zoom-in', {
+        name: 'Zoom In',
+        callback: () => {},
+        enabled: () => false,
+        shortcut: { displayChar: '+', char: '=', modifiers: ['shift'] }
+    });
+    actions.registerAction('zoom-out', {
+        name: 'Zoom Out',
+        callback: () => {},
+        enabled: () => false,
+        shortcut: { displayChar: '-', char: '-', modifiers: ['shift'] }
+    });
+    actions.registerAction('zoom-fit', {
+        name: 'Zoom Fit',
+        callback: () => {},
+        enabled: () => false,
+        shortcut: { char: '0', modifiers: ['shift'] }
+    });
+}
 
 
 export function setupMouseEvents(sourceCanvas, previewCanvas, canvasControls) {

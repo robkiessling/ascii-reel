@@ -19,10 +19,35 @@ import Color from "@sphinxxxx/color-conversion";
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
 
-// --------------------------------------------------------------- Menu
+export function init() {
+    setupMainMenu();
 
-const $mainMenu = $('#main-menu');
-const mainMenu = createHorizontalMenu($mainMenu, $li => refreshMenu());
+    actions.registerAction('new-file', {
+        name: 'New File',
+        callback: () => {
+            // TODO ask for dimensions, etc.
+            confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew());
+        },
+        shortcut: 'n'
+    });
+
+    setupUploading();
+    setupSaveDialog();
+    setupResizeDialog();
+    setupExportDialog();
+
+}
+
+
+
+// --------------------------------------------------------------- Main Menu
+
+let $mainMenu, mainMenu;
+
+function setupMainMenu() {
+    $mainMenu = $('#main-menu');
+    mainMenu = createHorizontalMenu($mainMenu, $li => refreshMenu());
+}
 
 export function refreshMenu() {
     if (mainMenu.isShowing()) {
@@ -45,70 +70,64 @@ export function refreshMenu() {
             }
         });
     }
-    else {
-        console.log('skip');
-    }
 }
 
 
-// --------------------------------------------------------------- New
-
-actions.registerAction('new-file', {
-    name: 'New File',
-    callback: () => {
-        // TODO ask for dimensions, etc.
-        confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew());
-    },
-    shortcut: 'n'
-});
-
-
 // --------------------------------------------------------------- Uploading
-const $uploadInput = $('#upload-file');
-$uploadInput.attr('accept', `.${FILE_EXTENSION}`);
 
-$uploadInput.off('change').on('change', function(evt) {
-    const file = evt.target.files[0];
-    $uploadInput.val(null); // null out <input> so if the user uploads same file it gets refreshed
+function setupUploading() {
+    const $uploadInput = $('#upload-file');
+    $uploadInput.attr('accept', `.${FILE_EXTENSION}`);
 
-    if (file) {
-        const reader = new FileReader();
+    $uploadInput.off('change').on('change', function(evt) {
+        const file = evt.target.files[0];
+        $uploadInput.val(null); // null out <input> so if the user uploads same file it gets refreshed
 
-        reader.addEventListener("load", function() {
-            try {
-                state.load(JSON.parse(reader.result));
-            }
-            catch (exception) {
-                console.error(exception.message, exception.stack);
-                alert(exception.message + '\n\nView browser console for full stack trace.');
-            }
-        }, false);
+        if (file) {
+            const reader = new FileReader();
 
-        reader.readAsText(file);
-    }
-});
+            reader.addEventListener("load", function() {
+                try {
+                    state.load(JSON.parse(reader.result));
+                }
+                catch (exception) {
+                    console.error(exception.message, exception.stack);
+                    alert(exception.message + '\n\nView browser console for full stack trace.');
+                }
+            }, false);
 
-actions.registerAction('open-file', {
-    name: 'Open File',
-    callback: () => {
-        // Doing asynchronously so main menu has time to close
-        window.setTimeout(() => $uploadInput.trigger('click'), 1);
-    },
-    shortcut: 'o'
-});
+            reader.readAsText(file);
+        }
+    });
+
+    actions.registerAction('open-file', {
+        name: 'Open File',
+        callback: () => {
+            // Doing asynchronously so main menu has time to close
+            window.setTimeout(() => $uploadInput.trigger('click'), 1);
+        },
+        shortcut: 'o'
+    });
+}
 
 
 // --------------------------------------------------------------- Saving
-const $saveFileDialog = $('#save-file-dialog');
-
-setupSaveDialog();
+let $saveFileDialog;
 
 function setupSaveDialog() {
+    $saveFileDialog = $('#save-file-dialog');
+
     createDialog($saveFileDialog, () => {
         state.config('name', $saveFileDialog.find('.name').val());
         const blob = new Blob([state.stringify()], {type: "text/plain;charset=utf-8"});
         saveAs(blob, `${state.config('name')}.${FILE_EXTENSION}`)
         $saveFileDialog.dialog('close');
+    });
+
+    actions.registerAction('save-file', {
+        name: 'Save File',
+        callback: () => openSaveDialog(),
+        shortcut: 's'
     });
 }
 
@@ -118,24 +137,13 @@ function openSaveDialog() {
     $saveFileDialog.dialog('open');
 }
 
-actions.registerAction('save-file', {
-    name: 'Save File',
-    callback: () => openSaveDialog(),
-    shortcut: 's'
-});
-
 
 // --------------------------------------------------------------- Resize
-const $resizeDialog = $('#resize-dialog');
-
-setupResizeDialog();
-
-actions.registerAction('resize-canvas', {
-    name: 'Resize Canvas',
-    callback: () => openResizeDialog()
-});
+let $resizeDialog;
 
 function setupResizeDialog() {
+    $resizeDialog = $('#resize-dialog');
+
     createDialog($resizeDialog, () => {
         resize(() => {
             $exportOptions.find(`[name="width"]`); // resetting export width field in case it was set previously
@@ -177,6 +185,11 @@ function setupResizeDialog() {
     // Initial option: middle/middle
     $resizeDialog.find('.anchor-option').removeClass('selected');
     $resizeDialog.find('.anchor-option[data-row-anchor="middle"][data-col-anchor="middle"]').addClass('selected');
+
+    actions.registerAction('resize-canvas', {
+        name: 'Resize Canvas',
+        callback: () => openResizeDialog()
+    });
 }
 
 function openResizeDialog() {
@@ -237,19 +250,16 @@ const EXPORT_OPTION_VALIDATORS = {
     spritesheetRows: { type: 'integer' }
 }
 
-const $exportFileDialog = $('#export-file-dialog');
-const $exportFormat = $exportFileDialog.find('#export-file-format');
-const $exportOptions = $exportFileDialog.find('#export-options');
-
-setupExportDialog();
-
-actions.registerAction('export-file', {
-    name: 'Export File',
-    callback: () => openExportDialog(),
-    shortcut: 'e'
-});
+let $exportFileDialog, $exportFormat, $exportOptions;
+let $exportCanvasContainer, exportCanvas;
 
 function setupExportDialog() {
+    $exportFileDialog = $('#export-file-dialog');
+    $exportFormat = $exportFileDialog.find('#export-file-format');
+    $exportOptions = $exportFileDialog.find('#export-options');
+    $exportCanvasContainer = $('#export-canvas-container');
+    exportCanvas = new CanvasControl($('#export-canvas'), {});
+
     createDialog($exportFileDialog, () => {
         exportFile(() => {
             $exportFileDialog.dialog('close');
@@ -291,6 +301,12 @@ function setupExportDialog() {
         const height = $(evt.currentTarget).val();
         const width = Math.round(height / state.numRows() * state.numCols() * MONOSPACE_RATIO);
         $exportOptions.find('[name="width"]').val(width);
+    });
+
+    actions.registerAction('export-file', {
+        name: 'Export File',
+        callback: () => openExportDialog(),
+        shortcut: 'e'
     });
 }
 
@@ -393,11 +409,6 @@ function validateExportOptions() {
         options: options
     };
 }
-
-const $exportCanvasContainer = $('#export-canvas-container');
-const $exportCanvas = $('#export-canvas');
-const exportCanvas = new CanvasControl($exportCanvas, {});
-
 
 /**
  * options:

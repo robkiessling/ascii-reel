@@ -1,6 +1,6 @@
 import {roundForComparison} from "./utilities.js";
-import * as state from "./state.js";
 import bresenham from "bresenham";
+import {charInBounds, colorStr, numCols, numRows} from "./state.js";
 
 export const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
@@ -123,7 +123,7 @@ export class CanvasControl {
             if (line) { lines.push(line); }
         }
         lines.forEach(line => {
-            this.context.fillStyle = state.colorStr(line.colorIndex);
+            this.context.fillStyle = colorStr(line.colorIndex);
             this.context.fillText(line.text, line.x, line.y);
         });
 
@@ -241,17 +241,17 @@ export class CanvasControl {
         this.context.strokeStyle = GRID_COLOR;
         this.context.lineWidth = GRID_WIDTH;
 
-        for (let r = 0; r < state.numRows() + 1; r++) {
+        for (let r = 0; r < numRows() + 1; r++) {
             this.context.beginPath();
             this.context.moveTo(Cell.x(0), Cell.y(r));
-            this.context.lineTo(Cell.x(state.numCols()), Cell.y(r));
+            this.context.lineTo(Cell.x(numCols()), Cell.y(r));
             this.context.stroke();
         }
 
-        for (let c = 0; c < state.numCols() + 1; c++) {
+        for (let c = 0; c < numCols() + 1; c++) {
             this.context.beginPath();
             this.context.moveTo(Cell.x(c), Cell.y(0));
-            this.context.lineTo(Cell.x(c), Cell.y(state.numRows()));
+            this.context.lineTo(Cell.x(c), Cell.y(numRows()));
             this.context.stroke();
         }
     }
@@ -548,7 +548,7 @@ export class Cell extends Rect {
     }
 
     isInBounds() {
-        return state.charInBounds(this.row, this.col);
+        return charInBounds(this.row, this.col);
     }
 
     get row() {
@@ -592,7 +592,7 @@ export class CellArea extends Rect {
     }
 
     static drawableArea() {
-        return new CellArea(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
+        return new CellArea(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
     }
 
     get numRows() {
@@ -610,13 +610,13 @@ export class CellArea extends Rect {
     bindToDrawableArea() {
         if (this.topLeft.row < 0) { this.topLeft.row = 0; }
         if (this.topLeft.col < 0) { this.topLeft.col = 0; }
-        if (this.topLeft.row > state.numRows() - 1) { this.topLeft.row = state.numRows(); } // Allow 1 space negative
-        if (this.topLeft.col > state.numCols() - 1) { this.topLeft.col = state.numCols(); } // Allow 1 space negative
+        if (this.topLeft.row > numRows() - 1) { this.topLeft.row = numRows(); } // Allow 1 space negative
+        if (this.topLeft.col > numCols() - 1) { this.topLeft.col = numCols(); } // Allow 1 space negative
 
         if (this.bottomRight.row < 0) { this.bottomRight.row = -1; } // Allow 1 space negative
         if (this.bottomRight.col < 0) { this.bottomRight.col = -1; } // Allow 1 space negative
-        if (this.bottomRight.row > state.numRows() - 1) { this.bottomRight.row = state.numRows() - 1; }
-        if (this.bottomRight.col > state.numCols() - 1) { this.bottomRight.col = state.numCols() - 1; }
+        if (this.bottomRight.row > numRows() - 1) { this.bottomRight.row = numRows() - 1; }
+        if (this.bottomRight.col > numCols() - 1) { this.bottomRight.col = numCols() - 1; }
 
         return this;
     }

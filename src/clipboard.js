@@ -12,30 +12,32 @@ import * as actions from "./actions.js";
 let copiedSelection = null; // 2d array
 let copiedText = null; // string
 
-actions.registerAction('cut', {
-    name: 'Cut',
-    callback: () => cut(),
-    enabled: () => selection.hasSelection() && !selection.movableContent,
-    shortcut: 'x'
-});
-actions.registerAction('copy', {
-    name: 'Copy',
-    callback: () => copy(),
-    enabled: () => selection.hasSelection() && !selection.movableContent,
-    shortcut: 'c'
-});
-actions.registerAction('paste', {
-    name: 'Paste',
-    callback: () => paste(),
-    enabled: () => selection.hasSelection() && !selection.movableContent,
-    shortcut: 'v'
-});
-actions.registerAction('paste-in-selection', {
-    name: 'Paste In Selection',
-    callback: () => paste(true),
-    enabled: () => selection.hasSelection() && !selection.movableContent,
-    shortcut: { char: 'v', modifiers: ['shift'] }
-});
+export function init() {
+    actions.registerAction('cut', {
+        name: 'Cut',
+        callback: () => cut(),
+        enabled: () => selection.hasSelection() && !selection.movableContent,
+        shortcut: 'x'
+    });
+    actions.registerAction('copy', {
+        name: 'Copy',
+        callback: () => copy(),
+        enabled: () => selection.hasSelection() && !selection.movableContent,
+        shortcut: 'c'
+    });
+    actions.registerAction('paste', {
+        name: 'Paste',
+        callback: () => paste(),
+        enabled: () => selection.hasSelection() && !selection.movableContent,
+        shortcut: 'v'
+    });
+    actions.registerAction('paste-in-selection', {
+        name: 'Paste In Selection',
+        callback: () => paste(true),
+        enabled: () => selection.hasSelection() && !selection.movableContent,
+        shortcut: { char: 'v', modifiers: ['shift'] }
+    });
+}
 
 
 function cut() {

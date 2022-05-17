@@ -7,20 +7,24 @@ import {selectionCanvas} from "./index.js";
 
 const MAX_FPS = 30;
 
-export const canvasControl = new CanvasControl($('#preview-canvas'), {});
-let previewInterval;
-let previewIndex;
+export let canvasControl;
+let previewInterval, previewIndex;
+let $fpsValue, $fpsSlider;
 
-const $fpsValue = $('#preview-fps-value');
+export function init() {
+    canvasControl = new CanvasControl($('#preview-canvas'), {});
 
-const $fpsSlider = $('#preview-fps-slider').slider({
-    min: 0,
-    max: MAX_FPS,
-    slide: (event, ui) => {
-        state.config('fps', ui.value);
-        reset();
-    }
-});
+    $fpsValue = $('#preview-fps-value');
+
+    $fpsSlider = $('#preview-fps-slider').slider({
+        min: 0,
+        max: MAX_FPS,
+        slide: (event, ui) => {
+            state.config('fps', ui.value);
+            reset();
+        }
+    });
+}
 
 export function refresh() {
     $fpsSlider.slider('value', state.config('fps'));

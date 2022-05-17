@@ -1,5 +1,5 @@
 import $ from "jquery";
-// import * as file from "./file.js"; // todo this doesn't work
+import * as file from "./file.js";
 
 let actions;
 let shortcutLookup;
@@ -84,7 +84,7 @@ export function shortcutAbbr(shortcut) {
 function callAction(action) {
     if (action && (action.enabled === undefined || action.enabled())) {
         action.callback();
-        // file.refreshMenu();
+        file.refreshMenu();
         return true;
     }
 
