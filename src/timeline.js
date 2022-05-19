@@ -290,7 +290,7 @@ class FrameComponent {
 
     redrawChars() {
         this._canvasController.clear();
-        this._canvasController.drawBackground();
+        this._canvasController.drawBackground(state.config('background'));
         this._canvasController.drawChars(state.layeredChars(this._frame));
     }
 }

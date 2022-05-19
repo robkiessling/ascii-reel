@@ -175,11 +175,11 @@ function paintSelection() {
 // -------------------------------------------------------------------------------- Non-selection tools
 
 function drawCellChar(cell) {
-    const char = state.getCurrentCelChar(cell.row, cell.col);
+    const currentChar = state.getCurrentCelChar(cell.row, cell.col);
 
     // Only updating char if it is actually different (needs to be efficient since we call this on mousemove)
-    if (char && char[0] !== freeformChar) {
-        state.setCurrentCelChar(cell.row, cell.col, [freeformChar, undefined]);
+    if (currentChar && (currentChar[0] !== freeformChar || currentChar[1] !== currentColorIndex())) {
+        state.setCurrentCelChar(cell.row, cell.col, [freeformChar, currentColorIndex()]);
         triggerRefresh('chars');
     }
 }
@@ -225,7 +225,7 @@ export function setFreeformChar(char) {
 
 let cachedColorString = null;
 let cachedColorIndex = null;
-let colorPickerElement, $addToPalette, colorPicker;
+let $addToPalette, colorPicker;
 
 // Returns the currently selected colorIndex, or creates a new index if a new color is selected.
 // Also caching the result for faster performance since this gets called a lot in a loop
@@ -248,10 +248,10 @@ export function selectColor(colorStr) {
 const SHOW_ADD_ICON = false; // todo decide how I want to do this. Note: there is also associated css to uncomment
 
 function setupColorPicker() {
-    colorPickerElement = document.querySelector('#current-color');
+    const $colorPicker = $('#current-color');
 
     colorPicker = new Picker({
-        parent: colorPickerElement,
+        parent: $colorPicker.get(0),
         popup: 'top',
         onOpen: () => {
             keyboard.toggleStandard(true);
@@ -261,12 +261,12 @@ function setupColorPicker() {
                     $addToPalette = $('<div>', {
                         class: 'add-to-palette',
                         html: '<button><span class="ri ri-fw ri-alert-line"></span></button>'
-                    }).appendTo($(colorPickerElement).find('.picker_wrapper'));
+                    }).appendTo($colorPicker.find('.picker_wrapper'));
                 }
             }
             else {
                 if (!$addToPalette) {
-                    $addToPalette = $(colorPickerElement).find('.picker_sample');
+                    $addToPalette = $colorPicker.find('.picker_sample');
                 }
             }
 
@@ -276,7 +276,7 @@ function setupColorPicker() {
             keyboard.toggleStandard(false);
         },
         onChange: (color) => {
-            colorPickerElement.style.background = color[state.COLOR_FORMAT];
+            $colorPicker.get(0).style.background = color[state.COLOR_FORMAT];
             cachedColorString = color[state.COLOR_FORMAT];
             cachedColorIndex = null;
 
@@ -285,7 +285,7 @@ function setupColorPicker() {
         },
     });
 
-    $(colorPickerElement).on('click', '.add-to-palette', () => {
+    $colorPicker.on('click', '.add-to-palette', () => {
         state.addColor(cachedColorString);
 
         refreshAddToPalette();

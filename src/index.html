@@ -112,7 +112,7 @@
             <div id="frame-controller">
                 <div class="tools">
                     <div>
-<!--                        <span class="section-header no-select">Frames</span>-->
+                        <span class="section-header no-select">Frames</span>
                         <button class="add-blank-frame">
                             <span class="ri ri-fw ri-add-line"></span>
                         </button>
@@ -227,40 +227,6 @@
         </label>
     </div>
 
-    <div id="resize-dialog" title="Resize Canvas" class="dialog-form">
-        <label>
-            <input type="checkbox" name="aspect-ratio" checked="checked"> Maintain aspect ratio
-        </label>
-        <label>
-            Width:
-            <input type="text" name="columns"> columns
-        </label>
-        <label>
-            Height:
-            <input type="text" name="rows"> rows
-        </label>
-        <div>
-            Anchor:
-            <div class="anchor-options">
-                <div>
-                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="left"></div>
-                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="middle"></div>
-                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="right"></div>
-                </div>
-                <div>
-                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="left"></div>
-                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="middle"></div>
-                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="right"></div>
-                </div>
-                <div>
-                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="left"></div>
-                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="middle"></div>
-                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="right"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
 <!--    <div id="settings-dialog">-->
 <!--        <ul>-->
 <!--            <li><a href="#settings-general">General</a></li>-->
@@ -328,7 +294,7 @@
                     <option value="space">          </option>
                     <option value="spaceNumbered">#          </option>
                     <option value="dash">----------</option>
-                    <option value="dashNumbered">#---------</option>
+                    <option value="dashNumbered" selected="selected">#---------</option>
                     <option value="asterisk">**********</option>
                     <option value="asteriskNumbered">#*********</option>
                 </select>
@@ -338,6 +304,54 @@
 
     <div id="export-canvas-container">
         <canvas id="export-canvas"></canvas>
+    </div>
+
+
+    <div id="resize-dialog" title="Resize Canvas" class="dialog-form">
+        <label>
+            <input type="checkbox" name="aspect-ratio" checked="checked"> Maintain aspect ratio
+        </label>
+        <label>
+            Width:
+            <input type="text" name="columns"> columns
+        </label>
+        <label>
+            Height:
+            <input type="text" name="rows"> rows
+        </label>
+        <div>
+            Anchor:
+            <div class="anchor-options">
+                <div>
+                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="left"></div>
+                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="middle"></div>
+                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="right"></div>
+                </div>
+                <div>
+                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="left"></div>
+                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="middle"></div>
+                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="right"></div>
+                </div>
+                <div>
+                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="left"></div>
+                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="middle"></div>
+                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="right"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="background-dialog" title="Background" class="dialog-form">
+        <label>
+            <input type="radio" name="background-type" value="transparent"> Transparent
+        </label>
+        <label>
+            <input type="radio" name="background-type" value="colored"> Colored
+        </label>
+
+        <div class="color-picker-container">
+            <div class="color-picker" id="background-color" style="width: 100px;height:100px;background:red;"></div>
+        </div>
     </div>
 
     <div id="edit-layer-dialog" title="Edit Layer">

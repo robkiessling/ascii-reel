@@ -29,7 +29,6 @@ const HIGHLIGHT_CELL_OPACITY = 0.15;
 
 const CHECKERBOARD_A = '#4c4c4c';
 const CHECKERBOARD_B = '#555';
-const CANVAS_BACKGROUND = false; // false => transparent
 const CHECKER_SIZE = 10;
 
 const ZOOM_BOUNDARIES = [0.25, 30];
@@ -91,12 +90,12 @@ export class CanvasControl {
         });
     }
 
-    drawBackground() {
-        if (CANVAS_BACKGROUND === false) {
+    drawBackground(color) {
+        if (color === false) {
             this._fillCheckerboard();
         }
         else {
-            this.context.fillStyle = CANVAS_BACKGROUND;
+            this.context.fillStyle = color;
             this.context.fillRect(...CellArea.drawableArea().xywh);
         }
     }

@@ -50,11 +50,6 @@ registerAction('font-settings', {
     callback: () => {},
     enabled: () => false
 });
-registerAction('background-settings', {
-    name: 'Background',
-    callback: () => {},
-    enabled: () => false
-});
 registerAction('preferences', {
     name: 'Preferences',
     callback: () => {},
@@ -165,7 +160,7 @@ export function triggerRefresh(type = 'full') {
 
 function redrawCharCanvas() {
     charCanvas.clear();
-    charCanvas.drawBackground();
+    charCanvas.drawBackground(state.config('background'));
     charCanvas.drawChars(state.layeredChars(state.currentFrame(), { showMovingContent: true }));
 
     if (state.config('onion')) {

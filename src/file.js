@@ -1,8 +1,10 @@
+import $ from "jquery";
+import Picker from 'vanilla-picker/csp';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+
 import * as state from "./state.js";
 import * as actions from "./actions.js";
-import $ from "jquery";
-import { saveAs } from 'file-saver';
-import JSZip from 'jszip';
 
 // TODO HACK Had to override gif.js, background option wasn't working.
 //           Fix background: https://github.com/jnordberg/gif.js/pull/46
@@ -15,27 +17,19 @@ import GIF from './vendor/gif.cjs';
 import {confirmDialog, createDialog, createHTMLFile, createHorizontalMenu} from "./utilities.js";
 import {CanvasControl, MONOSPACE_RATIO} from "./canvas.js";
 import Color from "@sphinxxxx/color-conversion";
+import {triggerRefresh} from "./index.js";
 
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
 
 export function init() {
     setupMainMenu();
-
-    actions.registerAction('new-file', {
-        name: 'New File',
-        callback: () => {
-            // TODO ask for dimensions, etc.
-            confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew());
-        },
-        shortcut: 'n'
-    });
-
-    setupUploading();
+    setupNewFile();
+    setupUpload();
     setupSaveDialog();
     setupResizeDialog();
+    setupBackgroundDialog();
     setupExportDialog();
-
 }
 
 
@@ -73,9 +67,22 @@ export function refreshMenu() {
 }
 
 
+// --------------------------------------------------------------- New File
+
+function setupNewFile() {
+    actions.registerAction('new-file', {
+        name: 'New File',
+        callback: () => {
+            // TODO ask for dimensions, etc.
+            confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew());
+        },
+        shortcut: 'n'
+    });
+}
+
 // --------------------------------------------------------------- Uploading
 
-function setupUploading() {
+function setupUpload() {
     const $uploadInput = $('#upload-file');
     $uploadInput.attr('accept', `.${FILE_EXTENSION}`);
 
@@ -221,15 +228,72 @@ function resize(onSuccess) {
     }
 }
 
+// --------------------------------------------------------------- Background
+let $backgroundDialog, $backgroundTypes, backgroundColorPicker, backgroundColorPickerVal;
+const DEFAULT_COLORED_BACKGROUND = 'rgba(160,208,230,1)';
+
+function setupBackgroundDialog() {
+    $backgroundDialog = $('#background-dialog');
+    $backgroundTypes = $backgroundDialog.find('input[name="background-type"]');
+
+    createDialog($backgroundDialog, () => {
+        state.config('background', getBackgroundValue());
+        triggerRefresh();
+        $backgroundDialog.dialog('close');
+    }, 'Save', {
+        minWidth: 400,
+        maxWidth: 400,
+        minHeight: 500,
+        maxHeight: 500
+    });
+
+    const $colorPickerContainer = $backgroundDialog.find('.color-picker-container');
+    const $colorPicker = $('#background-color');
+
+    backgroundColorPicker = new Picker({
+        parent: $colorPicker.get(0),
+        popup: false,
+        onChange: (color) => {
+            backgroundColorPickerVal = color[state.COLOR_FORMAT];
+        },
+    });
+
+    $backgroundTypes.on('change', () => {
+        $colorPickerContainer.toggle(!!getBackgroundValue());
+    });
+
+    actions.registerAction('background-settings', {
+        name: 'Background',
+        callback: () => openBackgroundDialog()
+    });
+}
+
+function openBackgroundDialog() {
+    const radioValue = state.config('background') ? 'colored' : 'transparent';
+    $backgroundTypes.filter(`[value="${radioValue}"]`).prop('checked', true).trigger('change');
+
+    backgroundColorPicker.setColor(state.config('background') ? state.config('background') : DEFAULT_COLORED_BACKGROUND, false)
+
+    $backgroundDialog.dialog('open');
+}
+
+function getBackgroundValue() {
+    if ($backgroundTypes.filter(':checked').val() === 'transparent') {
+        return false;
+    }
+
+    return backgroundColorPickerVal;
+}
+
 
 // --------------------------------------------------------------- Export
 
 const DEFAULT_FONT_SIZE = 16;
 
 const EXPORT_OPTIONS = {
-    png: ['width', 'height', 'frames', 'spritesheetColumns', 'spritesheetRows'],
+    png: ['width', 'height', 'background', 'frames', 'spritesheetColumns', 'spritesheetRows'],
     txt: ['frames', 'frameSeparator'],
-    rtf: ['fontSize', 'frames', 'frameSeparator'],
+    rtf: ['fontSize', 'background', 'frames', 'frameSeparator'],
     html: ['fontSize', 'fps', 'background', 'loop'],
     gif: ['width', 'height', 'fps', 'background', 'loop'],
 }
@@ -462,24 +526,37 @@ function exportTxt(options = {}) {
 function exportRtf(options) {
     let rtf, blob;
 
-    const rtfColors = state.colorTable().map(colorStr => {
-        const [r, g, b, a] = new Color(colorStr).rgba; // Break colorStr into rgba components
-        return `\\red${r}\\green${g}\\blue${b}`; // Note: alpha cannot be shown in rtf
-    });
-    rtfColors.unshift(`\\red0\\green0\\blue0`); // Always have black as first color, for frameSeparators
-    const colorTable = `{\\colortbl ${rtfColors.join(';')};}`;
+    const rtfColors = [
+        // First color (black) reserved for frameSeparators
+        encodeColor('rgba(0,0,0,1)'),
 
+        // Second color reserved for background
+        encodeColor(state.config('background') ? state.config('background') : 'rgba(0,0,0,1)'),
+
+        // Then merge in all colors used in the drawing
+        ...state.colorTable().map(colorStr => encodeColor(colorStr))
+    ]
     const font = 'Courier New';
     const fontSize = options.fontSize;
 
+    // char background: use index 1 of color table. Note: chshdng / chcbpat is for MS Word compatibility
+    const cb = options.background ? `\\chshdng0\\chcbpat${1}\\cb${1}` : '';
+
+    function encodeColor(colorStr) {
+        const [r, g, b, a] = new Color(colorStr).rgba; // Break colorStr into rgba components
+        return `\\red${r}\\green${g}\\blue${b}`; // Note: alpha cannot be shown in rtf
+    }
+
     function _buildRtfFile(content) {
-        // rtf fontSize is in half pt, so multiply by 2. See oreilly document linked above for more information
+        const colorTable = `{\\colortbl ${rtfColors.join(';')};}`;
+
+        // rtf font size is in half pt, so multiply desired font size by 2
         return `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 ${font};}}${colorTable}\\f0\\fs${fontSize * 2} ${content}}`;
     }
 
     function _frameToRtf(frame) {
-        // Add 1 to colorIndex, since we prepended black color
-        return exportableFrameString(frame, '\\line ', line => `{\\cf${line.colorIndex + 1} ${line.text}}`)
+        // For foreground color, add 2 to colorIndex since we prepended 2 colors to the color table
+        return exportableFrameString(frame, '\\line ', line => `{\\cf${line.colorIndex + 2}${cb} ${line.text}}`)
     }
 
     switch(options.frames) {
@@ -500,7 +577,7 @@ function exportRtf(options) {
         case 'spritesheet':
             rtf = '';
             state.frames().forEach((frame, index) => {
-                rtf += `{\\cf0 ${buildFrameSeparator(options, index, '\\line ')}}`; // Always cf0 (black)
+                rtf += `{\\cf0 ${buildFrameSeparator(options, index, '\\line ')}}`; // use index 0 of color table
                 rtf += _frameToRtf(frame);
             });
             rtf = _buildRtfFile(rtf);
@@ -549,7 +626,7 @@ function exportHtml(options) {
     `;
 
     const width = state.numCols() * options.fontSize * MONOSPACE_RATIO;
-    const background = options.background ? `background: ${'#ff00ff'};` : ''; // TODO
+    const background = options.background ? `background: ${state.config('background')};` : '';
 
     const body = `<pre id="sprite" style="font-family: monospace;font-size: ${options.fontSize}px;width:${width}px;${background}"></pre>`;
     const html = createHTMLFile(state.config('name'), script, body);
@@ -594,6 +671,7 @@ function exportGif(options) {
 
     state.frames().forEach(frame => {
         exportCanvas.clear();
+        if (options.background) { exportCanvas.drawBackground(state.config('background')); }
         exportCanvas.drawChars(state.layeredChars(frame, { showAllLayers: true }));
         // gif.addFrame(exportCanvas.canvas, { delay: 1000 / fps }); // doesn't work with multiple frames
         gif.addFrame(exportCanvas.context, {copy: true, delay: 1000 / fps });
@@ -628,6 +706,7 @@ function exportPng(options) {
 
     function _frameToPng(frame, callback) {
         exportCanvas.clear();
+        if (options.background) { exportCanvas.drawBackground(state.config('background')); }
         exportCanvas.drawChars(state.layeredChars(frame, { showAllLayers: true }));
         exportCanvas.canvas.toBlob(function(blob) {
             callback(blob);
