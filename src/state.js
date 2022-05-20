@@ -304,6 +304,8 @@ export function colorTable() {
 export function colorStr(colorIndex) {
     return state.colorTable[colorIndex] === undefined ? palette.DEFAULT_COLOR : state.colorTable[colorIndex];
 }
+
+// TODO Vacuum the colorTable every so often
 export function colorIndex(colorStr) {
     let index = state.colorTable.indexOf(colorStr);
 
@@ -385,18 +387,23 @@ export function resize(newDimensions, rowAnchor, colAnchor) {
 
     Object.values(state.cels).forEach(cel => {
         let resizedChars = [];
+        let resizedColors = [];
 
         for (let r = 0; r < newDimensions[1]; r++) {
             for (let c = 0; c < newDimensions[0]; c++) {
                 if (resizedChars[r] === undefined) { resizedChars[r] = []; }
+                if (resizedColors[r] === undefined) { resizedColors[r] = []; }
 
-                resizedChars[r][c] = cel.chars[r + rowOffset] && cel.chars[r + rowOffset][c + colOffset] ?
-                    cel.chars[r + rowOffset][c + colOffset] :
-                    ['', 0];
+                let oldRow = r + rowOffset;
+                let oldCol = c + colOffset;
+
+                resizedChars[r][c] = cel.chars[oldRow] && cel.chars[oldRow][oldCol] ? cel.chars[oldRow][oldCol] : '';
+                resizedColors[r][c] = cel.colors[oldRow] && cel.colors[oldRow][oldCol] ? cel.colors[oldRow][oldCol] : 0;
             }
         }
 
         cel.chars = resizedChars;
+        cel.colors = resizedColors;
     });
 
     state.config.dimensions = newDimensions;
