@@ -113,7 +113,7 @@ export function triggerRefresh(type = 'full') {
             case 'chars':
                 redrawCharCanvas();
                 redrawPreview();
-                timeline.currentFrameComponent.redrawChars();
+                timeline.currentFrameComponent.redrawGlyphs();
                 break;
             case 'selection':
                 selection.clearCaches();
@@ -161,10 +161,10 @@ export function triggerRefresh(type = 'full') {
 function redrawCharCanvas() {
     charCanvas.clear();
     charCanvas.drawBackground(state.config('background'));
-    charCanvas.drawChars(state.layeredChars(state.currentFrame(), { showMovingContent: true }));
+    charCanvas.drawGlyphs(state.layeredGlyphs(state.currentFrame(), { showMovingContent: true }));
 
     if (state.config('onion')) {
-        charCanvas.drawOnion(state.layeredChars(state.previousFrame()));
+        charCanvas.drawOnion(state.layeredGlyphs(state.previousFrame()));
     }
 }
 

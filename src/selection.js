@@ -1,4 +1,4 @@
-import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translate} from "./utilities.js";
+import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translateGlyphs} from "./utilities.js";
 import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
@@ -11,7 +11,7 @@ import * as actions from "./actions.js";
 export let polygons = [];
 export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
 export let isMoving = false; // Only true when mouse is down and polygon is being moved
-export let movableContent = null; // 2d array of content IF there is any (it will be surrounded by dashed outline)
+export let movableContent = null; // Selected glyph content IF there is any (it will be surrounded by dashed outline)
 export let hoveredCell;
 export let cursorCell;
 // export let cursorTabCell; // TODO Where to move from on return key
@@ -47,7 +47,7 @@ export function clear() {
 // Empties the selection's contents. Does not clear the selection.
 export function empty() {
     getSelectedCells().forEach(cell => {
-        state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
+        state.setCurrentCelGlyph(cell.row, cell.col, '', 0);
     });
 }
 
@@ -80,8 +80,8 @@ export function selectingSingleCell() {
 
 
 /**
- * Returns a 2d array of values for the smallest CellArea that bounds all polygons. This 2d array will contain
- * undefined elements for any gaps between polygons (if any).
+ * For the smallest CellArea that bounds all polygons, this function returns an object containing a 2d array
+ * of its chars and a 2d array of its colors. Gaps within the polygon(s) will be represented by undefined values.
  *
  * E.g. If the polygons (depicted by x's) were this:
  *
@@ -91,12 +91,16 @@ export function selectingSingleCell() {
  *        .......
  *
  *      Returns:
- *
- *        [
- *          ['x', 'x', undefined, undefined, undefined],
- *          ['x', 'x', undefined, undefined, 'x']
- *        ]
- *
+ *      {
+ *          chars: [
+ *              ['x', 'x', undefined, undefined, undefined],
+ *              ['x', 'x', undefined, undefined, 'x']
+ *          ],
+ *          colors: [
+ *             [0, 0, undefined, undefined, undefined],
+ *             [0, 0, undefined, undefined, 0]
+ *          ]
+ *      }
  */
 export function getSelectedValues() {
     if (!hasSelection()) {
@@ -107,17 +111,23 @@ export function getSelectedValues() {
         return movableContent;
     }
 
-    // Start with a 2d array of undefined elements
+    // Start with 2d arrays of undefined elements
     const cellArea = getSelectedCellArea();
-    let values = create2dArray(cellArea.numRows, cellArea.numCols);
+    let chars = create2dArray(cellArea.numRows, cellArea.numCols);
+    let colors = create2dArray(cellArea.numRows, cellArea.numCols);
 
     polygons.forEach(polygon => {
         polygon.iterateCells((r, c) => {
-            values[r - cellArea.topLeft.row][c - cellArea.topLeft.col] = state.getCurrentCelChar(r, c);
+            const [char, color] = state.getCurrentCelGlyph(r, c);
+            chars[r - cellArea.topLeft.row][c - cellArea.topLeft.col] = char;
+            colors[r - cellArea.topLeft.row][c - cellArea.topLeft.col] = color;
         });
     });
 
-    return values;
+    return {
+        chars: chars,
+        colors: colors
+    };
 }
 
 /**
@@ -323,8 +333,8 @@ export function startMovingContent() {
 }
 
 export function finishMovingContent() {
-    translate(movableContent, getSelectedCellArea().topLeft, (value, r, c) => {
-        if (value !== undefined) { state.setCurrentCelChar(r, c, value); }
+    translateGlyphs(movableContent, getSelectedCellArea().topLeft, (r, c, char, color) => {
+        state.setCurrentCelGlyph(r, c, char, color);
     });
 
     movableContent = null;
@@ -332,14 +342,20 @@ export function finishMovingContent() {
 }
 
 export function updateMovableContent(char, color) {
-    movableContent.forEach((rowValues, rowIndex) => {
-        rowValues.forEach((value, colIndex) => {
-            if (value !== undefined) {
-                value[0] = char;
-                value[1] = color;
+    function _update2dArray(array, value) {
+        let r, c;
+
+        for (r = 0; r < array.length; r++) {
+            for (c = 0; c < array[r].length; c++) {
+                if (array[r][c] !== undefined) {
+                    array[r][c] = value;
+                }
             }
-        });
-    });
+        }
+    }
+
+    _update2dArray(movableContent.chars, char);
+    _update2dArray(movableContent.colors, color);
 }
 
 
@@ -532,19 +548,20 @@ function flip(horizontally, vertically, mirrorChars) {
     }
 
     getSelectedCells().forEach(cell => {
-        let value = state.getCurrentCelChar(cell.row, cell.col);
-        if (mirrorChars && horizontally) { value[0] = mirrorCharHorizontally(value[0]); }
-        if (mirrorChars && vertically) { value[0] = mirrorCharVertically(value[0]); }
+        let [char, color] = state.getCurrentCelGlyph(cell.row, cell.col);
+        if (mirrorChars && horizontally) { char = mirrorCharHorizontally(char); }
+        if (mirrorChars && vertically) { char = mirrorCharVertically(char); }
         updates.push({
             row: vertically ? flipRow(cell.row) : cell.row,
             col: horizontally ? flipCol(cell.col) : cell.col,
-            value: value
+            char: char,
+            color: color
         });
-        state.setCurrentCelChar(cell.row, cell.col, ['', 0]);
+        state.setCurrentCelGlyph(cell.row, cell.col, '', 0);
     });
 
     updates.forEach(update => {
-        state.setCurrentCelChar(update.row, update.col, update.value);
+        state.setCurrentCelGlyph(update.row, update.col, update.char, update.color);
     })
 
     polygons.forEach(polygon => {
@@ -920,21 +937,21 @@ class SelectionWand extends SelectionPolygon {
 
     _findConnectedCells() {
         const cellHash = {};
-        const startChar = state.getCurrentCelChar(this.start.row, this.start.col);
-        const isBlank = startChar[0] === '';
+        const [startChar, startColor] = state.getCurrentCelGlyph(this.start.row, this.start.col);
+        const isBlank = startChar === '';
         const colorblind = this.options.colorblind;
         const diagonal = this.options.diagonal;
 
         function spread(cell) {
             if (cellHash[cellKey(cell)] === undefined) {
-                const charObj = state.getCurrentCelChar(cell.row, cell.col);
-                if (!charObj) { return; }
+                const [char, color] = state.getCurrentCelGlyph(cell.row, cell.col);
+                if (char === undefined) { return; }
 
                 // If starting character was blank, only keep blank cells. Otherwise only keep non-blank cells
-                if (isBlank ? charObj[0] !== '' : charObj[0] === '') { return; }
+                if (isBlank ? char !== '' : char === '') { return; }
 
                 // Character colors have to match unless colorblind option is true
-                if (!isBlank && !colorblind && charObj[1] !== startChar[1]) { return; }
+                if (!isBlank && !colorblind && color !== startColor) { return; }
 
                 // Add cell to result
                 cellHash[cellKey(cell)] = new Cell(cell.row, cell.col);

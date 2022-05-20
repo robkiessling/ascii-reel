@@ -1,5 +1,5 @@
 import $ from "jquery";
-import {create2dArray, eachWithObject, transformValues, translate} from "./utilities.js";
+import {create2dArray, eachWithObject, transformValues, translateGlyphs} from "./utilities.js";
 import * as selection from "./selection.js";
 import {onStateLoaded} from "./index.js";
 import * as actions from "./actions.js";
@@ -9,7 +9,7 @@ import Color from "@sphinxxxx/color-conversion";
 const CONFIG_DEFAULTS = {
     name: 'New Sprite',
     dimensions: [10, 5],
-    background: 'rgba(160,208,230,1)',
+    background: false,
     fps: 12,
     onion: false,
     lockLayerVisibility: true,
@@ -24,7 +24,8 @@ const LAYER_DEFAULTS = {
 }
 const FRAME_DEFAULTS = {}
 const CELL_DEFAULTS = {
-    chars: [[]]
+    chars: [[]],
+    colors: [[]]
 }
 const SEQUENCES = ['layers', 'frames'];
 
@@ -53,7 +54,7 @@ export function loadNew() {
     load({
         layers: [{ id: 1 }],
         frames: [{ id: 1 }],
-        cels: { '1,1': { chars: [[]] } }
+        cels: { '1,1': {} }
     });
 }
 
@@ -65,7 +66,7 @@ export function load(data) {
         colorTable: data.colorTable ? [...data.colorTable] : []
     };
 
-    state.cels = transformValues(data.cels || {}, (v) => normalizeCel(v));
+    state.cels = transformValues(data.cels || {}, v => normalizeCel(v));
 
     sequences = eachWithObject(SEQUENCES, {}, (className, obj) => {
         obj[className] = Math.max.apply(Math, state[className].map(e => e.id));
@@ -207,50 +208,50 @@ function createCel(layer, frame, data = {}) {
 function normalizeCel(cel) {
     let normalizedCel = $.extend({}, CELL_DEFAULTS);
 
-    // Copy over everything except for chars
-    Object.keys(cel).filter(key => key !== 'chars').forEach(key => normalizedCel[key] = cel[key]);
+    // Copy over everything except for chars/colors
+    Object.keys(cel).filter(key => key !== 'chars' && key !== 'colors').forEach(key => normalizedCel[key] = cel[key]);
 
-    // Build chars array, making sure every row/col has a value, and boundaries are followed
+    // Build chars/colors arrays, making sure every row/col has a value, and boundaries are followed
     normalizedCel.chars = [];
-    let row, col, char, color;
-    for (row = 0; row < numRows(); row++) {
-        normalizedCel.chars[row] = [];
+    normalizedCel.colors = [];
 
-        for (col = 0; col < numCols(); col++) {
+    let row, col, char, color, rowLength = numRows(), colLength = numCols();
+    for (row = 0; row < rowLength; row++) {
+        normalizedCel.chars[row] = [];
+        normalizedCel.colors[row] = [];
+
+        for (col = 0; col < colLength; col++) {
             char = undefined;
             color = undefined;
 
             if (cel.chars && cel.chars[row] && cel.chars[row][col] !== undefined) {
-                if (Array.isArray(cel.chars[row][col])) {
-                    char = cel.chars[row][col][0];
-                    color = cel.chars[row][col][1];
-                }
-                else {
-                    char = cel.chars[row][col];
-                }
+                char = cel.chars[row][col];
+            }
+            if (cel.colors && cel.colors[row] && cel.colors[row][col] !== undefined) {
+                color = cel.colors[row][col];
             }
             if (char === undefined) { char = ''; }
             if (color === undefined) { color = 0; }
 
-            normalizedCel.chars[row][col] = [char, color];
+            normalizedCel.chars[row][col] = char;
+            normalizedCel.colors[row][col] = color;
         }
     }
 
     return normalizedCel;
 }
 
-export function iterateCels(callback) {
-    Object.values(state.cels).forEach((cel, i) => callback(cel, i));
+// A "glyph" is the term I'm using for a char+color combination
+// This function returns the glyph as a 2d array: [char, color]
+export function getCurrentCelGlyph(row, col) {
+    return charInBounds(row, col) ? [currentCel().chars[row][col], currentCel().colors[row][col]] : [];
 }
 
-export function getCurrentCelChar(row, col) {
-    return charInBounds(row, col) ? $.extend([], currentCel().chars[row][col]) : undefined;
-}
-
-// Parameter 'value' is an array of [char, color]. If an array element is undefined, that element will not be modified
-export function setCurrentCelChar(row, col, value) {
+// If the char or color parameter is undefined, that parameter will not be overridden
+export function setCurrentCelGlyph(row, col, char, color) {
     if (charInBounds(row, col)) {
-        $.extend(currentCel().chars[row][col], value);
+        if (char !== undefined) { currentCel().chars[row][col] = char; }
+        if (color !== undefined) { currentCel().colors[row][col] = color; }
     }
 }
 
@@ -259,18 +260,22 @@ export function charInBounds(row, col) {
 }
 
 // Aggregates all visible layers for a frame
-export function layeredChars(frame, options = {}) {
-    let result = create2dArray(numRows(), numCols(), () => ['', 0]);
+export function layeredGlyphs(frame, options = {}) {
+    // let result = create2dArray(numRows(), numCols(), () => ['', 0]);
+    let chars = create2dArray(numRows(), numCols(), '');
+    let colors = create2dArray(numRows(), numCols(), 0);
 
-    let l, layer, chars, r, c;
+    let l, layer, celChars, celColors, r, c;
     for (l = 0; l < state.layers.length; l++) {
         layer = state.layers[l];
         if (options.showAllLayers || (state.config.lockLayerVisibility ? l === layerIndex() : layer.visible)) {
-            chars = cel(layer, frame).chars;
-            for (r = 0; r < chars.length; r++) {
-                for (c = 0; c < chars[r].length; c++) {
-                    if (chars[r][c][0] !== '') {
-                        result[r][c] = chars[r][c];
+            celChars = cel(layer, frame).chars;
+            celColors = cel(layer, frame).colors;
+            for (r = 0; r < celChars.length; r++) {
+                for (c = 0; c < celChars[r].length; c++) {
+                    if (celChars[r][c] !== '') {
+                        chars[r][c] = celChars[r][c];
+                        colors[r][c] = celColors[r][c];
                     }
                 }
             }
@@ -278,13 +283,19 @@ export function layeredChars(frame, options = {}) {
 
         // If there is movableContent, we show it on top of the rest of the layer
         if (options.showMovingContent && l === layerIndex() && selection.movableContent) {
-            translate(selection.movableContent, selection.getSelectedCellArea().topLeft, (value, r, c) => {
-                if (value !== undefined && charInBounds(r, c)) { result[r][c] = value; }
+            translateGlyphs(selection.movableContent, selection.getSelectedCellArea().topLeft, (r, c, char, color) => {
+                if (charInBounds(r, c)) {
+                    chars[r][c] = char;
+                    colors[r][c] = color;
+                }
             });
         }
     }
 
-    return result;
+    return {
+        chars: chars,
+        colors: colors
+    };
 }
 
 export function colorTable() {

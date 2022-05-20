@@ -285,12 +285,12 @@ class FrameComponent {
 
         this._frame = frame;
 
-        this.redrawChars();
+        this.redrawGlyphs();
     }
 
-    redrawChars() {
+    redrawGlyphs() {
         this._canvasController.clear();
         this._canvasController.drawBackground(state.config('background'));
-        this._canvasController.drawChars(state.layeredChars(this._frame));
+        this._canvasController.drawGlyphs(state.layeredGlyphs(this._frame));
     }
 }

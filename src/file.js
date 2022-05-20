@@ -253,6 +253,7 @@ function setupBackgroundDialog() {
     backgroundColorPicker = new Picker({
         parent: $colorPicker.get(0),
         popup: false,
+        color: DEFAULT_COLORED_BACKGROUND,
         onChange: (color) => {
             backgroundColorPickerVal = color[state.COLOR_FORMAT];
         },
@@ -272,7 +273,9 @@ function openBackgroundDialog() {
     const radioValue = state.config('background') ? 'colored' : 'transparent';
     $backgroundTypes.filter(`[value="${radioValue}"]`).prop('checked', true).trigger('change');
 
-    backgroundColorPicker.setColor(state.config('background') ? state.config('background') : DEFAULT_COLORED_BACKGROUND, false)
+    if (state.config('background')) {
+        backgroundColorPicker.setColor(state.config('background'), false);
+    }
 
     $backgroundDialog.dialog('open');
 }
@@ -540,7 +543,7 @@ function exportRtf(options) {
     const fontSize = options.fontSize;
 
     // char background: use index 1 of color table. Note: chshdng / chcbpat is for MS Word compatibility
-    const cb = options.background ? `\\chshdng0\\chcbpat${1}\\cb${1}` : '';
+    const cb = options.background && state.config('background') ? `\\chshdng0\\chcbpat${1}\\cb${1}` : '';
 
     function encodeColor(colorStr) {
         const [r, g, b, a] = new Color(colorStr).rgba; // Break colorStr into rgba components
@@ -672,7 +675,7 @@ function exportGif(options) {
     state.frames().forEach(frame => {
         exportCanvas.clear();
         if (options.background) { exportCanvas.drawBackground(state.config('background')); }
-        exportCanvas.drawChars(state.layeredChars(frame, { showAllLayers: true }));
+        exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
         // gif.addFrame(exportCanvas.canvas, { delay: 1000 / fps }); // doesn't work with multiple frames
         gif.addFrame(exportCanvas.context, {copy: true, delay: 1000 / fps });
     });
@@ -707,7 +710,7 @@ function exportPng(options) {
     function _frameToPng(frame, callback) {
         exportCanvas.clear();
         if (options.background) { exportCanvas.drawBackground(state.config('background')); }
-        exportCanvas.drawChars(state.layeredChars(frame, { showAllLayers: true }));
+        exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
         exportCanvas.canvas.toBlob(function(blob) {
             callback(blob);
         });
@@ -756,17 +759,18 @@ function exportPng(options) {
 
 // Converts a frame to a string using the given newLineChar and (optional) lineFormatter
 function exportableFrameString(frame, newLineChar, lineFormatter = function(line) { return line.text; }) {
-    const chars = state.layeredChars(frame, { showAllLayers: true });
-
     let image = '';
 
-    for (let row = 0; row < chars.length; row++) {
+    const glyphs = state.layeredGlyphs(frame, { showAllLayers: true });
+    let row, col, rowLength = glyphs.chars.length, colLength = glyphs.chars[0].length;
+
+    for (row = 0; row < rowLength; row++) {
         // Convert individual chars into lines of text (of matching color), so we can draw as few <span> as possible
         let lines = [];
         let line, colorIndex;
 
-        for (let col = 0; col < chars[row].length; col++) {
-            colorIndex = chars[row][col][1];
+        for (col = 0; col < colLength; col++) {
+            colorIndex = glyphs.colors[row][col];
 
             if (line && colorIndex !== line.colorIndex) {
                 // New color; have to make new line
@@ -776,7 +780,7 @@ function exportableFrameString(frame, newLineChar, lineFormatter = function(line
             if (!line) {
                 line = { colorIndex: colorIndex, text: '' }
             }
-            line.text += (chars[row][col][0] === '' ? ' ' : chars[row][col][0]);
+            line.text += (glyphs.chars[row][col] === '' ? ' ' : glyphs.chars[row][col]);
         }
 
         if (line) { lines.push(line); }

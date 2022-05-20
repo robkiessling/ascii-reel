@@ -100,13 +100,15 @@ export class CanvasControl {
         }
     }
 
-    drawChars(chars) {
-        // Convert individual chars into lines of text (of matching color), so we can call fillText as few times as possible
+    drawGlyphs(glyphs) {
+        // Convert individual glyphs into lines of text (of matching color), so we can call fillText as few times as possible
         let lines = [];
-        for (let row = 0; row < chars.length; row++) {
+        let row, col, rowLength = glyphs.chars.length, colLength = glyphs.chars[0].length;
+
+        for (row = 0; row < rowLength; row++) {
             let line, colorIndex;
-            for (let col = 0; col < chars[row].length; col++) {
-                colorIndex = chars[row][col][1];
+            for (col = 0; col < colLength; col++) {
+                colorIndex = glyphs.colors[row][col];
                 if (line && colorIndex !== line.colorIndex) {
                     // Have to make new line
                     lines.push(line);
@@ -117,7 +119,7 @@ export class CanvasControl {
                     // Increase row by 0.5 so it is centered in cell
                     line = { x: Cell.x(col), y: Cell.y(row + 0.5), colorIndex: colorIndex, text: '' }
                 }
-                line.text += (chars[row][col][0] === '' ? ' ' : chars[row][col][0]);
+                line.text += (glyphs.chars[row][col] === '' ? ' ' : glyphs.chars[row][col]);
             }
             if (line) { lines.push(line); }
         }
@@ -131,10 +133,10 @@ export class CanvasControl {
         }
     }
 
-    drawOnion(chars) {
+    drawOnion(glyphs) {
         this.context.save();
         this.context.globalAlpha = ONION_OPACITY;
-        this.drawChars(chars);
+        this.drawGlyphs(glyphs);
         this.context.restore();
     }
 

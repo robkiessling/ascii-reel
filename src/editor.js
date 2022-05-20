@@ -167,7 +167,7 @@ function refreshSelectionTools() {
 
 function paintSelection() {
     selection.getSelectedCells().forEach(cell => {
-        state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
+        state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
     });
     triggerRefresh('chars');
 }
@@ -175,21 +175,21 @@ function paintSelection() {
 // -------------------------------------------------------------------------------- Non-selection tools
 
 function drawCellChar(cell) {
-    const currentChar = state.getCurrentCelChar(cell.row, cell.col);
+    const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
 
     // Only updating char if it is actually different (needs to be efficient since we call this on mousemove)
-    if (currentChar && (currentChar[0] !== freeformChar || currentChar[1] !== currentColorIndex())) {
-        state.setCurrentCelChar(cell.row, cell.col, [freeformChar, currentColorIndex()]);
+    if (currentChar !== undefined && (currentChar !== freeformChar || currentColor !== currentColorIndex())) {
+        state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, currentColorIndex());
         triggerRefresh('chars');
     }
 }
 
 function paintCell(cell) {
-    const char = state.getCurrentCelChar(cell.row, cell.col);
+    const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
 
     // Only refreshing if color is actually different (needs to be efficient since we call this on mousemove)
-    if (char && char[1] !== currentColorIndex()) {
-        state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
+    if (currentChar !== undefined && currentColor !== currentColorIndex()) {
+        state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
         triggerRefresh('chars');
     }
 }
@@ -198,7 +198,7 @@ function paintConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return; }
 
     selection.getConnectedCells(cell, options).forEach(cell => {
-        state.setCurrentCelChar(cell.row, cell.col, [undefined, currentColorIndex()]);
+        state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
     })
 
     triggerRefresh('chars');

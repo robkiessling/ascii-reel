@@ -92,7 +92,7 @@ function setupKeydownListener() {
                     if (char === 'Backspace') {
                         selection.moveCursorInDirection('left');
                     }
-                    state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, ['', 0]);
+                    state.setCurrentCelGlyph(selection.cursorCell.row, selection.cursorCell.col, '', 0);
                 }
                 else {
                     selection.empty();
@@ -110,13 +110,13 @@ function setupKeydownListener() {
                     }
                     else if (selection.cursorCell) {
                         // update cursor cell and then move to next cell
-                        state.setCurrentCelChar(selection.cursorCell.row, selection.cursorCell.col, [char, editor.currentColorIndex()]);
+                        state.setCurrentCelGlyph(selection.cursorCell.row, selection.cursorCell.col, char, editor.currentColorIndex());
                         selection.moveCursorInDirection('right');
                     }
                     else {
                         // update entire selection
                         selection.getSelectedCells().forEach(cell => {
-                            state.setCurrentCelChar(cell.row, cell.col, [char, editor.currentColorIndex()]);
+                            state.setCurrentCelGlyph(cell.row, cell.col, char, editor.currentColorIndex());
                         });
                     }
 

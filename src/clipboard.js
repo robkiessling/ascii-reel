@@ -4,13 +4,13 @@ import "core-js/stable.js";
 
 import * as selection from "./selection.js";
 import * as state from "./state.js";
-import {translate} from "./utilities.js";
+import {translateGlyphs} from "./utilities.js";
 import {triggerRefresh} from "./index.js";
 import * as editor from "./editor.js";
 import * as actions from "./actions.js";
 
-let copiedSelection = null; // 2d array
-let copiedText = null; // string
+let copiedSelection = null;
+let copiedText = null;
 
 export function init() {
     actions.registerAction('cut', {
@@ -71,33 +71,41 @@ function paste(limitToSelection) {
     readClipboard(text => {
         if (copiedText !== text) {
             // External clipboard has changed; paste the external clipboard
-            paste2dArray(convertTextToChars(text), limitToSelection);
+            pasteGlyphs(convertTextToGlyphs(text), limitToSelection);
         }
         else if (copiedSelection) {
             // Write our stored selection
-            paste2dArray(copiedSelection, limitToSelection);
+            pasteGlyphs(copiedSelection, limitToSelection);
         }
     });
 }
 
 function copySelection() {
     copiedSelection = selection.getSelectedValues();
-    copiedText = convertCharsToText(copiedSelection);
+    copiedText = convertGlyphsToText(copiedSelection);
     writeClipboard(copiedText);
 }
 
-function paste2dArray(array, limitToSelection) {
-    if (array.length === 1 && array[0].length === 1) {
+/**
+ *
+ * @param glyphs           An object like: { chars: [[2d array of chars]], colors: [[2d array of colors]] }
+ * @param limitToSelection If true, pasted text will only be pasted within the current selection bounds
+ */
+function pasteGlyphs(glyphs, limitToSelection) {
+    if (glyphs.chars.length === 1 && glyphs.chars[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
+        const char = glyphs.chars[0][0];
+        const color = glyphs.colors[0][0];
+
         selection.getSelectedCells().forEach(cell => {
-            state.setCurrentCelChar(cell.row, cell.col, array[0][0]);
+            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
         });
     }
     else {
-        // Paste array once at topLeft of entire selected area
-        translate(array, selection.getSelectedCellArea().topLeft, (value, r, c) => {
-            if (value !== undefined && (!limitToSelection || selection.isSelectedCell({row: r, col: c}))) {
-                state.setCurrentCelChar(r, c, value);
+        // Paste glyphs once at topLeft of entire selected area
+        translateGlyphs(glyphs, selection.getSelectedCellArea().topLeft, (r, c, char, color) => {
+            if (!limitToSelection || selection.isSelectedCell({row: r, col: c})) {
+                state.setCurrentCelGlyph(r, c, char, color);
             }
         });
     }
@@ -105,21 +113,34 @@ function paste2dArray(array, limitToSelection) {
     triggerRefresh('chars');
 }
 
-function convertCharsToText(array) {
-    return array.map(row => {
-        return row.map(charObj => {
-            // Only care about the char, not the color
+function convertGlyphsToText(glyphs) {
+    // TODO Only caring about the char, not the color
+    return glyphs.chars.map(row => {
+        return row.map(char => {
             // Convert empty cells to space char ' ' so when it is pasted to a text document the spacing is correct
-            return charObj === undefined || charObj[0] === '' ? ' ' : charObj[0];
+            return char === undefined || char === '' ? ' ' : char;
         }).join('');
     }).join('\n');
 }
 
 const MAX_TEXT_LENGTH = 100000; // Upper limit just in case the OS clipboard had a huge amount of text copied
-export function convertTextToChars(text) {
-    return text.slice(0, MAX_TEXT_LENGTH).split(/\r?\n/).map(line => {
-        return line.split('').map(char => [char, editor.currentColorIndex()]);
-    })
+function convertTextToGlyphs(text) {
+    let chars = [], colors = [];
+    
+    text.slice(0, MAX_TEXT_LENGTH).split(/\r?\n/).forEach((line, r) => {
+        chars[r] = [];
+        colors[r] = [];
+
+        line.split('').forEach((char, c) => {
+            chars[r][c] = char;
+            colors[r][c] = editor.currentColorIndex() // todo could read color from rtf
+        })
+    });
+
+    return {
+        chars: chars,
+        colors: colors
+    }
 }
 
 

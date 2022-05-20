@@ -52,19 +52,20 @@ export function transformValues(obj, callback) {
 }
 
 /**
- * Translates a 2d array as if it was positioned at a Cell. The callback value will be null for parts of the array
- * that go out of the frame.
+ * Translates 2d arrays of chars/colors as if they were positioned at a Cell.
+ * Note: The callback rows/cols can be out of bounds
  *
- * @param array         2d array of values
- * @param cell          Position to move the top-left Cell of the layout to
- * @param callback      function(value, row, col), where row and col are the coordinates if the layout was moved
+ * @param glyphs         An object like: { chars: [[2d array of chars]], colors: [[2d array of colors]] }
+ * @param cell           Position to move the top-left Cell of the layout to
+ * @param callback       function(row, col, char, color), where row and col are the coordinates if the layout was moved
  */
-export function translate(array, cell, callback) {
-    array.forEach((rowValues, rowIndex) => {
-        rowValues.forEach((value, colIndex) => {
-            callback(value, rowIndex + cell.row, colIndex + cell.col);
-        });
-    });
+export function translateGlyphs(glyphs, cell, callback) {
+    let r, c, numRows = glyphs.chars.length, numCols = glyphs.chars[0].length;
+    for (r = 0; r < numRows; r++) {
+        for (c = 0; c < numCols; c++) {
+            callback(r + cell.row, c + cell.col, glyphs.chars[r][c], glyphs.colors[r][c]);
+        }
+    }
 }
 
 

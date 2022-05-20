@@ -34,7 +34,7 @@ export function refresh() {
 export function redraw() {
     canvasControl.clear();
     canvasControl.drawBackground(state.config('background'));
-    canvasControl.drawChars(state.layeredChars(state.frames()[previewIndex], { showAllLayers: true }));
+    canvasControl.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
     canvasControl.drawWindow(selectionCanvas.currentViewRect());
 }
 
