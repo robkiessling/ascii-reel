@@ -29,7 +29,7 @@ export function init() {
 
     $delete.on('click', () => {
         state.deleteColor($colorList.find('.selected').data('color'));
-        triggerRefresh('palette');
+        triggerRefresh('palette', true);
     });
 }
 

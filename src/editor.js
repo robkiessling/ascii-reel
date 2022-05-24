@@ -169,7 +169,7 @@ function paintSelection() {
     selection.getSelectedCells().forEach(cell => {
         state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
     });
-    triggerRefresh('chars');
+    triggerRefresh('chars', true);
 }
 
 // -------------------------------------------------------------------------------- Non-selection tools
@@ -180,7 +180,7 @@ function drawCellChar(cell) {
     // Only updating char if it is actually different (needs to be efficient since we call this on mousemove)
     if (currentChar !== undefined && (currentChar !== freeformChar || currentColor !== currentColorIndex())) {
         state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, currentColorIndex());
-        triggerRefresh('chars');
+        triggerRefresh('chars', true);
     }
 }
 
@@ -190,7 +190,7 @@ function paintCell(cell) {
     // Only refreshing if color is actually different (needs to be efficient since we call this on mousemove)
     if (currentChar !== undefined && currentColor !== currentColorIndex()) {
         state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
-        triggerRefresh('chars');
+        triggerRefresh('chars', true);
     }
 }
 
@@ -201,7 +201,7 @@ function paintConnectedCells(cell, options) {
         state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
     })
 
-    triggerRefresh('chars');
+    triggerRefresh('chars', true);
 }
 
 
@@ -289,7 +289,7 @@ function setupColorPicker() {
         state.addColor(cachedColorString);
 
         refreshAddToPalette();
-        triggerRefresh('palette');
+        triggerRefresh('palette', true);
     })
 }
 

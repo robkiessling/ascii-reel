@@ -195,6 +195,7 @@ export class Timeline {
 
         this.$editLayerDialog.dialog("close");
 
+        state.pushStateToHistory();
         // triggerRefresh(); // Uncomment this if we ever add something like layer opacity to layer settings
     }
 
@@ -204,13 +205,17 @@ export class Timeline {
     }
 
     _selectLayer(index) {
-        state.layerIndex(index);
-        triggerRefresh();
+        if (index !== state.layerIndex()) {
+            state.layerIndex(index);
+            triggerRefresh('full', true);
+        }
     }
 
     _selectFrame(index) {
-        state.frameIndex(index);
-        triggerRefresh();
+        if (index !== state.frameIndex()) {
+            state.frameIndex(index);
+            triggerRefresh('full', true);
+        }
     }
 
     _refreshVisibilities() {

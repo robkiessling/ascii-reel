@@ -97,12 +97,13 @@ function setupKeydownListener() {
                 else {
                     selection.empty();
                 }
-                triggerRefresh('chars');
+                triggerRefresh('chars', true);
                 break;
             default:
                 if (producesText(code)) {
                     if (state.config('tool') === 'draw-freeform') {
                         editor.setFreeformChar(char);
+                        return;
                     }
 
                     if (selection.movableContent) {
@@ -120,7 +121,7 @@ function setupKeydownListener() {
                         });
                     }
 
-                    triggerRefresh('chars');
+                    triggerRefresh('chars', true);
                 }
                 else {
                     // Unrecognized input; let browser handle as normal

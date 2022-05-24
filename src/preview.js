@@ -26,10 +26,6 @@ export function init() {
     });
 }
 
-export function refresh() {
-    $fpsSlider.slider('value', state.config('fps'));
-}
-
 // Just redraw the current preview frame (e.g. if chars got updated)
 export function redraw() {
     canvasControl.clear();
@@ -42,6 +38,7 @@ export function redraw() {
 export function reset() {
     window.clearInterval(previewInterval);
 
+    $fpsSlider.slider('value', state.config('fps'));
     $fpsValue.html(`${state.config('fps')} FPS`);
 
     previewIndex = state.frameIndex();

@@ -238,7 +238,7 @@ function setupBackgroundDialog() {
 
     createDialog($backgroundDialog, () => {
         state.config('background', getBackgroundValue());
-        triggerRefresh();
+        triggerRefresh('full', true);
         $backgroundDialog.dialog('close');
     }, 'Save', {
         minWidth: 400,

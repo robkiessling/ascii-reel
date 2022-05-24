@@ -46,7 +46,7 @@ function cut() {
 
     copySelection();
     selection.empty();
-    triggerRefresh('chars');
+    triggerRefresh('chars', true);
 }
 
 function copy() {
@@ -110,7 +110,7 @@ function pasteGlyphs(glyphs, limitToSelection) {
         });
     }
 
-    triggerRefresh('chars');
+    triggerRefresh('chars', true);
 }
 
 function convertGlyphsToText(glyphs) {

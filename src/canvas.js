@@ -509,6 +509,14 @@ export class Cell extends Rect {
         return row * CELL_HEIGHT;
     }
 
+    serialize() {
+        return { row: this.row, col: this.col }
+    }
+
+    static deserialize(data) {
+        return new Cell(data.row, data.col);
+    }
+
     clone() {
         return new Cell(this.row, this.col);
     }
@@ -590,6 +598,14 @@ export class CellArea extends Rect {
         super();
         this.topLeft = topLeft; // Cell
         this.bottomRight = bottomRight; // Cell
+    }
+
+    serialize() {
+        return { topLeft: this.topLeft.serialize(), bottomRight: this.bottomRight.serialize() }
+    }
+
+    static deserialize(data) {
+        return new CellArea(Cell.deserialize(data.topLeft), Cell.deserialize(data.bottomRight));
     }
 
     static drawableArea() {

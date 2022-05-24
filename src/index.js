@@ -9,10 +9,7 @@ import { init as initEditor, setupMouseEvents as setupEditorMouse, refresh as re
 import { init as initFile } from "./file.js";
 import { init as initKeyboard } from "./keyboard.js";
 import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./palette.js";
-import {
-    init as initPreview, canvasControl as previewCanvas,
-    refresh as refreshPreview, redraw as redrawPreview, reset as resetPreview
-} from "./preview.js";
+import { init as initPreview, canvasControl as previewCanvas, redraw as redrawPreview, reset as resetPreview } from "./preview.js";
 import * as selection from './selection.js';
 import * as state from "./state.js";
 import { Timeline } from "./timeline.js";
@@ -71,20 +68,14 @@ window.setTimeout(() => {
 
 
 
-// TODO Is this needed? Describe the function
-export function onStateLoaded() {
-    refreshPreview();
-    refreshEditor();
-    timeline.refresh();
-    triggerResize();
-
-    selection.clear();
-}
-
 /**
  * Resizes the components that depend on window size. Then triggers a full refresh.
  */
-export function triggerResize() {
+export function triggerResize(clearSelection) {
+    if (clearSelection) {
+        selection.clear();
+    }
+
     timeline.refresh(); // This has to happen first, since its configuration can affect canvas boundaries
 
     charCanvas.resize();
@@ -103,8 +94,9 @@ export function triggerResize() {
  *
  * @param type Can be a single string value, or an Array of string values. This narrows does the refresh scope to just
  *             refresh a subset of components.
+ * @param saveState If true, state will be stored in history (for undo/redo purposes)
  */
-export function triggerRefresh(type = 'full') {
+export function triggerRefresh(type = 'full', saveState = false) {
     if (!Array.isArray(type)) {
         type = [type];
     }
@@ -156,6 +148,10 @@ export function triggerRefresh(type = 'full') {
                 console.warn(`triggerRefresh("${type}") is not a valid type`);
         }
     });
+
+    if (saveState) {
+        state.pushStateToHistory();
+    }
 }
 
 function redrawCharCanvas() {

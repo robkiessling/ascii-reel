@@ -1,3 +1,4 @@
+import $ from "jquery";
 import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translateGlyphs} from "./utilities.js";
 import {Cell, CellArea} from "./canvas.js";
 import {triggerRefresh} from "./index.js";
@@ -12,8 +13,8 @@ export let polygons = [];
 export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
 export let isMoving = false; // Only true when mouse is down and polygon is being moved
 export let movableContent = null; // Selected glyph content IF there is any (it will be surrounded by dashed outline)
-export let hoveredCell;
-export let cursorCell;
+export let hoveredCell = null;
+export let cursorCell = null;
 // export let cursorTabCell; // TODO Where to move from on return key
 
 export function init() {
@@ -31,6 +32,41 @@ export function init() {
     });
 
     clearCaches();
+}
+
+/**
+ * Saves the current state of the various selection variables. Many things such as the polygons have to be serialized first.
+ * We don't actually store this data in the save file, but it is stored in memory for undo/redo purposes.
+ */
+export function serialize() {
+    return {
+        polygons: polygons.map(polygon => polygon.serialize()),
+        movableContent: movableContent === null ? null : $.extend(true, {}, movableContent),
+        cursorCell: cursorCell === null ? null : cursorCell.serialize(),
+    };
+}
+
+/**
+ * Loads a serialized state
+ */
+export function deserialize(data) {
+    polygons = data.polygons.map(polygon => {
+        switch (polygon.className) {
+            case 'SelectionRect':
+                return SelectionRect.deserialize(polygon);
+            case 'SelectionLine':
+                return SelectionLine.deserialize(polygon);
+            case 'SelectionLasso':
+                return SelectionLasso.deserialize(polygon);
+            case 'SelectionWand':
+                return SelectionWand.deserialize(polygon);
+            default:
+                console.error(`Unknown polygon class: ${polygon.className}`);
+                return null;
+        }
+    });
+    movableContent = data.movableContent === null ? null : $.extend(true, {}, data.movableContent);
+    cursorCell = data.cursorCell === null ? null : Cell.deserialize(data.cursorCell);
 }
 
 export function hasSelection() {
@@ -55,7 +91,7 @@ export function empty() {
 export function selectAll() {
     editor.changeTool('selection-rect');
     polygons = [SelectionRect.drawableArea()];
-    triggerRefresh('selection');
+    triggerRefresh('selection', true);
 }
 
 // Returns true if the given Cell is part of the selection
@@ -254,7 +290,9 @@ export function setupMouseEvents(canvasControl) {
                     polygons.push(new SelectionLasso(cell, cell.clone()));
                     break;
                 case 'selection-wand':
-                    polygons.push(new SelectionWand(cell, cell.clone(), { diagonal: mouseEvent.metaKey, colorblind: mouseEvent.altKey }));
+                    let wand = new SelectionWand(cell, cell.clone(), { diagonal: mouseEvent.metaKey, colorblind: mouseEvent.altKey });
+                    wand.complete();
+                    polygons.push(wand);
                     break;
             }
 
@@ -329,7 +367,7 @@ export function startMovingContent() {
     movableContent = getSelectedValues();
 
     empty();
-    triggerRefresh();
+    triggerRefresh('full', true);
 }
 
 export function finishMovingContent() {
@@ -338,7 +376,7 @@ export function finishMovingContent() {
     });
 
     movableContent = null;
-    triggerRefresh();
+    triggerRefresh('full', true);
 }
 
 export function updateMovableContent(char, color) {
@@ -569,7 +607,7 @@ function flip(horizontally, vertically, mirrorChars) {
         if (horizontally) { polygon.flipHorizontally(flipCol); }
     });
 
-    triggerRefresh(['chars', 'selection']);
+    triggerRefresh(['chars', 'selection'], true);
 }
 
 
@@ -600,7 +638,7 @@ function cellKeyToRowCol(cellKey) {
  * SelectionPolygon is the base class for many types of selection shapes. All polygons have a start value (where the
  * user first clicked) and an end value (where the user's last mouse position was).
  *
- * Subclasses must implement an 'iterateCells' function and a 'draw' function.
+ * Subclasses must implement 'iterateCells', 'draw', 'serialize' and 'deserialize' methods
  */
 class SelectionPolygon {
     constructor(startCell, endCell, options = {}) {
@@ -659,6 +697,14 @@ class SelectionPolygon {
 }
 
 class SelectionLine extends SelectionPolygon {
+    serialize() {
+        return { className: 'SelectionLine', start: this.start.serialize(), end: this.end.serialize() };
+    }
+
+    static deserialize(data) {
+        return new SelectionLine(Cell.deserialize(data.start), Cell.deserialize(data.end));
+    }
+
     iterateCells(callback) {
         this.start.lineTo(this.end).forEach(cell => callback(cell.row, cell.col));
     }
@@ -673,6 +719,14 @@ class SelectionLine extends SelectionPolygon {
 }
 
 class SelectionRect extends SelectionPolygon {
+    serialize() {
+        return { className: 'SelectionRect', start: this.start.serialize(), end: this.end.serialize() };
+    }
+
+    static deserialize(data) {
+        return new SelectionRect(Cell.deserialize(data.start), Cell.deserialize(data.end));
+    }
+
     static drawableArea() {
         return new SelectionRect(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
     }
@@ -703,6 +757,20 @@ class SelectionRect extends SelectionPolygon {
  * the polygon is filled in and stored as an array of rectangular CellAreas (_lassoAreas).
  */
 class SelectionLasso extends SelectionPolygon {
+    serialize() {
+        return {
+            className: 'SelectionLasso',
+            areas: this._lassoAreas.map(area => area.serialize())
+        };
+    }
+
+    static deserialize(data) {
+        let lasso = new SelectionLasso(null, null);
+        lasso._lassoAreas = data.areas.map(area => CellArea.deserialize(area));
+        lasso._cacheEndpoints();
+        lasso.completed = true;
+        return lasso;
+    }
 
     iterateCells(callback) {
         if (this._lassoAreas) {
@@ -880,10 +948,20 @@ class SelectionLasso extends SelectionPolygon {
 
 
 class SelectionWand extends SelectionPolygon {
-    constructor(...args) {
-        super(...args);
-        this._findConnectedCells();
-        this.complete();
+
+    serialize() {
+        return {
+            className: 'SelectionWand',
+            cells: this._cells.map(cell => cell.serialize())
+        };
+    }
+
+    static deserialize(data) {
+        let wand = new SelectionWand(null, null);
+        wand._cells = data.cells.map(cell => Cell.deserialize(cell));
+        wand._cacheEndpoints();
+        wand.completed = true;
+        return wand;
     }
 
     get cells() {
@@ -935,7 +1013,7 @@ class SelectionWand extends SelectionPolygon {
         this._cacheEndpoints();
     }
 
-    _findConnectedCells() {
+    complete() {
         const cellHash = {};
         const [startChar, startColor] = state.getCurrentCelGlyph(this.start.row, this.start.col);
         const isBlank = startChar === '';
@@ -975,6 +1053,8 @@ class SelectionWand extends SelectionPolygon {
 
         this._cells = Object.values(cellHash);
         this._cacheEndpoints();
+
+        super.complete();
     }
 
     _cacheEndpoints() {
