@@ -159,6 +159,11 @@ function redrawCharCanvas() {
     charCanvas.drawBackground(state.config('background'));
     charCanvas.drawGlyphs(state.layeredGlyphs(state.currentFrame(), { showMovingContent: true }));
 
+    const grid = state.config('grid');
+    if (grid.show) {
+        charCanvas.drawGrid(grid.width, grid.spacing, grid.color);
+    }
+
     if (state.config('onion')) {
         charCanvas.drawOnion(state.layeredGlyphs(state.previousFrame()));
     }

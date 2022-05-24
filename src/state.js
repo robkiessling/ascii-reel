@@ -5,13 +5,19 @@ import {triggerRefresh, triggerResize} from "./index.js";
 import * as actions from "./actions.js";
 import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
-import {deserialize} from "./selection.js";
 
+// TODO Have to move certain stuff out of here. E.g. cmd-z should not undo fps value
 const CONFIG_DEFAULTS = {
     name: 'New Sprite',
     dimensions: [10, 5],
     background: false,
     fps: 12,
+    grid: {
+        show: false,
+        width: 1,
+        spacing: 1,
+        color: '#ccc'
+    },
     onion: false,
     lockLayerVisibility: true,
     layerIndex: 0,

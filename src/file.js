@@ -14,7 +14,7 @@ import * as actions from "./actions.js";
 // import GIF from 'gif.js.optimized/dist/gif.js';
 import GIF from './vendor/gif.cjs';
 
-import {confirmDialog, createDialog, createHTMLFile, createHorizontalMenu} from "./utilities.js";
+import {confirmDialog, createDialog, createHTMLFile, createHorizontalMenu, isFunction} from "./utilities.js";
 import {CanvasControl, MONOSPACE_RATIO} from "./canvas.js";
 import Color from "@sphinxxxx/color-conversion";
 import {triggerRefresh} from "./index.js";
@@ -50,7 +50,7 @@ export function refreshMenu() {
             const action = actions.getActionInfo($item.data('action'));
 
             if (action) {
-                let html = `<span>${action.name}</span>`;
+                let html = `<span>${isFunction(action.name) ? action.name() : action.name}</span>`;
                 if (action.shortcut) {
                     html += `<span class="shortcut">${actions.shortcutAbbr(action.shortcut)}</span>`;
                 }
@@ -243,12 +243,12 @@ function setupBackgroundDialog() {
     }, 'Save', {
         minWidth: 400,
         maxWidth: 400,
-        minHeight: 500,
-        maxHeight: 500
+        minHeight: 450,
+        maxHeight: 450
     });
 
     const $colorPickerContainer = $backgroundDialog.find('.color-picker-container');
-    const $colorPicker = $('#background-color');
+    const $colorPicker = $colorPickerContainer.find('.color-picker');
 
     backgroundColorPicker = new Picker({
         parent: $colorPicker.get(0),

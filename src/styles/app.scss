@@ -686,6 +686,12 @@ $selection-tool-size: 2rem;
       outline: 1px solid red;
     }
   }
+
+  .color-picker-container {
+    .picker_wrapper {
+      font-size: 8px; // This affects overall size/scaling of the vanilla color picker
+    }
+  }
 }
 
 @for $i from 0 through 20 {

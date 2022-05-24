@@ -6,10 +6,6 @@ export const MONOSPACE_RATIO = 3/5;
 const CELL_HEIGHT = 16;
 const CELL_WIDTH = CELL_HEIGHT * MONOSPACE_RATIO;
 
-const GRID = false;
-const GRID_WIDTH = 0.25;
-const GRID_COLOR = '#fff';
-
 const WINDOW_BORDER_COLOR = '#fff';
 const WINDOW_BORDER_WIDTH = 4;
 
@@ -127,10 +123,6 @@ export class CanvasControl {
             this.context.fillStyle = colorStr(line.colorIndex);
             this.context.fillText(line.text, line.x, line.y);
         });
-
-        if (GRID) {
-            this._drawGrid();
-        }
     }
 
     drawOnion(glyphs) {
@@ -238,18 +230,18 @@ export class CanvasControl {
         )
     }
 
-    _drawGrid() {
-        this.context.strokeStyle = GRID_COLOR;
-        this.context.lineWidth = GRID_WIDTH;
+    drawGrid(width, spacing, color) {
+        this.context.strokeStyle = color;
+        this.context.lineWidth = width / this._currentZoom();
 
-        for (let r = 0; r < numRows() + 1; r++) {
+        for (let r = 0; r < numRows() + 1; r += spacing) {
             this.context.beginPath();
             this.context.moveTo(Cell.x(0), Cell.y(r));
             this.context.lineTo(Cell.x(numCols()), Cell.y(r));
             this.context.stroke();
         }
 
-        for (let c = 0; c < numCols() + 1; c++) {
+        for (let c = 0; c < numCols() + 1; c += spacing) {
             this.context.beginPath();
             this.context.moveTo(Cell.x(c), Cell.y(0));
             this.context.lineTo(Cell.x(c), Cell.y(numRows()));

@@ -39,6 +39,7 @@
                 <span>View</span>
                 <ul>
                     <li class="action-item" data-action="toggle-grid"></li>
+                    <li class="action-item" data-action="grid-settings"></li>
                     <li class="break"></li>
                     <li class="action-item" data-action="zoom-in"></li>
                     <li class="action-item" data-action="zoom-out"></li>
@@ -350,7 +351,36 @@
         </label>
 
         <div class="color-picker-container">
-            <div class="color-picker" id="background-color" style="width: 100px;height:100px;background:red;"></div>
+            <div class="color-picker"></div>
+        </div>
+    </div>
+
+    <div id="grid-dialog" title="Grid Settings" class="dialog-form">
+        <label>
+            Grid Size:
+            <select id="grid-width" class="w-5">
+                <option value="1">1px</option>
+                <option value="2">2px</option>
+                <option value="3">3px</option>
+                <option value="4">4px</option>
+            </select>
+        </label>
+        <label>
+            Grid Spacing:
+            <select id="grid-spacing" class="w-5">
+                <option value="1">1px</option>
+                <option value="2">2px</option>
+                <option value="4">4px</option>
+                <option value="8">8px</option>
+                <option value="16">16px</option>
+                <option value="32">32px</option>
+                <option value="64">64px</option>
+            </select>
+        </label>
+
+        <label style="padding-top: 0.5rem;">Grid Color:</label>
+        <div class="color-picker-container">
+            <div class="color-picker"></div>
         </div>
     </div>
 

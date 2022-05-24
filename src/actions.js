@@ -8,7 +8,7 @@ let shortcutLookup;
  * @param key Unique string that can be used to call an action at a later time
  * @param data Object with attributes:
  *
- *     name: string             Display name
+ *     name: string or fn       Display name (or function that returns display name)
  *     description: string      (optional) Text used for tooltips
  *     callback: function       Function to call when action is performed
  *     enabled: function        (optional) If given, the function must return true for action to be called
