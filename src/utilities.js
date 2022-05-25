@@ -60,9 +60,11 @@ export function transformValues(obj, callback) {
  * @param callback       function(row, col, char, color), where row and col are the coordinates if the layout was moved
  */
 export function translateGlyphs(glyphs, cell, callback) {
-    let r, c, numRows = glyphs.chars.length, numCols = glyphs.chars[0].length;
-    for (r = 0; r < numRows; r++) {
-        for (c = 0; c < numCols; c++) {
+    // Note: rows may have different number of columns (e.g. when pasting from a text editor) so not caching row/col length
+    let r, c;
+
+    for (r = 0; r < glyphs.chars.length; r++) {
+        for (c = 0; c < glyphs.chars[r].length; c++) {
             callback(r + cell.row, c + cell.col, glyphs.chars[r][c], glyphs.colors[r][c]);
         }
     }

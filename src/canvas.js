@@ -1,10 +1,7 @@
 import {roundForComparison} from "./utilities.js";
 import bresenham from "bresenham";
-import {charInBounds, colorStr, numCols, numRows} from "./state.js";
-
-export const MONOSPACE_RATIO = 3/5;
-const CELL_HEIGHT = 16;
-const CELL_WIDTH = CELL_HEIGHT * MONOSPACE_RATIO;
+import {charInBounds, colorStr, numCols, numRows, config} from "./state.js";
+import {cellHeight, cellWidth} from "./fonts.js";
 
 const WINDOW_BORDER_COLOR = '#fff';
 const WINDOW_BORDER_WIDTH = 4;
@@ -59,7 +56,7 @@ export class CanvasControl {
         this.originalTransform = this.context.getTransform();
 
         // Set up font
-        this.context.font = '1rem monospace';
+        this.context.font = `${cellHeight}px ${config('font')}`;
         this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
 
@@ -331,8 +328,8 @@ export class CanvasControl {
 
     cellAtExternalXY(x, y) {
         const point = this.pointAtExternalXY(x, y);
-        const row = Math.floor(point.y / CELL_HEIGHT);
-        const col = Math.floor(point.x / CELL_WIDTH);
+        const row = Math.floor(point.y / cellHeight);
+        const col = Math.floor(point.x / cellWidth);
         return new Cell(row, col);
     }
 
@@ -495,10 +492,10 @@ export class Cell extends Rect {
     // Since x and y are based purely on col/row value, we have these static methods so you can calculate x/y without
     // having to instantiate a new Cell() -- helps with performance
     static x(col) {
-        return col * CELL_WIDTH;
+        return col * cellWidth;
     }
     static y(row) {
-        return row * CELL_HEIGHT;
+        return row * cellHeight;
     }
 
     serialize() {
@@ -569,16 +566,16 @@ export class Cell extends Rect {
     }
 
     get x() {
-        return this.col * CELL_WIDTH;
+        return this.col * cellWidth;
     }
     get y() {
-        return this.row * CELL_HEIGHT;
+        return this.row * cellHeight;
     }
     get width() {
-        return CELL_WIDTH;
+        return cellWidth;
     }
     get height() {
-        return CELL_HEIGHT;
+        return cellHeight;
     }
 }
 
@@ -645,9 +642,9 @@ export class CellArea extends Rect {
         return this.topLeft.y;
     }
     get width() {
-        return this.numCols * CELL_WIDTH;
+        return this.numCols * cellWidth;
     }
     get height() {
-        return this.numRows * CELL_HEIGHT;
+        return this.numRows * cellHeight;
     }
 }

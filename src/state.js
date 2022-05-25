@@ -5,11 +5,13 @@ import {triggerRefresh, triggerResize} from "./index.js";
 import * as actions from "./actions.js";
 import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
+import {calculateFontRatio} from "./fonts.js";
 
 // TODO Have to move certain stuff out of here. E.g. cmd-z should not undo fps value
 const CONFIG_DEFAULTS = {
     name: 'New Sprite',
     dimensions: [10, 5],
+    font: 'monospace',
     background: false,
     fps: 12,
     grid: {
@@ -89,6 +91,7 @@ export function load(data) {
 
     importPalette(data.palette && data.palette.length ? data.palette : palette.DEFAULT_PALETTE, true);
 
+    calculateFontRatio();
     triggerResize(true);
     pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
 }

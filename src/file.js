@@ -15,9 +15,10 @@ import * as actions from "./actions.js";
 import GIF from './vendor/gif.cjs';
 
 import {confirmDialog, createDialog, createHTMLFile, createHorizontalMenu, isFunction} from "./utilities.js";
-import {CanvasControl, MONOSPACE_RATIO} from "./canvas.js";
+import {CanvasControl} from "./canvas.js";
 import Color from "@sphinxxxx/color-conversion";
 import {triggerRefresh} from "./index.js";
+import {fontRatio, rtfFont} from "./fonts.js";
 
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
@@ -358,15 +359,14 @@ function setupExportDialog() {
         }
     });
 
-    // const height = width / state.numCols() * state.numRows() / MONOSPACE_RATIO;
     $exportOptions.find('[name="width"]').on('input', evt => {
         const width = $(evt.currentTarget).val();
-        const height = Math.round(width / state.numCols() * state.numRows() / MONOSPACE_RATIO);
+        const height = Math.round(width / state.numCols() * state.numRows() / fontRatio);
         $exportOptions.find('[name="height"]').val(height);
     });
     $exportOptions.find('[name="height"]').on('input', evt => {
         const height = $(evt.currentTarget).val();
-        const width = Math.round(height / state.numRows() * state.numCols() * MONOSPACE_RATIO);
+        const width = Math.round(height / state.numRows() * state.numCols() * fontRatio);
         $exportOptions.find('[name="width"]').val(width);
     });
 
@@ -539,8 +539,6 @@ function exportRtf(options) {
         // Then merge in all colors used in the drawing
         ...state.colorTable().map(colorStr => encodeColor(colorStr))
     ]
-    const font = 'Courier New';
-    const fontSize = options.fontSize;
 
     // char background: use index 1 of color table. Note: chshdng / chcbpat is for MS Word compatibility
     const cb = options.background && state.config('background') ? `\\chshdng0\\chcbpat${1}\\cb${1}` : '';
@@ -554,7 +552,9 @@ function exportRtf(options) {
         const colorTable = `{\\colortbl ${rtfColors.join(';')};}`;
 
         // rtf font size is in half pt, so multiply desired font size by 2
-        return `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 ${font};}}${colorTable}\\f0\\fs${fontSize * 2} ${content}}`;
+        const fontSize = options.fontSize * 2;
+
+        return `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 ${rtfFont()};}}${colorTable}\\f0\\fs${fontSize} ${content}}`;
     }
 
     function _frameToRtf(frame) {
@@ -609,7 +609,7 @@ function exportHtml(options) {
         document.addEventListener("DOMContentLoaded", function() {
             var sprite = document.getElementById('sprite');
             var frames = ${JSON.stringify(frames)};
-            var fps = ${options.fps};
+            var fps = ${frames.length > 1 ? options.fps : 0};
             var loop = ${options.loop};
             var frameIndex = 0;
 
@@ -628,10 +628,11 @@ function exportHtml(options) {
         });
     `;
 
-    const width = state.numCols() * options.fontSize * MONOSPACE_RATIO;
-    const background = options.background ? `background: ${state.config('background')};` : '';
+    const width = state.numCols() * options.fontSize * fontRatio;
+    const background = options.background && state.config('background') ? `background: ${state.config('background')};` : '';
+    const fontStyles = `font-family: ${state.config('font')};font-size: ${options.fontSize}px;`;
 
-    const body = `<pre id="sprite" style="font-family: monospace;font-size: ${options.fontSize}px;width:${width}px;${background}"></pre>`;
+    const body = `<pre id="sprite" style="width:${width}px;${background};${fontStyles}"></pre>`;
     const html = createHTMLFile(state.config('name'), script, body);
     const blob = new Blob([html], {type: "text/plain;charset=utf-8"});
     saveAs(blob, `${state.config('name')}.html`);
@@ -674,7 +675,9 @@ function exportGif(options) {
 
     state.frames().forEach(frame => {
         exportCanvas.clear();
-        if (options.background) { exportCanvas.drawBackground(state.config('background')); }
+        if (options.background && state.config('background')) {
+            exportCanvas.drawBackground(state.config('background'));
+        }
         exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
         // gif.addFrame(exportCanvas.canvas, { delay: 1000 / fps }); // doesn't work with multiple frames
         gif.addFrame(exportCanvas.context, {copy: true, delay: 1000 / fps });
@@ -709,7 +712,9 @@ function exportPng(options) {
 
     function _frameToPng(frame, callback) {
         exportCanvas.clear();
-        if (options.background) { exportCanvas.drawBackground(state.config('background')); }
+        if (options.background && state.config('background')) {
+            exportCanvas.drawBackground(state.config('background'));
+        }
         exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
         exportCanvas.canvas.toBlob(function(blob) {
             callback(blob);
