@@ -64,6 +64,10 @@ $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 // Load initial empty page
 window.setTimeout(() => {
     state.loadNew();
+
+    if (state.config('tool') === 'text-editor') {
+        selection.moveCursorToStart();
+    }
 }, 1);
 
 
@@ -193,7 +197,11 @@ function drawHoveredCell() {
     hoveredCellCanvas.clear();
 
     if (selection.hoveredCell && !selection.isDrawing && !selection.isMoving && selection.hoveredCell.isInBounds()) {
-        hoveredCellCanvas.highlightCell(selection.hoveredCell);
+        // Not showing if the tool is text-editor because when you click on a cell, the cursor doesn't necessarily
+        // go to that cell (it gets rounded up or down, like a real text editor does).
+        if (state.config('tool') !== 'text-editor') {
+            hoveredCellCanvas.highlightCell(selection.hoveredCell);
+        }
     }
 
     updateMouseCoords(selection.hoveredCell);

@@ -371,7 +371,7 @@ function setupExportDialog() {
     });
 
     actions.registerAction('export-file', {
-        name: 'Export File',
+        name: 'Export To...',
         callback: () => openExportDialog(),
         shortcut: 'e'
     });

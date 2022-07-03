@@ -70,7 +70,7 @@ export function deserialize(data) {
 }
 
 export function hasSelection() {
-    return polygons.length > 0;
+    return polygons.some(polygon => polygon.hasArea);
 }
 
 export function clear() {
@@ -89,7 +89,15 @@ export function empty() {
 
 // Select entire canvas
 export function selectAll() {
-    editor.changeTool('selection-rect');
+    // selectAll works with both text-editor and selection-rect tools; only switch tools if not using one of those already
+    if (state.config('tool') !== 'text-editor' && state.config('tool') !== 'selection-rect') {
+        editor.changeTool('selection-rect');
+    }
+
+    if (cursorCell) {
+        hideCursor();
+    }
+
     polygons = [SelectionRect.drawableArea()];
     triggerRefresh('selection', true);
 }
@@ -238,7 +246,7 @@ export function getSelectedCells() {
   */
 export function getConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return []; }
-    return new SelectionWand(cell, cell.clone(), options).cells;
+    return new SelectionWand(cell, undefined, options).cells;
 }
 
 
@@ -246,7 +254,7 @@ export function getConnectedCells(cell, options) {
 // -------------------------------------------------------------------------------- Events
 
 export function setupMouseEvents(canvasControl) {
-    let movingFrom = null;
+    let moveStep, hasMoved;
 
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
         switch(tool) {
@@ -254,6 +262,7 @@ export function setupMouseEvents(canvasControl) {
             case 'selection-line':
             case 'selection-lasso':
             case 'selection-wand':
+            case 'text-editor':
                 break;
             default:
                 return; // Ignore all other tools
@@ -261,7 +270,8 @@ export function setupMouseEvents(canvasControl) {
 
         if (isSelectedCell(cell)) {
             isMoving = true;
-            movingFrom = cell;
+            moveStep = cell;
+            hasMoved = false;
 
             if (mouseEvent.metaKey && !movableContent) {
                 startMovingContent();
@@ -279,20 +289,28 @@ export function setupMouseEvents(canvasControl) {
         if (cell.isInBounds()) {
             isDrawing = true;
 
+            if (tool === 'text-editor') {
+                cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+            }
+
             switch(tool) {
                 case 'selection-rect':
-                    polygons.push(new SelectionRect(cell, cell.clone()));
+                    polygons.push(new SelectionRect(cell));
                     break;
                 case 'selection-line':
-                    polygons.push(new SelectionLine(cell, cell.clone()));
+                    polygons.push(new SelectionLine(cell));
                     break;
                 case 'selection-lasso':
-                    polygons.push(new SelectionLasso(cell, cell.clone()));
+                    polygons.push(new SelectionLasso(cell));
                     break;
                 case 'selection-wand':
-                    let wand = new SelectionWand(cell, cell.clone(), { diagonal: mouseEvent.metaKey, colorblind: mouseEvent.altKey });
+                    let wand = new SelectionWand(cell, undefined, { diagonal: mouseEvent.metaKey, colorblind: mouseEvent.altKey });
                     wand.complete();
                     polygons.push(wand);
+                    break;
+                case 'text-editor':
+                    moveCursorTo(cell);
+                    polygons.push(new SelectionText(cell));
                     break;
             }
 
@@ -300,27 +318,44 @@ export function setupMouseEvents(canvasControl) {
         }
     });
 
-    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell) => {
+    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
         hoveredCell = cell;
         triggerRefresh('hoveredCell');
 
         if (isDrawing) {
-            lastPolygon().end = cell;
-            triggerRefresh('selection');
+            if (tool === 'text-editor') {
+                cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+                lastPolygon().end = cell;
+                triggerRefresh('selection');
+                hasSelection() ? hideCursor() : moveCursorTo(cell);
+            }
+            else {
+                lastPolygon().end = cell;
+                triggerRefresh('selection');
+            }
         }
         if (isMoving) {
-            moveDelta(cell.row - movingFrom.row, cell.col - movingFrom.col);
-            movingFrom = cell;
+            moveDelta(cell.row - moveStep.row, cell.col - moveStep.col);
+
+            if (!hasMoved && (cell.row !== moveStep.row || cell.col !== moveStep.col)) {
+                hasMoved = true;
+            }
+            moveStep = cell;
         }
     });
 
-    canvasControl.$canvas.on('editor:mouseup', () => {
+    canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvt, cell, tool) => {
         if (isDrawing) {
             lastPolygon().complete();
             isDrawing = false;
             triggerRefresh('selection');
         }
         if (isMoving) {
+            if (tool === 'text-editor' && !movableContent && !hasMoved) {
+                clear();
+                moveCursorTo(cell);
+            }
+
             isMoving = false;
             const refresh = ['selection'];
             if (movableContent) { refresh.push('chars'); }
@@ -415,15 +450,18 @@ export function moveCursorToStart() {
     const cellData = caches.cellsLeftToRight[0];
 
     if (cellData) {
-        const cell = new Cell(cellData[0], cellData[1]);
-        moveCursorTo(cell);
+        moveCursorTo(new Cell(cellData[0], cellData[1]));
+    }
+    else {
+        // Move cursor to top-left cell of entire canvas. This only really happens when using text-editor tool.
+        moveCursorTo(new Cell(0, 0));
     }
 }
 
 // Steps the cursor forward or backward one space
 export function moveCursorInDirection(direction) {
     if (cursorCell) {
-        if (selectingSingleCell() || state.config('tool') === 'write-text') {
+        if (selectingSingleCell() || state.config('tool') === 'text-editor') {
             // Entire canvas is the domain to traverse through
 
             let col = cursorCell.col, row = cursorCell.row;
@@ -433,10 +471,21 @@ export function moveCursorInDirection(direction) {
             if (direction === 'right') { col += 1; }
             if (direction === 'down') { row += 1; }
 
-            if (col >= state.numCols()) { col = 0; row += 1; }
-            if (col < 0) { col = state.numCols() - 1; row -= 1; }
-            if (row >= state.numRows()) { row = 0; }
-            if (row < 0) { row = state.numRows() - 1; }
+            if (row === 0 && col < 0) {
+                // When entire canvas is domain, we do not wrap from first cell to the last cell (just leave at first)
+                col = 0;
+            }
+            else if (row === state.numRows() - 1 && col >= state.numCols()) {
+                // When entire canvas is domain, we do not wrap from last cell to the first cell (just leave at last)
+                col = state.numCols();
+            }
+            else {
+                // For non-first/last cells, wrap rows/columns normally
+                if (col >= state.numCols()) { col = 0; row += 1; }
+                if (col < 0) { col = state.numCols() - 1; row -= 1; }
+                if (row >= state.numRows()) { row = 0; }
+                if (row < 0) { row = state.numRows() - 1; }
+            }
 
             moveCursorTo(new Cell(row, col));
 
@@ -641,9 +690,9 @@ function cellKeyToRowCol(cellKey) {
  * Subclasses must implement 'iterateCells', 'draw', 'serialize' and 'deserialize' methods
  */
 class SelectionPolygon {
-    constructor(startCell, endCell, options = {}) {
+    constructor(startCell, endCell = undefined, options = {}) {
         this.start = startCell;
-        this.end = endCell;
+        this.end = endCell === undefined ? startCell.clone() : endCell;
         this.options = options;
         this.completed = false;
     }
@@ -666,6 +715,12 @@ class SelectionPolygon {
     }
     get bottomRight() {
         return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
+    }
+
+    // Return true if the polygon has visible area. By default, even the smallest polygon occupies a 1x1 cell and is
+    // visible. Some subclasses override this.
+    get hasArea() {
+        return true;
     }
 
     complete() {
@@ -748,6 +803,29 @@ class SelectionRect extends SelectionPolygon {
 
     _toCellArea() {
         return new CellArea(this.topLeft, this.bottomRight);
+    }
+}
+
+/**
+ * SelectionText is similar to SelectionRect, but it can occupy 0 width. Similar to selecting text in a text editor,
+ * when you first click-and-drag, your cursor highlights a single line between two characters. As you drag in a particular
+ * direction, you will highlight 1 or more characters. To achieve this effect, we can simply subtract 1 from the end
+ * column once the user highlights more than 1 cell.
+ */
+class SelectionText extends SelectionRect {
+    get bottomRight() {
+        let maxRow = Math.max(this.start.row, this.end.row);
+        let maxCol = Math.max(this.start.col, this.end.col);
+
+        if (this.start.row === this.end.row || this.start.col !== this.end.col) {
+            maxCol -= 1;
+        }
+
+        return new Cell(maxRow, maxCol);
+    }
+
+    get hasArea() {
+        return this.topLeft.col !== this.bottomRight.col + 1;
     }
 }
 

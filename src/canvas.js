@@ -135,7 +135,7 @@ export class CanvasControl {
     }
 
     drawCursorCell(cell) {
-        this.context.strokeStyle = CURSOR_CELL_COLOR;
+        this.context.strokeStyle = CURSOR_CELL_COLOR; // TODO Maybe color should be whatever color is selected?
         this.context.lineWidth = OUTLINE_WIDTH;
 
         // Clear out targeted cell and surround it with a border
@@ -330,6 +330,16 @@ export class CanvasControl {
         const point = this.pointAtExternalXY(x, y);
         const row = Math.floor(point.y / cellHeight);
         const col = Math.floor(point.x / cellWidth);
+        return new Cell(row, col);
+    }
+
+    // Getting the "cursor" positioning is slightly different than just getting the corresponding cell; we round the x
+    // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
+    // click on the second half of a character, it will round up to the next character
+    cursorAtExternalXY(x, y) {
+        const point = this.pointAtExternalXY(x, y);
+        const row = Math.floor(point.y / cellHeight);
+        const col = Math.round(point.x / cellWidth);
         return new Cell(row, col);
     }
 

@@ -75,9 +75,6 @@ export function setupMouseEvents(canvasControl) {
     /*  ---------------------  Event Listeners  ---------------------  */
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
         switch(tool) {
-            case 'write-text':
-                selection.moveCursorTo(cell);
-                break;
             case 'draw-freeform':
                 drawCellChar(cell);
                 break;
@@ -324,6 +321,8 @@ function refreshAddToPalette() {
 
 function cursorStyle(tool, cell) {
     switch (tool) {
+        case 'text-editor':
+            return selection.isSelectedCell(cell) ? 'grab' : 'text';
         case 'selection-rect':
         case 'selection-line':
         case 'selection-lasso':

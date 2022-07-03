@@ -13,7 +13,7 @@ const CONFIG_DEFAULTS = {
     dimensions: [10, 5],
     font: 'monospace',
     background: false,
-    fps: 12,
+    fps: 6,
     grid: {
         show: false,
         width: 1,
@@ -25,7 +25,7 @@ const CONFIG_DEFAULTS = {
     layerIndex: 0,
     frameIndex: 0,
     frameOrientation: 'left',
-    tool: 'selection-rect'
+    tool: 'text-editor'
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',
