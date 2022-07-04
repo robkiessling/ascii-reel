@@ -90,7 +90,7 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
-        $canvasContainer.css('cursor', cursorStyle(tool, cell));
+        $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
 
         switch(tool) {
             case 'draw-freeform':
@@ -319,10 +319,10 @@ function refreshAddToPalette() {
 
 // -------------------------------------------------------------------------------- Misc.
 
-function cursorStyle(tool, cell) {
+function cursorStyle(evt, mouseEvent, cell, tool) {
     switch (tool) {
         case 'text-editor':
-            return selection.isSelectedCell(cell) ? 'grab' : 'text';
+            return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? 'grab' : 'text';
         case 'selection-rect':
         case 'selection-line':
         case 'selection-lasso':

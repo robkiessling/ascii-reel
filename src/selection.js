@@ -54,6 +54,8 @@ export function deserialize(data) {
         switch (polygon.className) {
             case 'SelectionRect':
                 return SelectionRect.deserialize(polygon);
+            case 'SelectionText':
+                return SelectionText.deserialize(polygon);
             case 'SelectionLine':
                 return SelectionLine.deserialize(polygon);
             case 'SelectionLasso':
@@ -117,6 +119,11 @@ export function selectingSingleCell() {
     return area && area.topLeft.equals(area.bottomRight);
 }
 
+// We allow the selection to be moved in all cases except for when the text-editor tool is being used and the
+// shift key is down (in that case - we simply modify the text-editor polygon).
+export function allowMovement(tool, mouseEvent) {
+    return !(tool === 'text-editor' && mouseEvent.shiftKey)
+}
 
 
 
@@ -124,8 +131,8 @@ export function selectingSingleCell() {
 
 
 /**
- * For the smallest CellArea that bounds all polygons, this function returns an object containing a 2d array
- * of its chars and a 2d array of its colors. Gaps within the polygon(s) will be represented by undefined values.
+ * Returns an object representing the smallest CellArea that bounds all polygons. The object contains a 2d array of its
+ * chars and a 2d array of its colors. Gaps within the polygon(s) will be represented by undefined values.
  *
  * E.g. If the polygons (depicted by x's) were this:
  *
@@ -217,7 +224,8 @@ export function getSelectedRect() {
 }
 
 /**
- * Returns a 1d array of Cell-like objects for all selected cells.
+ * Returns a 1d array of Cell-like objects for all selected cells. The Cell-like objects have row and column attributes
+ * like regular Cells, but none of the other methods. This function does not return full Cell objects to reduce memory cost.
  *
  * E.g. If the polygons (depicted by x's) were this:
  *
@@ -242,7 +250,7 @@ export function getSelectedCells() {
 }
 
 /**
- * Returns all cells adjacent to (and sharing the same color as) the targeted cell
+ * Returns all Cells adjacent to (and sharing the same color as) the targeted Cell
   */
 export function getConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return []; }
@@ -268,7 +276,8 @@ export function setupMouseEvents(canvasControl) {
                 return; // Ignore all other tools
         }
 
-        if (isSelectedCell(cell)) {
+        // If user clicks on the selection, we begin the 'moving' process (moving the selection area).
+        if (isSelectedCell(cell) && allowMovement(tool, mouseEvent)) {
             isMoving = true;
             moveStep = cell;
             hasMoved = false;
@@ -282,16 +291,13 @@ export function setupMouseEvents(canvasControl) {
             return;
         }
 
+        // If user clicks anywhere on the canvas (without the shift-key) we want to clear everything and start a new polygon
         if (!mouseEvent.shiftKey) {
             clear();
         }
 
         if (cell.isInBounds()) {
             isDrawing = true;
-
-            if (tool === 'text-editor') {
-                cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
-            }
 
             switch(tool) {
                 case 'selection-rect':
@@ -309,8 +315,15 @@ export function setupMouseEvents(canvasControl) {
                     polygons.push(wand);
                     break;
                 case 'text-editor':
-                    moveCursorTo(cell);
-                    polygons.push(new SelectionText(cell));
+                    cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+
+                    // We only ever use one polygon for the text-editor tool
+                    if (polygons.length === 0) {
+                        polygons.push(new SelectionText(cell));
+                    }
+                    polygons[0].end = cell;
+
+                    hasSelection() ? hideCursor() : moveCursorTo(cell);
                     break;
             }
 
@@ -334,7 +347,7 @@ export function setupMouseEvents(canvasControl) {
                 triggerRefresh('selection');
             }
         }
-        if (isMoving) {
+        else if (isMoving) {
             moveDelta(cell.row - moveStep.row, cell.col - moveStep.col);
 
             if (!hasMoved && (cell.row !== moveStep.row || cell.col !== moveStep.col)) {
@@ -350,7 +363,7 @@ export function setupMouseEvents(canvasControl) {
             isDrawing = false;
             triggerRefresh('selection');
         }
-        if (isMoving) {
+        else if (isMoving) {
             if (tool === 'text-editor' && !movableContent && !hasMoved) {
                 clear();
                 moveCursorTo(cell);
@@ -813,6 +826,14 @@ class SelectionRect extends SelectionPolygon {
  * column once the user highlights more than 1 cell.
  */
 class SelectionText extends SelectionRect {
+    serialize() {
+        return $.extend(super.serialize(), { className: 'SelectionText' });
+    }
+
+    static deserialize(data) {
+        return new SelectionText(Cell.deserialize(data.start), Cell.deserialize(data.end));
+    }
+
     get bottomRight() {
         let maxRow = Math.max(this.start.row, this.end.row);
         let maxCol = Math.max(this.start.col, this.end.col);
