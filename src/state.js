@@ -402,9 +402,16 @@ function importPalette(palette, replace) {
 
 // -------------------------------------------------------------------------------- Resizing Canvas
 
-export function resize(newDimensions, rowAnchor, colAnchor) {
-    let rowOffset;
-    switch(rowAnchor) {
+/**
+ * Resizes the canvas dimensions. If the canvas shrinks, all content outside of the new dimensions will be truncated.
+ * @param newDimensions Array [num columns, num rows] of the new dimensions
+ * @param rowOffset Integer or 'top'/'middle'/'bottom' - If an integer is provided, it will determine the starting row
+ *                  for the content in the new dimensions. Alternatively, a string 'top'/'middle'/'bottom' can be given
+ *                  to anchor the content to the top, middle, or bottom row in the new dimensions.
+ * @param colOffset Same as rowOffset, but for the column.
+ */
+export function resize(newDimensions, rowOffset, colOffset) {
+    switch(rowOffset) {
         case 'top':
             rowOffset = 0;
             break;
@@ -417,13 +424,9 @@ export function resize(newDimensions, rowAnchor, colAnchor) {
         case 'bottom':
             rowOffset = numRows() - newDimensions[1];
             break;
-        default:
-            console.error(`Invalid rowAnchor: ${rowAnchor}`);
-            return;
     }
 
-    let colOffset;
-    switch(colAnchor) {
+    switch(colOffset) {
         case 'left':
             colOffset = 0;
             break;
@@ -436,9 +439,6 @@ export function resize(newDimensions, rowAnchor, colAnchor) {
         case 'right':
             colOffset = numCols() - newDimensions[0];
             break;
-        default:
-            console.error(`Invalid colAnchor: ${colAnchor}`);
-            return;
     }
 
     Object.values(state.cels).forEach(cel => {

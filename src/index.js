@@ -105,7 +105,7 @@ export function triggerResize(clearSelection) {
 /**
  * Triggers a refresh that cascades through the different components of the app.
  *
- * @param type Can be a single string value, or an Array of string values. This narrows does the refresh scope to just
+ * @param type Can be a single string value, or an Array of string values. This narrows down the refresh scope to just
  *             refresh a subset of components.
  * @param saveState If true, state will be stored in history (for undo/redo purposes)
  */

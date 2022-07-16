@@ -35,7 +35,7 @@ export class CanvasControl {
         this.config = config;
     }
 
-    // TODO Currently it will always zoom all the way out after a resize event, due to buildBoundaries
+    // TODO Currently it will always zoom all the way out after a resize event, due to _buildBoundaries
     resize() {
         // Reset any width/height attributes that may have been set previously
         this.canvas.removeAttribute('width');
@@ -60,7 +60,7 @@ export class CanvasControl {
         this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
 
-        this.buildBoundaries();
+        this._buildBoundaries();
 
         this.initialized = true;
     }
@@ -296,7 +296,7 @@ export class CanvasControl {
     // -------------------------------------------------------------- Zoom/View related methods
 
     // Builds the zoom boundaries and zooms out all the way
-    buildBoundaries() {
+    _buildBoundaries() {
         this._minZoom = this._zoomLevelForFit() / ZOOM_MARGIN;
         this.zoomTo(this._minZoom); // Have to zoom to minimum so we can record what the boundaries are
         this._boundaries = this.currentViewRect();
@@ -335,7 +335,7 @@ export class CanvasControl {
 
     // Getting the "cursor" positioning is slightly different than just getting the corresponding cell; we round the x
     // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
-    // click on the second half of a character, it will round up to the next character
+    // click on the right half of a character, it will round up to the next character
     cursorAtExternalXY(x, y) {
         const point = this.pointAtExternalXY(x, y);
         const row = Math.floor(point.y / cellHeight);

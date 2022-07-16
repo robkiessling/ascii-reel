@@ -125,6 +125,7 @@ function setupSelectionTools() {
     bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.shiftKey));
     bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.shiftKey));
     bindSelectionToolEvent('paint-bucket', () => paintSelection());
+    bindSelectionToolEvent('resize', () => resizeToSelection());
     bindSelectionToolEvent('close', () => selection.clear());
 }
 
@@ -167,6 +168,11 @@ function paintSelection() {
         state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
     });
     triggerRefresh('chars', true);
+}
+
+function resizeToSelection() {
+    const area = selection.getSelectedCellArea();
+    state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
 }
 
 // -------------------------------------------------------------------------------- Non-selection tools
