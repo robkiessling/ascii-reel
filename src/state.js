@@ -26,7 +26,7 @@ const CONFIG_DEFAULTS = {
     frameIndex: 0,
     frameOrientation: 'left',
     tool: 'text-editor',
-    drawingShape: {
+    brushShape: {
         shape: 'square',
         size: 1
     }

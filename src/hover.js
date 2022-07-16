@@ -1,6 +1,6 @@
 import {triggerRefresh} from "./index.js";
 import * as state from './state.js';
-import {DRAWING_TOOLS} from "./editor.js";
+import {BRUSH_TOOLS} from "./editor.js";
 import {Cell} from "./canvas.js";
 
 export let hoveredCell = null;
@@ -24,14 +24,14 @@ export function setupMouseEvents(canvasControl) {
 
 
 export function iterateHoveredCells(callback) {
-    // If not using a drawing-tool, only include hoveredCell (the cell the mouse is over)
-    if (!DRAWING_TOOLS.includes(state.config('tool'))) {
+    // If not using a brush tool, only include hoveredCell (the cell the mouse is over)
+    if (!BRUSH_TOOLS.includes(state.config('tool'))) {
         callback(hoveredCell);
         return;
     }
 
-    // If using a drawing-tool, other nearby cells will be iterated through depending on the chosen shape/size
-    let { shape, size } = state.config('drawingShape');
+    // If using a brush tool, other nearby cells will be iterated through depending on the chosen shape/size
+    let { shape, size } = state.config('brushShape');
 
     switch(shape) {
         case 'square':
@@ -39,7 +39,7 @@ export function iterateHoveredCells(callback) {
         case 'circle':
             return iterateCircleShape(size, callback);
         default:
-            console.error('Unsupported drawing shape: ', shape);
+            console.error('Unsupported brush shape: ', shape);
     }
 }
 

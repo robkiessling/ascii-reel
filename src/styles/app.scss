@@ -162,7 +162,7 @@ $editing-tool-size: 3rem;
 }
 
 $selection-tool-size: 2rem;
-#selection-tools, #drawing-shapes {
+#selection-tools, #brush-shapes {
   position: absolute;
   top: 50%;
   left: $editing-tool-size + 0.5rem;
@@ -177,7 +177,7 @@ $selection-tool-size: 2rem;
   border: 3px solid $highlight2;
   margin-left: 2px;
 
-  .selection-tool, .drawing-shape {
+  .selection-tool, .brush-shape {
     width: $selection-tool-size;
     height: $selection-tool-size;
     display: flex;

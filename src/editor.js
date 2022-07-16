@@ -10,13 +10,13 @@ import {iterateHoveredCells} from "./hover.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $tools, $canvasContainer, $selectionTools, $drawingShapes, $canvasDetails;
+let $tools, $canvasContainer, $selectionTools, $brushShapes, $canvasDetails;
 
 export function init() {
     $tools = $('#editing-tools');
     $canvasContainer = $('#canvas-container');
     $selectionTools = $('#selection-tools');
-    $drawingShapes = $('#drawing-shapes');
+    $brushShapes = $('#brush-shapes');
     $canvasDetails = $('#canvas-details');
     
     $tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
@@ -25,7 +25,7 @@ export function init() {
 
     setupFreeformChar();
     setupSelectionTools();
-    setupDrawingShapes();
+    setupBrushShapes();
     setupColorPicker();
 }
 
@@ -39,7 +39,7 @@ export function refresh() {
     $tools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
-    refreshDrawingShapes();
+    refreshBrushShapes();
 
     $canvasDetails.find('.dimensions .value').html(`${state.numCols()}:${state.numRows()}`);
 }
@@ -182,31 +182,31 @@ function resizeToSelection() {
     state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
 }
 
-// -------------------------------------------------------------------------------- Drawing shapes / painting
+// -------------------------------------------------------------------------------- Brushing shapes / painting
 
-export const DRAWING_TOOLS = ['draw-freeform', 'paint-brush'];
+export const BRUSH_TOOLS = ['draw-freeform', 'paint-brush'];
 
-function setupDrawingShapes() {
-    $drawingShapes.off('click', '.drawing-shape').on('click', '.drawing-shape', evt => {
+function setupBrushShapes() {
+    $brushShapes.off('click', '.brush-shape').on('click', '.brush-shape', evt => {
         const $shape = $(evt.currentTarget);
 
-        state.config('drawingShape', {
+        state.config('brushShape', {
             shape: $shape.data('shape'),
             size: $shape.data('size')
         });
-        refreshDrawingShapes();
+        refreshBrushShapes();
     });
 }
 
-function refreshDrawingShapes() {
-    let show = DRAWING_TOOLS.includes(state.config('tool'))
-    $drawingShapes.toggle(show);
+function refreshBrushShapes() {
+    let show = BRUSH_TOOLS.includes(state.config('tool'))
+    $brushShapes.toggle(show);
 
     if (show) {
-        $drawingShapes.find('.drawing-shape').toggleClass('active', false);
+        $brushShapes.find('.brush-shape').toggleClass('active', false);
 
-        let { shape, size } = state.config('drawingShape');
-        $drawingShapes.find(`.drawing-shape[data-shape="${shape}"][data-size="${size}"]`).toggleClass('active', true);
+        let { shape, size } = state.config('brushShape');
+        $brushShapes.find(`.brush-shape[data-shape="${shape}"][data-size="${size}"]`).toggleClass('active', true);
     }
 }
 
