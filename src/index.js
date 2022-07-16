@@ -61,6 +61,15 @@ registerAction('keyboard-shortcuts', {
 // Attach window resize listener
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 
+// Warn before changing page
+// TODO Do we want this?
+// window.addEventListener('beforeunload', event => {
+//     if (state.hasChanges()) {
+//         // Note: Most browsers use their own unload string instead of this one that is given
+//         event.returnValue = 'Reload site? Changes you made may not be saved.';
+//     }
+// });
+
 // Load initial empty page
 window.setTimeout(() => {
     state.loadNew();
@@ -177,15 +186,10 @@ function drawSelection() {
     selectionCanvas.clear();
     selectionBorderCanvas.clear();
 
-    // Not showing selection polygons if the only selection is the single cursor cell
-    const skipPolygonRender = selection.cursorCell && selection.selectingSingleCell();
+    selectionCanvas.highlightPolygons(selection.polygons);
 
-    if (!skipPolygonRender) {
-        selectionCanvas.highlightPolygons(selection.polygons);
-
-        if (selection.hasSelection() && !selection.isDrawing) {
-            selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
-        }
+    if (selection.hasSelection() && !selection.isDrawing) {
+        selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
     }
 
     if (selection.cursorCell) {

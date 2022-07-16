@@ -28,7 +28,7 @@ export function init() {
     actions.registerAction('paste', {
         name: 'Paste',
         callback: () => paste(),
-        enabled: () => selection.hasSelection() && !selection.movableContent,
+        enabled: () => selection.hasTarget() && !selection.movableContent,
         shortcut: 'v'
     });
     actions.registerAction('paste-in-selection', {
@@ -63,7 +63,7 @@ function copy() {
  * - Otherwise, paste content relative to topLeft of selection
  */
 function paste(limitToSelection) {
-    if (!selection.hasSelection()) {
+    if (!selection.hasTarget()) {
         // There is no where to paste the text
         return;
     }
@@ -92,22 +92,32 @@ function copySelection() {
  * @param limitToSelection If true, pasted text will only be pasted within the current selection bounds
  */
 function pasteGlyphs(glyphs, limitToSelection) {
+    // If there is no selection area, that means there is simply a cursor to paste at (this only happens when using the
+    // text-editor tool). In this case, paste the content at the cursor, then move the cursor an amount equal to the content's width
+    const pasteAtCursor = !selection.hasSelection();
+
     if (glyphs.chars.length === 1 && glyphs.chars[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         const char = glyphs.chars[0][0];
         const color = glyphs.colors[0][0];
 
-        selection.getSelectedCells().forEach(cell => {
+        const cells = pasteAtCursor ? [selection.cursorCell] : selection.getSelectedCells();
+        cells.forEach(cell => {
             state.setCurrentCelGlyph(cell.row, cell.col, char, color);
         });
     }
     else {
-        // Paste glyphs once at topLeft of entire selected area
-        translateGlyphs(glyphs, selection.getSelectedCellArea().topLeft, (r, c, char, color) => {
+        // Paste glyphs at topLeft of entire selected area
+        const topLeft = pasteAtCursor ? selection.cursorCell : selection.getSelectedCellArea().topLeft;
+        translateGlyphs(glyphs, topLeft, (r, c, char, color) => {
             if (!limitToSelection || selection.isSelectedCell({row: r, col: c})) {
                 state.setCurrentCelGlyph(r, c, char, color);
             }
         });
+    }
+
+    if (pasteAtCursor) {
+        selection.moveCursorInDirection('right', false, glyphs.chars[0].length);
     }
 
     triggerRefresh('chars', true);

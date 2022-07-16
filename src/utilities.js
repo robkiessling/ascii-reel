@@ -85,6 +85,11 @@ export function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// https://stackoverflow.com/a/58326357
+export function randomHexString(length) {
+    return [...Array(length)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+}
+
 
 const EPSILON = 0.000001; // Adding an epsilon to handle floating point rounding errors
 

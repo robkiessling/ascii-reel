@@ -64,9 +64,9 @@ function setupKeydownListener() {
             case 'Tab':
                 if (e.shiftKey) {
                     // If shift key is pressed, we move in opposite direction
-                    selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1);
+                    selection.cursorCell ? selection.moveCursorInDirection('left', false) : selection.moveInDirection('left', 1);
                 } else {
-                    selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1);
+                    selection.cursorCell ? selection.moveCursorInDirection('right', false) : selection.moveInDirection('right', 1);
                 }
                 break;
             case 'Enter':
@@ -76,9 +76,10 @@ function setupKeydownListener() {
                 else {
                     if (e.shiftKey) {
                         // If shift key is pressed, we move in opposite direction
-                        selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1);
+                        selection.cursorCell ? selection.moveCursorInDirection('up', false) : selection.moveInDirection('up', 1);
                     } else {
-                        selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1);
+                        // 'Enter' key differs from 'ArrowDown' in that the cursor will go to the start of the next line (like Excel)
+                        selection.cursorCell ? selection.moveCursorCarriageReturn() : selection.moveInDirection('down', 1);
                     }
                 }
                 break;
@@ -90,7 +91,7 @@ function setupKeydownListener() {
                 }
                 else if (selection.cursorCell) {
                     if (char === 'Backspace') {
-                        selection.moveCursorInDirection('left');
+                        selection.moveCursorInDirection('left', false);
                     }
                     state.setCurrentCelGlyph(selection.cursorCell.row, selection.cursorCell.col, '', 0);
                 }
@@ -112,7 +113,7 @@ function setupKeydownListener() {
                     else if (selection.cursorCell) {
                         // update cursor cell and then move to next cell
                         state.setCurrentCelGlyph(selection.cursorCell.row, selection.cursorCell.col, char, editor.currentColorIndex());
-                        selection.moveCursorInDirection('right');
+                        selection.moveCursorInDirection('right', false);
                     }
                     else {
                         // update entire selection

@@ -15,7 +15,7 @@ export let isMoving = false; // Only true when mouse is down and polygon is bein
 export let movableContent = null; // Selected glyph content IF there is any (it will be surrounded by dashed outline)
 export let hoveredCell = null;
 export let cursorCell = null;
-// export let cursorTabCell; // TODO Where to move from on return key
+export let cursorCellOrigin; // Where to move from on return key
 
 export function init() {
     actions.registerAction('commit-selection', {
@@ -71,8 +71,14 @@ export function deserialize(data) {
     cursorCell = data.cursorCell === null ? null : Cell.deserialize(data.cursorCell);
 }
 
+// Returns true if there is any area selected
 export function hasSelection() {
     return polygons.some(polygon => polygon.hasArea);
+}
+
+// Returns true if there is any area selected or a cursor showing (i.e. a target visible on the canvas)
+export function hasTarget() {
+    return hasSelection() || cursorCell;
 }
 
 export function clear() {
@@ -108,15 +114,6 @@ export function selectAll() {
 export function isSelectedCell(cell) {
     cacheSelectedCells();
     return caches.selectedCells.has(cellKey(cell));
-}
-
-// Returns true if the selection is comprised by a single 1x1 Cell
-export function selectingSingleCell() {
-    if (isDrawing) {
-        return false;
-    }
-    const area = getSelectedCellArea();
-    return area && area.topLeft.equals(area.bottomRight);
 }
 
 // We allow the selection to be moved in all cases except for when the text-editor tool is being used and the
@@ -451,10 +448,15 @@ export function toggleCursor() {
     cursorCell ? hideCursor() : moveCursorToStart();
 }
 
-export function moveCursorTo(cell) {
+export function moveCursorTo(cell, updateOrigin = true) {
     if (movableContent) { finishMovingContent(); } // Cannot move content and show cursor at the same time
 
     cursorCell = cell;
+
+    if (updateOrigin) {
+        cursorCellOrigin = cell;
+    }
+
     triggerRefresh('cursorCell');
 }
 
@@ -471,46 +473,56 @@ export function moveCursorToStart() {
     }
 }
 
-// Steps the cursor forward or backward one space
-export function moveCursorInDirection(direction) {
+// When using the text-editor tool, moves the cursor down one row and back to the origin column.
+// This is similar to how Excel moves your cell when using the tab/return keys.
+export function moveCursorCarriageReturn() {
     if (cursorCell) {
-        if (selectingSingleCell() || state.config('tool') === 'text-editor') {
-            // Entire canvas is the domain to traverse through
+        if (state.config('tool') === 'text-editor') {
+            let col = cursorCellOrigin.col,
+                row = cursorCell.row + 1;
 
-            let col = cursorCell.col, row = cursorCell.row;
-
-            if (direction === 'left') { col -= 1; }
-            if (direction === 'up') { row -= 1; }
-            if (direction === 'right') { col += 1; }
-            if (direction === 'down') { row += 1; }
-
-            if (row === 0 && col < 0) {
-                // When entire canvas is domain, we do not wrap from first cell to the last cell (just leave at first)
-                col = 0;
-            }
-            else if (row === state.numRows() - 1 && col >= state.numCols()) {
-                // When entire canvas is domain, we do not wrap from last cell to the first cell (just leave at last)
-                col = state.numCols();
-            }
-            else {
-                // For non-first/last cells, wrap rows/columns normally
-                if (col >= state.numCols()) { col = 0; row += 1; }
-                if (col < 0) { col = state.numCols() - 1; row -= 1; }
-                if (row >= state.numRows()) { row = 0; }
-                if (row < 0) { row = state.numRows() - 1; }
+            if (row >= state.numRows()) {
+                return; // Do not wrap around or move cursor at all
             }
 
             moveCursorTo(new Cell(row, col));
-
-            if (selectingSingleCell()) {
-                // Also update underlying single selection cell.
-                // Don't have to refresh selection since the selection is hidden if selecting single cells
-                polygons = [new SelectionRect(cursorCell.clone(), cursorCell.clone())];
-                clearCaches();
-            }
+            matchPolygonToCursor();
         }
         else {
-            // The current selection is the domain to traverse through
+            moveCursorInDirection('down', false);
+        }
+    }
+}
+
+export function moveCursorInDirection(direction, updateOrigin = true, amount = 1) {
+    if (cursorCell) {
+        if (state.config('tool') === 'text-editor') {
+            let col = cursorCell.col, row = cursorCell.row;
+
+            if (direction === 'left') {
+                col = Math.max(0, col - amount);
+            }
+            if (direction === 'up') {
+                row = Math.max(0, row - amount);
+            }
+            if (direction === 'right') {
+                // Note: When moving right, we intentionally allow column to go 1 space out of bounds
+                col = Math.min(col + amount, state.numCols());
+            }
+            if (direction === 'down' && row < state.numRows() - 1) {
+                row = Math.min(row + amount, state.numRows() - 1);
+            }
+
+            moveCursorTo(new Cell(row, col), updateOrigin);
+            matchPolygonToCursor();
+        }
+        else {
+            // For selection tools, the cursor traverse through the domain of the selection (wrapping when it reaches the end of a row)
+
+            // TODO This case is hardcoded to step 1 space, but so far it does not need to support anything more
+            if (amount !== 1) {
+                console.error('moveCursorInDirection only supports an `amount` of `1` for selection tools');
+            }
 
             cacheUniqueSortedCells();
 
@@ -531,7 +543,7 @@ export function moveCursorInDirection(direction) {
             if (i >= length) { i = 0; }
             if (i < 0) { i = length - 1; }
 
-            moveCursorTo(new Cell(cells[i][0], cells[i][1]));
+            moveCursorTo(new Cell(cells[i][0], cells[i][1]), updateOrigin);
         }
     }
 }
@@ -541,6 +553,10 @@ export function hideCursor() {
     triggerRefresh('cursorCell');
 }
 
+function matchPolygonToCursor() {
+    polygons = [new SelectionText(cursorCell)];
+    clearCaches();
+}
 
 
 
