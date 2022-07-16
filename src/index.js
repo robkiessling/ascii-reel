@@ -7,6 +7,7 @@ import { CanvasControl } from "./canvas.js";
 import { init as initClipboard } from "./clipboard.js"
 import { init as initEditor, setupMouseEvents as setupEditorMouse, refresh as refreshEditor, updateMouseCoords } from "./editor.js"
 import { init as initFile } from "./file.js";
+import { setupMouseEvents as setupHoverMouse, hoveredCell, iterateHoveredCells } from "./hover.js";
 import { init as initKeyboard } from "./keyboard.js";
 import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./palette.js";
 import { init as initPreview, canvasControl as previewCanvas, redraw as redrawPreview, reset as resetPreview } from "./preview.js";
@@ -34,8 +35,10 @@ export const selectionBorderCanvas = new CanvasControl($('#selection-border-canv
 export const hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
 export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
-// Bind mouse events to controllers
+// Bind mouse events to controllers (note: many controllers attach mouse events to the selectionCanvas since it is
+// on top, even thought they have their own canvases underneath).
 selection.setupMouseEvents(selectionCanvas);
+setupHoverMouse(selectionCanvas);
 setupEditorMouse(selectionCanvas);
 setupZoomMouse(selectionCanvas, previewCanvas,
     [selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas]
@@ -200,13 +203,15 @@ function drawSelection() {
 function drawHoveredCell() {
     hoveredCellCanvas.clear();
 
-    if (selection.hoveredCell && !selection.isDrawing && !selection.isMoving && selection.hoveredCell.isInBounds()) {
+    if (hoveredCell && !selection.isDrawing && !selection.isMoving && hoveredCell.isInBounds()) {
         // Not showing if the tool is text-editor because when you click on a cell, the cursor doesn't necessarily
         // go to that cell (it gets rounded up or down, like a real text editor does).
         if (state.config('tool') !== 'text-editor') {
-            hoveredCellCanvas.highlightCell(selection.hoveredCell);
+            iterateHoveredCells(cell => {
+                hoveredCellCanvas.highlightCell(cell);
+            })
         }
     }
 
-    updateMouseCoords(selection.hoveredCell);
+    updateMouseCoords(hoveredCell);
 }

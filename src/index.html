@@ -104,6 +104,32 @@
                     <div class="selection-tool" data-tool="resize"><span class="ri ri-fw ri-crop-line"></span></div>
                     <div class="selection-tool" data-tool="close"><span class="ri ri-fw ri-close-line"></span></div>
                 </div>
+                <div id="drawing-shapes" style="display: none;">
+                    <div class="drawing-shape" data-shape="square" data-size="1">
+                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.5rem;"></span>
+                    </div>
+                    <div class="drawing-shape" data-shape="square" data-size="2">
+                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.85rem;"></span>
+                    </div>
+                    <div class="drawing-shape" data-shape="square" data-size="3">
+                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.15rem;"></span>
+                    </div>
+                    <div class="drawing-shape" data-shape="square" data-size="4">
+                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.5rem;"></span>
+                    </div>
+<!--                    <div class="drawing-shape" data-shape="circle" data-size="1">-->
+<!--                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 0.5rem;"></span>-->
+<!--                    </div>-->
+<!--                    <div class="drawing-shape" data-shape="circle" data-size="2">-->
+<!--                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 0.85rem;"></span>-->
+<!--                    </div>-->
+                    <div class="drawing-shape" data-shape="circle" data-size="3">
+                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1.15rem;"></span>
+                    </div>
+                    <div class="drawing-shape" data-shape="circle" data-size="4">
+                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1.5rem;"></span>
+                    </div>
+                </div>
                 <div id="canvas-container">
                     <canvas id="char-canvas" class="absolute-center full"></canvas>
                     <canvas id="selection-border-canvas" class="absolute-center full"></canvas>
@@ -213,9 +239,15 @@
                 <div class="color-list"></div>
             </div>
             <div id="canvas-details">
-                <span class="dimensions"></span>
-                <span>&nbsp;</span>
-                <span class="mouse-coordinates">0:0</span>
+                <span class="dimensions">
+                    <span class="ri ri-fw ri-crop-line"></span>
+                    <span class="value"></span>
+                </span>
+                <span>&emsp;</span>
+                <span class="mouse-coordinates">
+                    <span class="ri ri-fw ri-focus-3-line"></span>
+                    <span class="value"></span>
+                </span>
             </div>
         </div>
     </div>

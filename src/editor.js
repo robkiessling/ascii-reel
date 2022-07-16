@@ -6,15 +6,17 @@ import {triggerRefresh} from "./index.js";
 import * as keyboard from "./keyboard.js";
 import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
+import {iterateHoveredCells} from "./hover.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $tools, $canvasContainer, $selectionTools, $canvasDetails;
+let $tools, $canvasContainer, $selectionTools, $drawingShapes, $canvasDetails;
 
 export function init() {
     $tools = $('#editing-tools');
     $canvasContainer = $('#canvas-container');
     $selectionTools = $('#selection-tools');
+    $drawingShapes = $('#drawing-shapes');
     $canvasDetails = $('#canvas-details');
     
     $tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
@@ -23,6 +25,7 @@ export function init() {
 
     setupFreeformChar();
     setupSelectionTools();
+    setupDrawingShapes();
     setupColorPicker();
 }
 
@@ -35,14 +38,16 @@ export function refresh() {
     $tools.find('.editing-tool').removeClass('selected');
     $tools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
 
-    $selectionTools.toggle(selection.hasSelection());
     refreshSelectionTools();
+    refreshDrawingShapes();
 
-    $canvasDetails.find('.dimensions').html(`[${state.numCols()}x${state.numRows()}]`);
+    $canvasDetails.find('.dimensions .value').html(`${state.numCols()}:${state.numRows()}`);
 }
 
 export function updateMouseCoords(cell) {
-    $canvasDetails.find('.mouse-coordinates').html(cell && cell.isInBounds() ? `${cell.col}:${cell.row}` : '&nbsp;');
+    const show = cell && cell.isInBounds();
+    $canvasDetails.find('.mouse-coordinates').toggle(!!show)
+        .find('.value').html(show ? `${cell.col}:${cell.row}` : '&nbsp;');
 }
 
 export function changeTool(newTool) {
@@ -76,10 +81,10 @@ export function setupMouseEvents(canvasControl) {
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
         switch(tool) {
             case 'draw-freeform':
-                drawCellChar(cell);
+                drawCharShape();
                 break;
             case 'paint-brush':
-                paintCell(cell);
+                paintShape();
                 break;
             case 'paint-bucket':
                 paintConnectedCells(cell, { diagonal: mouseEvent.metaKey });
@@ -95,12 +100,12 @@ export function setupMouseEvents(canvasControl) {
         switch(tool) {
             case 'draw-freeform':
                 if (mouseEvent.which === 1) {
-                    drawCellChar(cell);
+                    drawCharShape(cell);
                 }
                 break;
             case 'paint-brush':
                 if (mouseEvent.which === 1) {
-                    paintCell(cell);
+                    paintShape(cell);
                 }
                 break;
             default:
@@ -138,6 +143,8 @@ function bindSelectionToolEvent(tool, onClick) {
 }
 
 function refreshSelectionTools() {
+    $selectionTools.toggle(selection.hasSelection());
+
     $selectionTools.find('.selection-tool').toggleClass('disabled', false);
     $selectionTools.find('.selection-tool').toggleClass('active', false);
 
@@ -175,24 +182,66 @@ function resizeToSelection() {
     state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
 }
 
-// -------------------------------------------------------------------------------- Non-selection tools
+// -------------------------------------------------------------------------------- Drawing shapes / painting
 
-function drawCellChar(cell) {
-    const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
+export const DRAWING_TOOLS = ['draw-freeform', 'paint-brush'];
 
-    // Only updating char if it is actually different (needs to be efficient since we call this on mousemove)
-    if (currentChar !== undefined && (currentChar !== freeformChar || currentColor !== currentColorIndex())) {
-        state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, currentColorIndex());
+function setupDrawingShapes() {
+    $drawingShapes.off('click', '.drawing-shape').on('click', '.drawing-shape', evt => {
+        const $shape = $(evt.currentTarget);
+
+        state.config('drawingShape', {
+            shape: $shape.data('shape'),
+            size: $shape.data('size')
+        });
+        refreshDrawingShapes();
+    });
+}
+
+function refreshDrawingShapes() {
+    let show = DRAWING_TOOLS.includes(state.config('tool'))
+    $drawingShapes.toggle(show);
+
+    if (show) {
+        $drawingShapes.find('.drawing-shape').toggleClass('active', false);
+
+        let { shape, size } = state.config('drawingShape');
+        $drawingShapes.find(`.drawing-shape[data-shape="${shape}"][data-size="${size}"]`).toggleClass('active', true);
+    }
+}
+
+function drawCharShape() {
+    let hasChanges = false;
+
+    iterateHoveredCells(cell => {
+        const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
+
+        // Only updating char if it is actually different (this needs to be efficient since we call this on mousemove)
+        if (currentChar !== undefined && (currentChar !== freeformChar || currentColor !== currentColorIndex())) {
+            state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, currentColorIndex());
+            hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
         triggerRefresh('chars', true);
     }
 }
 
-function paintCell(cell) {
-    const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
+function paintShape() {
+    let hasChanges = false;
 
-    // Only refreshing if color is actually different (needs to be efficient since we call this on mousemove)
-    if (currentChar !== undefined && currentColor !== currentColorIndex()) {
-        state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
+    iterateHoveredCells(cell => {
+        const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
+
+        // Only refreshing if color is actually different (this needs to be efficient since we call this on mousemove)
+        if (currentChar !== undefined && currentColor !== currentColorIndex()) {
+            state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
+            hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
         triggerRefresh('chars', true);
     }
 }

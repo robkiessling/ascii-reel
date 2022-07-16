@@ -162,7 +162,7 @@ $editing-tool-size: 3rem;
 }
 
 $selection-tool-size: 2rem;
-#selection-tools {
+#selection-tools, #drawing-shapes {
   position: absolute;
   top: 50%;
   left: $editing-tool-size + 0.5rem;
@@ -177,7 +177,7 @@ $selection-tool-size: 2rem;
   border: 3px solid $highlight2;
   margin-left: 2px;
 
-  .selection-tool {
+  .selection-tool, .drawing-shape {
     width: $selection-tool-size;
     height: $selection-tool-size;
     display: flex;
@@ -725,6 +725,11 @@ $selection-tool-size: 2rem;
 
   font-family: monospace;
   color: white;
+
+  .dimensions, .mouse-coordinates {
+    display: flex;
+    align-items: center;
+  }
 }
 
 .full {

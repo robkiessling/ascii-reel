@@ -13,7 +13,6 @@ export let polygons = [];
 export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
 export let isMoving = false; // Only true when mouse is down and polygon is being moved
 export let movableContent = null; // Selected glyph content IF there is any (it will be surrounded by dashed outline)
-export let hoveredCell = null;
 export let cursorCell = null;
 export let cursorCellOrigin; // Where to move from on return key
 
@@ -329,9 +328,6 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
-        hoveredCell = cell;
-        triggerRefresh('hoveredCell');
-
         if (isDrawing) {
             if (tool === 'text-editor') {
                 cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
@@ -372,16 +368,6 @@ export function setupMouseEvents(canvasControl) {
             if (cursorCell) { refresh.push('cursorCell'); }
             triggerRefresh(refresh);
         }
-    });
-
-    canvasControl.$canvas.on('editor:mouseenter', (evt, mouseEvent, cell) => {
-        hoveredCell = cell;
-        triggerRefresh('hoveredCell');
-    });
-
-    canvasControl.$canvas.on('editor:mouseleave', () => {
-        hoveredCell = null;
-        triggerRefresh('hoveredCell');
     });
 
     canvasControl.$canvas.on('editor:dblclick', (evt, mouseEvent, cell, tool) => {

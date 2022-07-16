@@ -25,7 +25,11 @@ const CONFIG_DEFAULTS = {
     layerIndex: 0,
     frameIndex: 0,
     frameOrientation: 'left',
-    tool: 'text-editor'
+    tool: 'text-editor',
+    drawingShape: {
+        shape: 'square',
+        size: 1
+    }
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',
