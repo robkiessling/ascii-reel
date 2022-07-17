@@ -142,18 +142,18 @@ function setupEditingTools() {
     $editingTools.find('.editing-tool').each(function(i, element) {
         const $element = $(element);
         const tool = $element.data('tool');
-        actions.registerAction(actionKeyForTool(tool), () => changeTool(tool));
+        actions.registerAction(actionIdForTool(tool), () => changeTool(tool));
     });
 
     $editingTools.off('click', '.editing-tool').on('click', '.editing-tool', evt => {
         const $element = $(evt.currentTarget);
-        actions.callAction(actionKeyForTool($element.data('tool')));
+        actions.callAction(actionIdForTool($element.data('tool')));
     });
 
-    setupTooltips('.editing-tool', reference => actionKeyForTool($(reference).data('tool')));
+    setupTooltips('.editing-tool', element => actionIdForTool($(element).data('tool')));
 }
 
-function actionKeyForTool(tool) {
+function actionIdForTool(tool) {
     return `editor.tools.${tool}`;
 }
 
@@ -162,7 +162,7 @@ function actionKeyForTool(tool) {
 
 function setupSelectionTools() {
     function registerAction(tool, callback, disableOnMove = true, disableOnCursor = true, shortcutAbbr) {
-        actions.registerAction(actionKeyForSelectionTool(tool), {
+        actions.registerAction(actionIdForSelectionTool(tool), {
             callback: callback,
             enabled: () => {
                 if (disableOnMove && selection.movableContent) { return false; }
@@ -183,13 +183,13 @@ function setupSelectionTools() {
 
     $selectionTools.off('click', '.selection-tool').on('click', '.selection-tool', evt => {
         const $element = $(evt.currentTarget);
-        actions.callAction(actionKeyForSelectionTool($element.data('tool')), evt);
+        actions.callAction(actionIdForSelectionTool($element.data('tool')), evt);
     });
 
-    setupTooltips('.selection-tool', reference => actionKeyForSelectionTool($(reference).data('tool')));
+    setupTooltips('.selection-tool', element => actionIdForSelectionTool($(element).data('tool')));
 }
 
-function actionKeyForSelectionTool(tool) {
+function actionIdForSelectionTool(tool) {
     return `editor.selection.${tool}`;
 }
 
@@ -204,7 +204,7 @@ function refreshSelectionTools() {
 
     $selectionTools.find('.selection-tool').each((i, element) => {
         const $element = $(element);
-        $element.toggleClass('disabled', !actions.getActionInfo(actionKeyForSelectionTool($element.data('tool'))).enabled)
+        $element.toggleClass('disabled', !actions.isActionEnabled(actionIdForSelectionTool($element.data('tool'))));
     });
 }
 
@@ -237,9 +237,10 @@ function setupBrushShapes() {
     });
 
     tippy('.brush-shape', {
-        content: reference => {
-            const shape = $(reference).data('shape');
-            const size = $(reference).data('size');
+        content: element => {
+            const $element = $(element);
+            const shape = $element.data('shape');
+            const size = $element.data('size');
             return `<span>${capitalizeFirstLetter(shape)} Brush</span><br><span>Size: ${size}</span>`;
         },
         placement: 'right',

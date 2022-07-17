@@ -3,6 +3,7 @@ import 'jquery-ui/ui/widgets/sortable.js';
 import SimpleBar from 'simplebar';
 import {CanvasControl} from "./canvas.js";
 import {triggerRefresh, triggerResize} from "./index.js";
+import * as actions from "./actions.js";
 import * as state from "./state.js";
 import {createDialog} from "./utilities.js";
 
@@ -47,7 +48,8 @@ export class Timeline {
             }
         });
 
-        this.$layerContainer.find('.add-layer').off('click').on('click', () => {
+        // ---------------- Layer actions
+        actions.registerAction('timeline.add-layer', () => {
             const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
             state.createLayer(layerIndex, {
                 name: `Layer ${state.layers().length + 1}`
@@ -55,21 +57,22 @@ export class Timeline {
             this._selectLayer(layerIndex);
         });
 
-        this.$layerContainer.find('.edit-layer').off('click').on('click', () => {
-            this._editLayer();
+        actions.registerAction('timeline.edit-layer', () => this._editLayer());
+
+        actions.registerAction('timeline.delete-layer', {
+            callback: () => {
+                state.deleteLayer(state.layerIndex());
+                this._selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
+            },
+            enabled: () => state.layers() && state.layers().length > 1
         });
 
-        this.$layerContainer.find('.delete-layer').off('click').on('click', () => {
-            state.deleteLayer(state.layerIndex());
-            this._selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
-        });
-
-        this.$layerContainer.find('.toggle-visibility-lock').off('click').on('click', () => {
+        actions.registerAction('timeline.toggle-layer-visibility-lock', () => {
             state.config('lockLayerVisibility', !state.config('lockLayerVisibility'));
             triggerRefresh();
         });
 
-
+        this._layerTooltips = this._setupActionButtons(this.$layerContainer, { placement: 'top' });
     }
 
     _initFrames() {
@@ -102,36 +105,44 @@ export class Timeline {
             }
         });
 
-        this.$frameContainer.find('.add-blank-frame').off('click').on('click', () => {
+        // ---------------- Frame actions
+
+        actions.registerAction('timeline.add-frame', () => {
             const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
             state.createFrame(frameIndex, {});
             this._selectFrame(frameIndex);
         });
 
-        this.$frameContainer.find('.duplicate-frame').off('click').on('click', () => {
+        actions.registerAction('timeline.duplicate-frame', () => {
             state.duplicateFrame(state.frameIndex());
             this._selectFrame(state.frameIndex() + 1);
         });
 
-        this.$frameContainer.find('.delete-frame').off('click').on('click', () => {
-            state.deleteFrame(state.frameIndex());
-            this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
+        actions.registerAction('timeline.delete-frame', {
+            callback: () => {
+                state.deleteFrame(state.frameIndex());
+                this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
+            },
+            enabled: () => state.frames() && state.frames().length > 1
         });
 
-        this.$frameContainer.find('.toggle-onion').off('click').on('click', () => {
+        actions.registerAction('timeline.toggle-onion', () => {
             state.config('onion', !state.config('onion'));
             this._refreshOnion(); // have to refresh this manually since just refreshing chars
             triggerRefresh('chars');
         });
 
-        this.$frameContainer.find('.align-frames-left').off('click').on('click', () => {
+        actions.registerAction('timeline.align-frames-left', () => {
             state.config('frameOrientation', 'left');
             triggerResize();
         });
-        this.$frameContainer.find('.align-frames-bottom').off('click').on('click', () => {
+
+        actions.registerAction('timeline.align-frames-bottom', () => {
             state.config('frameOrientation', 'bottom');
             triggerResize();
         });
+
+        this._frameTooltips = this._setupActionButtons(this.$frameContainer);
     }
 
     refresh() {
@@ -150,7 +161,10 @@ export class Timeline {
         scrollElement.scrollTop = scrollTop;
         this.layerSimpleBar.recalculate();
 
-        this.$layerContainer.find('.delete-layer').prop('disabled', state.layers().length <= 1);
+        this.$layerContainer.find('[data-action]').each((i, element) => {
+            const $element = $(element);
+            $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
+        });
     }
 
     rebuildFrames() {
@@ -165,7 +179,10 @@ export class Timeline {
         scrollElement.scrollTop = scrollTop;
         this.frameSimpleBar.recalculate();
 
-        this.$frameContainer.find('.delete-frame').prop('disabled', state.frames().length <= 1);
+        this.$frameContainer.find('[data-action]').each((i, element) => {
+            const $element = $(element);
+            $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
+        });
     }
 
     get currentFrameComponent() {
@@ -173,6 +190,21 @@ export class Timeline {
     }
     get currentLayerComponent() {
         return this._layerComponents[state.layerIndex()];
+    }
+
+    _setupActionButtons($container, tooltipOptions) {
+        $container.off('click', '[data-action]').on('click', '[data-action]', evt => {
+            const $element = $(evt.currentTarget);
+            if (!$element.hasClass('disabled')) {
+                actions.callAction($element.data('action'))
+            }
+        });
+
+        return actions.setupTooltips(
+            $container.find('[data-action]').toArray(),
+            element => $(element).data('action'),
+            tooltipOptions
+        );
     }
 
     _setupLayerEditor() {
@@ -236,11 +268,17 @@ export class Timeline {
         $('#frames-and-canvas')
             .toggleClass('frames-on-left', orientation === 'left')
             .toggleClass('frames-on-bottom', orientation === 'bottom');
-        this.$frameContainer.find('.align-frames-left').prop('disabled', orientation === 'left')
+        this.$frameContainer.find('.align-frames-left').toggleClass('disabled', orientation === 'left')
             .find('.ri').toggleClass('active', orientation === 'left');
-        this.$frameContainer.find('.align-frames-bottom').prop('disabled', orientation === 'bottom')
+        this.$frameContainer.find('.align-frames-bottom').toggleClass('disabled', orientation === 'bottom')
             .find('.ri').toggleClass('active', orientation === 'bottom');
         this.$frames.sortable('option', 'axis', orientation === 'left' ? 'y' : 'x');
+
+        this._frameTooltips.forEach(tooltip => {
+            tooltip.setProps({
+                placement: orientation === 'left' ? 'right' : 'top'
+            });
+        });
     }
 
     _refreshOnion() {

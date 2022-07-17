@@ -1,6 +1,7 @@
 import $ from "jquery";
 import 'jquery-ui/ui/widgets/dialog.js';
 import * as keyboard from "./keyboard.js";
+import {hideAll} from "tippy.js";
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -286,6 +287,7 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
         },
         close: () => {
             keyboard.toggleStandard(false);
+            setTimeout(() => hideAll(), 1); // Hide all tooltips (sometimes tooltips get stifled by dialog popup)
             $(document).off('keyboard:enter.dialog');
         },
         buttons: [

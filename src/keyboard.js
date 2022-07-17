@@ -114,7 +114,7 @@ function setupKeydownListener() {
                 triggerRefresh('chars', 'backspace');
                 break;
             default:
-                if (producesText(code)) {
+                if (producesText(code) && char.length === 1) {
                     if (state.config('tool') === 'draw-freeform') {
                         editor.setFreeformChar(char);
                         return;

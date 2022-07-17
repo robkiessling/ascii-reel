@@ -821,9 +821,10 @@ button {
     background: $dark;
   }
 
-  &:disabled {
+  &:disabled, &.disabled {
     color: #666;
     background: none;
+    cursor: default;
   }
 }
 

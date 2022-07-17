@@ -8,7 +8,7 @@ let actions;
 
 // todo will move to preferences.js
 // Format: { char: 'x', modifiers: ['alt', 'shift'] } // modifiers are optional
-let actionToShortcut = {
+let actionIdToShortcut = {
     'clipboard.cut': { char: 'x', modifiers: ['meta'] },
     'clipboard.copy': { char: 'c', modifiers: ['meta'] },
     'clipboard.paste': { char: 'v', modifiers: ['meta'] },
@@ -18,29 +18,33 @@ let actionToShortcut = {
     'state.undo': { char: 'z', modifiers: ['meta'] },
     'state.redo': { char: 'z', modifiers: ['meta', 'shift'] },
 
+    'timeline.add-frame': { char: 'f', modifiers: ['meta', 'shift'] },
+    'timeline.duplicate-frame': { char: 'd', modifiers: ['meta', 'shift'] },
+    // 'timeline.delete-frame': { char: 'e', modifiers: ['meta', 'shift'] },
+
     'view.toggle-grid': { char: 'g', modifiers: ['meta'] },
     'view.grid-settings': { char: 'g', modifiers: ['meta', 'shift'] },
     'zoom.zoom-in': { displayChar: '+', char: '=', modifiers: ['meta', 'shift'] },
     'zoom.zoom-out': { displayChar: '-', char: '-', modifiers: ['meta', 'shift'] },
     'zoom.zoom-fit': { char: '0', modifiers: ['meta', 'shift'] },
 };
-let shortcutToAction; // populated by refreshShortcuts()
+let shortcutToActionId; // populated by refreshShortcuts()
 
 
 /**
- * @param key Unique string that can be used to call an action at a later time
+ * @param id   Unique identifier string that can be used to call an action at a later time
  * @param data Object with attributes:
  *
  *     callback: fn             (required) Function to call when action is performed
- *     name: string/fn          (optional) Name to display in menus/tooltips. Default: strings[<key>.name]
- *     description: string/fn   (optional) Text to display in tooltips. Default: strings[<key>.description]
+ *     name: string/fn          (optional) Name to display in menus/tooltips. Default: strings[<id>.name]
+ *     description: string/fn   (optional) Text to display in tooltips. Default: strings[<id>.description]
  *     enabled: boolean/fn      (optional) Whether the action is allowed to be called. Default: true
  *     shortcutAbbr: string/fn  (optional) Hardcoded shortcut abbreviation (not common; most abbr will come from preferences)
  *
  *     Alternatively, if `data` is just a function, it will be used as the callback
  *
  */
-export function registerAction(key, data) {
+export function registerAction(id, data) {
     if (actions === undefined) {
         actions = {};
     }
@@ -49,51 +53,59 @@ export function registerAction(key, data) {
         data = { callback: data };
     }
 
-    if (data.name === undefined) { data.name = strings[`${key}.name`]; }
-    if (data.name === undefined) { console.warn(`No string found for: ${key}.name`); data.name = '(Unknown)'; }
-    if (data.description === undefined) { data.description = strings[`${key}.description`]; }
+    if (data.name === undefined) { data.name = strings[`${id}.name`]; }
+    if (data.name === undefined) { console.warn(`No string found for: ${id}.name`); data.name = '(Unknown)'; }
+    if (data.description === undefined) { data.description = strings[`${id}.description`]; }
     if (data.enabled === undefined) { data.enabled = true; }
 
-    actions[key] = data;
+    if (actions[id] !== undefined) { console.warn(`Re-registering action: ${id}`); }
+    actions[id] = data;
 }
 
 export function refreshShortcuts() {
-    shortcutToAction = {};
+    shortcutToActionId = {};
 
-    for (let [action, shortcut] of Object.entries(actionToShortcut)) {
+    for (let [actionId, shortcut] of Object.entries(actionIdToShortcut)) {
         const shortcutKey = getShortcutKey(shortcut);
-        if (shortcutToAction[shortcutKey]) {
+        if (shortcutToActionId[shortcutKey]) {
             console.warn(`There is already a shortcut for: ${shortcutKey}`);
         }
-        shortcutToAction[shortcutKey] = action;
+        shortcutToActionId[shortcutKey] = actionId;
     }
 }
 
-export function getActionInfo(key) {
-    if (actions[key] === undefined) {
-        console.error('No action found for: ', key);
+export function getActionInfo(id) {
+    if (actions[id] === undefined) {
+        console.error('No action found for: ', id);
         return null;
     }
 
-    let info = $.extend({}, actions[key]);
+    let info = $.extend({}, actions[id]);
 
     if (isFunction(info.name)) { info.name = info.name(); }
     if (isFunction(info.description)) { info.description = info.description(); }
     if (isFunction(info.enabled)) { info.enabled = info.enabled(); }
 
-    if (info.shortcutAbbr === undefined && actionToShortcut[key]) {
-        info.shortcutAbbr = shortcutAbbr(actionToShortcut[key]);
+    if (info.shortcutAbbr === undefined && actionIdToShortcut[id]) {
+        info.shortcutAbbr = shortcutAbbr(actionIdToShortcut[id]);
     }
 
     return info;
 }
 
-// Returns true if the action is successfully called
-export function callAction(key, callbackData) {
-    const action = getActionInfo(key);
+export function isActionEnabled(id) {
+    if (actions[id] === undefined) {
+        console.error('No action found for: ', id);
+        return false;
+    }
 
-    if (action && action.enabled) {
-        action.callback(callbackData);
+    return isFunction(actions[id].enabled) ? actions[id].enabled() : actions[id].enabled;
+}
+
+// Returns true if the action is successfully called
+export function callAction(id, callbackData) {
+    if (isActionEnabled(id)) {
+        actions[id].callback(callbackData);
         file.refreshMenu();
         return true;
     }
@@ -102,22 +114,22 @@ export function callAction(key, callbackData) {
 }
 
 export function callActionByShortcut(shortcut, callbackData) {
-    const actionKey = shortcutToAction[getShortcutKey(shortcut)];
-    if (actionKey !== undefined) {
-        return callAction(actionKey, callbackData);
+    const actionId = shortcutToActionId[getShortcutKey(shortcut)];
+    if (actionId !== undefined) {
+        return callAction(actionId, callbackData);
     }
 }
 
-export function setupTooltips(targets, getActionKey) {
-    tippy(targets, {
-        content: reference => {
-            const actionKey = isFunction(getActionKey) ? getActionKey(reference) : getActionKey;
-            const actionInfo = getActionInfo(actionKey);
+export function setupTooltips(targets, getActionId, options = {}) {
+    return tippy(targets, $.extend({}, {
+        content: element => {
+            const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
+            const actionInfo = getActionInfo(actionId);
 
             if (actionInfo) {
                 let modifiers = '';
-                if (ACTION_MODIFIERS[actionKey]) {
-                    ACTION_MODIFIERS[actionKey].forEach(modification => {
+                if (ACTION_MODIFIERS[actionId]) {
+                    ACTION_MODIFIERS[actionId].forEach(modification => {
                         const modifierKey = formattedModifierKey(MODIFIER_KEYS[modification]);
                         const modifierDesc = strings[modification];
                         modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
@@ -128,7 +140,7 @@ export function setupTooltips(targets, getActionKey) {
                     `<span class="title">${actionInfo.name}</span>` +
                     `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
                     `</div>` +
-                    `<div class="description">${actionInfo.description}</div>` +
+                    `<div class="description">${actionInfo.description ? actionInfo.description : ''}</div>` +
                     modifiers;
             }
 
@@ -137,7 +149,7 @@ export function setupTooltips(targets, getActionKey) {
         placement: 'right',
         hideOnClick: false,
         allowHTML: true
-    });
+    }, options));
 }
 
 

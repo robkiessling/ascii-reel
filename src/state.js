@@ -62,8 +62,8 @@ export function init() {
 
 // -------------------------------------------------------------------------------- Loading / General Config
 
-let state;
-let sequences;
+let state = {};
+let sequences = {};
 
 export function loadNew() {
     load({
