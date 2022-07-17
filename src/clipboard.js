@@ -13,29 +13,21 @@ let copiedSelection = null;
 let copiedText = null;
 
 export function init() {
-    actions.registerAction('cut', {
-        name: 'Cut',
+    actions.registerAction('clipboard.cut', {
         callback: () => cut(),
-        enabled: () => selection.hasSelection() && !selection.movableContent,
-        shortcut: 'x'
+        enabled: () => selection.hasSelection() && !selection.movableContent
     });
-    actions.registerAction('copy', {
-        name: 'Copy',
+    actions.registerAction('clipboard.copy', {
         callback: () => copy(),
-        enabled: () => selection.hasSelection() && !selection.movableContent,
-        shortcut: 'c'
+        enabled: () => selection.hasSelection() && !selection.movableContent
     });
-    actions.registerAction('paste', {
-        name: 'Paste',
+    actions.registerAction('clipboard.paste', {
         callback: () => paste(),
-        enabled: () => selection.hasTarget() && !selection.movableContent,
-        shortcut: 'v'
+        enabled: () => selection.hasTarget() && !selection.movableContent
     });
-    actions.registerAction('paste-in-selection', {
-        name: 'Paste In Selection',
+    actions.registerAction('clipboard.paste-in-selection', {
         callback: () => paste(true),
-        enabled: () => selection.hasSelection() && !selection.movableContent,
-        shortcut: { char: 'v', modifiers: ['shift'] }
+        enabled: () => selection.hasSelection() && !selection.movableContent
     });
 }
 

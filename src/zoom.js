@@ -5,6 +5,7 @@ import {triggerRefresh} from "./index.js";
 import * as actions from "./actions.js";
 import * as state from './state.js';
 import {createDialog} from "./utilities.js";
+import {strings} from "./strings.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 
@@ -14,23 +15,17 @@ export function init() {
     setupGridToggle();
     setupGridDialog();
 
-    actions.registerAction('zoom-in', {
-        name: 'Zoom In',
+    actions.registerAction('zoom.zoom-in', {
         callback: () => {},
-        enabled: () => false,
-        shortcut: { displayChar: '+', char: '=', modifiers: ['shift'] }
+        enabled: () => false
     });
-    actions.registerAction('zoom-out', {
-        name: 'Zoom Out',
+    actions.registerAction('zoom.zoom-out', {
         callback: () => {},
-        enabled: () => false,
-        shortcut: { displayChar: '-', char: '-', modifiers: ['shift'] }
+        enabled: () => false
     });
-    actions.registerAction('zoom-fit', {
-        name: 'Zoom Fit',
+    actions.registerAction('zoom.zoom-fit', {
         callback: () => {},
-        enabled: () => false,
-        shortcut: { char: '0', modifiers: ['shift'] }
+        enabled: () => false
     });
 }
 
@@ -175,11 +170,7 @@ function setupGridDialog() {
         },
     });
 
-    actions.registerAction('grid-settings', {
-        name: 'Grid Settings',
-        callback: () => openGridDialog(),
-        shortcut: { char: 'g', modifiers: ['shift'] }
-    });
+    actions.registerAction('view.grid-settings',  () => openGridDialog());
 }
 
 function openGridDialog() {
@@ -191,14 +182,13 @@ function openGridDialog() {
 }
 
 function setupGridToggle() {
-    actions.registerAction('toggle-grid', {
-        name: () => state.config('grid').show ? 'Hide Grid' : 'Show Grid',
+    actions.registerAction('view.toggle-grid', {
+        name: () => state.config('grid').show ? strings['view.hide-grid.name'] : strings['view.show-grid.name'],
         callback: () => {
             let grid = $.extend({}, state.config('grid'));
             grid.show = !grid.show;
             state.config('grid', grid);
             triggerRefresh('chars');
-        },
-        shortcut: 'g'
+        }
     });
 }

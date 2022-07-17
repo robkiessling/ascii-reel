@@ -5,11 +5,12 @@ import * as selection from './selection.js';
 import {triggerRefresh} from "./index.js";
 import * as keyboard from "./keyboard.js";
 import * as palette from "./palette.js";
+import * as actions from "./actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import {iterateHoveredCells} from "./hover.js";
 import tippy from 'tippy.js';
-import {strings} from "./strings.js";
-import {capitalizeFirstLetter, formattedModifierKey} from "./utilities.js";
+import {capitalizeFirstLetter} from "./utilities.js";
+import {setupTooltips, shouldModifyAction} from "./actions.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -89,8 +90,8 @@ export function setupMouseEvents(canvasControl) {
             case 'paint-bucket':
                 paintConnectedCells(cell, {
                     // Uses same diagonal/colorblind modifications as selection-wand tool
-                    diagonal: shouldPerformModification('editingTools.selection-wand.diagonal', mouseEvent),
-                    colorblind: shouldPerformModification('editingTools.selection-wand.colorblind', mouseEvent)
+                    diagonal: shouldModifyAction('editor.tools.selection-wand.diagonal', mouseEvent),
+                    colorblind: shouldModifyAction('editor.tools.selection-wand.colorblind', mouseEvent)
                 });
                 break;
             case 'eyedropper':
@@ -137,128 +138,74 @@ export function setupMouseEvents(canvasControl) {
 
 // -------------------------------------------------------------------------------- Editing Tools
 
-/**
- * Some tools have modifiers (e.g. shift, alt) that affect what they do. This const has the format:
- *
- *      'namespace.tool': [ effect A, effect B, ... ]
- *
- * Where each effect is a type of modification to the tool. An effect is represented by a string that should be present in both:
- *      a) the MODIFIER_KEYS const (this is where it gets the type of modifier - i.e. shift, alt, etc.)
- *      b) the strings.js const (this is where it gets its description)
- */
-const TOOL_MODIFIERS = {
-    'editingTools.selection-rect': ['editingTools.selection.multiple'],
-    'editingTools.selection-line': ['editingTools.selection.multiple'],
-    'editingTools.selection-lasso': ['editingTools.selection.multiple'],
-    'editingTools.selection-wand': ['editingTools.selection.multiple', 'editingTools.selection-wand.diagonal', 'editingTools.selection-wand.colorblind'],
-    'editingTools.paint-bucket': ['editingTools.selection-wand.diagonal', 'editingTools.selection-wand.colorblind'],
-    'selectionTools.flip-v': ['selectionTools.flip-v.mirror'],
-    'selectionTools.flip-h': ['selectionTools.flip-h.mirror'],
-}
-
-// Defines what modifier key is used for the effect.
-const MODIFIER_KEYS = {
-    'editingTools.selection.multiple': 'shiftKey',
-    'editingTools.selection-wand.diagonal': 'metaKey',
-    'editingTools.selection-wand.colorblind': 'altKey',
-    'selectionTools.flip-v.mirror': 'altKey',
-    'selectionTools.flip-h.mirror': 'altKey',
-}
-
-// Returns true if the given effect should be applied (based on the mouseEvent's modifier keys)
-export function shouldPerformModification(effect, mouseEvent) {
-    const modifierKey = MODIFIER_KEYS[effect];
-
-    if (modifierKey === undefined) {
-        console.error('Could not find modifier key for: ', effect);
-        return false;
-    }
-
-    return mouseEvent[modifierKey];
-}
-
 function setupEditingTools() {
-    $editingTools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
-        changeTool($(evt.currentTarget).data('tool'));
+    $editingTools.find('.editing-tool').each(function(i, element) {
+        const $element = $(element);
+        const tool = $element.data('tool');
+        actions.registerAction(actionKeyForTool(tool), () => changeTool(tool));
     });
 
-    setupTooltips('.editing-tool', 'editingTools');
+    $editingTools.off('click', '.editing-tool').on('click', '.editing-tool', evt => {
+        const $element = $(evt.currentTarget);
+        actions.callAction(actionKeyForTool($element.data('tool')));
+    });
+
+    setupTooltips('.editing-tool', reference => actionKeyForTool($(reference).data('tool')));
 }
 
-function setupTooltips(cssSelector, namespace) {
-    tippy(cssSelector, {
-        content: reference => {
-            const tool = $(reference).data('tool');
-            const title = strings[`${namespace}.${tool}.title`];
-            const description = strings[`${namespace}.${tool}.description`];
-            let modifierText = '';
-            if (TOOL_MODIFIERS[`${namespace}.${tool}`]) {
-                TOOL_MODIFIERS[`${namespace}.${tool}`].forEach(modifier => {
-                    const modifierKey = formattedModifierKey(MODIFIER_KEYS[modifier]);
-                    modifierText += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${strings[modifier]}</span></div>`;
-                })
-            }
-            return `<div class="title">${title}</div><div class="description">${description}</div>${modifierText}`;
-        },
-        placement: 'right',
-        hideOnClick: false,
-        allowHTML: true
-    });
+function actionKeyForTool(tool) {
+    return `editor.tools.${tool}`;
 }
 
 
 // -------------------------------------------------------------------------------- Selection Tools
-// Tools that are allowed when the given tool is selected
-const MOVE_TOOLS = ['move'];
-const TYPEWRITER_TOOLS = ['typewriter'];//, 'cut', 'copy', 'paste'];
 
 function setupSelectionTools() {
-    bindSelectionToolEvent('move', () => selection.toggleMovingContent());
-    bindSelectionToolEvent('typewriter', () => selection.toggleCursor());
-    bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(shouldPerformModification('selectionTools.flip-v.mirror', e)));
-    bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(shouldPerformModification('selectionTools.flip-h.mirror', e)));
-    bindSelectionToolEvent('paint-bucket', () => paintSelection());
-    bindSelectionToolEvent('resize', () => resizeToSelection());
-    bindSelectionToolEvent('close', () => selection.clear());
+    function registerAction(tool, callback, disableOnMove = true, disableOnCursor = true, shortcutAbbr) {
+        actions.registerAction(actionKeyForSelectionTool(tool), {
+            callback: callback,
+            enabled: () => {
+                if (disableOnMove && selection.movableContent) { return false; }
+                if (disableOnCursor && selection.cursorCell) { return false; }
+                return true;
+            },
+            shortcutAbbr: shortcutAbbr
+        });
+    }
+    
+    registerAction('move', () => selection.toggleMovingContent(), false, true, '⌘ Click');
+    registerAction('typewriter', () => selection.toggleCursor(), true, false, 'Double click');
+    registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('editor.selection.flip-v.mirror', e)));
+    registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('editor.selection.flip-h.mirror', e)));
+    registerAction('paint-bucket', () => paintSelection());
+    registerAction('resize', () => resizeToSelection());
+    registerAction('close', () => selection.clear(), true, true, 'Esc');
 
-    setupTooltips('.selection-tool', 'selectionTools');
+    $selectionTools.off('click', '.selection-tool').on('click', '.selection-tool', evt => {
+        const $element = $(evt.currentTarget);
+        actions.callAction(actionKeyForSelectionTool($element.data('tool')), evt);
+    });
+
+    setupTooltips('.selection-tool', reference => actionKeyForSelectionTool($(reference).data('tool')));
 }
 
-function bindSelectionToolEvent(tool, onClick) {
-    $selectionTools.find(`.selection-tool[data-tool="${tool}"]`).off('click').on('click', evt => {
-        if (!$(evt.currentTarget).hasClass('disabled')) {
-            onClick(evt);
-        }
-    })
+function actionKeyForSelectionTool(tool) {
+    return `editor.selection.${tool}`;
 }
 
 function refreshSelectionTools() {
     $selectionTools.toggle(selection.hasSelection());
 
-    $selectionTools.find('.selection-tool').toggleClass('disabled', false);
-    $selectionTools.find('.selection-tool').toggleClass('active', false);
+    // Hide typewriter when using text-editor tool
     $selectionTools.find('.selection-tool[data-tool="typewriter"]').toggle(state.config('tool') !== 'text-editor');
 
-    if (selection.movableContent) {
-        $selectionTools.find('.selection-tool').each((i, element) => {
-            const $element = $(element);
-            if (!MOVE_TOOLS.includes($element.data('tool'))) {
-                $element.toggleClass('disabled', true);
-            }
-        })
+    $selectionTools.find('.selection-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
+    $selectionTools.find('.selection-tool[data-tool="typewriter"]').toggleClass('active', !!selection.cursorCell);
 
-        $selectionTools.find('.selection-tool[data-tool="move"]').toggleClass('active', true);
-    }
-
-    if (selection.cursorCell) {
-        $selectionTools.find('.selection-tool').each((i, element) => {
-            const $element = $(element);
-            if (!TYPEWRITER_TOOLS.includes($element.data('tool'))) {
-                $element.toggleClass('disabled', true);
-            }
-        })
-        $selectionTools.find('.selection-tool[data-tool="typewriter"]').toggleClass('active', true);
-    }
+    $selectionTools.find('.selection-tool').each((i, element) => {
+        const $element = $(element);
+        $element.toggleClass('disabled', !actions.getActionInfo(actionKeyForSelectionTool($element.data('tool'))).enabled)
+    });
 }
 
 function paintSelection() {

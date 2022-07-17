@@ -1021,9 +1021,16 @@ button {
 
 // tooltip styling https://atomiks.github.io/tippyjs/v6/themes/
 .tippy-content {
-  .title {
-    font-weight: bold;
-    color: $highlight;
+  .header {
+    .title {
+      font-weight: bold;
+      color: $highlight;
+    }
+
+    .shortcut {
+      margin-left: 1rem;
+      color: $light;
+    }
   }
 
   .description {

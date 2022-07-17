@@ -2,7 +2,7 @@ import $ from "jquery";
 import './styles/app.scss'
 import 'remixicon/fonts/remixicon.css';
 
-import { registerAction } from "./actions.js";
+import {refreshShortcuts, registerAction} from "./actions.js";
 import { CanvasControl } from "./canvas.js";
 import { init as initClipboard } from "./clipboard.js"
 import { init as initEditor, setupMouseEvents as setupEditorMouse, refresh as refreshEditor, updateMouseCoords } from "./editor.js"
@@ -76,6 +76,8 @@ $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 // Load initial empty page
 window.setTimeout(() => {
     state.loadNew();
+
+    refreshShortcuts();
 
     if (state.config('tool') === 'text-editor') {
         selection.moveCursorToStart();

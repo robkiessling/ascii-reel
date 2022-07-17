@@ -48,18 +48,14 @@ const MAX_HISTORY = 30; // Max number of states to remember in the history. Incr
 
 
 export function init() {
-    actions.registerAction('undo', {
-        name: 'Undo',
+    actions.registerAction('state.undo', {
         callback: () => undo(),
         enabled: () => canUndo(),
-        shortcut: 'z'
     });
 
-    actions.registerAction('redo', {
-        name: 'Redo',
+    actions.registerAction('state.redo', {
         callback: () => redo(),
         enabled: () => canRedo(),
-        shortcut: { char: 'z', modifiers: ['shift'] }
     });
 }
 

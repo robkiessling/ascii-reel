@@ -5,6 +5,7 @@ import {triggerRefresh} from "./index.js";
 import * as state from "./state.js";
 import * as editor from "./editor.js";
 import * as actions from "./actions.js";
+import {shouldModifyAction} from "./actions.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -17,18 +18,14 @@ export let cursorCell = null;
 export let cursorCellOrigin; // Where to move from on return key
 
 export function init() {
-    actions.registerAction('commit-selection', {
-        name: 'Commit Move',
-        callback: () => finishMovingContent(),
-        enabled: () => !!movableContent,
-        shortcut: 'Enter'
-    });
+    // actions.registerAction('selection.commit-selection', {
+    //     name: 'Commit Move',
+    //     callback: () => finishMovingContent(),
+    //     enabled: () => !!movableContent,
+    //     shortcut: 'Enter'
+    // });
 
-    actions.registerAction('select-all', {
-        name: 'Select All',
-        callback: () => selectAll(),
-        shortcut: 'a'
-    });
+    actions.registerAction('selection.select-all', () => selectAll());
 
     clearCaches();
 }
@@ -293,7 +290,7 @@ export function setupMouseEvents(canvasControl) {
         }
 
         // If user clicks anywhere on the canvas (without the multiple-select key down) we want to clear everything and start a new polygon
-        if (!editor.shouldPerformModification('editingTools.selection.multiple', mouseEvent)) {
+        if (!shouldModifyAction('editor.tools.selection.multiple', mouseEvent)) {
             clear();
         }
 
@@ -312,8 +309,8 @@ export function setupMouseEvents(canvasControl) {
                     break;
                 case 'selection-wand':
                     const wand = new SelectionWand(cell, undefined, {
-                        diagonal: editor.shouldPerformModification('editingTools.selection-wand.diagonal', mouseEvent),
-                        colorblind: editor.shouldPerformModification('editingTools.selection-wand.colorblind', mouseEvent)
+                        diagonal: shouldModifyAction('editor.tools.selection-wand.diagonal', mouseEvent),
+                        colorblind: shouldModifyAction('editor.tools.selection-wand.colorblind', mouseEvent)
                     });
                     wand.complete();
                     polygons.push(wand);

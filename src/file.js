@@ -51,13 +51,13 @@ export function refreshMenu() {
             const action = actions.getActionInfo($item.data('action'));
 
             if (action) {
-                let html = `<span>${isFunction(action.name) ? action.name() : action.name}</span>`;
-                if (action.shortcut) {
-                    html += `<span class="shortcut">${actions.shortcutAbbr(action.shortcut)}</span>`;
+                let html = `<span>${action.name}</span>`;
+                if (action.shortcutAbbr) {
+                    html += `<span class="shortcut">${action.shortcutAbbr}</span>`;
                 }
                 $item.html(html);
-                $item.off('click').on('click', () => actions.callActionByKey(action.key));
-                $item.toggleClass('disabled', !(action.enabled === undefined || action.enabled()))
+                $item.off('click').on('click', () => action.callback());
+                $item.toggleClass('disabled', !action.enabled);
             }
             else {
                 $item.empty();
@@ -71,13 +71,9 @@ export function refreshMenu() {
 // --------------------------------------------------------------- New File
 
 function setupNewFile() {
-    actions.registerAction('new-file', {
-        name: 'New File',
-        callback: () => {
-            // TODO ask for dimensions, etc.
-            confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew());
-        },
-        shortcut: 'n'
+    actions.registerAction('file.new-file', () => {
+        // TODO ask for dimensions, etc.
+        confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew());
     });
 }
 
@@ -108,13 +104,9 @@ function setupUpload() {
         }
     });
 
-    actions.registerAction('open-file', {
-        name: 'Open File',
-        callback: () => {
-            // Doing asynchronously so main menu has time to close
-            window.setTimeout(() => $uploadInput.trigger('click'), 1);
-        },
-        shortcut: 'o'
+    actions.registerAction('file.open-file', () => {
+        // Doing asynchronously so main menu has time to close
+        window.setTimeout(() => $uploadInput.trigger('click'), 1);
     });
 }
 
@@ -132,11 +124,7 @@ function setupSaveDialog() {
         $saveFileDialog.dialog('close');
     });
 
-    actions.registerAction('save-file', {
-        name: 'Save File',
-        callback: () => openSaveDialog(),
-        shortcut: 's'
-    });
+    actions.registerAction('file.save-file', () => openSaveDialog());
 }
 
 function openSaveDialog() {
@@ -194,10 +182,7 @@ function setupResizeDialog() {
     $resizeDialog.find('.anchor-option').removeClass('selected');
     $resizeDialog.find('.anchor-option[data-row-anchor="middle"][data-col-anchor="middle"]').addClass('selected');
 
-    actions.registerAction('resize-canvas', {
-        name: 'Resize Canvas',
-        callback: () => openResizeDialog()
-    });
+    actions.registerAction('file.resize-canvas', () => openResizeDialog());
 }
 
 function openResizeDialog() {
@@ -264,10 +249,7 @@ function setupBackgroundDialog() {
         $colorPickerContainer.toggle(!!getBackgroundValue());
     });
 
-    actions.registerAction('background-settings', {
-        name: 'Background',
-        callback: () => openBackgroundDialog()
-    });
+    actions.registerAction('file.background-settings', () => openBackgroundDialog());
 }
 
 function openBackgroundDialog() {
@@ -370,11 +352,7 @@ function setupExportDialog() {
         $exportOptions.find('[name="width"]').val(width);
     });
 
-    actions.registerAction('export-file', {
-        name: 'Export To...',
-        callback: () => openExportDialog(),
-        shortcut: 'e'
-    });
+    actions.registerAction('file.export-file', () => openExportDialog());
 }
 
 

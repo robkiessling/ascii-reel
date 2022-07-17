@@ -36,6 +36,7 @@ function setupKeydownListener() {
         // TODO Make sure everything in the app considers metaKey === ctrlKey
         if (e.metaKey || e.ctrlKey) {
             let modifiers = [];
+            if (e.metaKey || e.ctrlKey) { modifiers.push('meta'); }
             if (e.shiftKey) { modifiers.push('shift'); }
             if (e.altKey) { modifiers.push('alt'); }
             if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
