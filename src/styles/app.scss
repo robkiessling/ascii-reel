@@ -6,6 +6,8 @@
 @import 'jquery-ui/themes/base/tabs';
 @import 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
 @import 'vanilla-picker/dist/vanilla-picker.csp.css';
+@import 'tippy.js/dist/tippy.css';
+
 
 @import 'icon-fonts/style.css';
 
@@ -1015,3 +1017,31 @@ button {
 .icon-paint-bucket {
   margin-left: 0.25rem;
 }
+
+
+// tooltip styling https://atomiks.github.io/tippyjs/v6/themes/
+.tippy-content {
+  .title {
+    font-weight: bold;
+    color: $highlight;
+  }
+
+  .description {
+    margin: 2px 0;
+  }
+
+  .modifier-desc {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+
+    .modifier-key {
+      font-size: 0.55rem;
+      border: 1px solid white;
+      padding: 2px 6px;
+      margin-right: 6px;
+      border-radius: 4px;
+    }
+  }
+}
+

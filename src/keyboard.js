@@ -47,8 +47,13 @@ function setupKeydownListener() {
         switch (char) {
             case 'Escape':
                 state.endHistoryModification();
-                // If cursor is showing, escape just hides the cursor but keeps the selection intact
-                selection.cursorCell ? selection.hideCursor() : selection.clear();
+                if (state.config('tool') === 'text-editor') {
+                    selection.clear();
+                }
+                else {
+                    // Regular selection: If cursor is showing, escape just hides the cursor but keeps the selection intact
+                    selection.cursorCell ? selection.hideCursor() : selection.clear();
+                }
                 break;
             case 'ArrowLeft':
                 state.endHistoryModification();

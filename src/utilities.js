@@ -90,6 +90,21 @@ export function randomHexString(length) {
     return [...Array(length)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 }
 
+export function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+// TODO support windows OS
+export function formattedModifierKey(modifierKey) {
+    switch(modifierKey) {
+        case 'shiftKey':
+            return 'SHIFT';
+        case 'altKey':
+            return 'OPT';
+        case 'metaKey':
+            return 'CMD';
+    }
+}
 
 const EPSILON = 0.000001; // Adding an epsilon to handle floating point rounding errors
 

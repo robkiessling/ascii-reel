@@ -292,8 +292,8 @@ export function setupMouseEvents(canvasControl) {
             return;
         }
 
-        // If user clicks anywhere on the canvas (without the shift-key) we want to clear everything and start a new polygon
-        if (!mouseEvent.shiftKey) {
+        // If user clicks anywhere on the canvas (without the multiple-select key down) we want to clear everything and start a new polygon
+        if (!editor.shouldPerformModification('editingTools.selection.multiple', mouseEvent)) {
             clear();
         }
 
@@ -311,7 +311,10 @@ export function setupMouseEvents(canvasControl) {
                     polygons.push(new SelectionLasso(cell));
                     break;
                 case 'selection-wand':
-                    const wand = new SelectionWand(cell, undefined, { diagonal: mouseEvent.metaKey, colorblind: mouseEvent.altKey });
+                    const wand = new SelectionWand(cell, undefined, {
+                        diagonal: editor.shouldPerformModification('editingTools.selection-wand.diagonal', mouseEvent),
+                        colorblind: editor.shouldPerformModification('editingTools.selection-wand.colorblind', mouseEvent)
+                    });
                     wand.complete();
                     polygons.push(wand);
                     break;
@@ -452,15 +455,18 @@ export function moveCursorTo(cell, updateOrigin = true) {
 }
 
 export function moveCursorToStart() {
+    if (state.config('tool') === 'text-editor') {
+        // Move cursor to top-left cell of entire canvas. This only really happens during page init.
+        moveCursorTo(new Cell(0, 0));
+        matchPolygonToCursor();
+        return;
+    }
+
     cacheUniqueSortedCells();
     const cellData = caches.cellsLeftToRight[0];
 
     if (cellData) {
         moveCursorTo(new Cell(cellData[0], cellData[1]));
-    }
-    else {
-        // Move cursor to top-left cell of entire canvas. This only really happens when using text-editor tool.
-        moveCursorTo(new Cell(0, 0));
     }
 }
 

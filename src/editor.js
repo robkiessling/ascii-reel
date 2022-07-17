@@ -7,23 +7,22 @@ import * as keyboard from "./keyboard.js";
 import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
 import {iterateHoveredCells} from "./hover.js";
-import {colorIndex} from "./state.js";
+import tippy from 'tippy.js';
+import {strings} from "./strings.js";
+import {capitalizeFirstLetter, formattedModifierKey} from "./utilities.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $tools, $canvasContainer, $selectionTools, $brushShapes, $canvasDetails;
+let $editingTools, $canvasContainer, $selectionTools, $brushShapes, $canvasDetails;
 
 export function init() {
-    $tools = $('#editing-tools');
+    $editingTools = $('#editing-tools');
     $canvasContainer = $('#canvas-container');
     $selectionTools = $('#selection-tools');
     $brushShapes = $('#brush-shapes');
     $canvasDetails = $('#canvas-details');
     
-    $tools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
-        changeTool($(evt.currentTarget).data('tool'));
-    });
-
+    setupEditingTools();
     setupFreeformChar();
     setupSelectionTools();
     setupBrushShapes();
@@ -36,8 +35,8 @@ export function refresh() {
         selectColor(palette.DEFAULT_COLOR);
     }
 
-    $tools.find('.editing-tool').removeClass('selected');
-    $tools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
+    $editingTools.find('.editing-tool').removeClass('selected');
+    $editingTools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
     refreshBrushShapes();
@@ -88,7 +87,11 @@ export function setupMouseEvents(canvasControl) {
                 paintShape();
                 break;
             case 'paint-bucket':
-                paintConnectedCells(cell, { diagonal: mouseEvent.metaKey });
+                paintConnectedCells(cell, {
+                    // Uses same diagonal/colorblind modifications as selection-wand tool
+                    diagonal: shouldPerformModification('editingTools.selection-wand.diagonal', mouseEvent),
+                    colorblind: shouldPerformModification('editingTools.selection-wand.colorblind', mouseEvent)
+                });
                 break;
             case 'eyedropper':
                 eyedropper(cell);
@@ -132,7 +135,79 @@ export function setupMouseEvents(canvasControl) {
 
 
 
-// -------------------------------------------------------------------------------- Selection Editor
+// -------------------------------------------------------------------------------- Editing Tools
+
+/**
+ * Some tools have modifiers (e.g. shift, alt) that affect what they do. This const has the format:
+ *
+ *      'namespace.tool': [ effect A, effect B, ... ]
+ *
+ * Where each effect is a type of modification to the tool. An effect is represented by a string that should be present in both:
+ *      a) the MODIFIER_KEYS const (this is where it gets the type of modifier - i.e. shift, alt, etc.)
+ *      b) the strings.js const (this is where it gets its description)
+ */
+const TOOL_MODIFIERS = {
+    'editingTools.selection-rect': ['editingTools.selection.multiple'],
+    'editingTools.selection-line': ['editingTools.selection.multiple'],
+    'editingTools.selection-lasso': ['editingTools.selection.multiple'],
+    'editingTools.selection-wand': ['editingTools.selection.multiple', 'editingTools.selection-wand.diagonal', 'editingTools.selection-wand.colorblind'],
+    'editingTools.paint-bucket': ['editingTools.selection-wand.diagonal', 'editingTools.selection-wand.colorblind'],
+    'selectionTools.flip-v': ['selectionTools.flip-v.mirror'],
+    'selectionTools.flip-h': ['selectionTools.flip-h.mirror'],
+}
+
+// Defines what modifier key is used for the effect.
+const MODIFIER_KEYS = {
+    'editingTools.selection.multiple': 'shiftKey',
+    'editingTools.selection-wand.diagonal': 'metaKey',
+    'editingTools.selection-wand.colorblind': 'altKey',
+    'selectionTools.flip-v.mirror': 'altKey',
+    'selectionTools.flip-h.mirror': 'altKey',
+}
+
+// Returns true if the given effect should be applied (based on the mouseEvent's modifier keys)
+export function shouldPerformModification(effect, mouseEvent) {
+    const modifierKey = MODIFIER_KEYS[effect];
+
+    if (modifierKey === undefined) {
+        console.error('Could not find modifier key for: ', effect);
+        return false;
+    }
+
+    return mouseEvent[modifierKey];
+}
+
+function setupEditingTools() {
+    $editingTools.off('click', '.editing-tool').on('click', '.editing-tool', (evt) => {
+        changeTool($(evt.currentTarget).data('tool'));
+    });
+
+    setupTooltips('.editing-tool', 'editingTools');
+}
+
+function setupTooltips(cssSelector, namespace) {
+    tippy(cssSelector, {
+        content: reference => {
+            const tool = $(reference).data('tool');
+            const title = strings[`${namespace}.${tool}.title`];
+            const description = strings[`${namespace}.${tool}.description`];
+            let modifierText = '';
+            if (TOOL_MODIFIERS[`${namespace}.${tool}`]) {
+                TOOL_MODIFIERS[`${namespace}.${tool}`].forEach(modifier => {
+                    const modifierKey = formattedModifierKey(MODIFIER_KEYS[modifier]);
+                    modifierText += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${strings[modifier]}</span></div>`;
+                })
+            }
+            return `<div class="title">${title}</div><div class="description">${description}</div>${modifierText}`;
+        },
+        placement: 'right',
+        hideOnClick: false,
+        allowHTML: true
+    });
+}
+
+
+// -------------------------------------------------------------------------------- Selection Tools
 // Tools that are allowed when the given tool is selected
 const MOVE_TOOLS = ['move'];
 const TYPEWRITER_TOOLS = ['typewriter'];//, 'cut', 'copy', 'paste'];
@@ -140,14 +215,13 @@ const TYPEWRITER_TOOLS = ['typewriter'];//, 'cut', 'copy', 'paste'];
 function setupSelectionTools() {
     bindSelectionToolEvent('move', () => selection.toggleMovingContent());
     bindSelectionToolEvent('typewriter', () => selection.toggleCursor());
-    // bindSelectionToolEvent('cut', () => clipboard.cut());
-    // bindSelectionToolEvent('copy', () => clipboard.copy());
-    // bindSelectionToolEvent('paste', (e) => clipboard.paste(e.shiftKey));
-    bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(e.shiftKey));
-    bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(e.shiftKey));
+    bindSelectionToolEvent('flip-v', (e) => selection.flipVertically(shouldPerformModification('selectionTools.flip-v.mirror', e)));
+    bindSelectionToolEvent('flip-h', (e) => selection.flipHorizontally(shouldPerformModification('selectionTools.flip-h.mirror', e)));
     bindSelectionToolEvent('paint-bucket', () => paintSelection());
     bindSelectionToolEvent('resize', () => resizeToSelection());
     bindSelectionToolEvent('close', () => selection.clear());
+
+    setupTooltips('.selection-tool', 'selectionTools');
 }
 
 function bindSelectionToolEvent(tool, onClick) {
@@ -199,6 +273,7 @@ function resizeToSelection() {
     state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
 }
 
+
 // -------------------------------------------------------------------------------- Brushing shapes / painting
 
 export const BRUSH_TOOLS = ['draw-freeform', 'paint-brush'];
@@ -213,6 +288,17 @@ function setupBrushShapes() {
         });
         refreshBrushShapes();
     });
+
+    tippy('.brush-shape', {
+        content: reference => {
+            const shape = $(reference).data('shape');
+            const size = $(reference).data('size');
+            return `<span>${capitalizeFirstLetter(shape)} Brush</span><br><span>Size: ${size}</span>`;
+        },
+        placement: 'right',
+        hideOnClick: false,
+        allowHTML: true
+    })
 }
 
 function refreshBrushShapes() {

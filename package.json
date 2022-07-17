@@ -55,6 +55,7 @@
     "regenerator-runtime": "^0.13.9",
     "remixicon": "^2.5.0",
     "simplebar": "^5.3.6",
+    "tippy.js": "^6.3.7",
     "vanilla-picker": "^2.12.1"
   }
 }
