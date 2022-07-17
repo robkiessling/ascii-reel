@@ -7,6 +7,7 @@ import * as keyboard from "./keyboard.js";
 import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
 import {iterateHoveredCells} from "./hover.js";
+import {colorIndex} from "./state.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -88,6 +89,9 @@ export function setupMouseEvents(canvasControl) {
                 break;
             case 'paint-bucket':
                 paintConnectedCells(cell, { diagonal: mouseEvent.metaKey });
+                break;
+            case 'eyedropper':
+                eyedropper(cell);
                 break;
             default:
                 return; // Ignore all other tools
@@ -269,6 +273,11 @@ function paintConnectedCells(cell, options) {
     triggerRefresh('chars', true);
 }
 
+function eyedropper(cell) {
+    const [char, colorIndex] = state.getCurrentCelGlyph(cell.row, cell.col);
+    selectColor(state.colorStr(colorIndex));
+}
+
 
 // -------------------------------------------------------------------------------- Freeform Char
 
@@ -402,6 +411,7 @@ function cursorStyle(evt, mouseEvent, cell, tool) {
             return 'cell';
         case 'paint-brush':
         case 'paint-bucket':
+        case 'eyedropper':
             return 'cell';
         case 'move':
             return 'grab';

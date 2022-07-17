@@ -11,7 +11,7 @@ const ONION_OPACITY = 0.25;
 
 const OUTLINE_WIDTH = 0.5;
 
-const CURSOR_CELL_COLOR = '#f48225';
+const CURSOR_CELL_COLOR = '#31e39d';
 const CURSOR_WIDTH = 0.35;
 
 const DASH_OUTLINE_LENGTH = 5;
