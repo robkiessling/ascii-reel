@@ -159,6 +159,7 @@ function refreshSelectionTools() {
 
     $selectionTools.find('.selection-tool').toggleClass('disabled', false);
     $selectionTools.find('.selection-tool').toggleClass('active', false);
+    $selectionTools.find('.selection-tool[data-tool="typewriter"]').toggle(state.config('tool') !== 'text-editor');
 
     if (selection.movableContent) {
         $selectionTools.find('.selection-tool').each((i, element) => {
