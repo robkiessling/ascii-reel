@@ -41,6 +41,8 @@ export function setupMouseEvents(sourceCanvas, previewCanvas, canvasControls) {
     canvases = canvasControls;
 
     setupScroll();
+    setupPreviewScroll();
+
     setupPan();
     setupPreviewPan();
 }
@@ -55,6 +57,18 @@ function setupScroll() {
         const scaledDelta = Math.pow(ZOOM_SCROLL_FACTOR, -deltaY / 100);
         const target = source.pointAtExternalXY(evt.offsetX, evt.offsetY);
         updateCanvases(canvasControl => canvasControl.zoomDelta(scaledDelta, target))
+    });
+}
+
+function setupPreviewScroll() {
+    preview.$canvas.off('wheel.zoom').on('wheel.zoom', evt => {
+        evt.preventDefault();
+
+        const deltaY = evt.originalEvent.deltaY;
+        if (deltaY === 0) { return; }
+
+        const scaledDelta = Math.pow(ZOOM_SCROLL_FACTOR, -deltaY / 100);
+        updateCanvases(canvasControl => canvasControl.zoomDelta(scaledDelta))
     });
 }
 

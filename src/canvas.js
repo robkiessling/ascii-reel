@@ -363,6 +363,11 @@ export class CanvasControl {
         this.zoomTo(this._zoomLevelForFit());
     }
 
+    /**
+     * Zooms the canvas in or out focused at a particular target
+     * @param delta Float controlling the magnitude of the zoom. A value > 1 will zoom in, a value < 1 will zoom out.
+     * @param target Point to zoom towards. If undefined, will zoom in/out relative to center of canvas.
+     */
     zoomDelta(delta, target) {
         const currentZoom = this._currentZoom();
         let newZoom = currentZoom * delta;
@@ -371,6 +376,10 @@ export class CanvasControl {
         if (newZoom > ZOOM_BOUNDARIES[1]) { newZoom = ZOOM_BOUNDARIES[1]; delta = newZoom / currentZoom; }
         if (newZoom < this._minZoom) { newZoom = this._minZoom; delta = newZoom / currentZoom; }
         if (roundForComparison(newZoom) === roundForComparison(currentZoom)) { return; }
+
+        if (!target) {
+            target = this.pointAtExternalXY(this.outerWidth / 2, this.outerHeight / 2)
+        }
 
         // Zoom to the mouse target, using a process described here: https://stackoverflow.com/a/5526721
         this.context.translate(target.x, target.y)
