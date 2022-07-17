@@ -106,7 +106,7 @@ export function selectAll() {
     }
 
     polygons = [SelectionRect.drawableArea()];
-    triggerRefresh('selection', true);
+    triggerRefresh('selection');
 }
 
 // Returns true if the given Cell is part of the selection
@@ -250,7 +250,10 @@ export function getSelectedCells() {
   */
 export function getConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return []; }
-    return new SelectionWand(cell, undefined, options).cells;
+
+    const wand = new SelectionWand(cell, undefined, options);
+    wand.complete();
+    return wand.cells;
 }
 
 
@@ -271,6 +274,8 @@ export function setupMouseEvents(canvasControl) {
             default:
                 return; // Ignore all other tools
         }
+
+        state.endHistoryModification();
 
         // If user clicks on the selection, we begin the 'moving' process (moving the selection area).
         if (isSelectedCell(cell) && allowMovement(tool, mouseEvent)) {
@@ -306,7 +311,7 @@ export function setupMouseEvents(canvasControl) {
                     polygons.push(new SelectionLasso(cell));
                     break;
                 case 'selection-wand':
-                    let wand = new SelectionWand(cell, undefined, { diagonal: mouseEvent.metaKey, colorblind: mouseEvent.altKey });
+                    const wand = new SelectionWand(cell, undefined, { diagonal: mouseEvent.metaKey, colorblind: mouseEvent.altKey });
                     wand.complete();
                     polygons.push(wand);
                     break;

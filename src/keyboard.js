@@ -46,22 +46,28 @@ function setupKeydownListener() {
 
         switch (char) {
             case 'Escape':
+                state.endHistoryModification();
                 // If cursor is showing, escape just hides the cursor but keeps the selection intact
                 selection.cursorCell ? selection.hideCursor() : selection.clear();
                 break;
             case 'ArrowLeft':
+                state.endHistoryModification();
                 selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1, !e.shiftKey);
                 break;
             case 'ArrowUp':
+                state.endHistoryModification();
                 selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1, !e.shiftKey);
                 break;
             case 'ArrowRight':
+                state.endHistoryModification();
                 selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1, !e.shiftKey);
                 break;
             case 'ArrowDown':
+                state.endHistoryModification();
                 selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1, !e.shiftKey);
                 break;
             case 'Tab':
+                state.endHistoryModification();
                 if (e.shiftKey) {
                     // If shift key is pressed, we move in opposite direction
                     selection.cursorCell ? selection.moveCursorInDirection('left', false) : selection.moveInDirection('left', 1);
@@ -74,6 +80,7 @@ function setupKeydownListener() {
                     selection.finishMovingContent();
                 }
                 else {
+                    state.endHistoryModification();
                     if (e.shiftKey) {
                         // If shift key is pressed, we move in opposite direction
                         selection.cursorCell ? selection.moveCursorInDirection('up', false) : selection.moveInDirection('up', 1);
@@ -98,7 +105,7 @@ function setupKeydownListener() {
                 else {
                     selection.empty();
                 }
-                triggerRefresh('chars', true);
+                triggerRefresh('chars', 'backspace');
                 break;
             default:
                 if (producesText(code)) {
@@ -122,7 +129,7 @@ function setupKeydownListener() {
                         });
                     }
 
-                    triggerRefresh('chars', true);
+                    triggerRefresh('chars', 'producesText');
                 }
                 else {
                     // Unrecognized input; let browser handle as normal

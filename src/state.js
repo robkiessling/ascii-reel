@@ -494,20 +494,41 @@ export function pushFrameToHistory() {
 
 }
 
+/**
+ * Adds the current state of the app as a new slice of the history.
+ * @param options.modifiable (optional String) If a string is given, further calls to pushStateToHistory with the same
+ *                           modifiable string will update the current history slice instead of adding a new slice.
+ *                           This is used for things like typing, where we don't want each new character to be a new slice.
+ *                           Once the modifiable string changes / is undefined (or endHistoryModification is called) that
+ *                           history slice will not be updated anymore; a new slice will be made on the next push.
+ * @param options.requiresResize (optional Boolean) If true, undoing/redoing to this state will force the canvas to be
+ *                               resized.
+ */
 export function pushStateToHistory(options = {}) {
     // Remove anything in the future (all "redo" states are removed)
     if (historyIndex !== undefined) {
         history.splice(historyIndex + 1, history.length);
     }
 
-    history.push({
+    // The snapshot to be saved in the history
+    const snapshot = {
         state: $.extend(true, {}, state),
         selection: selection.serialize(),
         options: options
-    });
+    };
 
+    // If modifiable option is a match, we just update the current slice and return
+    if (history.length && options.modifiable && options.modifiable === history[historyIndex].options.modifiable) {
+        history[historyIndex] = snapshot;
+        return;
+    }
+
+    endHistoryModification();
+    
+    history.push(snapshot);
     historyIndex = historyIndex === undefined ? 0 : historyIndex + 1;
 
+    // Limit history length
     if (history.length > MAX_HISTORY) {
         history.shift();
         historyIndex -= 1;
@@ -535,6 +556,7 @@ function canUndo() {
 
 function undo() {
     if (canUndo()) {
+        endHistoryModification();
         loadStateFromHistory(historyIndex - 1, historyIndex);
         historyIndex -= 1;
     }
@@ -550,3 +572,11 @@ function redo() {
         historyIndex += 1;
     }
 }
+
+// Ends further modifications to the current history slice. See pushStateToHistory for more info.
+export function endHistoryModification() {
+    if (history.length) {
+        history[historyIndex].options.modifiable = undefined;
+    }
+}
+

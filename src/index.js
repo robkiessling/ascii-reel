@@ -111,6 +111,8 @@ export function triggerResize(clearSelection) {
  * @param type Can be a single string value, or an Array of string values. This narrows down the refresh scope to just
  *             refresh a subset of components.
  * @param saveState If true, state will be stored in history (for undo/redo purposes)
+ *                  If a string, state will be stored in history with the string used as the 'modifiable' key (see
+ *                  pushStateToHistory for more information)
  */
 export function triggerRefresh(type = 'full', saveState = false) {
     if (!Array.isArray(type)) {
@@ -166,7 +168,7 @@ export function triggerRefresh(type = 'full', saveState = false) {
     });
 
     if (saveState) {
-        state.pushStateToHistory();
+        state.pushStateToHistory(saveState === true ? undefined : { modifiable: saveState });
     }
 }
 
@@ -203,12 +205,14 @@ function drawSelection() {
 function drawHoveredCell() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell && !selection.isDrawing && !selection.isMoving && hoveredCell.isInBounds()) {
+    if (hoveredCell && !selection.isDrawing && !selection.isMoving) {
         // Not showing if the tool is text-editor because when you click on a cell, the cursor doesn't necessarily
         // go to that cell (it gets rounded up or down, like a real text editor does).
         if (state.config('tool') !== 'text-editor') {
             iterateHoveredCells(cell => {
-                hoveredCellCanvas.highlightCell(cell);
+                if (cell.isInBounds()) {
+                    hoveredCellCanvas.highlightCell(cell);
+                }
             })
         }
     }

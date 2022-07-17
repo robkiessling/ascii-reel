@@ -112,6 +112,18 @@ export function setupMouseEvents(canvasControl) {
                 return; // Ignore all other tools
         }
     });
+
+    canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvent, cell, tool) => {
+        switch(tool) {
+            case 'draw-freeform':
+            case 'paint-brush':
+                // drawCharShape and paintShape save a 'modifiable' state during mousemove, so end modifications on mouseup
+                state.endHistoryModification();
+                break;
+            default:
+                return; // Ignore all other tools
+        }
+    });
 }
 
 
@@ -224,7 +236,7 @@ function drawCharShape() {
     });
 
     if (hasChanges) {
-        triggerRefresh('chars', true);
+        triggerRefresh('chars', 'drawCharShape');
     }
 }
 
@@ -242,7 +254,7 @@ function paintShape() {
     });
 
     if (hasChanges) {
-        triggerRefresh('chars', true);
+        triggerRefresh('chars', 'paintShape');
     }
 }
 
