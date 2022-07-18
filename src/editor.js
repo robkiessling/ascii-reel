@@ -100,12 +100,14 @@ export function setupMouseEvents(canvasControl) {
             case 'paint-bucket':
                 paintConnectedCells(cell, {
                     // Uses same diagonal/colorblind modifications as selection-wand tool
-                    diagonal: shouldModifyAction('editor.tools.selection-wand.diagonal', mouseEvent),
+                    diagonal: true, //shouldModifyAction('editor.tools.selection-wand.diagonal', mouseEvent),
                     colorblind: shouldModifyAction('editor.tools.selection-wand.colorblind', mouseEvent)
                 });
                 break;
             case 'eyedropper':
-                eyedropper(cell);
+                eyedropper(cell, {
+                    addToPalette: shouldModifyAction('editor.tools.eyedropper.add-to-palette', mouseEvent)
+                });
                 break;
             default:
                 return; // Ignore all other tools
@@ -317,9 +319,15 @@ function paintConnectedCells(cell, options) {
     triggerRefresh('chars', true);
 }
 
-function eyedropper(cell) {
+function eyedropper(cell, options) {
     const [char, colorIndex] = state.getCurrentCelGlyph(cell.row, cell.col);
-    selectColor(state.colorStr(colorIndex));
+    const colorStr = state.colorStr(colorIndex);
+    selectColor(colorStr);
+
+    if (options.addToPalette) {
+        state.addColor(colorStr);
+        triggerRefresh('palette', true);
+    }
 }
 
 

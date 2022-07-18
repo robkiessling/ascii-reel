@@ -44,7 +44,7 @@ const SEQUENCES = ['layers', 'frames'];
 
 export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and use to display
 
-const MAX_HISTORY = 30; // Max number of states to remember in the history. Increasing this value will use more memory.
+const MAX_HISTORY = 50; // Max number of states to remember in the history. Increasing this value will use more memory.
 
 
 export function init() {

@@ -123,7 +123,7 @@ export function modifierWord(modifierKey) {
         case 'metaKey':
             return isMacOS() ? 'Cmd' : 'Win';
         case 'altKey':
-            return isMacOS() ? 'Opt' : 'Alt';
+            return isMacOS() ? 'Option' : 'Alt';
         case 'ctrlKey':
             return 'Ctrl';
         case 'shiftKey':

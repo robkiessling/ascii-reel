@@ -309,7 +309,7 @@ export function setupMouseEvents(canvasControl) {
                     break;
                 case 'selection-wand':
                     const wand = new SelectionWand(cell, undefined, {
-                        diagonal: shouldModifyAction('editor.tools.selection-wand.diagonal', mouseEvent),
+                        diagonal: true, //shouldModifyAction('editor.tools.selection-wand.diagonal', mouseEvent),
                         colorblind: shouldModifyAction('editor.tools.selection-wand.colorblind', mouseEvent)
                     });
                     wand.complete();
