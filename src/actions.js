@@ -2,31 +2,33 @@ import $ from "jquery";
 import * as file from "./file.js";
 import tippy from "tippy.js";
 import {strings} from "./strings.js";
-import {formattedModifierKey, isFunction} from "./utilities.js";
+import {modifierWord, isFunction, isMacOS, modifierAbbr} from "./utilities.js";
 
 let actions;
 
 // todo will move to preferences.js
-// Format: { char: 'x', modifiers: ['alt', 'shift'] } // modifiers are optional
+// Format: { char: 'x', modifiers: ['altKey', 'shiftKey'] } // modifiers are optional
+
+let cmdKey = isMacOS() ? 'metaKey' : 'ctrlKey';
 let actionIdToShortcut = {
-    'clipboard.cut': { char: 'x', modifiers: ['meta'] },
-    'clipboard.copy': { char: 'c', modifiers: ['meta'] },
-    'clipboard.paste': { char: 'v', modifiers: ['meta'] },
-    'clipboard.paste-in-selection': { char: 'v', modifiers: ['meta', 'shift'] },
-    'editor.tools.text-editor': { char: 'e', modifiers: ['meta'] },
-    'selection.select-all': { char: 'a', modifiers: ['meta'] },
-    'state.undo': { char: 'z', modifiers: ['meta'] },
-    'state.redo': { char: 'z', modifiers: ['meta', 'shift'] },
+    'clipboard.cut': { char: 'x', modifiers: [cmdKey] },
+    'clipboard.copy': { char: 'c', modifiers: [cmdKey] },
+    'clipboard.paste': { char: 'v', modifiers: [cmdKey] },
+    'clipboard.paste-in-selection': { char: 'v', modifiers: [cmdKey, 'shiftKey'] },
+    'editor.tools.text-editor': { char: 'e', modifiers: [cmdKey] },
+    'selection.select-all': { char: 'a', modifiers: [cmdKey] },
+    'state.undo': { char: 'z', modifiers: [cmdKey] },
+    'state.redo': { char: 'z', modifiers: [cmdKey, 'shiftKey'] },
 
-    'timeline.add-frame': { char: 'f', modifiers: ['meta', 'shift'] },
-    'timeline.duplicate-frame': { char: 'd', modifiers: ['meta', 'shift'] },
-    // 'timeline.delete-frame': { char: 'e', modifiers: ['meta', 'shift'] },
+    'timeline.add-frame': { char: 'f', modifiers: [cmdKey, 'shiftKey'] },
+    'timeline.duplicate-frame': { char: 'd', modifiers: [cmdKey, 'shiftKey'] },
+    // 'timeline.delete-frame': { char: 'e', modifiers: [cmdKey, 'shiftKey'] },
 
-    'view.toggle-grid': { char: 'g', modifiers: ['meta'] },
-    'view.grid-settings': { char: 'g', modifiers: ['meta', 'shift'] },
-    'zoom.zoom-in': { displayChar: '+', char: '=', modifiers: ['meta', 'shift'] },
-    'zoom.zoom-out': { displayChar: '-', char: '-', modifiers: ['meta', 'shift'] },
-    'zoom.zoom-fit': { char: '0', modifiers: ['meta', 'shift'] },
+    'view.toggle-grid': { char: 'g', modifiers: [cmdKey] },
+    'view.grid-settings': { char: 'g', modifiers: [cmdKey, 'shiftKey'] },
+    'zoom.zoom-in': { displayChar: '+', char: '=', modifiers: [cmdKey, 'shiftKey'] },
+    'zoom.zoom-out': { displayChar: '-', char: '-', modifiers: [cmdKey, 'shiftKey'] },
+    'zoom.zoom-fit': { char: '0', modifiers: [cmdKey, 'shiftKey'] },
 };
 let shortcutToActionId; // populated by refreshShortcuts()
 
@@ -115,9 +117,7 @@ export function callAction(id, callbackData) {
 
 export function callActionByShortcut(shortcut, callbackData) {
     const actionId = shortcutToActionId[getShortcutKey(shortcut)];
-    if (actionId !== undefined) {
-        return callAction(actionId, callbackData);
-    }
+    return actionId === undefined ? false : callAction(actionId, callbackData);
 }
 
 export function setupTooltips(targets, getActionId, options = {}) {
@@ -130,7 +130,7 @@ export function setupTooltips(targets, getActionId, options = {}) {
                 let modifiers = '';
                 if (ACTION_MODIFIERS[actionId]) {
                     ACTION_MODIFIERS[actionId].forEach(modification => {
-                        const modifierKey = formattedModifierKey(MODIFIER_KEYS[modification]);
+                        const modifierKey = modifierWord(MODIFIER_KEYS[modification]);
                         const modifierDesc = strings[modification];
                         modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
                     });
@@ -177,7 +177,7 @@ const ACTION_MODIFIERS = {
 // Defines what modifier key is used for the effect. These are static; they won't be customizable by the user.
 const MODIFIER_KEYS = {
     'editor.tools.selection.multiple': 'shiftKey',
-    'editor.tools.selection-wand.diagonal': 'metaKey',
+    'editor.tools.selection-wand.diagonal': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.tools.selection-wand.colorblind': 'altKey',
     'editor.selection.flip-v.mirror': 'altKey',
     'editor.selection.flip-h.mirror': 'altKey',
@@ -203,26 +203,11 @@ export function shouldModifyAction(modification, mouseEvent) {
 
 
 
-// todo ctrl if windows
 function shortcutAbbr(shortcut) {
     let result = '';
 
     if ($.isPlainObject(shortcut)) {
-        shortcut.modifiers.forEach(modifier => {
-            switch(modifier) {
-                case 'meta':
-                    result += '⌘';
-                    break;
-                case 'alt':
-                    result += '⌥';
-                    break;
-                case 'shift':
-                    result += '⇧';
-                    break;
-                default:
-                    console.warn(`Unknown modifier: ${modifier}`);
-            }
-        });
+        shortcut.modifiers.forEach(modifier => result += modifierAbbr(modifier));
 
         if (shortcut.displayChar) {
             result += shortcut.displayChar.toUpperCase();

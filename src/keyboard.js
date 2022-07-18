@@ -33,16 +33,16 @@ function setupKeydownListener() {
         }
 
         // Shortcuts
-        // TODO Make sure everything in the app considers metaKey === ctrlKey
-        if (e.metaKey || e.ctrlKey) {
+        if (e.metaKey || e.ctrlKey || e.altKey) {
             let modifiers = [];
-            if (e.metaKey || e.ctrlKey) { modifiers.push('meta'); }
-            if (e.shiftKey) { modifiers.push('shift'); }
-            if (e.altKey) { modifiers.push('alt'); }
+            if (e.metaKey) { modifiers.push('metaKey'); }
+            if (e.ctrlKey) { modifiers.push('ctrlKey'); }
+            if (e.altKey) { modifiers.push('altKey'); }
+            if (e.shiftKey) { modifiers.push('shiftKey'); }
             if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
                 e.preventDefault();
+                return;
             }
-            return;
         }
 
         switch (char) {
@@ -115,6 +115,12 @@ function setupKeydownListener() {
                 break;
             default:
                 if (producesText(code) && char.length === 1) {
+                    if (e.metaKey || e.ctrlKey) {
+                        // Ignore browser commands (e.g. cmd-N) that we don't override with anything.
+                        // Currently allowing altKey, because sometimes the option key is used to write special characters.
+                        return;
+                    }
+
                     if (state.config('tool') === 'draw-freeform') {
                         editor.setFreeformChar(char);
                         return;

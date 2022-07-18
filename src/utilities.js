@@ -95,15 +95,39 @@ export function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-// TODO support windows OS
-export function formattedModifierKey(modifierKey) {
+export function isMacOS() {
+    return navigator.platform.indexOf("Mac") === 0; // TODO deprecated?
+}
+
+// It seems like operating systems abbreviate shortcuts differently:
+// Mac:     ⌘⇧N
+// Windows: Ctrl-Shift-N
+export function modifierAbbr(modifierKey) {
     switch(modifierKey) {
-        case 'shiftKey':
-            return 'SHIFT';
-        case 'altKey':
-            return 'OPT';
         case 'metaKey':
-            return 'CMD';
+            return isMacOS() ? '⌘' : 'Win-';
+        case 'altKey':
+            return isMacOS() ? '⌥' : 'Alt-';
+        case 'ctrlKey':
+            return isMacOS() ? '^' : 'Ctrl-';
+        case 'shiftKey':
+            return isMacOS() ? '⇧' : 'Shift-';
+        default:
+            console.warn(`Unknown modifierKey: ${modifierKey}`);
+            return '?'
+    }
+}
+
+export function modifierWord(modifierKey) {
+    switch(modifierKey) {
+        case 'metaKey':
+            return isMacOS() ? 'Cmd' : 'Win';
+        case 'altKey':
+            return isMacOS() ? 'Opt' : 'Alt';
+        case 'ctrlKey':
+            return 'Ctrl';
+        case 'shiftKey':
+            return 'Shift';
     }
 }
 

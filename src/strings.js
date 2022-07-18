@@ -76,7 +76,7 @@ export const strings = {
     'timeline.delete-layer.name': 'Delete Layer',
     'timeline.delete-layer.description': 'Deletes the current layer.',
     'timeline.toggle-layer-visibility-lock.name': 'Toggle Layer Visibility',
-    'timeline.toggle-layer-visibility-lock.description': 'When locked, only the currently selected layer is shown. When unlocked, you can manually show/hide layers.',
+    'timeline.toggle-layer-visibility-lock.description': 'When locked, only the current layer is shown in the main canvas. When unlocked, you can manually show/hide all layers.',
 
     'zoom.zoom-in.name': 'Zoom In',
     'zoom.zoom-out.name': 'Zoom Out',
