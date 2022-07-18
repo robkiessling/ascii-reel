@@ -14,7 +14,7 @@ import {setupTooltips, shouldModifyAction} from "./actions.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $editingTools, $canvasContainer, $selectionTools, $brushShapes, $canvasDetails;
+let $editingTools, $canvasContainer, $selectionTools, $brushShapes, $canvasDetails, $canvasMessage;
 
 export function init() {
     $editingTools = $('#editing-tools');
@@ -22,6 +22,7 @@ export function init() {
     $selectionTools = $('#selection-tools');
     $brushShapes = $('#brush-shapes');
     $canvasDetails = $('#canvas-details');
+    $canvasMessage = $('#canvas-message');
     
     setupEditingTools();
     setupFreeformChar();
@@ -57,6 +58,15 @@ export function changeTool(newTool) {
     refresh();
 }
 
+
+
+export function showCanvasMessage(message) {
+    $canvasMessage.show().html(message);
+}
+
+export function hideCanvasMessage() {
+    $canvasMessage.hide();
+}
 
 // -------------------------------------------------------------------------------- Events
 
@@ -241,7 +251,7 @@ function setupBrushShapes() {
             const $element = $(element);
             const shape = $element.data('shape');
             const size = $element.data('size');
-            return `<span>${capitalizeFirstLetter(shape)} Brush</span><br><span>Size: ${size}</span>`;
+            return `<span class="title">${capitalizeFirstLetter(shape)} Brush</span><br><span>Size: ${size}</span>`;
         },
         placement: 'right',
         hideOnClick: false,

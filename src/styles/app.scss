@@ -22,6 +22,8 @@ $highlight-dark: #1cca85;
 $highlight2: #4C8BF5;
 $highlight2-dark: #3873d7;
 
+$alert: #f48225;
+
 
 $darkest: #202124;
 $darker: #282C2F;
@@ -170,9 +172,10 @@ $editing-tool-size: 3rem;
 $selection-tool-size: 2rem;
 #selection-tools, #brush-shapes {
   position: absolute;
-  top: 50%;
   left: $editing-tool-size + 0.5rem;
+  top: 50%;
   transform: translate(0, -50%);
+  margin-left: 2px;
   z-index: 1;
 
   display: flex;
@@ -181,7 +184,6 @@ $selection-tool-size: 2rem;
 
   background: $light;
   border: 3px solid $highlight2;
-  margin-left: 2px;
 
   .selection-tool, .brush-shape {
     width: $selection-tool-size;
@@ -208,8 +210,25 @@ $selection-tool-size: 2rem;
       color: $highlight;
     }
   }
-
 }
+
+#canvas-message {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, 0);
+  margin-left: calc(#{$editing-tool-size} / 2);
+  margin-top: 2px;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  background: $dark;
+  color: white;
+  border: 3px solid $alert;
+  padding: 0.5rem 1rem;
+}
+
 
 #canvas-container {
   background: $lightest;
@@ -754,6 +773,10 @@ $selection-tool-size: 2rem;
   visibility: hidden; // Will still take up space, but be invisible
 }
 
+.alert {
+  color: $alert;
+}
+
 // Remove text highlighting https://stackoverflow.com/a/4407335
 .no-select {
   -webkit-touch-callout: none; /* iOS Safari */
@@ -1022,16 +1045,14 @@ button {
 
 // tooltip styling https://atomiks.github.io/tippyjs/v6/themes/
 .tippy-content {
-  .header {
-    .title {
-      font-weight: bold;
-      color: $highlight;
-    }
+  .title {
+    font-weight: bold;
+    color: $highlight;
+  }
 
-    .shortcut {
-      margin-left: 1rem;
-      color: $light;
-    }
+  .shortcut {
+    margin-left: 1rem;
+    color: $light;
   }
 
   .description {

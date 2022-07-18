@@ -192,17 +192,20 @@ function openResizeDialog() {
     $resizeDialog.dialog('open');
 }
 
+const MAX_ROWS = 500;
+const MAX_COLUMNS = 500;
+
 function resize(onSuccess) {
     let isValid = true;
 
     const rows = parseInt($resizeDialog.find('[name="rows"]').val());
-    if (isNaN(rows)) {
+    if (isNaN(rows) || rows > MAX_ROWS) {
         $resizeDialog.find('[name="rows"]').addClass('error');
         isValid = false;
     }
 
     const columns = parseInt($resizeDialog.find('[name="columns"]').val());
-    if (isNaN(columns)) {
+    if (isNaN(columns) || columns > MAX_COLUMNS) {
         $resizeDialog.find('[name="columns"]').addClass('error');
         isValid = false;
     }

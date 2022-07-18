@@ -6,6 +6,7 @@ import {triggerRefresh, triggerResize} from "./index.js";
 import * as actions from "./actions.js";
 import * as state from "./state.js";
 import {createDialog} from "./utilities.js";
+import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
 
 export class Timeline {
     constructor($frameContainer, $layerContainer) {
@@ -237,17 +238,13 @@ export class Timeline {
     }
 
     _selectLayer(index) {
-        if (index !== state.layerIndex()) {
-            state.layerIndex(index);
-            triggerRefresh('full', true);
-        }
+        state.layerIndex(index);
+        triggerRefresh('full', true);
     }
 
     _selectFrame(index) {
-        if (index !== state.frameIndex()) {
-            state.frameIndex(index);
-            triggerRefresh('full', true);
-        }
+        state.frameIndex(index);
+        triggerRefresh('full', true);
     }
 
     _refreshVisibilities() {
@@ -260,6 +257,12 @@ export class Timeline {
                 .toggleClass('ri-lock-line', locked)
                 .toggleClass('ri-lock-unlock-line', !locked);
 
+            if (state.currentLayer().visible) {
+                hideCanvasMessage();
+            }
+            else {
+                showCanvasMessage("<span class='ri ri-fw ri-error-warning-line alert'></span>&emsp;The current layer is not visible")
+            }
         }
     }
 
