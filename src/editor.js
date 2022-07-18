@@ -94,6 +94,9 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-freeform':
                 drawCharShape();
                 break;
+            case 'eraser':
+                erase();
+                break;
             case 'paint-brush':
                 paintShape();
                 break;
@@ -120,12 +123,17 @@ export function setupMouseEvents(canvasControl) {
         switch(tool) {
             case 'draw-freeform':
                 if (mouseEvent.which === 1) {
-                    drawCharShape(cell);
+                    drawCharShape();
+                }
+                break;
+            case 'eraser':
+                if (mouseEvent.which === 1) {
+                    erase();
                 }
                 break;
             case 'paint-brush':
                 if (mouseEvent.which === 1) {
-                    paintShape(cell);
+                    paintShape();
                 }
                 break;
             default:
@@ -136,6 +144,7 @@ export function setupMouseEvents(canvasControl) {
     canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvent, cell, tool) => {
         switch(tool) {
             case 'draw-freeform':
+            case 'eraser':
             case 'paint-brush':
                 // drawCharShape and paintShape save a 'modifiable' state during mousemove, so end modifications on mouseup
                 state.endHistoryModification();
@@ -235,7 +244,7 @@ function resizeToSelection() {
 
 // -------------------------------------------------------------------------------- Brushing shapes / painting
 
-export const BRUSH_TOOLS = ['draw-freeform', 'paint-brush'];
+export const BRUSH_TOOLS = ['draw-freeform', 'eraser', 'paint-brush'];
 
 function setupBrushShapes() {
     $brushShapes.off('click', '.brush-shape').on('click', '.brush-shape', evt => {
@@ -288,6 +297,24 @@ function drawCharShape() {
 
     if (hasChanges) {
         triggerRefresh('chars', 'drawCharShape');
+    }
+}
+
+function erase() {
+    let hasChanges = false;
+
+    iterateHoveredCells(cell => {
+        const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
+
+        // Only updating char if it is actually different (this needs to be efficient since we call this on mousemove)
+        if (currentChar !== undefined && currentChar !== '') {
+            state.setCurrentCelGlyph(cell.row, cell.col, '', 0);
+            hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
+        triggerRefresh('chars', 'erase');
     }
 }
 
@@ -461,6 +488,7 @@ function cursorStyle(evt, mouseEvent, cell, tool) {
         case 'draw-line':
         case 'draw-freeform':
             return 'cell';
+        case 'eraser':
         case 'paint-brush':
         case 'paint-bucket':
         case 'eyedropper':

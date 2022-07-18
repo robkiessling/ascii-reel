@@ -19,6 +19,8 @@ export const strings = {
 
     'editor.tools.text-editor.name': 'Text Editor Tool',
     'editor.tools.text-editor.description': 'Click to place your cursor, then type to enter text characters. Click and drag to highlight text.',
+    'editor.tools.eraser.name': 'Eraser Tool',
+    'editor.tools.eraser.description': 'Click and drag to remove characters.',
     'editor.tools.draw-freeform.name': 'Draw Character Tool',
     'editor.tools.draw-freeform.description': 'Click and drag to continuously draw the chosen character. Type a key to change the character.',
     'editor.tools.selection.multiple': 'Create multiple selections',
