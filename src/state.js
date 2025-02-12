@@ -7,7 +7,8 @@ import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "./fonts.js";
 
-// TODO Have to move certain stuff out of here. E.g. cmd-z should not undo fps value
+// Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it in the
+// CONFIG_KEYS_FOR_HISTORY constant
 const CONFIG_DEFAULTS = {
     name: 'New Sprite',
     dimensions: [10, 5],
@@ -45,6 +46,13 @@ const SEQUENCES = ['layers', 'frames'];
 export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and use to display
 
 const MAX_HISTORY = 50; // Max number of states to remember in the history. Increasing this value will use more memory.
+
+// By default, config keys are not saved to the history. That way when the user presses 'undo' their tool doesn't
+// revert (for example). However, some config settings need to be able to be undone; those are listed here:
+const CONFIG_KEYS_FOR_HISTORY = new Set([
+    'dimensions', 'background', 'frameIndex', 'layerIndex'
+])
+
 
 
 export function init() {
@@ -507,11 +515,7 @@ export function pushStateToHistory(options = {}) {
     }
 
     // The snapshot to be saved in the history
-    const snapshot = {
-        state: $.extend(true, {}, state),
-        selection: selection.serialize(),
-        options: options
-    };
+    const snapshot = buildHistorySnapshot(options);
 
     // If modifiable option is a match, we just update the current slice and return
     if (history.length && options.modifiable && options.modifiable === history[historyIndex].options.modifiable) {
@@ -531,12 +535,36 @@ export function pushStateToHistory(options = {}) {
     }
 }
 
+// We only want to save a subset of the config state to history: certain things like what tool is selected, or whether
+// the grid is showing, should not be part of the "undo" sequence.
+function buildHistorySnapshot(options) {
+    const historyState = $.extend(true, {}, state);
+
+    for (const key of Object.keys(historyState.config)) {
+        if (!CONFIG_KEYS_FOR_HISTORY.has(key)) {
+            delete historyState.config[key];
+        }
+    }
+
+    return {
+        state: historyState,
+        options: options,
+
+        // Note: I am commenting this out for now because having 'undo' move the selection around can be jarring
+        // selection: selection.serialize(),
+    }
+}
+
 function loadStateFromHistory(newIndex, oldIndex) {
     const newState = history[newIndex];
     const oldState = history[oldIndex];
 
-    state = $.extend(true, {}, newState.state);
-    selection.deserialize(newState.selection);
+    // We are deep merging the history state into our current state rather than just replacing.
+    // That way certain settings (e.g. what tool is selected) is inherited from the current state
+    state = $.extend(true, state, newState.state);
+
+    // Note: I am commenting this out for now because having 'undo' move the selection around can be jarring
+    // selection.deserialize(newState.selection);
 
     if (newState.options.requiresResize || oldState.options.requiresResize) {
         triggerResize(true);
