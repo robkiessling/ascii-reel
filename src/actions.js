@@ -120,38 +120,59 @@ export function callActionByShortcut(shortcut, callbackData) {
     return actionId === undefined ? false : callAction(actionId, callbackData);
 }
 
+/**
+ * Sets up tippy tooltips for a group of action buttons
+ * @param targets Can be an Array of DOM elements or a DOM query selector. These elements are the action buttons that
+ *   the tooltips will be attached to.
+ * @param getActionId Can be an action-id string, or a function that returns an action-id. The function will be passed
+ *   an `element` that refers to each target.
+ * @param options Standard tippy options
+ * @returns {Array.<Tippy>} The array also has a `refreshContent` function that can be called to refresh
+ *   the content of all its tooltips (e.g. useful if action->description is a function and needs to be re-evaluated)
+ */
 export function setupTooltips(targets, getActionId, options = {}) {
-    return tippy(targets, $.extend({}, {
-        content: element => {
-            const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
-            const actionInfo = getActionInfo(actionId);
-
-            if (actionInfo) {
-                let modifiers = '';
-                if (ACTION_MODIFIERS[actionId]) {
-                    ACTION_MODIFIERS[actionId].forEach(modification => {
-                        const modifierKey = modifierWord(MODIFIER_KEYS[modification]);
-                        const modifierDesc = strings[modification];
-                        modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
-                    });
-                }
-
-                return  `<div class="header">` +
-                    `<span class="title">${actionInfo.name}</span>` +
-                    `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
-                    `</div>` +
-                    `<div class="description">${actionInfo.description ? actionInfo.description : ''}</div>` +
-                    modifiers;
-            }
-
-            return '(Unknown)';
-        },
+    const tooltips = tippy(targets, $.extend({}, {
+        content: tooltipContentBuilder(getActionId),
         placement: 'right',
         hideOnClick: false,
         allowHTML: true
     }, options));
+
+    tooltips.refreshContent = () => {
+        tooltips.forEach(tooltip => {
+            tooltip.setContent(tooltipContentBuilder(getActionId));
+        })
+    }
+
+    return tooltips;
 }
 
+function tooltipContentBuilder(getActionId) {
+    return element => {
+        const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
+        const actionInfo = getActionInfo(actionId);
+
+        if (actionInfo) {
+            let modifiers = '';
+            if (ACTION_MODIFIERS[actionId]) {
+                ACTION_MODIFIERS[actionId].forEach(modification => {
+                    const modifierKey = modifierWord(MODIFIER_KEYS[modification]);
+                    const modifierDesc = strings[modification];
+                    modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
+                });
+            }
+
+            return  `<div class="header">` +
+                `<span class="title">${actionInfo.name}</span>` +
+                `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
+                `</div>` +
+                `<div class="description">${actionInfo.description ? actionInfo.description : ''}</div>` +
+                modifiers;
+        }
+
+        return '(Unknown)';
+    }
+}
 
 
 /**

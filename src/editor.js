@@ -422,7 +422,7 @@ export function setFreeformChar(char) {
 
 let cachedColorString = null;
 let cachedColorIndex = null;
-let $addToPalette, colorPicker;
+let $addToPalette, colorPicker, addToPaletteTooltip;
 
 // Returns the currently selected colorIndex, or creates a new index if a new color is selected.
 // Also caching the result for faster performance since this gets called a lot in a loop
@@ -464,6 +464,15 @@ function setupColorPicker() {
             else {
                 if (!$addToPalette) {
                     $addToPalette = $colorPicker.find('.picker_sample');
+                    addToPaletteTooltip = tippy($addToPalette.get(0), {
+                        content: () => {
+                            return `<span class="title">Add Color To Palette</span><br>` +
+                                `<span>This color is not currently saved to your palette. Click here if you want to add it.</span>`;
+                        },
+                        placement: 'right',
+                        offset: [0, 20],
+                        allowHTML: true,
+                    })
                 }
             }
 
@@ -507,9 +516,12 @@ function refreshAddToPalette() {
                     css: { color: l <= 0.5 ? 'white' : 'black' },
                     class: 'ri ri-fw ri-alert-line'
                 }).appendTo($addToPalette);
+
+                addToPaletteTooltip.enable();
             }
             else {
                 $addToPalette.removeClass('add-to-palette');
+                addToPaletteTooltip.disable();
             }
         }
     }

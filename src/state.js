@@ -98,7 +98,7 @@ export function load(data) {
         obj[className] = Math.max.apply(Math, state[className].map(e => e.id));
     });
 
-    importPalette(data.palette && data.palette.length ? data.palette : palette.DEFAULT_PALETTE, true);
+    importPalette(data.palette ? data.palette : { colors: palette.DEFAULT_PALETTE }, true)
 
     calculateFontRatio();
     triggerResize(true);
@@ -390,6 +390,8 @@ export function layeredGlyphs(frame, options = {}) {
 
 
 // -------------------------------------------------------------------------------- Colors / Palettes
+// - colorTable includes all colors used in rendering
+// - palette.colors includes only colors that have been saved to the palette
 
 export function colorTable() {
     return state.colorTable;
@@ -410,35 +412,52 @@ export function colorIndex(colorStr) {
     return index;
 }
 
-export function currentPalette() {
-    return state.palette;
+export function sortedPalette() {
+    return state.palette.sortedColors || [];
 }
 
 export function isNewColor(colorStr) {
-    return !state.palette.includes(colorStr);
+    return !state.palette.colors.includes(colorStr);
 }
 
 export function addColor(colorStr) {
     if (isNewColor(colorStr)) {
-        state.palette.push(colorStr);
+        state.palette.colors.push(colorStr);
+        recalculateSortedPalette();
     }
 }
 
 export function deleteColor(colorStr) {
-    state.palette = state.palette.filter(paletteColorStr => paletteColorStr !== colorStr);
+    state.palette.colors = state.palette.colors.filter(paletteColorStr => paletteColorStr !== colorStr);
+    recalculateSortedPalette();
 }
 
-function importPalette(palette, replace) {
-    if (replace) {
-        state.palette = [];
+export function changePaletteSortBy(newSortBy) {
+    state.palette.sortBy = newSortBy;
+    recalculateSortedPalette();
+}
+
+export function getPaletteSortBy() {
+    return state.palette ? state.palette.sortBy : null;
+}
+
+function importPalette(newPalette, replace) {
+    if (!state.palette) { state.palette = {}; }
+
+    const currentColors = state.palette && state.palette.colors ? state.palette.colors : []
+    const newColors = newPalette.colors ? newPalette.colors.map(colorStr => new Color(colorStr)[COLOR_FORMAT]) : [];
+    state.palette.colors = replace ? newColors : [...currentColors, ...newColors]
+
+    state.palette.sortBy = newPalette.sortBy || state.palette.sortBy;
+    if (!Object.values(palette.SORT_BY).includes(state.palette.sortBy)) {
+        state.palette.sortBy = palette.SORT_BY.DATE_ADDED;
     }
 
-    const existingColors = new Set(state.palette);
+    recalculateSortedPalette();
+}
 
-    // parse incoming palette and remove duplicates
-    palette.forEach(colorStr => existingColors.add(new Color(colorStr)[COLOR_FORMAT]));
-
-    state.palette = [...existingColors];
+function recalculateSortedPalette() {
+    state.palette.sortedColors = palette.sortPalette(state.palette.colors, state.palette.sortBy);
 }
 
 

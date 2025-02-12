@@ -87,6 +87,16 @@ export const strings = {
     'timeline.toggle-layer-visibility-lock.name': 'Toggle Layer Visibility',
     'timeline.toggle-layer-visibility-lock.description': 'When locked, only the current layer is shown in the main canvas. When unlocked, you can manually show/hide all layers.',
 
+    'palette.sort-colors.name.date-added': 'Sorting By: Date Added',
+    'palette.sort-colors.name.hue': 'Sorting By: Hue',
+    'palette.sort-colors.name.saturation': 'Sorting By: Saturation',
+    'palette.sort-colors.name.lightness': 'Sorting By: Lightness',
+    'palette.sort-colors.name.alpha': 'Sorting By: Alpha',
+    'palette.delete-color.name': 'Delete Color',
+    'palette.delete-color.description': 'Removes the selected color from the palette.',
+    'palette.open-settings.name': 'Palette Settings',
+    'palette.open-settings.description': 'TODO',
+
     'zoom.zoom-in.name': 'Zoom In',
     'zoom.zoom-out.name': 'Zoom Out',
     'zoom.zoom-fit.name': 'Zoom Fit',
