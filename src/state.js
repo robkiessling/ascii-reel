@@ -171,12 +171,6 @@ function celIdsForLayer(layer) {
     return state.frames.map(frame => getCelId(layer.id, frame.id));
 }
 
-export function iterateCelsForCurrentLayer(callback) {
-    celIdsForLayer(currentLayer()).forEach(celId => {
-        callback(state.cels[celId]);
-    });
-}
-
 
 // -------------------------------------------------------------------------------- Frames
 
@@ -299,6 +293,34 @@ export function cel(layer, frame) {
 
 function getCelId(layerId, frameId) {
     return `${layerId},${frameId}`;
+}
+
+
+export function iterateAllCels(callback) {
+    for (const cel of Object.values(state.cels)) {
+        callback(cel);
+    }
+}
+
+export function iterateCelsForCurrentLayer(callback) {
+    celIdsForLayer(currentLayer()).forEach(celId => {
+        callback(state.cels[celId]);
+    });
+}
+
+export function iterateCelsForCurrentFrame(callback) {
+    celIdsForFrame(currentFrame()).forEach(celId => {
+        callback(state.cels[celId]);
+    });
+}
+
+export function iterateCellsForCel(cel, callback) {
+    let row, col, rowLength = numRows(), colLength = numCols();
+    for (row = 0; row < rowLength; row++) {
+        for (col = 0; col < colLength; col++) {
+            callback(row, col, cel.chars[row][col], cel.colors[row][col], cel);
+        }
+    }
 }
 
 

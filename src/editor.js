@@ -11,7 +11,6 @@ import {iterateHoveredCells} from "./hover.js";
 import tippy from 'tippy.js';
 import {capitalizeFirstLetter} from "./utilities.js";
 import {setupTooltips, shouldModifyAction} from "./actions.js";
-import {cloneToAllFrames} from "./selection.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -109,10 +108,15 @@ export function setupMouseEvents(canvasControl) {
                 break;
             case 'paint-bucket':
                 paintConnectedCells(cell, {
-                    // Uses same diagonal/colorblind modifications as selection-wand tool
-                    diagonal: true, //shouldModifyAction('editor.tools.selection-wand.diagonal', mouseEvent),
-                    colorblind: shouldModifyAction('editor.tools.selection-wand.colorblind', mouseEvent)
+                    diagonal: true,
+                    colorblind: shouldModifyAction('editor.tools.paint-bucket.colorblind', mouseEvent)
                 });
+                break;
+            case 'color-swap':
+                colorSwap(cell, {
+                    allLayers: shouldModifyAction('editor.tools.color-swap.all-layers', mouseEvent),
+                    allFrames: shouldModifyAction('editor.tools.color-swap.all-frames', mouseEvent)
+                })
                 break;
             case 'eyedropper':
                 eyedropper(cell, {
@@ -354,6 +358,38 @@ function paintConnectedCells(cell, options) {
     triggerRefresh('chars', true);
 }
 
+function colorSwap(cell, options) {
+    if (!cell.isInBounds()) { return; }
+
+    const [targetChar, targetColor] = state.getCurrentCelGlyph(cell.row, cell.col);
+    if (targetChar === '') { return; }
+
+    const updateMatchingColorsInCel = (cel) => {
+        state.iterateCellsForCel(cel, (row, col, char, color, cel) => {
+            if (color === targetColor) {
+                state.setCelGlyph(cel, row, col, char, currentColorIndex())
+            }
+        });
+    }
+
+    if (options.allLayers && options.allFrames) { // Apply to all cels
+        state.iterateAllCels(updateMatchingColorsInCel);
+        triggerRefresh('full', true); // need full refresh since multiple frames in timeline need updating
+    }
+    else if (options.allLayers && !options.allFrames) { // Apply to all layers (of a single frame)
+        state.iterateCelsForCurrentFrame(updateMatchingColorsInCel);
+        triggerRefresh('chars', true);
+    }
+    else if (!options.allLayers && options.allFrames) { // Apply to all frames (of a single layer)
+        state.iterateCelsForCurrentLayer(updateMatchingColorsInCel);
+        triggerRefresh('full', true); // need full refresh since multiple frames in timeline need updating
+    }
+    else { // Apply to current cel
+        updateMatchingColorsInCel(state.currentCel());
+        triggerRefresh('chars', true);
+    }
+}
+
 function eyedropper(cell, options) {
     const [char, colorIndex] = state.getCurrentCelGlyph(cell.row, cell.col);
     const colorStr = state.colorStr(colorIndex);
@@ -499,6 +535,7 @@ function cursorStyle(evt, mouseEvent, cell, tool) {
         case 'eraser':
         case 'paint-brush':
         case 'paint-bucket':
+        case 'color-swap':
         case 'eyedropper':
             return 'cell';
         case 'move':

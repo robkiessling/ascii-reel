@@ -168,10 +168,9 @@ const ACTION_MODIFIERS = {
     'editor.tools.selection-rect': ['editor.tools.selection.multiple'],
     'editor.tools.selection-line': ['editor.tools.selection.multiple'],
     'editor.tools.selection-lasso': ['editor.tools.selection.multiple'],
-    // 'editor.tools.selection-wand': ['editor.tools.selection.multiple', 'editor.tools.selection-wand.diagonal', 'editor.tools.selection-wand.colorblind'],
     'editor.tools.selection-wand': ['editor.tools.selection.multiple', 'editor.tools.selection-wand.colorblind'],
-    // 'editor.tools.paint-bucket': ['editor.tools.selection-wand.diagonal', 'editor.tools.selection-wand.colorblind'],
-    'editor.tools.paint-bucket': ['editor.tools.selection-wand.colorblind'],
+    'editor.tools.paint-bucket': ['editor.tools.paint-bucket.colorblind'],
+    'editor.tools.color-swap': ['editor.tools.color-swap.all-layers', 'editor.tools.color-swap.all-frames'],
     'editor.tools.eyedropper': ['editor.tools.eyedropper.add-to-palette'],
     'editor.selection.flip-v': ['editor.selection.flip-v.mirror'],
     'editor.selection.flip-h': ['editor.selection.flip-h.mirror'],
@@ -180,8 +179,10 @@ const ACTION_MODIFIERS = {
 // Defines what modifier key is used for the effect. These are static; they won't be customizable by the user.
 const MODIFIER_KEYS = {
     'editor.tools.selection.multiple': 'shiftKey',
-    // 'editor.tools.selection-wand.diagonal': 'altKey', // TODO Avoiding using the altKey, because might use altKey-click for eyedropper tool
     'editor.tools.selection-wand.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
+    'editor.tools.paint-bucket.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
+    'editor.tools.color-swap.all-layers': 'shiftKey',
+    'editor.tools.color-swap.all-frames': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.tools.eyedropper.add-to-palette': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.selection.flip-v.mirror': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.selection.flip-h.mirror': isMacOS() ? 'metaKey' : 'ctrlKey',
