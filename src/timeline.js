@@ -49,6 +49,10 @@ export class Timeline {
             }
         });
 
+        this.$layers.off('dblclick', '.layer').on('dblclick', '.layer', evt => {
+            actions.callAction('timeline.edit-layer');
+        });
+
         // ---------------- Layer actions
         actions.registerAction('timeline.add-layer', () => {
             const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
@@ -229,7 +233,7 @@ export class Timeline {
         this.$editLayerDialog.dialog("close");
 
         state.pushStateToHistory();
-        // triggerRefresh(); // Uncomment this if we ever add something like layer opacity to layer settings
+        triggerRefresh();
     }
 
     // Layers are sorted backwards in the DOM

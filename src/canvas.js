@@ -3,7 +3,7 @@ import bresenham from "bresenham";
 import {charInBounds, colorStr, numCols, numRows, config} from "./state.js";
 import {cellHeight, cellWidth} from "./fonts.js";
 
-const WINDOW_BORDER_COLOR = '#fff';
+const WINDOW_BORDER_COLOR = '#31e39d';
 const WINDOW_BORDER_WIDTH = 4;
 
 const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles

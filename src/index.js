@@ -36,7 +36,7 @@ export const hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {}
 export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
 // Bind mouse events to controllers (note: many controllers attach mouse events to the selectionCanvas since it is
-// on top, even thought they have their own canvases underneath).
+// on top, even though they have their own canvases underneath).
 selection.setupMouseEvents(selectionCanvas);
 setupHoverMouse(selectionCanvas);
 setupEditorMouse(selectionCanvas);

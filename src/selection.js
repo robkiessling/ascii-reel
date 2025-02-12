@@ -831,9 +831,9 @@ class SelectionRect extends SelectionPolygon {
 
 /**
  * SelectionText is similar to SelectionRect, but it can occupy 0 width. Similar to selecting text in a text editor,
- * when you first click-and-drag, your cursor highlights a single line between two characters. As you drag in a particular
- * direction, you will highlight 1 or more characters. To achieve this effect, we can simply subtract 1 from the end
- * column once the user highlights more than 1 cell.
+ * when you first click-and-drag, your cursor highlights a single line between two characters (no chars are selected).
+ * As you drag in a particular direction, you will highlight 0 or more characters. To achieve this effect, we can simply
+ * subtract 1 from the end column once the user highlights more than 1 cell.
  */
 class SelectionText extends SelectionRect {
     serialize() {
@@ -992,10 +992,18 @@ class SelectionLasso extends SelectionPolygon {
          *
          * Because we have discrete cells, a polygon edge/corner can "double back" on itself along the same path. We
          * have to implement special handlers for these cases to calculate whether it counts as 1 or 2 "crossings" in
-         * point-in-polygon test.
+         * point-in-polygon test. For example:
          *
-         * A lasso area is a CellArea that is on a single row. There may be multiple lasso areas per row if they are
-         * separated by gaps. We use areas instead of keeping track of individual cells to maximize performance.
+         *       .....###...
+         *       ..####.###.
+         *       ..#......#.
+         *       ..#...#..#. <-- the # in the middle "doubles back" towards the bottom
+         *       ..########.
+         *       ...........
+         *
+         * A "lasso area" is a CellArea that is on a single row. There may be multiple lasso areas per row if they are
+         * separated by gaps. In the above example, the 2nd row (row index 1) would have 2 lasso areas.
+         * We use areas instead of keeping track of individual cells to maximize performance.
          */
         this._lassoAreas = [];
         sortedLinks.forEach(rowOfLinks => {
