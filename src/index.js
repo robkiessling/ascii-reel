@@ -13,6 +13,7 @@ import { init as initPalette, refresh as refreshPalette, refreshSelection as ref
 import { init as initPreview, canvasControl as previewCanvas, redraw as redrawPreview, reset as resetPreview } from "./preview.js";
 import * as selection from './selection.js';
 import * as state from "./state.js";
+import * as localstorage from "./localstorage.js";
 import { Timeline } from "./timeline.js";
 import { init as initZoom, setupMouseEvents as setupZoomMouse } from './zoom.js';
 
@@ -26,6 +27,7 @@ initPreview();
 selection.init();
 state.init();
 initZoom();
+localstorage.setupAutoSave();
 
 
 // Set up various controller instances
@@ -75,7 +77,13 @@ $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 
 // Load initial empty page
 window.setTimeout(() => {
-    state.loadNew();
+    const savedState = localstorage.loadState();
+    if (savedState) {
+        state.load(savedState);
+    }
+    else {
+        state.loadNew();
+    }
 
     refreshShortcuts();
 

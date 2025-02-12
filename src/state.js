@@ -6,6 +6,7 @@ import * as actions from "./actions.js";
 import * as palette from "./palette.js";
 import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "./fonts.js";
+import {saveState} from "./localstorage.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it in the
 // CONFIG_KEYS_FOR_HISTORY constant
@@ -102,6 +103,7 @@ export function load(data) {
     calculateFontRatio();
     triggerResize(true);
     pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
+    saveState(stringify());
 }
 
 export function stringify() {

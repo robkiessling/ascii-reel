@@ -73,7 +73,7 @@ export function refreshMenu() {
 function setupNewFile() {
     actions.registerAction('file.new-file', () => {
         // TODO ask for dimensions, etc.
-        confirmDialog('Create new sprite?', 'Any unsaved changes will be lost.', () => state.loadNew());
+        confirmDialog('Create new animation?', 'Any unsaved changes will be lost.', () => state.loadNew());
     });
 }
 
