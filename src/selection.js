@@ -682,6 +682,19 @@ function flip(horizontally, vertically, mirrorChars) {
     triggerRefresh(['chars', 'selection'], true);
 }
 
+// -------------------------------------------------------------------------------- Cloning
+
+export function cloneToAllFrames() {
+    translateGlyphs(getSelectedValues(), getSelectedCellArea().topLeft, (r, c, char, color) => {
+        state.iterateCelsForCurrentLayer(cel => {
+            state.setCelGlyph(cel, r, c, char, color);
+        })
+    });
+
+    triggerRefresh('full', true);
+}
+
+
 
 
 // -------------------------------------------------------------------------------- Helpers

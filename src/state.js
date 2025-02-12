@@ -171,6 +171,12 @@ function celIdsForLayer(layer) {
     return state.frames.map(frame => getCelId(layer.id, frame.id));
 }
 
+export function iterateCelsForCurrentLayer(callback) {
+    celIdsForLayer(currentLayer()).forEach(celId => {
+        callback(state.cels[celId]);
+    });
+}
+
 
 // -------------------------------------------------------------------------------- Frames
 
@@ -306,9 +312,13 @@ export function getCurrentCelGlyph(row, col) {
 
 // If the char or color parameter is undefined, that parameter will not be overridden
 export function setCurrentCelGlyph(row, col, char, color) {
+    setCelGlyph(currentCel(), row, col, char, color);
+}
+
+export function setCelGlyph(cel, row, col, char, color) {
     if (charInBounds(row, col)) {
-        if (char !== undefined) { currentCel().chars[row][col] = char; }
-        if (color !== undefined) { currentCel().colors[row][col] = color; }
+        if (char !== undefined) { cel.chars[row][col] = char; }
+        if (color !== undefined) { cel.colors[row][col] = color; }
     }
 }
 

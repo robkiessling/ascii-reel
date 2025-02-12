@@ -52,6 +52,8 @@ export const strings = {
     'editor.selection.flip-h.name': 'Flip Horizontally',
     'editor.selection.flip-h.description': 'Mirrors the selected content horizontally.',
     'editor.selection.flip-h.mirror': 'Mirrors characters when possible, e.g. b => d',
+    'editor.selection.clone.name': 'Clone Selection',
+    'editor.selection.clone.description': 'Clones the current selection to all frames.',
     'editor.selection.paint-bucket.name': 'Paint Selection',
     'editor.selection.paint-bucket.description': 'Paints the selected area with the current color.',
     'editor.selection.resize.name': 'Resize Canvas',

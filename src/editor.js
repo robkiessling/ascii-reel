@@ -11,6 +11,7 @@ import {iterateHoveredCells} from "./hover.js";
 import tippy from 'tippy.js';
 import {capitalizeFirstLetter} from "./utilities.js";
 import {setupTooltips, shouldModifyAction} from "./actions.js";
+import {cloneToAllFrames} from "./selection.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -198,6 +199,7 @@ function setupSelectionTools() {
     registerAction('typewriter', () => selection.toggleCursor(), true, false, 'Double click');
     registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('editor.selection.flip-v.mirror', e)));
     registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('editor.selection.flip-h.mirror', e)));
+    registerAction('clone', () => selection.cloneToAllFrames());
     registerAction('paint-bucket', () => paintSelection());
     registerAction('resize', () => resizeToSelection());
     registerAction('close', () => selection.clear(), true, true, 'Esc');

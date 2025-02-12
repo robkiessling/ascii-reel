@@ -31,12 +31,12 @@
 .icon-circle-solid:before {
   content: "\e901";
 }
-.icon-flip-horizontal:before {
-  content: "\e902";
-}
-.icon-flip-vertical:before {
-  content: "\e903";
-}
+/*.icon-flip-horizontal:before {*/
+/*  content: "\e902";*/
+/*}*/
+/*.icon-flip-vertical:before {*/
+/*  content: "\e903";*/
+/*}*/
 .icon-lasso-dashed:before {
   content: "\e904";
 }
@@ -46,12 +46,12 @@
 .icon-line-solid:before {
   content: "\e906";
 }
-.icon-move-hand:before {
-  content: "\e907";
-}
-.icon-paint-bucket:before {
-  content: "\e908";
-}
+/*.icon-move-hand:before {*/
+/*  content: "\e907";*/
+/*}*/
+/*.icon-paint-bucket:before {*/
+/*  content: "\e908";*/
+/*}*/
 .icon-rect-dashed:before {
   content: "\e909";
 }
