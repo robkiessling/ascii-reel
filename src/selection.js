@@ -322,7 +322,9 @@ export function setupMouseEvents(canvasControl) {
                     if (polygons.length === 0) {
                         polygons.push(new SelectionText(cell));
                     }
-                    polygons[0].end = cell;
+                    else {
+                        polygons[0].end = cell;
+                    }
 
                     hasSelection() ? hideCursor() : moveCursorTo(cell);
                     break;
@@ -547,9 +549,10 @@ export function hideCursor() {
     triggerRefresh('cursorCell');
 }
 
+// Sets the current polygon to be a SelectionText of size 0 located at the cursor
 function matchPolygonToCursor() {
     polygons = [new SelectionText(cursorCell)];
-    clearCaches();
+    triggerRefresh('selection');
 }
 
 
@@ -615,7 +618,7 @@ function moveDelta(rowDelta, colDelta) {
 
 // Move all polygons in a particular direction
 export function moveInDirection(direction, amount, moveStart = true, moveEnd = true) {
-    if (!hasSelection()) {
+    if (!hasTarget()) {
         return;
     }
 
@@ -637,6 +640,55 @@ export function moveInDirection(direction, amount, moveStart = true, moveEnd = t
     }
 
     triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
+}
+
+// Special handler for text-editor tool when arrow keys are pressed. We simulate a real text editor, where:
+// - the arrow keys move the cursor
+// - if you hold shift, the cursor begins highlighting text
+// - if you keep holding shift and make your highlighted text area size 0, it reverts to a normal cursor
+// - if you let go of shift after highlighting text and hit an arrow key, the cursor jumps to beginning/end of what
+//   you had selected
+export function handleTextEditorArrowKey(direction, shiftKey) {
+    if (shiftKey) {
+        if (cursorCell) {
+            // Switch from a cursor to a selection area (by extending the current polygon and hiding the cursor)
+            moveInDirection(direction, 1, false);
+            hideCursor();
+        }
+        else {
+            // Grow/shrink the selection area like normal
+            moveInDirection(direction, 1, false);
+
+            // However, if the selection area ever gets to be size 0, revert back to showing a cursor
+            if (polygons[0] && !hasSelection()) {
+                moveCursorTo(polygons[0].start);
+            }
+        }
+    }
+    else {
+        if (cursorCell) {
+            // Move the cursor like normal
+            moveCursorInDirection(direction)
+        }
+        else {
+            // Jump cursor to start/end of the selection area, and go back to just having a cursor
+            switch(direction) {
+                case 'left':
+                case 'up':
+                    moveCursorTo(polygons[0].topLeft);
+                    break;
+                case 'right':
+                case 'down':
+                    const target = polygons[0].bottomRight;
+                    target.translate(0, 1); // Cursor actually needs to go one cell to the right of the selection end
+                    moveCursorTo(target);
+                    break;
+                default:
+                    console.warn(`Invalid direction: ${direction}`);
+            }
+            matchPolygonToCursor();
+        }
+    }
 }
 
 export function flipVertically(mirrorChars) {

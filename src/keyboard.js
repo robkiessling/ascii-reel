@@ -57,20 +57,16 @@ function setupKeydownListener() {
                 }
                 break;
             case 'ArrowLeft':
-                state.endHistoryModification();
-                selection.cursorCell ? selection.moveCursorInDirection('left') : selection.moveInDirection('left', 1, !e.shiftKey);
+                handleArrowKey(e, 'left');
                 break;
             case 'ArrowUp':
-                state.endHistoryModification();
-                selection.cursorCell ? selection.moveCursorInDirection('up') : selection.moveInDirection('up', 1, !e.shiftKey);
+                handleArrowKey(e, 'up');
                 break;
             case 'ArrowRight':
-                state.endHistoryModification();
-                selection.cursorCell ? selection.moveCursorInDirection('right') : selection.moveInDirection('right', 1, !e.shiftKey);
+                handleArrowKey(e, 'right');
                 break;
             case 'ArrowDown':
-                state.endHistoryModification();
-                selection.cursorCell ? selection.moveCursorInDirection('down') : selection.moveInDirection('down', 1, !e.shiftKey);
+                handleArrowKey(e, 'down');
                 break;
             case 'Tab':
                 state.endHistoryModification();
@@ -152,6 +148,18 @@ function setupKeydownListener() {
         e.preventDefault();
     });
 }
+
+function handleArrowKey(e, direction) {
+    state.endHistoryModification();
+
+    if (state.config('tool') === 'text-editor') {
+        selection.handleTextEditorArrowKey(direction, e.shiftKey);
+    }
+    else {
+        selection.cursorCell ? selection.moveCursorInDirection(direction) : selection.moveInDirection(direction, 1, !e.shiftKey);
+    }
+}
+
 
 function handleStandardKeyboard(char, e) {
     if (char === 'Enter') {
