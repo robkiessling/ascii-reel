@@ -44,13 +44,19 @@ export function refresh() {
     refreshSelectionTools();
     refreshBrushShapes();
 
-    $canvasDetails.find('.dimensions .value').html(`${state.numCols()}:${state.numRows()}`);
+    $canvasDetails.find('.canvas-dimensions .value').html(`[${state.numCols()}x${state.numRows()}]`);
 }
 
-export function updateMouseCoords(cell) {
+export function refreshMouseCoords(cell) {
     const show = cell && cell.isInBounds();
     $canvasDetails.find('.mouse-coordinates').toggle(!!show)
         .find('.value').html(show ? `${cell.col}:${cell.row}` : '&nbsp;');
+}
+
+export function refreshSelectionDimensions(cellArea) {
+    const show = cellArea !== null;
+    $canvasDetails.find('.selection-dimensions').toggle(!!show)
+        .find('.value').html(show ? `${cellArea.numRows}x${cellArea.numCols}` : '&nbsp;');
 }
 
 export function changeTool(newTool) {

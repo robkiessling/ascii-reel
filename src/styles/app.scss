@@ -751,9 +751,13 @@ $selection-tool-size: 2rem;
   font-family: monospace;
   color: white;
 
-  .dimensions, .mouse-coordinates {
+  .canvas-dimensions, .mouse-coordinates, .selection-dimensions {
     display: flex;
     align-items: center;
+
+    &:not(:last-child) {
+      margin-right: 1rem;
+    }
   }
 }
 

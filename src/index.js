@@ -5,7 +5,13 @@ import 'remixicon/fonts/remixicon.css';
 import {refreshShortcuts, registerAction} from "./actions.js";
 import { CanvasControl } from "./canvas.js";
 import { init as initClipboard } from "./clipboard.js"
-import { init as initEditor, setupMouseEvents as setupEditorMouse, refresh as refreshEditor, updateMouseCoords } from "./editor.js"
+import {
+    init as initEditor,
+    setupMouseEvents as setupEditorMouse,
+    refresh as refreshEditor,
+    refreshMouseCoords,
+    refreshSelectionDimensions
+} from "./editor.js"
 import { init as initFile } from "./file.js";
 import { setupMouseEvents as setupHoverMouse, hoveredCell, iterateHoveredCells } from "./hover.js";
 import { init as initKeyboard } from "./keyboard.js";
@@ -210,6 +216,8 @@ function drawSelection() {
     if (selection.cursorCell) {
         selectionCanvas.drawCursorCell(selection.cursorCell);
     }
+
+    refreshSelectionDimensions(selection.getSelectedCellArea())
 }
 
 function drawHoveredCell() {
@@ -227,5 +235,6 @@ function drawHoveredCell() {
         }
     }
 
-    updateMouseCoords(hoveredCell);
+    // We don't show mouse coords if we're showing selection dimensions
+    refreshMouseCoords(selection.hasSelection() ? null : hoveredCell);
 }
