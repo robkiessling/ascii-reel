@@ -4,6 +4,7 @@ import * as selection from "./selection.js";
 import {triggerRefresh, triggerResize} from "./index.js";
 import * as actions from "./actions.js";
 import * as palette from "./palette.js";
+import * as editor from "./editor.js";
 import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "./fonts.js";
 import {saveState} from "./localstorage.js";
@@ -31,7 +32,9 @@ const CONFIG_DEFAULTS = {
     brushShape: {
         shape: 'square',
         size: 1
-    }
+    },
+    drawRectType: 'printable-ascii-1',
+    drawLineType: '-'
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',
@@ -373,6 +376,15 @@ export function layeredGlyphs(frame, options = {}) {
         // If there is movableContent, we show it on top of the rest of the layer
         if (options.showMovingContent && l === layerIndex() && selection.movableContent) {
             translateGlyphs(selection.movableContent, selection.getSelectedCellArea().topLeft, (r, c, char, color) => {
+                if (char !== undefined && charInBounds(r, c)) {
+                    chars[r][c] = char;
+                    colors[r][c] = color;
+                }
+            });
+        }
+
+        if (options.showDrawingContent && l === layerIndex() && editor.drawingContent) {
+            translateGlyphs(editor.drawingContent.glyphs, editor.drawingContent.topLeft, (r, c, char, color) => {
                 if (char !== undefined && charInBounds(r, c)) {
                     chars[r][c] = char;
                     colors[r][c] = color;

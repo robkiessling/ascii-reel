@@ -55,6 +55,7 @@ function iterateSquareShape(size, callback) {
 }
 
 // Iterates through cells in a circle shape, centered around the hoveredCell
+// On second thought, it's more of a diamond than a circle
 function iterateCircleShape(size, callback) {
     let offsets;
 
@@ -68,12 +69,21 @@ function iterateCircleShape(size, callback) {
                          [ 1, 0]
             ];
             break;
-        case 4:
+        // case 4:
+        //     offsets = [
+        //                  [-2,-1], [-2, 0],
+        //         [-1,-2], [-1,-1], [-1, 0], [-1, 1],
+        //         [ 0,-2], [ 0,-1], [ 0, 0], [ 0, 1],
+        //                  [ 1,-1], [ 1, 0]
+        //     ];
+        //     break;
+        case 5:
             offsets = [
-                         [-2,-1], [-2, 0],
-                [-1,-2], [-1,-1], [-1, 0], [-1, 1],
-                [ 0,-2], [ 0,-1], [ 0, 0], [ 0, 1],
-                         [ 1,-1], [ 1, 0]
+                                  [-2, 0],
+                         [-1,-1], [-1, 0], [-1, 1],
+                [ 0,-2], [ 0,-1], [ 0, 0], [ 0, 1], [ 0, 2],
+                         [ 1,-1], [ 1, 0], [ 1, 1],
+                                  [ 2, 0]
             ];
             break;
         default:

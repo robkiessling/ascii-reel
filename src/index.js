@@ -191,7 +191,7 @@ export function triggerRefresh(type = 'full', saveState = false) {
 function redrawCharCanvas() {
     charCanvas.clear();
     charCanvas.drawBackground(state.config('background'));
-    charCanvas.drawGlyphs(state.layeredGlyphs(state.currentFrame(), { showMovingContent: true }));
+    charCanvas.drawGlyphs(state.layeredGlyphs(state.currentFrame(), { showMovingContent: true, showDrawingContent: true }));
 
     const grid = state.config('grid');
     if (grid.show) {

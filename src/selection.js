@@ -33,6 +33,7 @@ export function init() {
 /**
  * Saves the current state of the various selection variables. Many things such as the polygons have to be serialized first.
  * We don't actually store this data in the save file, but it is stored in memory for undo/redo purposes.
+ * TODO: We don't actually undo/redo selection data anymore, so all serialize/deserialize can be removed.
  */
 export function serialize() {
     return {
@@ -197,12 +198,15 @@ export function getSelectedCellArea() {
     const topLeft = new Cell();
     const bottomRight = new Cell();
     
-    polygons.forEach(polygon => {
+    for (const polygon of Object.values(polygons)) {
+        if (!polygon.topLeft || !polygon.bottomRight) { continue; } // E.g. lasso that has not yet completed
         if (topLeft.row === undefined || polygon.topLeft.row < topLeft.row) { topLeft.row = polygon.topLeft.row; }
         if (topLeft.col === undefined || polygon.topLeft.col < topLeft.col) { topLeft.col = polygon.topLeft.col; }
         if (bottomRight.row === undefined || polygon.bottomRight.row > bottomRight.row) { bottomRight.row = polygon.bottomRight.row; }
         if (bottomRight.col === undefined || polygon.bottomRight.col > bottomRight.col) { bottomRight.col = polygon.bottomRight.col; }
-    });
+    }
+
+    if (topLeft.row === undefined) { return null; }
 
     return new CellArea(topLeft, bottomRight);
 }

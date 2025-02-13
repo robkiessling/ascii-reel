@@ -73,8 +73,9 @@
                     </div>
                     <div class="editing-tool" data-tool="eraser"><span class="ri ri-fw ri-eraser-line"></span></div>
 
-                    <!--                    <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>-->
-<!--                    <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>-->
+                    <div class="spacer"></div>
+                    <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
+                    <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
 
                     <div class="spacer"></div>
 
@@ -95,40 +96,43 @@
 
                     <div class="color-picker" id="current-color"></div>
                 </div>
-                <div id="selection-tools" style="display: none;">
-                    <div class="selection-tool" data-tool="move"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
-                    <div class="selection-tool" data-tool="typewriter"><span class="ri ri-fw ri-text-direction-l"></span></div>
-                    <div class="selection-tool" data-tool="flip-v"><span class="ri ri-fw ri-flip-vertical-fill"></span></div>
-                    <div class="selection-tool" data-tool="flip-h"><span class="ri ri-fw ri-flip-horizontal-fill"></span></div>
-                    <div class="selection-tool" data-tool="clone"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
-                    <div class="selection-tool" data-tool="paint-bucket"><span class="ri ri-fw ri-paint-fill"></span></div>
-                    <div class="selection-tool" data-tool="resize"><span class="ri ri-fw ri-crop-line"></span></div>
-                    <div class="selection-tool" data-tool="close"><span class="ri ri-fw ri-close-line"></span></div>
+                <div id="selection-tools" class="sub-tool-menu" style="display: none;">
+                    <div class="sub-tool" data-tool="move"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
+                    <div class="sub-tool" data-tool="typewriter"><span class="ri ri-fw ri-text-direction-l"></span></div>
+                    <div class="sub-tool" data-tool="flip-v"><span class="ri ri-fw ri-flip-vertical-fill"></span></div>
+                    <div class="sub-tool" data-tool="flip-h"><span class="ri ri-fw ri-flip-horizontal-fill"></span></div>
+                    <div class="sub-tool" data-tool="clone"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
+                    <div class="sub-tool" data-tool="paint-bucket"><span class="ri ri-fw ri-paint-fill"></span></div>
+                    <div class="sub-tool" data-tool="resize"><span class="ri ri-fw ri-crop-line"></span></div>
+                    <div class="sub-tool" data-tool="close"><span class="ri ri-fw ri-close-line"></span></div>
                 </div>
-                <div id="brush-shapes" style="display: none;">
-                    <div class="brush-shape" data-shape="square" data-size="1">
+                <div id="draw-rect-types" class="sub-tool-menu" style="display: none;">
+                    <div class="sub-tool" data-type="printable-ascii-1"><span>/-</span></div>
+                    <div class="sub-tool" data-type="printable-ascii-2"><span>+-</span></div>
+                    <div class="sub-tool" data-type="single-line"><span>┌─</span></div>
+                    <div class="sub-tool" data-type="double-line"><span>╔═</span></div>
+                </div>
+                <div id="brush-shapes" class="sub-tool-menu" style="display: none;">
+                    <div class="sub-tool" data-shape="square" data-size="1">
                         <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.5rem;"></span>
                     </div>
-                    <div class="brush-shape" data-shape="square" data-size="2">
-                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.85rem;"></span>
+                    <div class="sub-tool" data-shape="square" data-size="2">
+                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.75rem;"></span>
                     </div>
-                    <div class="brush-shape" data-shape="square" data-size="3">
-                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.15rem;"></span>
+                    <div class="sub-tool" data-shape="square" data-size="3">
+                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1rem;"></span>
                     </div>
-                    <div class="brush-shape" data-shape="square" data-size="4">
+                    <div class="sub-tool" data-shape="square" data-size="5">
+                        <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.25rem;"></span>
+                    </div>
+                    <div class="sub-tool" data-shape="square" data-size="10">
                         <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.5rem;"></span>
                     </div>
-<!--                    <div class="brush-shape" data-shape="circle" data-size="1">-->
-<!--                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 0.5rem;"></span>-->
-<!--                    </div>-->
-<!--                    <div class="brush-shape" data-shape="circle" data-size="2">-->
-<!--                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 0.85rem;"></span>-->
-<!--                    </div>-->
-                    <div class="brush-shape" data-shape="circle" data-size="3">
-                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1.15rem;"></span>
+                    <div class="sub-tool" data-shape="circle" data-size="3">
+                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1rem;"></span>
                     </div>
-                    <div class="brush-shape" data-shape="circle" data-size="4">
-                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1.5rem;"></span>
+                    <div class="sub-tool" data-shape="circle" data-size="5">
+                        <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1.25rem;"></span>
                     </div>
                 </div>
                 <div id="canvas-message" style="display: none;"></div>

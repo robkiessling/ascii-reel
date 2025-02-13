@@ -7,19 +7,22 @@ import * as keyboard from "./keyboard.js";
 import * as palette from "./palette.js";
 import * as actions from "./actions.js";
 import Color from "@sphinxxxx/color-conversion";
-import {iterateHoveredCells} from "./hover.js";
+import {hoveredCell, iterateHoveredCells} from "./hover.js";
 import tippy from 'tippy.js';
-import {capitalizeFirstLetter} from "./utilities.js";
+import {capitalizeFirstLetter, translateGlyphs} from "./utilities.js";
 import {setupTooltips, shouldModifyAction} from "./actions.js";
+import {strings} from "./strings.js";
+import {DrawingLine, DrawingRect} from "./drawing.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $editingTools, $canvasContainer, $selectionTools, $brushShapes, $canvasDetails, $canvasMessage;
+let $editingTools, $canvasContainer, $selectionTools, $drawRectTypes, $brushShapes, $canvasDetails, $canvasMessage;
 
 export function init() {
     $editingTools = $('#editing-tools');
     $canvasContainer = $('#canvas-container');
     $selectionTools = $('#selection-tools');
+    $drawRectTypes = $('#draw-rect-types');
     $brushShapes = $('#brush-shapes');
     $canvasDetails = $('#canvas-details');
     $canvasMessage = $('#canvas-message');
@@ -27,6 +30,7 @@ export function init() {
     setupEditingTools();
     setupFreeformChar();
     setupSelectionTools();
+    setupDrawRectTypes();
     setupBrushShapes();
     setupColorPicker();
 }
@@ -41,6 +45,7 @@ export function refresh() {
     $editingTools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
+    refreshDrawRectTypes();
     refreshBrushShapes();
 
     $canvasDetails.find('.canvas-dimensions .value').html(`[${state.numCols()}x${state.numRows()}]`);
@@ -100,6 +105,12 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-freeform':
                 drawCharShape();
                 break;
+            case 'draw-rect':
+                startDrawing(DrawingRect);
+                break;
+            case 'draw-line':
+                startDrawing(DrawingLine);
+                break;
             case 'eraser':
                 erase();
                 break;
@@ -131,21 +142,21 @@ export function setupMouseEvents(canvasControl) {
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
         $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
 
+        if (mouseEvent.which !== 1) { return; } // only care about left-click
+
         switch(tool) {
             case 'draw-freeform':
-                if (mouseEvent.which === 1) {
-                    drawCharShape();
-                }
+                drawCharShape();
+                break;
+            case 'draw-rect':
+            case 'draw-line':
+                updateDrawing();
                 break;
             case 'eraser':
-                if (mouseEvent.which === 1) {
-                    erase();
-                }
+                erase();
                 break;
             case 'paint-brush':
-                if (mouseEvent.which === 1) {
-                    paintShape();
-                }
+                paintShape();
                 break;
             default:
                 return; // Ignore all other tools
@@ -157,8 +168,12 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-freeform':
             case 'eraser':
             case 'paint-brush':
-                // drawCharShape and paintShape save a 'modifiable' state during mousemove, so end modifications on mouseup
+                // These handlers save a 'modifiable' state during mousemove, so end modifications on mouseup
                 state.endHistoryModification();
+                break;
+            case 'draw-rect':
+            case 'draw-line':
+                finishDrawing();
                 break;
             default:
                 return; // Ignore all other tools
@@ -214,12 +229,12 @@ function setupSelectionTools() {
     registerAction('resize', () => resizeToSelection());
     registerAction('close', () => selection.clear(), true, true, 'Esc');
 
-    $selectionTools.off('click', '.selection-tool').on('click', '.selection-tool', evt => {
+    $selectionTools.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
         const $element = $(evt.currentTarget);
         actions.callAction(actionIdForSelectionTool($element.data('tool')), evt);
     });
 
-    setupTooltips('.selection-tool', element => actionIdForSelectionTool($(element).data('tool')));
+    setupTooltips($selectionTools.find('.sub-tool').toArray(), element => actionIdForSelectionTool($(element).data('tool')));
 }
 
 function actionIdForSelectionTool(tool) {
@@ -230,12 +245,12 @@ function refreshSelectionTools() {
     $selectionTools.toggle(selection.hasSelection());
 
     // Hide typewriter when using text-editor tool
-    $selectionTools.find('.selection-tool[data-tool="typewriter"]').toggle(state.config('tool') !== 'text-editor');
+    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggle(state.config('tool') !== 'text-editor');
 
-    $selectionTools.find('.selection-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
-    $selectionTools.find('.selection-tool[data-tool="typewriter"]').toggleClass('active', !!selection.cursorCell);
+    $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
+    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggleClass('active', !!selection.cursorCell);
 
-    $selectionTools.find('.selection-tool').each((i, element) => {
+    $selectionTools.find('.sub-tool').each((i, element) => {
         const $element = $(element);
         $element.toggleClass('disabled', !actions.isActionEnabled(actionIdForSelectionTool($element.data('tool'))));
     });
@@ -259,7 +274,7 @@ function resizeToSelection() {
 export const BRUSH_TOOLS = ['draw-freeform', 'eraser', 'paint-brush'];
 
 function setupBrushShapes() {
-    $brushShapes.off('click', '.brush-shape').on('click', '.brush-shape', evt => {
+    $brushShapes.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
         const $shape = $(evt.currentTarget);
 
         state.config('brushShape', {
@@ -269,7 +284,7 @@ function setupBrushShapes() {
         refreshBrushShapes();
     });
 
-    tippy('.brush-shape', {
+    tippy($brushShapes.find('.sub-tool').toArray(), {
         content: element => {
             const $element = $(element);
             const shape = $element.data('shape');
@@ -287,10 +302,10 @@ function refreshBrushShapes() {
     $brushShapes.toggle(show);
 
     if (show) {
-        $brushShapes.find('.brush-shape').toggleClass('active', false);
+        $brushShapes.find('.sub-tool').toggleClass('active', false);
 
         let { shape, size } = state.config('brushShape');
-        $brushShapes.find(`.brush-shape[data-shape="${shape}"][data-size="${size}"]`).toggleClass('active', true);
+        $brushShapes.find(`.sub-tool[data-shape="${shape}"][data-size="${size}"]`).toggleClass('active', true);
     }
 }
 
@@ -415,6 +430,71 @@ export function setFreeformChar(char) {
     freeformChar = char;
     $freeformChar.html(freeformChar);
 }
+
+
+
+// -------------------------------------------------------------------------------- Drawing
+
+function setupDrawRectTypes() {
+    $drawRectTypes.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
+        const $tool = $(evt.currentTarget);
+
+        state.config('drawRectType', $tool.data('type'));
+        refreshDrawRectTypes();
+    });
+
+    tippy($drawRectTypes.find('.sub-tool').toArray(), {
+        content: element => {
+            const $element = $(element);
+            const type = $element.data('type');
+            const name = strings[`editor.draw-rect-types.${type}.name`];
+            const description = strings[`editor.draw-rect-types.${type}.description`];
+            return `<span class="title">${name}</span><br><span>${description}</span>`;
+        },
+        placement: 'right',
+        hideOnClick: false,
+        allowHTML: true
+    })
+}
+
+function refreshDrawRectTypes() {
+    let show = state.config('tool') === 'draw-rect';
+    $drawRectTypes.toggle(show);
+
+    if (show) {
+        $drawRectTypes.find('.sub-tool').toggleClass('active', false);
+
+        let type = state.config('drawRectType');
+        $drawRectTypes.find(`.sub-tool[data-type="${type}"]`).toggleClass('active', true);
+    }
+}
+
+export let drawingContent = null;
+
+function startDrawing(klass) {
+    drawingContent = new klass(hoveredCell);
+    triggerRefresh('chars');
+}
+
+function updateDrawing() {
+    if (hoveredCell && !hoveredCell.equals(drawingContent.end)) {
+        drawingContent.end = hoveredCell;
+        drawingContent.recalculateGlyphs();
+        triggerRefresh('chars');
+    }
+}
+
+function finishDrawing() {
+    if (drawingContent) {
+        translateGlyphs(drawingContent.glyphs, drawingContent.topLeft, (r, c, char, color) => {
+            state.setCurrentCelGlyph(r, c, char, color);
+        });
+
+        triggerRefresh('full', true);
+        drawingContent = null;
+    }
+}
+
 
 
 
