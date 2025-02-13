@@ -29,12 +29,16 @@ const CONFIG_DEFAULTS = {
     frameIndex: 0,
     frameOrientation: 'left',
     tool: 'text-editor',
-    brushShape: {
+    brush: {
         shape: 'square',
         size: 1
     },
-    drawRectType: 'printable-ascii-1',
-    drawLineType: '-'
+    drawRect: {
+        type: 'printable-ascii-1'
+    },
+    drawLine: {
+        type: 'dotted'
+    },
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',

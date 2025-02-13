@@ -16,22 +16,20 @@ import {DrawingLine, DrawingRect} from "./drawing.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $editingTools, $canvasContainer, $selectionTools, $drawRectTypes, $brushShapes, $canvasDetails, $canvasMessage;
+let $editingTools, $selectionTools, drawRectSubMenu, drawLineSubMenu, brushSubMenu,
+    $canvasContainer, $canvasDetails, $canvasMessage;
 
 export function init() {
-    $editingTools = $('#editing-tools');
     $canvasContainer = $('#canvas-container');
-    $selectionTools = $('#selection-tools');
-    $drawRectTypes = $('#draw-rect-types');
-    $brushShapes = $('#brush-shapes');
     $canvasDetails = $('#canvas-details');
     $canvasMessage = $('#canvas-message');
     
     setupEditingTools();
     setupFreeformChar();
     setupSelectionTools();
-    setupDrawRectTypes();
-    setupBrushShapes();
+    setupDrawRectSubMenu();
+    setupDrawLineSubMenu();
+    setupBrushSubMenu();
     setupColorPicker();
 }
 
@@ -45,8 +43,9 @@ export function refresh() {
     $editingTools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
-    refreshDrawRectTypes();
-    refreshBrushShapes();
+    drawRectSubMenu.refresh();
+    drawLineSubMenu.refresh();
+    brushSubMenu.refresh();
 
     $canvasDetails.find('.canvas-dimensions .value').html(`[${state.numCols()}x${state.numRows()}]`);
 }
@@ -186,6 +185,8 @@ export function setupMouseEvents(canvasControl) {
 // -------------------------------------------------------------------------------- Editing Tools
 
 function setupEditingTools() {
+    $editingTools = $('#editing-tools');
+
     $editingTools.find('.editing-tool').each(function(i, element) {
         const $element = $(element);
         const tool = $element.data('tool');
@@ -208,6 +209,8 @@ function actionIdForTool(tool) {
 // -------------------------------------------------------------------------------- Selection Tools
 
 function setupSelectionTools() {
+    $selectionTools = $('#selection-tools');
+
     function registerAction(tool, callback, disableOnMove = true, disableOnCursor = true, shortcutAbbr) {
         actions.registerAction(actionIdForSelectionTool(tool), {
             callback: callback,
@@ -273,40 +276,17 @@ function resizeToSelection() {
 
 export const BRUSH_TOOLS = ['draw-freeform', 'eraser', 'paint-brush'];
 
-function setupBrushShapes() {
-    $brushShapes.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
-        const $shape = $(evt.currentTarget);
-
-        state.config('brushShape', {
-            shape: $shape.data('shape'),
-            size: $shape.data('size')
-        });
-        refreshBrushShapes();
-    });
-
-    tippy($brushShapes.find('.sub-tool').toArray(), {
-        content: element => {
-            const $element = $(element);
-            const shape = $element.data('shape');
-            const size = $element.data('size');
+function setupBrushSubMenu() {
+    brushSubMenu = new ToolSubMenu({
+        $menu: $('#brush-shapes'),
+        configKey: 'brush',
+        visible: () => BRUSH_TOOLS.includes(state.config('tool')),
+        tooltipContent: $tool => {
+            const shape = $tool.data('shape');
+            const size = $tool.data('size');
             return `<span class="title">${capitalizeFirstLetter(shape)} Brush</span><br><span>Size: ${size}</span>`;
-        },
-        placement: 'right',
-        hideOnClick: false,
-        allowHTML: true
+        }
     })
-}
-
-function refreshBrushShapes() {
-    let show = BRUSH_TOOLS.includes(state.config('tool'))
-    $brushShapes.toggle(show);
-
-    if (show) {
-        $brushShapes.find('.sub-tool').toggleClass('active', false);
-
-        let { shape, size } = state.config('brushShape');
-        $brushShapes.find(`.sub-tool[data-shape="${shape}"][data-size="${size}"]`).toggleClass('active', true);
-    }
 }
 
 function drawCharShape() {
@@ -432,41 +412,34 @@ export function setFreeformChar(char) {
 }
 
 
-
 // -------------------------------------------------------------------------------- Drawing
 
-function setupDrawRectTypes() {
-    $drawRectTypes.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
-        const $tool = $(evt.currentTarget);
-
-        state.config('drawRectType', $tool.data('type'));
-        refreshDrawRectTypes();
-    });
-
-    tippy($drawRectTypes.find('.sub-tool').toArray(), {
-        content: element => {
-            const $element = $(element);
-            const type = $element.data('type');
+function setupDrawRectSubMenu() {
+    drawRectSubMenu = new ToolSubMenu({
+        $menu: $('#draw-rect-types'),
+        configKey: 'drawRect',
+        visible: () => state.config('tool') === 'draw-rect',
+        tooltipContent: $tool => {
+            const type = $tool.data('type');
             const name = strings[`editor.draw-rect-types.${type}.name`];
             const description = strings[`editor.draw-rect-types.${type}.description`];
             return `<span class="title">${name}</span><br><span>${description}</span>`;
-        },
-        placement: 'right',
-        hideOnClick: false,
-        allowHTML: true
+        }
     })
 }
 
-function refreshDrawRectTypes() {
-    let show = state.config('tool') === 'draw-rect';
-    $drawRectTypes.toggle(show);
-
-    if (show) {
-        $drawRectTypes.find('.sub-tool').toggleClass('active', false);
-
-        let type = state.config('drawRectType');
-        $drawRectTypes.find(`.sub-tool[data-type="${type}"]`).toggleClass('active', true);
-    }
+function setupDrawLineSubMenu() {
+    drawLineSubMenu = new ToolSubMenu({
+        $menu: $('#draw-line-types'),
+        configKey: 'drawLine',
+        visible: () => state.config('tool') === 'draw-line',
+        tooltipContent: $tool => {
+            const type = $tool.data('type');
+            const name = strings[`editor.draw-line-types.${type}.name`];
+            const description = strings[`editor.draw-line-types.${type}.description`];
+            return `<span class="title">${name}</span><br><span>${description}</span>`;
+        }
+    })
 }
 
 export let drawingContent = null;
@@ -635,4 +608,57 @@ function cursorStyle(evt, mouseEvent, cell, tool) {
         default:
             return 'default';
     }
+}
+
+
+class ToolSubMenu {
+    constructor(options = {}) {
+        this.$menu = options.$menu;
+        this.options = options;
+        this.setup();
+    }
+
+    get state() {
+        return state.config(this.options.configKey);
+    }
+
+    set state(newState) {
+        state.config(this.options.configKey, newState);
+    }
+
+    setup() {
+        this.$menu.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
+            const $tool = $(evt.currentTarget);
+            const newState = {};
+            Object.keys(this.state).forEach(dataAttr => {
+                newState[dataAttr] = $tool.data(dataAttr);
+            })
+            this.state = newState;
+            this.refresh();
+        });
+
+        if (this.options.tooltipContent) {
+            tippy(this.$menu.find('.sub-tool').toArray(), {
+                content: element => this.options.tooltipContent($(element)),
+                placement: 'right',
+                hideOnClick: false,
+                allowHTML: true
+            })
+        }
+    }
+
+    refresh() {
+        let show = this.options.visible();
+        this.$menu.toggle(show);
+
+        if (show) {
+            let str = '';
+            for (const [key, value] of Object.entries(this.state)) {
+                str += `[data-${key}="${value}"]`;
+            }
+            this.$menu.find('.sub-tool').toggleClass('active', false);
+            this.$menu.find(`.sub-tool${str}`).toggleClass('active', true);
+        }
+    }
+
 }

@@ -31,7 +31,7 @@ export function iterateHoveredCells(callback) {
     }
 
     // If using a brush tool, other nearby cells will be iterated through depending on the chosen shape/size
-    let { shape, size } = state.config('brushShape');
+    let { shape, size } = state.config('brush');
 
     switch(shape) {
         case 'square':

@@ -7,6 +7,10 @@ export function isFunction(value) {
     return typeof value === 'function';
 }
 
+export function isObject(val) {
+    return val !== null && typeof val === 'object' && Array.isArray(val) === false;
+}
+
 // @param defaultValue can be a primitive value (like an integer or string) or a function that returns the desired value.
 // Do not pass an object as a default value; otherwise all the elements will be a reference to the same object. You 
 // should pass a function that returns a new object.

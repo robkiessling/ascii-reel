@@ -78,9 +78,9 @@ export class DrawingRect extends DrawingPolygon {
     recalculateGlyphs() {
         super.recalculateGlyphs();
 
-        const charSheet = DRAW_RECT_CHARS[state.config('drawRectType')];
+        const charSheet = DRAW_RECT_CHARS[state.config('drawRect').type];
         if (charSheet === undefined) {
-            console.error("Invalid char sheet for: ", state.config('drawRectType'))
+            console.error("Invalid char sheet for: ", state.config('drawRect'))
             return;
         }
 

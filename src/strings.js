@@ -24,9 +24,9 @@ export const strings = {
     'editor.tools.draw-freeform.name': 'Draw Character Tool',
     'editor.tools.draw-freeform.description': 'Click and drag to continuously draw the chosen character. Type a key to change the character.',
     'editor.tools.draw-rect.name': 'Draw Rectangle Tool',
-    'editor.tools.draw-rect.description': 'Click and drag to draw a rectangle of any size.',
+    'editor.tools.draw-rect.description': 'Click and drag to draw a rectangle out of ASCII characters.',
     'editor.tools.draw-line.name': 'Draw Line Tool',
-    'editor.tools.draw-line.description': 'Click and drag to draw a line of any length.',
+    'editor.tools.draw-line.description': 'Click and drag to draw a line out of ASCII characters.',
     'editor.tools.selection.multiple': 'Create multiple selections',
     'editor.tools.selection-rect.name': 'Rectangle Selection',
     'editor.tools.selection-rect.description': 'Click and drag to select a rectangular area. Once an area is selected, typing a key will fill the selection with that character.',
@@ -77,6 +77,11 @@ export const strings = {
     'editor.draw-rect-types.single-line.description': 'Uses extended ASCII characters.',
     'editor.draw-rect-types.double-line.name': 'Characters: ╔═══╗',
     'editor.draw-rect-types.double-line.description': 'Uses extended ASCII characters.',
+
+    'editor.draw-line-types.dotted.name': 'Dotted Line',
+    'editor.draw-line-types.dotted.description': 'TODO.',
+    'editor.draw-line-types.dashed.name': 'Dashed Line',
+    'editor.draw-line-types.dashed.description': 'TODO.',
 
     'timeline.add-frame.name': 'Add Frame',
     'timeline.add-frame.description': 'Creates a blank frame.',
