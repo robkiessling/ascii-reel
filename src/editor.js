@@ -459,12 +459,12 @@ function updateDrawing() {
 
 function finishDrawing() {
     if (drawingContent) {
-        translateGlyphs(drawingContent.glyphs, drawingContent.topLeft, (r, c, char, color) => {
+        translateGlyphs(drawingContent.glyphs, drawingContent.origin, (r, c, char, color) => {
             state.setCurrentCelGlyph(r, c, char, color);
         });
 
-        triggerRefresh('full', true);
         drawingContent = null;
+        triggerRefresh('full', true);
     }
 }
 

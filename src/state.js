@@ -388,7 +388,7 @@ export function layeredGlyphs(frame, options = {}) {
         }
 
         if (options.showDrawingContent && l === layerIndex() && editor.drawingContent) {
-            translateGlyphs(editor.drawingContent.glyphs, editor.drawingContent.topLeft, (r, c, char, color) => {
+            translateGlyphs(editor.drawingContent.glyphs, editor.drawingContent.origin, (r, c, char, color) => {
                 if (char !== undefined && charInBounds(r, c)) {
                     chars[r][c] = char;
                     colors[r][c] = color;
