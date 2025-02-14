@@ -120,7 +120,9 @@ export class DrawingRect extends DrawingPolygon {
 }
 
 /**
- * @param loopTarget The row/col offset where the template should start looping (i.e. start its next character)
+ * @param loopTarget The row/col offset where the template should start looping (i.e. start its next character).
+ *   This cannot simply be calculated from looking at the chars -- sometimes it is offset for certain line shapes.
+ *   Note: Since rows go top to bottom, a negative row offset indicates upward movement
  */
 class LineTemplate {
     constructor(loopTarget, chars) {
@@ -142,9 +144,9 @@ const LINE_TEMPLATES = [
         '    `\'\'-'
     ]),
     new LineTemplate([2, 8], [
-        '-.      ',
-        '  `\'-.  ',
-        '      `\''
+        '-._     ',
+        '   `-._ ',
+        '       `'
     ]),
     new LineTemplate([4, 8], [
         '`.      ',
@@ -152,19 +154,16 @@ const LINE_TEMPLATES = [
         '    `.  ',
         '      `.'
     ]),
-    new LineTemplate([6, 8], [
-        '\\               ',
-        ' \'              ',
-        '  `.            ',
-        '    \\           ',
-        '     \'          ',
-        '      `.        '
+    new LineTemplate([3, 4], [
+        '\\   ',
+        ' \'  ',
+        '  `.'
     ]),
     new LineTemplate([4, 4], [
-        '\\               ',
-        ' \\              ',
-        '  \\             ',
-        '   \\            ',
+        '1   ',
+        ' \\  ',
+        '  \\ ',
+        '   4',
     ]),
     new LineTemplate([4, 2], [
         '\\  ',
@@ -184,26 +183,155 @@ const LINE_TEMPLATES = [
         '|',
         '|'
     ]),
+    new LineTemplate([4, -1], [
+        ' |',
+        ' /',
+        '| ',
+        '/ '
+    ]),
+    new LineTemplate([4, -2], [
+        '  /',
+        ' | ',
+        ' / ',
+        '|  '
+    ]),
+    new LineTemplate([4, -4], [
+        '   1',
+        '  / ',
+        ' /  ',
+        '4   '
+    ]),
+    new LineTemplate([3, -4], [
+        '   /',
+        '  \' ',
+        '.`  '
+    ]),
+    new LineTemplate([4, -8], [
+        '      .\'',
+        '    .\'  ',
+        '  .\'    ',
+        '.\'      '
+    ]),
+    new LineTemplate([2, -8], [
+        '     _,-',
+        ' _,-\'   ',
+        '\'       '
+    ]),
+    new LineTemplate([1, -8], [
+        '    _..-',
+        '-\'\'`    '
+    ]),
+    // Don't need [0, -8], it is the same as [0, 8]
+    new LineTemplate([-1, -8], [
+        '-..,_   ',
+        '     \'\'-'
+    ]),
+    new LineTemplate([-2, -8], [
+        '._      ',
+        '  `-._  ',
+        '      `-'
+    ]),
+    new LineTemplate([-4, -8], [
+        '`.      ',
+        '  `.    ',
+        '    `.  ',
+        '      `.'
+    ]),
+    new LineTemplate([-3, -4], [
+        '`.  ',
+        '  . ',
+        '   \\'
+    ]),
+    new LineTemplate([-4, -4], [
+        '4   ',
+        ' \\  ',
+        '  \\ ',
+        '   1'
+    ]),
+    new LineTemplate([-4, -2], [
+        '|  ',
+        ' \\ ',
+        ' | ',
+        '  \\'
+    ]),
+    new LineTemplate([-4, -1], [
+        '\\ ',
+        '| ',
+        ' \\',
+        ' |'
+    ]),
+    // Don't need [-4, 0], it is the same as [4, 0]
+    new LineTemplate([-4, 1], [
+        ' /',
+        ' |',
+        '/ ',
+        '| '
+    ]),
+    new LineTemplate([-4, 2], [
+        '  |',
+        ' / ',
+        ' | ',
+        '/  '
+    ]),
+    new LineTemplate([-4, 4], [
+        '   4',
+        '  / ',
+        ' /  ',
+        '1   '
+    ]),
+    new LineTemplate([-3, 4], [
+        '  ,\'',
+        ' .  ',
+        '/   '
+    ]),
+    new LineTemplate([-4, 8], [
+        '      .\'',
+        '    .\'  ',
+        '  .\'    ',
+        '.\'      '
+    ]),
+    new LineTemplate([-2, 8], [
+        '      _,',
+        '  _,-\'  ',
+        '-\'      '
+    ]),
+    new LineTemplate([-1, 8], [
+        '   _,..-',
+        '-\'\'     '
+    ]),
 ]
 
-function findClosestLineTemplate(goalSlope) {
-    if (isVerticalSlope(goalSlope)) {
+function findClosestLineTemplate(rise, run) {
+    const slope = rise / run;
+    if (isVerticalSlope(slope)) {
         return LINE_TEMPLATES.filter(template => isVerticalSlope(template.slope))[0];
     }
+    if (isHorizontalSlope(slope)) {
+        return LINE_TEMPLATES.filter(template => isHorizontalSlope(template.slope))[0];
+    }
 
-    return LINE_TEMPLATES.reduce((prev, curr) => {
-        return Math.abs(curr.slope - goalSlope) < Math.abs(prev.slope - goalSlope) ? curr : prev
+    return LINE_TEMPLATES.filter(template => {
+        // only include templates going same direction (check polarity)
+        if (rise * template.rise < 0) return false;
+        if (run * template.run < 0) return false;
+        return true;
+    }).reduce((prev, curr) => {
+        // of the remaining, find the template with the closest slope
+        return Math.abs(curr.slope - slope) < Math.abs(prev.slope - slope) ? curr : prev;
     });
 }
 
 function isVerticalSlope(slope) {
     return slope === Infinity || slope === -Infinity;
 }
+function isHorizontalSlope(slope) {
+    return slope === 0;
+}
 
 
 export class DrawingLine extends DrawingPolygon {
     get origin() {
-        return this._invertedOrigin ? this._invertedOrigin : this.start;
+        return this._origin;
     }
 
     recalculateGlyphs() {
@@ -215,54 +343,85 @@ export class DrawingLine extends DrawingPolygon {
         if (this.start.equals(this.end)) {
             this._glyphs.chars[0][0] = '-';
             this._glyphs.colors[0][0] = currentColorIndex();
+            this._origin = this.start;
             return;
         }
 
         const rise = this.end.row - this.start.row;
         const run = this.end.col - this.start.col;
-        const goalSlope = rise / run;
-        const inverted = run < 0 || (run === 0 && rise < 0);
-
-        const lineTemplate = findClosestLineTemplate(goalSlope);
+        const lineTemplate = findClosestLineTemplate(rise, run);
         const lineLength = Math.max(Math.abs(rise), Math.abs(run));
 
-        this._drawLineTemplate(lineTemplate, lineLength);
-
-        if (inverted) {
-            this._invertedOrigin = this.start.clone();
-            const rowOffset = this._glyphs.chars.length - 1;
-            const colOffset = this._glyphs.chars[rowOffset].length - 1
-            this._invertedOrigin.translate(-1 * rowOffset, -1 * colOffset);
-        }
-        else {
-            this._invertedOrigin = null;
-        }
+        this._drawTemplateRepeatedly(lineTemplate, lineLength);
+        this._recalculateOrigin(rise, run);
     }
 
-    // Draws the line by repeating the LineTemplate chars over and over until we reach the given lineLength
-    _drawLineTemplate(lineTemplate, lineLength) {
+    _drawTemplateRepeatedly(lineTemplate, lineLength) {
         let charIndex = 0; // How far into the ascii line we've drawn
         let templateIndex = 0; // How many times we've looped drawing the entire template
+        let finished = false;
 
-        while (true) {
-            const templateRow = templateIndex * lineTemplate.rise;
-            const templateCol = templateIndex * lineTemplate.run;
+        while (!finished) {
+            this._iterateRows(templateIndex, lineTemplate, (templateR, glyphR) => {
+                return this._iterateCols(templateIndex, lineTemplate, (templateC, glyphC) => {
+                    const char = lineTemplate.chars[templateR][templateC];
+                    if (char === ' ') { return; }
 
-            for (let r = 0; r < lineTemplate.chars.length; r++) {
-                for (let c = 0; c < lineTemplate.chars[r].length; c++) {
-                    const char = lineTemplate.chars[r][c];
-                    if (char === ' ') { continue; } // Ignore blank chars in the line template
-
-                    this._setGlyph(templateRow + r, templateCol + c, char, currentColorIndex());
+                    this._setGlyph(glyphR, glyphC, char, currentColorIndex());
 
                     charIndex++;
                     if (charIndex > lineLength) {
-                        return;
+                        finished = true;
+                        return true;
                     }
-                }
-            }
+                });
+            });
 
             templateIndex++;
+        }
+    }
+
+    _iterateRows(templateIndex, lineTemplate, callback) {
+        const templateOffset = templateIndex * Math.abs(lineTemplate.rise);
+        const maxTemplateRowIndex = lineTemplate.chars.length - 1;
+
+        if (lineTemplate.rise >= 0) {
+            for (let r = 0; r <= maxTemplateRowIndex; r++) {
+                if (callback(r, templateOffset + r)) {
+                    return true;
+                }
+            }
+        }
+        else {
+            for (let r = maxTemplateRowIndex; r >= 0; r--) {
+                const invertedR = maxTemplateRowIndex - r;
+                if (callback(r, templateOffset + invertedR)) {
+                    this._reverseGlyphRows()
+                    return true;
+                }
+            }
+        }
+    }
+
+    _iterateCols(templateIndex, lineTemplate, callback) {
+        const templateOffset = templateIndex * Math.abs(lineTemplate.run);
+        const maxTemplateColIndex = lineTemplate.chars[0].length - 1; // Note: This assumes template rows all have same length
+
+        if (lineTemplate.run >= 0) {
+            for (let c = 0; c <= maxTemplateColIndex; c++) {
+                if (callback(c, templateOffset + c)) {
+                    return true;
+                }
+            }
+        }
+        else {
+            for (let c = maxTemplateColIndex; c >= 0; c--) {
+                const invertedC = maxTemplateColIndex - c;
+                if (callback(c, templateOffset + invertedC)) {
+                    this._reverseGlyphCols();
+                    return true;
+                }
+            }
         }
     }
 
@@ -278,6 +437,36 @@ export class DrawingLine extends DrawingPolygon {
         }
         this._glyphs.colors[row][col] = color;
     }
+
+    _reverseGlyphRows() {
+        this._glyphs.chars.reverse();
+        this._glyphs.colors.reverse();
+    }
+
+    _reverseGlyphCols() {
+        const maxLength = Math.max(...this._glyphs.chars.map(row => row.length));
+        this._glyphs.chars.forEach(row => {
+            row.length = maxLength;
+            row.reverse();
+        });
+        this._glyphs.colors.forEach(row => {
+            row.length = maxLength;
+            row.reverse();
+        });
+    }
+
+    _recalculateOrigin(rise, run) {
+        this._origin = this.start.clone();
+        if (rise < 0) {
+            const rowOffset = this._glyphs.chars.length - 1;
+            this._origin.translate(-1 * rowOffset, 0);
+        }
+        if (run < 0) {
+            const colOffset = Math.max(...this._glyphs.chars.map(row => row.length)) - 1;
+            this._origin.translate(0, -1 * colOffset);
+        }
+    }
+
 
 }
 

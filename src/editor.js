@@ -450,6 +450,8 @@ function startDrawing(klass) {
 }
 
 function updateDrawing() {
+    if (!drawingContent) { return; }
+
     if (hoveredCell && !hoveredCell.equals(drawingContent.end)) {
         drawingContent.end = hoveredCell;
         drawingContent.recalculateGlyphs();
@@ -458,14 +460,14 @@ function updateDrawing() {
 }
 
 function finishDrawing() {
-    if (drawingContent) {
-        translateGlyphs(drawingContent.glyphs, drawingContent.origin, (r, c, char, color) => {
-            state.setCurrentCelGlyph(r, c, char, color);
-        });
+    if (!drawingContent) { return; }
 
-        drawingContent = null;
-        triggerRefresh('full', true);
-    }
+    translateGlyphs(drawingContent.glyphs, drawingContent.origin, (r, c, char, color) => {
+        state.setCurrentCelGlyph(r, c, char, color);
+    });
+
+    drawingContent = null;
+    triggerRefresh('full', true);
 }
 
 
