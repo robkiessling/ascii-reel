@@ -126,13 +126,60 @@ export class DrawingRect extends DrawingPolygon {
  */
 class LineTemplate {
     constructor(loopTarget, chars) {
-        this.loopTarget = loopTarget;
         this.chars = chars;
         
-        this.rise = this.loopTarget[0];
-        this.run = this.loopTarget[1];
+        this.rise = loopTarget[0];
+        this.run = loopTarget[1];
         this.slope = this.rise / this.run;
+
+        this.maxRowIndex = this.chars.length - 1;
+        this.maxColIndex = this.chars[0].length - 1; // TODO This assumes template rows all have same length
+
+        this.iterateRowsBackwards = this.rise < 0;
+        this.iterateColsBackwards = this.run < 0;
     }
+
+    followLinePath(length, callback) {
+        let charIndex = 0;
+        let templateIndex = 0; // How many times we've looped drawing the entire template
+        let finished = false;
+
+        while (!finished) {
+            const rowOffset = templateIndex * Math.abs(this.rise);
+            const colOffset = templateIndex * Math.abs(this.run);
+
+            this._iterate(this.maxRowIndex, this.iterateRowsBackwards, (templateR, glyphR) => {
+                return this._iterate(this.maxColIndex, this.iterateColsBackwards, (templateC, glyphC) => {
+                    const char = this.chars[templateR][templateC];
+                    if (char === ' ') { return; }
+
+                    callback(glyphR + rowOffset, glyphC + colOffset, char);
+
+                    charIndex++;
+                    if (charIndex > length) {
+                        finished = true;
+                        return true;
+                    }
+                })
+            });
+
+            templateIndex++;
+        }
+    }
+
+    _iterate(max, reverse, callback) {
+        if (reverse) {
+            for (let i = max; i >= 0; i--) {
+                if (callback(i, max - i)) return true;
+            }
+        }
+        else {
+            for (let i = 0; i <= max; i++) {
+                if (callback(i, i)) return true;
+            }
+        }
+    }
+
 }
 
 const LINE_TEMPLATES = [
@@ -352,77 +399,14 @@ export class DrawingLine extends DrawingPolygon {
         const lineTemplate = findClosestLineTemplate(rise, run);
         const lineLength = Math.max(Math.abs(rise), Math.abs(run));
 
-        this._drawTemplateRepeatedly(lineTemplate, lineLength);
+        lineTemplate.followLinePath(lineLength, (glyphR, glyphC, char) => {
+            this._setGlyph(glyphR, glyphC, char, currentColorIndex());
+        })
+
+        if (lineTemplate.iterateRowsBackwards) { this._reverseGlyphRows() }
+        if (lineTemplate.iterateColsBackwards) { this._reverseGlyphCols() }
+
         this._recalculateOrigin(rise, run);
-    }
-
-    _drawTemplateRepeatedly(lineTemplate, lineLength) {
-        let charIndex = 0; // How far into the ascii line we've drawn
-        let templateIndex = 0; // How many times we've looped drawing the entire template
-        let finished = false;
-
-        while (!finished) {
-            this._iterateRows(templateIndex, lineTemplate, (templateR, glyphR) => {
-                return this._iterateCols(templateIndex, lineTemplate, (templateC, glyphC) => {
-                    const char = lineTemplate.chars[templateR][templateC];
-                    if (char === ' ') { return; }
-
-                    this._setGlyph(glyphR, glyphC, char, currentColorIndex());
-
-                    charIndex++;
-                    if (charIndex > lineLength) {
-                        finished = true;
-                        return true;
-                    }
-                });
-            });
-
-            templateIndex++;
-        }
-    }
-
-    _iterateRows(templateIndex, lineTemplate, callback) {
-        const templateOffset = templateIndex * Math.abs(lineTemplate.rise);
-        const maxTemplateRowIndex = lineTemplate.chars.length - 1;
-
-        if (lineTemplate.rise >= 0) {
-            for (let r = 0; r <= maxTemplateRowIndex; r++) {
-                if (callback(r, templateOffset + r)) {
-                    return true;
-                }
-            }
-        }
-        else {
-            for (let r = maxTemplateRowIndex; r >= 0; r--) {
-                const invertedR = maxTemplateRowIndex - r;
-                if (callback(r, templateOffset + invertedR)) {
-                    this._reverseGlyphRows()
-                    return true;
-                }
-            }
-        }
-    }
-
-    _iterateCols(templateIndex, lineTemplate, callback) {
-        const templateOffset = templateIndex * Math.abs(lineTemplate.run);
-        const maxTemplateColIndex = lineTemplate.chars[0].length - 1; // Note: This assumes template rows all have same length
-
-        if (lineTemplate.run >= 0) {
-            for (let c = 0; c <= maxTemplateColIndex; c++) {
-                if (callback(c, templateOffset + c)) {
-                    return true;
-                }
-            }
-        }
-        else {
-            for (let c = maxTemplateColIndex; c >= 0; c--) {
-                const invertedC = maxTemplateColIndex - c;
-                if (callback(c, templateOffset + invertedC)) {
-                    this._reverseGlyphCols();
-                    return true;
-                }
-            }
-        }
     }
 
     // Drawing can go out of the boundaries initially set by super.recalculateGlyphs()
