@@ -391,6 +391,10 @@ $sub-tool-size: 2.5rem;
       background: $dark;
       border: $frame-border-size dashed $highlight;
     }
+
+    &.range-selection-sibling {
+      visibility: hidden;
+    }
   }
 
 }

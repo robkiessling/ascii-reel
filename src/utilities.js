@@ -346,3 +346,74 @@ export function createHTMLFile(title, script, body) {
 </body>
 </html>`;
 }
+
+
+// A Range represents a subarray between two indices: startIndex and endIndex
+export class Range {
+    constructor(startIndex, endIndex) {
+        this.startIndex = startIndex;
+        this.endIndex = endIndex;
+        if (this.endIndex < this.startIndex) {
+            console.error(`Invalid Range initialization: ${startIndex}, ${endIndex}`);
+            this.endIndex = this.startIndex;
+        }
+    }
+
+    // Convert to/from its object representation (so we can store it in json state)
+    static deserialize(data) {
+        return new Range(data.startIndex, data.endIndex);
+    }
+    serialize() {
+        return { startIndex: this.startIndex, endIndex: this.endIndex };
+    }
+
+    static fromSingleIndex(index) {
+        return new Range(index, index);
+    }
+
+    includes(index) {
+        return index >= this.startIndex && index <= this.endIndex;
+    }
+
+    get length() {
+        return this.endIndex - this.startIndex + 1;
+    }
+
+    toDisplay() {
+        return `${this.startIndex + 1}-${this.endIndex + 1}`
+    }
+
+    // Returns how far a given index is from the start of the range
+    offset(index) {
+        return index - this.startIndex;
+    }
+
+    iterate(callback) {
+        for (let i = this.startIndex; i <= this.endIndex; i++) {
+            callback(i);
+        }
+    }
+
+    // Extends the range so that it includes the given index
+    extendTo(index) {
+        this.startIndex = Math.min(this.startIndex, index);
+        this.endIndex = Math.max(this.endIndex, index);
+        return this;
+    }
+
+    // Translates the range a fixed distance
+    translate(distance) {
+        this.startIndex += distance;
+        this.endIndex += distance;
+        return this;
+    }
+
+    // Translates the range so that its startIndex equals the given index
+    translateTo(index) {
+        return this.translate(this.offset(index));
+    }
+
+    clone() {
+        return new Range(this.startIndex, this.endIndex);
+    }
+}

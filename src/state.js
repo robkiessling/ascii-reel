@@ -1,5 +1,5 @@
 import $ from "jquery";
-import {create2dArray, eachWithObject, transformValues, translateGlyphs} from "./utilities.js";
+import {create2dArray, eachWithObject, transformValues, translateGlyphs, Range} from "./utilities.js";
 import * as selection from "./selection.js";
 import {triggerRefresh, triggerResize} from "./index.js";
 import * as actions from "./actions.js";
@@ -28,6 +28,7 @@ const CONFIG_DEFAULTS = {
     layerIndex: 0,
     frameIndex: 0,
     frameOrientation: 'left',
+    frameRangeSelection: null, // A value of null means the range will match the currently selected frameIndex
     tool: 'text-editor',
     brush: {
         shape: 'square',
@@ -58,7 +59,7 @@ const MAX_HISTORY = 50; // Max number of states to remember in the history. Incr
 // By default, config keys are not saved to the history. That way when the user presses 'undo' their tool doesn't
 // revert (for example). However, some config settings need to be able to be undone; those are listed here:
 const CONFIG_KEYS_FOR_HISTORY = new Set([
-    'dimensions', 'background', 'frameIndex', 'layerIndex'
+    'dimensions', 'background', 'frameIndex', 'layerIndex', 'frameRangeSelection'
 ])
 
 
@@ -189,6 +190,24 @@ export function frameIndex(newIndex) {
     return config('frameIndex', newIndex);
 }
 
+/**
+ * Gets and/or sets the frameRangeSelection.
+ * @param {Range|null} [newRange] A value of null means the frameRangeSelection will match the currently selected frameIndex().
+ * @returns {Range}
+ */
+export function frameRangeSelection(newRange) {
+    if (newRange !== undefined) {
+        config('frameRangeSelection', newRange ? newRange.serialize() : null)
+    }
+
+    const serializedRange = config('frameRangeSelection');
+    return serializedRange ? Range.deserialize(serializedRange) : Range.fromSingleIndex(frameIndex());
+}
+
+export function extendFrameRangeSelection(index) {
+    frameRangeSelection(frameRangeSelection().extendTo(index));
+}
+
 export function currentFrame() {
     return state.frames[frameIndex()];
 }
@@ -225,14 +244,31 @@ export function duplicateFrame(index) {
     });
 }
 
-export function deleteFrame(index) {
-    const frame = state.frames[index];
-    celIdsForFrame(frame).forEach(celId => delete state.cels[celId]);
-    state.frames.splice(index, 1);
+export function duplicateFrames(range) {
+    const newFrames = [];
+    range.iterate(frameIndex => {
+        const originalFrame = state.frames[frameIndex];
+        const newFrame = $.extend({}, originalFrame, {
+            id: ++sequences.frames
+        });
+        newFrames.push(newFrame);
+        state.layers.forEach(layer => {
+            const originalCel = cel(layer, originalFrame);
+            createCel(layer, newFrame, originalCel);
+        });
+    });
+    state.frames.splice(range.startIndex, 0, ...newFrames);
 }
 
-export function reorderFrame(oldIndex, newIndex) {
-    state.frames.splice(newIndex, 0, state.frames.splice(oldIndex, 1)[0]);
+export function deleteFrames(range) {
+    range.iterate(frameIndex => {
+        celIdsForFrame(state.frames[frameIndex]).forEach(celId => delete state.cels[celId]);
+    });
+    state.frames.splice(range.startIndex, range.length);
+}
+
+export function reorderFrames(oldRange, newIndex) {
+    state.frames.splice(newIndex, 0, ...state.frames.splice(oldRange.startIndex, oldRange.length));
 }
 
 function celIdsForFrame(frame) {

@@ -7,6 +7,7 @@ import * as actions from "./actions.js";
 import * as state from "./state.js";
 import {createDialog} from "./utilities.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
+import {Range} from "./utilities.js"
 
 export class Timeline {
     constructor($frameContainer, $layerContainer) {
@@ -90,22 +91,49 @@ export class Timeline {
         });
         this.$frames = $(this.frameSimpleBar.getContentElement());
 
-        let draggedIndex;
+        // Adding functionality on top of jquery-ui `sortable` to handle dragging multiple frames
+        let draggedIndex, draggedRange;
         this.$frames.sortable({
             placeholder: 'frame placeholder',
             start: (event, ui) => {
                 draggedIndex = ui.item.index();
+                draggedRange = state.frameRangeSelection();
+
+                // If dragging a frame that is outside the current frameRangeSelection, use that frame as the draggedRange instead
+                if (!draggedRange.includes(draggedIndex)) {
+                    draggedRange = new Range(draggedIndex, draggedIndex);
+                }
+
+                // If dragging multiple frames, we update the frame-index to show the indices of the entire dragged
+                // range, and we hide all other selected frames during the drag.
+                if (draggedRange.length > 1) {
+                    ui.item.find('.frame-index').html(draggedRange.toDisplay());
+                    ui.item.siblings('.selected').addClass('range-selection-sibling')
+                }
             },
             update: (event, ui) => {
-                const newIndex = ui.item.index();
-                state.reorderFrame(draggedIndex, newIndex);
-                this._selectFrame(newIndex);
+                // Get newIndex without regarding any of the hidden frame siblings
+                const newIndex = ui.item.parent().find('.frame:not(.range-selection-sibling)').index(ui.item)
+                state.reorderFrames(draggedRange, newIndex);
+                this._selectFrameRange(
+                    draggedRange.clone().translateTo(newIndex),
+                    newIndex + draggedRange.offset(draggedIndex)
+                )
+            },
+            stop: (event, ui) => {
+                // In case multiple frames get dragged and then dropped at original position, this re-shows them
+                ui.item.siblings('.range-selection-sibling').removeClass('range-selection-sibling');
             }
         });
 
         this.$frames.off('click', '.frame').on('click', '.frame', evt => {
             const newIndex = $(evt.currentTarget).index();
-            if (newIndex !== state.frameIndex()) {
+
+            if (evt.shiftKey) {
+                state.extendFrameRangeSelection(newIndex);
+                triggerRefresh('full', true);
+            }
+            else {
                 this._selectFrame(newIndex);
             }
         });
@@ -119,13 +147,18 @@ export class Timeline {
         });
 
         actions.registerAction('timeline.duplicate-frame', () => {
-            state.duplicateFrame(state.frameIndex());
-            this._selectFrame(state.frameIndex() + 1);
+            const currentRange = state.frameRangeSelection();
+            state.duplicateFrames(currentRange);
+
+            this._selectFrameRange(
+                currentRange.clone().translate(currentRange.length),
+                state.frameIndex() + currentRange.length
+            )
         });
 
         actions.registerAction('timeline.delete-frame', {
             callback: () => {
-                state.deleteFrame(state.frameIndex());
+                state.deleteFrames(state.frameRangeSelection());
                 this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
             },
             enabled: () => state.frames() && state.frames().length > 1
@@ -247,7 +280,14 @@ export class Timeline {
     }
 
     _selectFrame(index) {
+        state.frameRangeSelection(null); // Clear out any range selection
         state.frameIndex(index);
+        triggerRefresh('full', true);
+    }
+
+    _selectFrameRange(newRange, newFrameIndex) {
+        state.frameRangeSelection(newRange);
+        state.frameIndex(newFrameIndex);
         triggerRefresh('full', true);
     }
 
@@ -326,7 +366,7 @@ class FrameComponent {
         this._$container = timeline.$frameTemplate.clone();
         this._$container.removeClass('frame-template').appendTo(timeline.$frames).show();
 
-        this._$container.toggleClass('selected', index === state.frameIndex());
+        this._$container.toggleClass('selected', state.frameRangeSelection().includes(index));
         this._$container.find('.frame-index').html(index + 1);
 
         this._canvasController = new CanvasControl(this._$container.find('canvas'), {});
