@@ -84,8 +84,8 @@ export const strings = {
     'editor.draw-line-types.dashed.name': 'Dashed Line',
     'editor.draw-line-types.dashed.description': 'TODO.',
 
-    'timeline.add-frame.name': 'Add Frame',
-    'timeline.add-frame.description': 'Creates a blank frame.',
+    'timeline.new-frame.name': 'New Frame',
+    'timeline.new-frame.description': 'Creates a new blank frame.',
     'timeline.duplicate-frame.name': 'Duplicate Frame',
     'timeline.duplicate-frame.description': 'Duplicates the currently selected frame(s).',
     'timeline.delete-frame.name': 'Delete Frame',
@@ -96,6 +96,8 @@ export const strings = {
     'timeline.align-frames-left.description': 'Positions the frames on the left side of the screen.',
     'timeline.align-frames-bottom.name': 'Align Frames: Bottom',
     'timeline.align-frames-bottom.description': 'Positions the frames on the bottom of the screen.',
+    'timeline.previous-frame.name': 'Previous Frame',
+    'timeline.next-frame.name': 'Next Frame',
 
     'timeline.add-layer.name': 'Add Layer',
     'timeline.add-layer.description': 'Creates a new layer.',

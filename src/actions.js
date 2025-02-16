@@ -8,7 +8,7 @@ let actions;
 
 // todo will move to preferences.js
 // Format: { char: 'x', modifiers: ['altKey', 'shiftKey'] } // modifiers are optional
-
+// If value is an array, that means the action has multiple shortcuts. The first element is displayed as the abbr.
 let cmdKey = isMacOS() ? 'metaKey' : 'ctrlKey';
 let actionIdToShortcut = {
     'clipboard.cut': { char: 'x', modifiers: [cmdKey] },
@@ -20,9 +20,12 @@ let actionIdToShortcut = {
     'state.undo': { char: 'z', modifiers: [cmdKey] },
     'state.redo': { char: 'z', modifiers: [cmdKey, 'shiftKey'] },
 
-    'timeline.add-frame': { char: 'f', modifiers: [cmdKey, 'shiftKey'] },
+    'timeline.new-frame': { char: 'n', modifiers: [cmdKey, 'shiftKey'] },
     'timeline.duplicate-frame': { char: 'd', modifiers: [cmdKey, 'shiftKey'] },
-    // 'timeline.delete-frame': { char: 'e', modifiers: [cmdKey, 'shiftKey'] },
+    'timeline.delete-frame': [
+        { char: 'Delete', modifiers: [cmdKey] },
+        { char: 'Backspace', modifiers: [cmdKey] }
+    ],
 
     'view.toggle-grid': { char: 'g', modifiers: [cmdKey] },
     'view.grid-settings': { char: 'g', modifiers: [cmdKey, 'shiftKey'] },
@@ -67,14 +70,23 @@ export function registerAction(id, data) {
 export function refreshShortcuts() {
     shortcutToActionId = {};
 
-    for (let [actionId, shortcut] of Object.entries(actionIdToShortcut)) {
-        const shortcutKey = getShortcutKey(shortcut);
-        if (shortcutToActionId[shortcutKey]) {
-            console.warn(`There is already a shortcut for: ${shortcutKey}`);
+    for (let [actionId, shortcutData] of Object.entries(actionIdToShortcut)) {
+        if (Array.isArray(shortcutData)) {
+            shortcutData.forEach(shortcut => refreshShortcut(actionId, shortcut))
         }
-        shortcutToActionId[shortcutKey] = actionId;
+        else {
+            refreshShortcut(actionId, shortcutData);
+        }
     }
 }
+function refreshShortcut(actionId, shortcut) {
+    const shortcutKey = getShortcutKey(shortcut);
+    if (shortcutToActionId[shortcutKey]) {
+        console.warn(`There is already a shortcut for: ${shortcutKey}`);
+    }
+    shortcutToActionId[shortcutKey] = actionId;
+}
+
 
 export function getActionInfo(id) {
     if (actions[id] === undefined) {
@@ -232,6 +244,10 @@ export function shouldModifyAction(modification, mouseEvent) {
 
 function shortcutAbbr(shortcut) {
     let result = '';
+
+    if (Array.isArray(shortcut)) {
+        shortcut = shortcut[0]; // Use first shortcut option as the abbreviation
+    }
 
     if ($.isPlainObject(shortcut)) {
         shortcut.modifiers.forEach(modifier => result += modifierAbbr(modifier));

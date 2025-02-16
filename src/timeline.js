@@ -117,7 +117,8 @@ export class Timeline {
                 state.reorderFrames(draggedRange, newIndex);
                 this._selectFrameRange(
                     draggedRange.clone().translateTo(newIndex),
-                    newIndex + draggedRange.offset(draggedIndex)
+                    newIndex + draggedRange.offset(draggedIndex),
+                    true
                 )
             },
             stop: (event, ui) => {
@@ -131,19 +132,19 @@ export class Timeline {
 
             if (evt.shiftKey) {
                 state.extendFrameRangeSelection(newIndex);
-                triggerRefresh('full', true);
+                triggerRefresh('full', 'changeFrameMulti');
             }
             else {
-                this._selectFrame(newIndex);
+                this._selectFrame(newIndex, 'changeFrameSingle');
             }
         });
 
         // ---------------- Frame actions
 
-        actions.registerAction('timeline.add-frame', () => {
+        actions.registerAction('timeline.new-frame', () => {
             const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
             state.createFrame(frameIndex, {});
-            this._selectFrame(frameIndex);
+            this._selectFrame(frameIndex, true);
         });
 
         actions.registerAction('timeline.duplicate-frame', () => {
@@ -152,14 +153,15 @@ export class Timeline {
 
             this._selectFrameRange(
                 currentRange.clone().translate(currentRange.length),
-                state.frameIndex() + currentRange.length
+                state.frameIndex() + currentRange.length,
+                true
             )
         });
 
         actions.registerAction('timeline.delete-frame', {
             callback: () => {
                 state.deleteFrames(state.frameRangeSelection());
-                this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
+                this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1), true);
             },
             enabled: () => state.frames() && state.frames().length > 1
         });
@@ -179,6 +181,19 @@ export class Timeline {
             state.config('frameOrientation', 'bottom');
             triggerResize();
         });
+
+        actions.registerAction('timeline.previous-frame', () => {
+            let index = state.frameRangeSelection().startIndex;
+            index -= 1;
+            if (index < 0) index = 0;
+            this._selectFrame(index, 'changeFrameSingle');
+        })
+        actions.registerAction('timeline.next-frame', () => {
+            let index = state.frameRangeSelection().endIndex;
+            index += 1;
+            if (index >= state.frames().length) index = state.frames().length - 1;
+            this._selectFrame(index, 'changeFrameSingle');
+        })
 
         this._frameTooltips = this._setupActionButtons(this.$frameContainer);
     }
@@ -279,16 +294,16 @@ export class Timeline {
         triggerRefresh('full', true);
     }
 
-    _selectFrame(index) {
+    _selectFrame(index, saveState) {
         state.frameRangeSelection(null); // Clear out any range selection
         state.frameIndex(index);
-        triggerRefresh('full', true);
+        triggerRefresh('full', saveState);
     }
 
-    _selectFrameRange(newRange, newFrameIndex) {
+    _selectFrameRange(newRange, newFrameIndex, saveState) {
         state.frameRangeSelection(newRange);
         state.frameIndex(newFrameIndex);
-        triggerRefresh('full', true);
+        triggerRefresh('full', saveState);
     }
 
     _refreshVisibilities() {

@@ -150,13 +150,34 @@ function setupKeydownListener() {
 }
 
 function handleArrowKey(e, direction) {
-    state.endHistoryModification();
+    if (selection.hasTarget()) {
+        state.endHistoryModification();
 
-    if (state.config('tool') === 'text-editor') {
-        selection.handleTextEditorArrowKey(direction, e.shiftKey);
+        if (state.config('tool') === 'text-editor') {
+            // text-editor tool has a special arrow key handler
+            selection.handleTextEditorArrowKey(direction, e.shiftKey);
+        }
+        else {
+            // For non-text-editor selections, if there is a cursor within the selection move that cursor, otherwise
+            // move the entire selection
+            selection.cursorCell ?
+                selection.moveCursorInDirection(direction) :
+                selection.moveInDirection(direction, 1, !e.shiftKey);
+        }
     }
     else {
-        selection.cursorCell ? selection.moveCursorInDirection(direction) : selection.moveInDirection(direction, 1, !e.shiftKey);
+        switch(direction) {
+            case 'left':
+                return actions.callAction('timeline.previous-frame')
+            case 'up':
+                return actions.callAction('timeline.previous-frame')
+            case 'right':
+                return actions.callAction('timeline.next-frame')
+            case 'down':
+                return actions.callAction('timeline.next-frame')
+            default:
+                console.warn(`Invalid direction: ${direction}`);
+        }
     }
 }
 
