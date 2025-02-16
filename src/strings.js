@@ -30,6 +30,7 @@ export const strings = {
     'editor.tools.selection.multiple': 'Create multiple selections',
     'editor.tools.selection-rect.name': 'Rectangle Selection',
     'editor.tools.selection-rect.description': 'Click and drag to select a rectangular area. Once an area is selected, typing a key will fill the selection with that character.',
+    'editor.tools.selection-rect.outline': 'Only select outline',
     'editor.tools.selection-line.name': 'Line Selection',
     'editor.tools.selection-line.description': 'Click and drag to select a linear area. Once an area is selected, typing a key will fill the selection with that character.',
     'editor.tools.selection-lasso.name': 'Lasso Selection',

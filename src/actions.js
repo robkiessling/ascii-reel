@@ -186,7 +186,7 @@ function tooltipContentBuilder(getActionId) {
  *      b) the strings.js const (this is where it gets the modification description)
  */
 const ACTION_MODIFIERS = {
-    'editor.tools.selection-rect': ['editor.tools.selection.multiple'],
+    'editor.tools.selection-rect': ['editor.tools.selection.multiple', 'editor.tools.selection-rect.outline'],
     'editor.tools.selection-line': ['editor.tools.selection.multiple'],
     'editor.tools.selection-lasso': ['editor.tools.selection.multiple'],
     'editor.tools.selection-wand': ['editor.tools.selection.multiple', 'editor.tools.selection-wand.colorblind'],
@@ -200,6 +200,7 @@ const ACTION_MODIFIERS = {
 // Defines what modifier key is used for the effect. These are static; they won't be customizable by the user.
 const MODIFIER_KEYS = {
     'editor.tools.selection.multiple': 'shiftKey',
+    'editor.tools.selection-rect.outline': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.tools.selection-wand.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.tools.paint-bucket.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.tools.color-swap.all-layers': 'shiftKey',

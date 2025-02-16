@@ -303,7 +303,9 @@ export function setupMouseEvents(canvasControl) {
 
             switch(tool) {
                 case 'selection-rect':
-                    polygons.push(new SelectionRect(cell));
+                    polygons.push(new SelectionRect(cell, undefined, {
+                        outline: shouldModifyAction('editor.tools.selection-rect.outline', mouseEvent)
+                    }));
                     break;
                 case 'selection-line':
                     polygons.push(new SelectionLine(cell));
@@ -805,6 +807,12 @@ class SelectionPolygon {
     get topLeft() {
         return new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
     }
+    get topRight() {
+        return new Cell(Math.min(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
+    }
+    get bottomLeft() {
+        return new Cell(Math.max(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
+    }
     get bottomRight() {
         return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
     }
@@ -879,14 +887,40 @@ class SelectionRect extends SelectionPolygon {
     }
 
     iterateCells(callback) {
-        this._toCellArea().iterate(callback);
+        if (this.options.outline) {
+            const minRow = this.topLeft.row;
+            const minCol = this.topLeft.col;
+            const maxRow = this.bottomRight.row;
+            const maxCol = this.bottomRight.col;
+
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    // Only call callback if on outer row/col of rectangle
+                    if (r === minRow || c === minCol || r === maxRow || c === maxCol) {
+                        callback(r, c);
+                    }
+                }
+            }
+        }
+        else {
+            this._toCellArea().iterate(callback);
+        }
     }
 
     draw(context) {
-        context.fillRect(...this._toCellArea().clone().bindToDrawableArea().xywh);
+        if (this.options.outline) {
+            context.fillRect(...new CellArea(this.topLeft, this.topRight).bindToDrawableArea().xywh);
+            context.fillRect(...new CellArea(this.topLeft, this.bottomLeft).bindToDrawableArea().xywh);
+            context.fillRect(...new CellArea(this.topRight, this.bottomRight).bindToDrawableArea().xywh);
+            context.fillRect(...new CellArea(this.bottomLeft, this.bottomRight).bindToDrawableArea().xywh);
+        }
+        else {
+            context.fillRect(...this._toCellArea().bindToDrawableArea().xywh);
+        }
     }
 
-    // Note: SelectionRect is the only Polygon that needs to implement `stroke`
+    // Note: SelectionRect is the only Polygon that needs to implement `stroke`, because we only use stroke() for
+    // outlinePolygon() and the outline is always a rectangle.
     stroke(context) {
         context.beginPath();
         context.rect(...this._toCellArea().xywh);
