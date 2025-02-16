@@ -12,7 +12,7 @@ import tippy from 'tippy.js';
 import {capitalizeFirstLetter, translateGlyphs} from "./utilities.js";
 import {setupTooltips, shouldModifyAction} from "./actions.js";
 import {strings} from "./strings.js";
-import {DrawingLine, DrawingRect} from "./drawing.js";
+import {AsciiLine, AsciiRect} from "./ascii_polygons.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -105,10 +105,10 @@ export function setupMouseEvents(canvasControl) {
                 drawCharShape();
                 break;
             case 'draw-rect':
-                startDrawing(DrawingRect);
+                startDrawing(AsciiRect);
                 break;
             case 'draw-line':
-                startDrawing(DrawingLine);
+                startDrawing(AsciiLine);
                 break;
             case 'eraser':
                 erase();
@@ -454,7 +454,7 @@ function updateDrawing() {
 
     if (hoveredCell && !hoveredCell.equals(drawingContent.end)) {
         drawingContent.end = hoveredCell;
-        drawingContent.recalculateGlyphs();
+        drawingContent.refreshGlyphs();
         triggerRefresh('chars');
     }
 }
