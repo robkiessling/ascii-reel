@@ -13,6 +13,7 @@ import {
     refreshSelectionDimensions
 } from "./editor.js"
 import { init as initFile } from "./file.js";
+import { init as initSettings } from "./settings.js";
 import { setupMouseEvents as setupHoverMouse, hoveredCell, iterateHoveredCells } from "./hover.js";
 import { init as initKeyboard } from "./keyboard.js";
 import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./palette.js";
@@ -27,6 +28,7 @@ import { init as initZoom, setupMouseEvents as setupZoomMouse } from './zoom.js'
 initClipboard();
 initEditor();
 initFile();
+initSettings();
 initKeyboard();
 initPalette();
 initPreview();
