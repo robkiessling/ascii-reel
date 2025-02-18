@@ -246,12 +246,7 @@ export class Timeline {
     }
 
     _setupActionButtons($container, tooltipOptions) {
-        $container.off('click', '[data-action]').on('click', '[data-action]', evt => {
-            const $element = $(evt.currentTarget);
-            if (!$element.hasClass('disabled')) {
-                actions.callAction($element.data('action'))
-            }
-        });
+        actions.attachClickHandlers($container);
 
         return actions.setupTooltips(
             $container.find('[data-action]').toArray(),

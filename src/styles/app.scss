@@ -34,7 +34,7 @@ $light: #868889; // custom
 $lighter: #c6c6c7; // custom
 $lightest: #D6D6D7;
 
-$header-height: 36px;
+$header-height: 38px;
 $header-border-size: 3px;
 $main-spacing: 0.5rem;
 $right-col-width: 220px;
@@ -478,12 +478,16 @@ $sub-tool-size: 2.5rem;
 }
 
 #preview-controller {
+  .tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
   #preview-canvas-container {
     position: relative;
     height: $preview-size;
     width: $preview-size;
-
-    margin-top: 0.5rem;
 
     background: $lightest;
   }
@@ -737,7 +741,7 @@ $sub-tool-size: 2.5rem;
   display: none;
 
   &.is-exporting {
-    display: block; // Show so canvas has correct width/height dimentions
+    display: block; // Show so canvas has correct width/height dimensions
     visibility: hidden;
     position: absolute;
     top: 0;

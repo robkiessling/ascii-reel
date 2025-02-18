@@ -26,6 +26,7 @@ let actionIdToShortcut = {
         { char: 'Delete', modifiers: [cmdKey] },
         { char: 'Backspace', modifiers: [cmdKey] }
     ],
+    'timeline.toggle-onion': { char: 'o', modifiers: [cmdKey, 'shiftKey'] },
 
     'view.toggle-grid': { char: 'g', modifiers: [cmdKey] },
     'view.grid-settings': { char: 'g', modifiers: [cmdKey, 'shiftKey'] },
@@ -59,7 +60,7 @@ export function registerAction(id, data) {
     }
 
     if (data.name === undefined) { data.name = strings[`${id}.name`]; }
-    if (data.name === undefined) { console.warn(`No string found for: ${id}.name`); data.name = '(Unknown)'; }
+    if (data.name === undefined) { data.name = ''; }
     if (data.description === undefined) { data.description = strings[`${id}.description`]; }
     if (data.enabled === undefined) { data.enabled = true; }
 
@@ -159,6 +160,19 @@ export function setupTooltips(targets, getActionId, options = {}) {
     return tooltips;
 }
 
+/**
+ * Attaches click handlers to all buttons (that have a data-action attribute) within the container.
+ * @param $container
+ */
+export function attachClickHandlers($container) {
+    $container.off('click', '[data-action]').on('click', '[data-action]', evt => {
+        const $element = $(evt.currentTarget);
+        if (!$element.hasClass('disabled')) {
+            callAction($element.data('action'))
+        }
+    });
+}
+
 function tooltipContentBuilder(getActionId) {
     return element => {
         const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
@@ -174,12 +188,18 @@ function tooltipContentBuilder(getActionId) {
                 });
             }
 
-            return  `<div class="header">` +
-                `<span class="title">${actionInfo.name}</span>` +
-                `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
-                `</div>` +
-                `<div class="description">${actionInfo.description ? actionInfo.description : ''}</div>` +
+            if (actionInfo.name) {
+                return `<div class="header">` +
+                    `<span class="title">${actionInfo.name}</span>` +
+                    `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
+                    `</div>` +
+                    `<div class="description">${actionInfo.description ? actionInfo.description : ''}</div>` +
+                    modifiers;
+            }
+            else {
+                return `<div class="description">${actionInfo.description ? actionInfo.description : ''}</div>` +
                 modifiers;
+            }
         }
 
         return '(Unknown)';

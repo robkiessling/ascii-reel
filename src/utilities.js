@@ -204,6 +204,43 @@ $(window).on('resize', () => {
     }, 500);
 });
 
+/**
+ * Similar to window.setInterval, but built on top of requestAnimationFrame. This is better for animations
+ * and can pause when the tab is inactive. Do not use if the callback needs to run at an extremely precise interval.
+ *
+ * @param callback The function to call every interval
+ * @param delay Time in milliseconds between intervals
+ * @param evaluateImmediately If true, callback immediately fires instead of waiting for first interval to pass
+ * @returns {{stop: function}} `stop` is a function that can be called to clear the interval
+ */
+export function setIntervalUsingRAF(callback, delay, evaluateImmediately = false) {
+    let now = performance.now();
+    let then = performance.now();
+    let progress = evaluateImmediately ? delay : 0;
+    let stop = false;
+
+    function loop() {
+        if (stop) return;
+
+        now = performance.now();
+        progress += (now - then);
+        then = now;
+
+        if (progress >= delay) {
+            callback();
+            progress = progress % delay;
+        }
+
+        window.requestAnimationFrame(loop);
+    }
+
+    window.requestAnimationFrame(loop);
+
+    return {
+        stop: () => { stop = true; }
+    }
+}
+
 
 
 export function createHorizontalMenu($menu, onOpen) {

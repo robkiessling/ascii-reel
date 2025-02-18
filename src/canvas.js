@@ -1,4 +1,4 @@
-import {roundForComparison} from "./utilities.js";
+import {roundForComparison, setIntervalUsingRAF} from "./utilities.js";
 import bresenham from "bresenham";
 import {charInBounds, colorStr, numCols, numRows, config} from "./state.js";
 import {cellHeight, cellWidth} from "./fonts.js";
@@ -74,8 +74,8 @@ export class CanvasControl {
 
     clear() {
         // Clear any animation intervals
-        if (this._outlineInterval) { window.clearInterval(this._outlineInterval); }
-        if (this._cursorInterval) { window.clearInterval(this._cursorInterval); }
+        if (this._outlineInterval) { this._outlineInterval.stop(); }
+        if (this._cursorInterval) { this._cursorInterval.stop(); }
 
         // Clear entire canvas
         this.usingFullArea((fullArea) => {
@@ -142,10 +142,9 @@ export class CanvasControl {
         this.context.clearRect(...cell.xywh);
         // this.context.strokeRect(...cell.xywh);
 
-        this._drawCursor(cell);
-        this._cursorInterval = window.setInterval(() => {
+        this._cursorInterval = setIntervalUsingRAF(() => {
             this._drawCursor(cell);
-        }, 1000 / 5);
+        }, 1000 / 5, true);
     }
 
     _drawCursor(cell) {
@@ -188,10 +187,9 @@ export class CanvasControl {
         this.context.lineWidth = OUTLINE_WIDTH;
 
         if (isDashed) {
-            this._drawDashedOutline(polygon);
-            this._outlineInterval = window.setInterval(() => {
+            this._outlineInterval = setIntervalUsingRAF(() => {
                 this._drawDashedOutline(polygon);
-            }, 1000 / DASH_OUTLINE_FPS);
+            }, 1000 / DASH_OUTLINE_FPS, true);
         }
         else {
             this.context.setLineDash([]);

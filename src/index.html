@@ -190,7 +190,12 @@
         </div>
         <div id="side-content">
             <div id="preview-controller">
-                <span class="section-header">Preview</span>
+                <div class="tools">
+                    <span class="section-header no-select">Preview</span>
+                    <button data-action="preview.open-popup">
+                        <span class="ri ri-fw ri-external-link-line"></span>
+                    </button>
+                </div>
                 <div id="preview-canvas-container">
                     <canvas id="preview-canvas" class="absolute-center full draggable"></canvas>
                 </div>
@@ -205,7 +210,7 @@
             <div id="layer-controller">
                 <div class="tools">
                     <div>
-                        <span class="section-header">Layers</span>
+                        <span class="section-header no-select">Layers</span>
                     </div>
                     <div>
                         <button data-action="timeline.add-layer">
@@ -236,7 +241,7 @@
             <div id="palette-controller">
                 <div class="tools">
                     <div>
-                        <span class="section-header">Palette</span>
+                        <span class="section-header no-select">Palette</span>
                     </div>
                     <div>
                         <button data-action="palette.sort-colors">

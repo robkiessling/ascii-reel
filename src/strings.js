@@ -108,6 +108,8 @@ export const strings = {
     'timeline.toggle-layer-visibility-lock.name': 'Toggle Layer Visibility',
     'timeline.toggle-layer-visibility-lock.description': 'When locked, only the current layer is shown in the main canvas. When unlocked, you can manually show/hide all layers.',
 
+    'preview.open-popup.description': 'Open preview in popup',
+
     'palette.sort-colors.name.date-added': 'Sorting By: Date Added',
     'palette.sort-colors.name.hue': 'Sorting By: Hue',
     'palette.sort-colors.name.saturation': 'Sorting By: Saturation',

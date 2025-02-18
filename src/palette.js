@@ -65,12 +65,7 @@ function setupActionButtons() {
 
     });
 
-    $container.off('click', '[data-action]').on('click', '[data-action]', evt => {
-        const $element = $(evt.currentTarget);
-        if (!$element.hasClass('disabled')) {
-            actions.callAction($element.data('action'))
-        }
-    });
+    actions.attachClickHandlers($container);
 
     tooltips = actions.setupTooltips(
         $container.find('[data-action]').toArray(),
