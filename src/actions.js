@@ -20,7 +20,7 @@ let actionIdToShortcut = {
     'state.undo': { char: 'z', modifiers: [cmdKey] },
     'state.redo': { char: 'z', modifiers: [cmdKey, 'shiftKey'] },
 
-    'timeline.new-frame': { char: 'n', modifiers: [cmdKey, 'shiftKey'] },
+    'timeline.new-frame': { char: 'f', modifiers: [cmdKey, 'shiftKey'] }, // Not using 'n' since that is reserved for new window
     'timeline.duplicate-frame': { char: 'd', modifiers: [cmdKey, 'shiftKey'] },
     'timeline.delete-frame': [
         { char: 'Delete', modifiers: [cmdKey] },
@@ -188,16 +188,18 @@ function tooltipContentBuilder(getActionId) {
                 });
             }
 
+            const htmlDescription = actionInfo.description ? actionInfo.description.replace(/\n/g, '<br/>') : '';
+
             if (actionInfo.name) {
                 return `<div class="header">` +
                     `<span class="title">${actionInfo.name}</span>` +
                     `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
                     `</div>` +
-                    `<div class="description">${actionInfo.description ? actionInfo.description : ''}</div>` +
+                    `<div class="description">${htmlDescription}</div>` +
                     modifiers;
             }
             else {
-                return `<div class="description">${actionInfo.description ? actionInfo.description : ''}</div>` +
+                return `<div class="description">${htmlDescription}</div>` +
                 modifiers;
             }
         }

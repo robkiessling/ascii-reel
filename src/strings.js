@@ -81,10 +81,8 @@ export const strings = {
     'editor.draw-rect-types.double-line.name': 'Characters: ╔═══╗',
     'editor.draw-rect-types.double-line.description': 'Uses extended ASCII characters.',
 
-    'editor.draw-line-types.dotted.name': 'Dotted Line',
-    'editor.draw-line-types.dotted.description': 'TODO.',
-    'editor.draw-line-types.dashed.name': 'Dashed Line',
-    'editor.draw-line-types.dashed.description': 'TODO.',
+    'editor.draw-line-types.basic.name': 'Basic Line',
+    'editor.draw-line-types.basic.description': 'Uses only basic ASCII characters.',
 
     'timeline.new-frame.name': 'New Frame',
     'timeline.new-frame.description': 'Creates a new blank frame.',
@@ -121,6 +119,24 @@ export const strings = {
     'palette.delete-color.description': 'Removes the selected color from your palette. This does not affect characters already using the color.',
     'palette.open-settings.name': 'Palette Settings',
     'palette.open-settings.description': 'TODO',
+
+    'unicode.information.name': 'Extended ASCII Helper',
+    'unicode.information.description': 'The following table provides quick access to several Extended ASCII characters. ' +
+        'These characters are not technically ASCII, but can be helpful if you are not limited to the 128 Standard ASCII characters.\n\n' +
+        'Click on a character below to copy it to your clipboard. ' +
+        'It can also have additional effects depending on your current tool:\n' +
+        '- Text Editor Tool: Pastes the character once\n' +
+        '- Draw Character Tool: Sets the character\n' +
+        '- Selections: Fill selected areas with the character',
+
+    // 'unicode.information.name': 'Unicode Helper',
+    // 'unicode.information.description': 'The following table provides quick access to several Unicode characters. ' +
+    //     'These characters are not ASCII, but can be helpful if you are not limited to the 128 printable ASCII characters.\n\n' +
+    //     'Click on a Unicode character below to copy it to your clipboard. ' +
+    //     'It can also have additional effects depending on your current tool:\n' +
+    //     '- Text Editor Tool: Pastes the character once\n' +
+    //     '- Draw Character Tool: Sets the character\n' +
+    //     '- Selections: Fill selected areas with the character',
 
     'zoom.zoom-in.name': 'Zoom In',
     'zoom.zoom-out.name': 'Zoom Out',

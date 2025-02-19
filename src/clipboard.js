@@ -56,7 +56,7 @@ function copy() {
  */
 function paste(limitToSelection) {
     if (!selection.hasTarget()) {
-        // There is no where to paste the text
+        // There is nowhere to paste the text
         return;
     }
 
@@ -76,6 +76,11 @@ function copySelection() {
     copiedSelection = selection.getSelectedValues();
     copiedText = convertGlyphsToText(copiedSelection);
     writeClipboard(copiedText);
+}
+
+// Copies a single char to the clipboard
+export function copyChar(char) {
+    writeClipboard(char);
 }
 
 /**
@@ -152,7 +157,7 @@ function readClipboard(callback) {
     }).catch(err => {
         console.error('Failed to read clipboard contents: ', err);
         alert("Cannot read from your clipboard. You need to allow 'Clipboard' access for this site " +
-            " in your browser settings if you want to paste text.");
+            " in your browser settings if you want to copy text.");
     });
 }
 

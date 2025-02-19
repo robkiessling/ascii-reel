@@ -18,7 +18,7 @@ export class Timeline {
     }
 
     _initLayers() {
-        this.$layers = this.$layerContainer.find('.layer-list');
+        this.$layers = this.$layerContainer.find('.list');
         this.$layerTemplate = this.$layerContainer.find('.layer-template');
 
         this.layerSimpleBar = new SimpleBar(this.$layers.get(0), {

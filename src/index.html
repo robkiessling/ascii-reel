@@ -10,7 +10,7 @@
 <!--        <div id="file-name">-->
 <!--            <span>c a n v /\ s c i i</span>-->
 <!--        </div>-->
-        <ul id="main-menu" class="horizontal-menu">
+        <ul id="main-menu" class="horizontal-menu no-select">
             <li>
                 <span>File</span>
                 <ul>
@@ -113,8 +113,7 @@
                     <div class="sub-tool" data-type="double-line"><span>╔═</span></div>
                 </div>
                 <div id="draw-line-types" class="sub-tool-menu" style="display: none;">
-                    <div class="sub-tool" data-type="dotted"><span>/-</span></div>
-                    <div class="sub-tool" data-type="dashed"><span>+-</span></div>
+                    <div class="sub-tool" data-type="basic"><span>`.</span></div>
                 </div>
                 <div id="brush-shapes" class="sub-tool-menu" style="display: none;">
                     <div class="sub-tool" data-shape="square" data-size="1">
@@ -152,7 +151,7 @@
                     <div>
                         <span class="section-header no-select">Frames</span>
                         <button data-action="timeline.new-frame">
-                            <span class="ri ri-fw ri-add-line"></span>
+                            <span class="ri ri-fw ri-add-circle-line"></span>
                         </button>
                         <button data-action="timeline.duplicate-frame">
                             <span class="ri ri-fw ri-file-copy-2-line"></span>
@@ -207,14 +206,14 @@
 
             <div class="side-separator"></div>
 
-            <div id="layer-controller">
+            <div id="layer-controller" class="side-content-flex-section">
                 <div class="tools">
                     <div>
                         <span class="section-header no-select">Layers</span>
                     </div>
                     <div>
                         <button data-action="timeline.add-layer">
-                            <span class="ri ri-fw ri-add-line"></span>
+                            <span class="ri ri-fw ri-add-circle-line"></span>
                         </button>
                         <button data-action="timeline.edit-layer">
                             <span class="ri ri-fw ri-pencil-line"></span>
@@ -233,12 +232,12 @@
                         <span class="ri ri-fw"></span>
                     </button>
                 </div>
-                <div class="layer-list"></div>
+                <div class="list"></div>
             </div>
 
             <div class="side-separator"></div>
 
-            <div id="palette-controller">
+            <div id="palette-controller" class="side-content-flex-section">
                 <div class="tools">
                     <div>
                         <span class="section-header no-select">Palette</span>
@@ -255,8 +254,25 @@
                         </button>
                     </div>
                 </div>
-                <div class="color-list"></div>
+                <div class="list as-rows"></div>
             </div>
+
+            <div class="side-separator"></div>
+
+            <div id="unicode-controller" class="side-content-flex-section">
+                <div class="tools">
+                    <div>
+                        <span class="section-header no-select">Extended ASCII</span>
+                    </div>
+                    <div>
+                        <button data-action="unicode.information">
+                            <span class="ri ri-fw ri-information-line"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="list as-rows no-select"></div>
+            </div>
+
             <div id="canvas-details">
                 <span class="canvas-dimensions">
                     <span class="value"></span>

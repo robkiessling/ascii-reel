@@ -119,6 +119,26 @@ export function allowMovement(tool, mouseEvent) {
     return !(tool === 'text-editor' && mouseEvent.shiftKey)
 }
 
+export function setSelectionToSingleChar(char, color) {
+    if (movableContent) {
+        updateMovableContent(char, color);
+    }
+    else if (cursorCell) {
+        // update cursor cell and then move to next cell
+        state.setCurrentCelGlyph(cursorCell.row, cursorCell.col, char, color);
+        moveCursorInDirection('right', false);
+    }
+    else {
+        // update entire selection
+        getSelectedCells().forEach(cell => {
+            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
+        });
+    }
+
+    triggerRefresh('chars', 'producesText');
+
+}
+
 
 
 // -------------------------------------------------------------------------------- Selection Results

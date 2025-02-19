@@ -18,6 +18,7 @@ import { setupMouseEvents as setupHoverMouse, hoveredCell, iterateHoveredCells }
 import { init as initKeyboard } from "./keyboard.js";
 import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./palette.js";
 import { init as initPreview, canvasControl as previewCanvas, redraw as redrawPreview, reset as resetPreview } from "./preview.js";
+import { init as initUnicode, refresh as refreshUnicode } from "./unicode.js";
 import * as selection from './selection.js';
 import * as state from "./state.js";
 import * as localstorage from "./localstorage.js";
@@ -32,6 +33,7 @@ initSettings();
 initKeyboard();
 initPalette();
 initPreview();
+initUnicode();
 selection.init();
 state.init();
 initZoom();
@@ -163,6 +165,9 @@ export function triggerRefresh(type = 'full', saveState = false) {
             case 'paletteSelection':
                 refreshPaletteSelection(); // less intensive that refreshing whole palette
                 break;
+            case 'unicode':
+                refreshUnicode();
+                break;
             case 'full':
                 selection.clearCaches();
                 redrawCharCanvas();
@@ -174,6 +179,7 @@ export function triggerRefresh(type = 'full', saveState = false) {
                 timeline.rebuildFrames();
                 timeline.refresh();
                 refreshPalette();
+                refreshUnicode();
                 break;
             default:
                 console.warn(`triggerRefresh("${type}") is not a valid type`);

@@ -432,7 +432,7 @@ function setupDrawLineSubMenu() {
     drawLineSubMenu = new ToolSubMenu({
         $menu: $('#draw-line-types'),
         configKey: 'drawLine',
-        visible: () => state.config('tool') === 'draw-line',
+        visible: () => false, // We currently only have one sub-menu option so no need to show this
         tooltipContent: $tool => {
             const type = $tool.data('type');
             const name = strings[`editor.draw-line-types.${type}.name`];

@@ -12,6 +12,8 @@ export function init() {
     setupKeydownListener();
 }
 
+// When standard keyboard is enabled, the keyboard works as normal (e.g. cmd-v will paste according to browser
+// clipboard). When disabled, the keyboard uses this app's shortcuts (e.g. cmd-v will paste into selection).
 export function toggleStandard(enable) {
     standardKeyboard = enable;
 }
@@ -112,8 +114,8 @@ function setupKeydownListener() {
             default:
                 if (producesText(code) && char.length === 1) {
                     if (e.metaKey || e.ctrlKey) {
-                        // Ignore browser commands (e.g. cmd-N) that we don't override with anything.
-                        // Currently allowing altKey, because sometimes the option key is used to write special characters.
+                        // Returning here allows browser commands that we haven't overridden (e.g. cmd-N).
+                        // We do not return early for altKey, because sometimes the option key is used to write special characters.
                         return;
                     }
 
@@ -121,23 +123,8 @@ function setupKeydownListener() {
                         editor.setFreeformChar(char);
                         return;
                     }
-
-                    if (selection.movableContent) {
-                        selection.updateMovableContent(char, editor.currentColorIndex());
-                    }
-                    else if (selection.cursorCell) {
-                        // update cursor cell and then move to next cell
-                        state.setCurrentCelGlyph(selection.cursorCell.row, selection.cursorCell.col, char, editor.currentColorIndex());
-                        selection.moveCursorInDirection('right', false);
-                    }
-                    else {
-                        // update entire selection
-                        selection.getSelectedCells().forEach(cell => {
-                            state.setCurrentCelGlyph(cell.row, cell.col, char, editor.currentColorIndex());
-                        });
-                    }
-
-                    triggerRefresh('chars', 'producesText');
+                    
+                    selection.setSelectionToSingleChar(char, editor.currentColorIndex());
                 }
                 else {
                     // Unrecognized input; let browser handle as normal

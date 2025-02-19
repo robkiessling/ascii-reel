@@ -38,7 +38,7 @@ const CONFIG_DEFAULTS = {
         type: 'printable-ascii-1'
     },
     drawLine: {
-        type: 'dotted'
+        type: 'basic'
     },
 }
 const LAYER_DEFAULTS = {

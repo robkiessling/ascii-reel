@@ -23,7 +23,7 @@ let $container, $colorList, $actions, tooltips;
 
 export function init() {
     $container = $('#palette-controller');
-    $colorList = $container.find('.color-list');
+    $colorList = $container.find('.list');
     $actions = $container.find('[data-action]');
 
     const colorListSimpleBar = new SimpleBar($colorList.get(0), {
