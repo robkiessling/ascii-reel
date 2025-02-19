@@ -59,7 +59,7 @@ const MAX_HISTORY = 50; // Max number of states to remember in the history. Incr
 // By default, config keys are not saved to the history. That way when the user presses 'undo' their tool doesn't
 // revert (for example). However, some config settings need to be able to be undone; those are listed here:
 const CONFIG_KEYS_FOR_HISTORY = new Set([
-    'dimensions', 'background', 'frameIndex', 'layerIndex', 'frameRangeSelection'
+    'font', 'dimensions', 'background', 'frameIndex', 'layerIndex', 'frameRangeSelection'
 ])
 
 
@@ -439,6 +439,10 @@ export function layeredGlyphs(frame, options = {}) {
     };
 }
 
+// Returns the stored font as a string that can be entered as a CSS font-family attribute (including fallbacks)
+export function fontFamily() {
+    return `"${config('font')}", monospace`
+}
 
 
 // -------------------------------------------------------------------------------- Colors / Palettes
@@ -612,6 +616,8 @@ export function pushFrameToHistory() {
  *                           history slice will not be updated anymore; a new slice will be made on the next push.
  * @param options.requiresResize (optional Boolean) If true, undoing/redoing to this state will force the canvas to be
  *                               resized.
+ * @param options.requiresCalculateFontRatio (optional Boolean) If true, undoing/redoing to this state will force the
+ *                               canvas fontRatio to be recalculated (only needed if font is changed)
  */
 export function pushStateToHistory(options = {}) {
     // Remove anything in the future (all "redo" states are removed)
@@ -670,6 +676,10 @@ function loadStateFromHistory(newIndex, oldIndex) {
 
     // Note: I am commenting this out for now because having 'undo' move the selection around can be jarring
     // selection.deserialize(newState.selection);
+
+    if (newState.options.requiresCalculateFontRatio || oldState.options.requiresCalculateFontRatio) {
+        calculateFontRatio();
+    }
 
     if (newState.options.requiresResize || oldState.options.requiresResize) {
         triggerResize(true);

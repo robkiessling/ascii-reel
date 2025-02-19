@@ -55,11 +55,6 @@ setupZoomMouse(selectionCanvas, previewCanvas,
 );
 
 // TODO These will be moved to other files, such as a settings.js file, once they've been made
-registerAction('font-settings', {
-    name: 'Font Settings',
-    callback: () => {},
-    enabled: () => false
-});
 registerAction('preferences', {
     name: 'Preferences',
     callback: () => {},
@@ -105,7 +100,7 @@ window.setTimeout(() => {
 /**
  * Resizes the components that depend on window size. Then triggers a full refresh.
  */
-export function triggerResize(clearSelection) {
+export function triggerResize(clearSelection = false) {
     if (clearSelection) {
         selection.clear();
     }

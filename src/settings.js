@@ -3,15 +3,68 @@ import * as state from "./state.js";
 import * as actions from "./actions.js";
 import Picker from 'vanilla-picker/csp';
 
-import {confirmDialog, createDialog} from "./utilities.js";
+import {createDialog} from "./utilities.js";
 import {resetExportDimensions} from "./file.js";
-import {triggerRefresh} from "./index.js";
+import {triggerRefresh, triggerResize} from "./index.js";
+import {AVAILABLE_FONTS, calculateFontRatio} from "./fonts.js";
+import {pushStateToHistory} from "./state.js";
 
 export function init() {
+    setupFontDialog();
     setupResizeDialog();
     setupBackgroundDialog();
-
 }
+
+
+// --------------------------------------------------------------- Font
+let $fontDialog, $fontSelect;
+
+function setupFontDialog() {
+    $fontDialog = $('#font-dialog');
+    $fontSelect = $fontDialog.find('#font-select');
+    const $examples = $fontDialog.find('#font-examples');
+
+    AVAILABLE_FONTS.forEach(font => {
+        const fontName = font === 'monospace' ? 'System Default' : font;
+        const style = `font-family: \"${font}\", monospace;`
+
+        $('<option></option>', {
+            value: font,
+            html: fontName,
+            style: style
+        }).appendTo($fontSelect);
+
+        $('<div/>', {
+            html: `${fontName}<br> abcdefghijklmnopqrstuvwxyz<br/>ABCDEFGHIJKLMNOPQRSTUVWXYZ<br/>1234567890!@#$%^&*()[]{}/\\|-_+=<>,.\`~`,
+            style: style,
+            class: 'font-example'
+        }).appendTo($examples);
+    })
+
+    createDialog($fontDialog, () => {
+        state.config('font', $fontSelect.val());
+
+        calculateFontRatio();
+        triggerResize(true);
+        pushStateToHistory({ requiresResize: true, requiresCalculateFontRatio: true });
+
+        $fontDialog.dialog('close');
+    }, 'Save', {
+        minWidth: 640,
+        maxWidth: 640,
+        // minHeight: 640,
+        maxHeight: 640
+    });
+
+    actions.registerAction('settings.open-font-dialog', () => openFontDialog());
+}
+
+function openFontDialog() {
+    $fontSelect.val(state.config('font'));
+    $fontDialog.dialog('open');
+}
+
+
 
 
 // --------------------------------------------------------------- Resize
@@ -62,7 +115,7 @@ function setupResizeDialog() {
     $resizeDialog.find('.anchor-option').removeClass('selected');
     $resizeDialog.find('.anchor-option[data-row-anchor="middle"][data-col-anchor="middle"]').addClass('selected');
 
-    actions.registerAction('file.resize-canvas', () => openResizeDialog());
+    actions.registerAction('settings.open-resize-dialog', () => openResizeDialog());
 }
 
 function openResizeDialog() {
@@ -132,7 +185,7 @@ function setupBackgroundDialog() {
         $colorPickerContainer.toggle(!!getBackgroundValue());
     });
 
-    actions.registerAction('file.background-settings', () => openBackgroundDialog());
+    actions.registerAction('settings.open-background-dialog', () => openBackgroundDialog());
 }
 
 function openBackgroundDialog() {

@@ -4,8 +4,6 @@ export const strings = {
     'file.open-file.name': 'Open File',
     'file.save-file.name': 'Save File',
     'file.export-file.name': 'Export To...',
-    'file.resize-canvas.name': 'Resize Canvas',
-    'file.background-settings.name': 'Background Settings',
 
     'clipboard.cut.name': 'Cut',
     'clipboard.copy.name': 'Copy',
@@ -16,6 +14,10 @@ export const strings = {
 
     'state.undo.name': 'Undo',
     'state.redo.name': 'Redo',
+
+    'settings.open-font-dialog.name': 'Font Settings',
+    'settings.open-resize-dialog.name': 'Resize Canvas',
+    'settings.open-background-dialog.name': 'Background Settings',
 
     'editor.tools.text-editor.name': 'Text Editor Tool',
     'editor.tools.text-editor.description': 'Click to place your cursor, then type to enter text characters. Click and drag to highlight text.',

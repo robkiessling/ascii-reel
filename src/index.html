@@ -49,9 +49,9 @@
             <li>
                 <span>Tools</span>
                 <ul>
-                    <li class="action-item" data-action="font-settings"></li>
-                    <li class="action-item" data-action="file.background-settings"></li>
-                    <li class="action-item" data-action="file.resize-canvas"></li>
+                    <li class="action-item" data-action="settings.open-font-dialog"></li>
+                    <li class="action-item" data-action="settings.open-background-dialog"></li>
+                    <li class="action-item" data-action="settings.open-resize-dialog"></li>
                     <li class="break"></li>
                     <li class="action-item" data-action="preferences"></li>
                     <li class="action-item" data-action="keyboard-shortcuts"></li>
@@ -344,6 +344,24 @@
         <canvas id="export-canvas"></canvas>
     </div>
 
+
+    <div id="font-dialog" title="Font Settings" class="dialog-form">
+        <label>
+            Canvas Font: <select id="font-select"></select>
+        </label>
+        <div>
+            Examples:
+        </div>
+        <div>
+            <em>
+                <i class="ri-information-line"></i>
+                Only monospaced fonts are supported.
+                If a font appears identical to <b>System Default</b>, that means it is not available to your browser
+                (System Default will be used instead).
+            </em>
+        </div>
+        <div id="font-examples"></div>
+    </div>
 
     <div id="resize-dialog" title="Resize Canvas" class="dialog-form">
         <label>

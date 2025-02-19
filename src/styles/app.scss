@@ -12,7 +12,12 @@
 
 @import 'icon-fonts/style.css';
 
-$font: monospace;
+// Matching font to the user's OS using GitHub's approach: https://css-tricks.com/snippets/css/system-font-stack/#aa-method-1-system-fonts-at-the-element-level
+// Note: This is the font used in the general UI, not the canvas (canvas font is configurable by user)
+$font-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+$font-monospace: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Liberation Mono", Menlo, Monaco, Consolas, monospace;
+
+$font-size-base: 14px;
 
 //$highlight: #f48225;
 //$highlight-dark: #e67920;
@@ -52,7 +57,8 @@ html, body {
   width: 100%;
   margin: 0;
 
-  font-family: $font;
+  font-family: $font-sans-serif;
+  font-size: $font-size-base;
 }
 
 body {
@@ -625,6 +631,14 @@ $sub-tool-size: 2.5rem;
   }
 }
 
+#font-dialog {
+  .font-example {
+    margin-bottom: 0.75rem;
+    border-left: 1px solid white;
+    padding: 0.25rem;
+  }
+}
+
 .horizontal-menu {
   height: 100%;
   margin: 0;
@@ -756,7 +770,7 @@ $sub-tool-size: 2.5rem;
   flex-direction: row;
   margin-top: 1rem;
 
-  font-family: monospace;
+  font-family: $font-monospace; // Using monospace so coords don't shift around as they are rapidly updated
   color: white;
 
   .canvas-dimensions, .mouse-coordinates, .selection-dimensions {
@@ -896,10 +910,10 @@ button {
 }
 
 .ui-widget {
-  font-family: $font;
+  font-family: $font-sans-serif;
 
   button {
-    font-family: $font;
+    font-family: $font-sans-serif;
   }
 }
 

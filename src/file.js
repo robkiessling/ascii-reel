@@ -16,7 +16,7 @@ import GIF from './vendor/gif.cjs';
 import {confirmDialog, createDialog, createHTMLFile, createHorizontalMenu, isFunction} from "./utilities.js";
 import {CanvasControl} from "./canvas.js";
 import Color from "@sphinxxxx/color-conversion";
-import {fontRatio, rtfFont} from "./fonts.js";
+import {fontRatio} from "./fonts.js";
 
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
@@ -393,17 +393,30 @@ function exportRtf(options) {
     }
 
     function _buildRtfFile(content) {
+        // fmodern tells the OS to use a monospace font in case the given font is not found
+        const fontTable = `{\\fonttbl {\\f0\\fmodern ${state.config('font')};}}`;
+
         const colorTable = `{\\colortbl ${rtfColors.join(';')};}`;
 
         // rtf font size is in half pt, so multiply desired font size by 2
         const fontSize = options.fontSize * 2;
 
-        return `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 ${rtfFont()};}}${colorTable}\\f0\\fs${fontSize} ${content}}`;
+        return `{\\rtf1\\ansi\\deff0 ${fontTable}${colorTable}\\f0\\fs${fontSize} ${content}}`;
     }
 
     function _frameToRtf(frame) {
-        // For foreground color, add 2 to colorIndex since we prepended 2 colors to the color table
-        return exportableFrameString(frame, '\\line ', line => `{\\cf${line.colorIndex + 2}${cb} ${line.text}}`)
+        return exportableFrameString(frame, '\\line ', line => {
+            // First replace handles special RTF chars: { } \
+            // The other 3 replace calls handle escaping unicode chars (see oreilly doc above for more info)
+            const escapedText = line.text
+                .replace(/[{}\\]/g, match => "\\" + match) // Escape special RTF chars: { } \
+                .replace(/[\u0080-\u00FF]/g, match => `\\'${match.charCodeAt(0).toString(16)}`)
+                .replace(/[\u0100-\u7FFF]/g, match => `\\uc1\\u${match.charCodeAt(0)}*`)
+                .replace(/[\u8000-\uFFFF]/g, match => `\\uc1\\u${match.charCodeAt(0)-0xFFFF}*`)
+
+            // For foreground color, add 2 to colorIndex since we prepended 2 colors to the color table
+            return `{\\cf${line.colorIndex + 2}${cb} ${escapedText}}`;
+        })
     }
 
     switch(options.frames) {
@@ -474,7 +487,7 @@ function exportHtml(options) {
 
     const width = state.numCols() * options.fontSize * fontRatio;
     const background = options.background && state.config('background') ? `background: ${state.config('background')};` : '';
-    const fontStyles = `font-family: ${state.config('font')};font-size: ${options.fontSize}px;`;
+    const fontStyles = `font-family: ${state.fontFamily()};font-size: ${options.fontSize}px;`;
 
     const body = `<pre id="sprite" style="width:${width}px;${background};${fontStyles}"></pre>`;
     const html = createHTMLFile(state.config('name'), script, body);
