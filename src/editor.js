@@ -267,7 +267,7 @@ function paintSelection() {
 }
 
 function resizeToSelection() {
-    const area = selection.getSelectedCellArea();
+    const area = selection.getSelectedCellArea().bindToDrawableArea();
     state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
 }
 
@@ -477,7 +477,7 @@ function finishDrawing() {
 
 let cachedColorString = null;
 let cachedColorIndex = null;
-let $addToPalette, colorPicker, addToPaletteTooltip;
+let $addToPalette, colorPicker, colorPickerTooltip, addToPaletteTooltip;
 
 // Returns the currently selected colorIndex, or creates a new index if a new color is selected.
 // Also caching the result for faster performance since this gets called a lot in a loop
@@ -502,11 +502,20 @@ const SHOW_ADD_ICON = false; // todo decide how I want to do this. Note: there i
 function setupColorPicker() {
     const $colorPicker = $('#current-color');
 
+    colorPickerTooltip = tippy($colorPicker.get(0), {
+        content: `<span class="title">Primary Color</span><br>` +
+            `<span>Click to change.</span>`,
+        placement: 'right',
+        allowHTML: true,
+    })
+
     colorPicker = new Picker({
         parent: $colorPicker.get(0),
         popup: 'top',
         onOpen: () => {
             keyboard.toggleStandard(true);
+            colorPickerTooltip.disable();
+            $colorPicker.addClass('picker-open');
 
             if (SHOW_ADD_ICON) {
                 if (!$addToPalette) {
@@ -535,6 +544,8 @@ function setupColorPicker() {
         },
         onClose: () => {
             keyboard.toggleStandard(false);
+            colorPickerTooltip.enable();
+            $colorPicker.removeClass('picker-open');
         },
         onChange: (color) => {
             $colorPicker.get(0).style.background = color[state.COLOR_FORMAT];

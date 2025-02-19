@@ -66,35 +66,57 @@
         <div id="frames-and-canvas" class="frames-on-left">
             <div id="tools-and-canvas">
                 <div id="editing-tools">
-                    <div class="editing-tool" data-tool="text-editor"><span class="ri ri-fw ri-text"></span></div>
-                    <div class="editing-tool" data-tool="draw-freeform">
-                        <span class="ri ri-fw ri-quill-pen-line"></span>
-                        <span class="freeform-char"></span>
+                    <div class="editing-tool-row">
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="text-editor"><span class="ri ri-fw ri-text"></span></div>
+                        </div>
                     </div>
-                    <div class="editing-tool" data-tool="eraser"><span class="ri ri-fw ri-eraser-line"></span></div>
-
-                    <div class="spacer"></div>
-                    <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
-                    <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
-
-                    <div class="spacer"></div>
-
-                    <div class="editing-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
-                    <div class="editing-tool" data-tool="selection-line"><span class="icon-line-dashed"></span></div>
-                    <div class="editing-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
-                    <div class="editing-tool" data-tool="selection-wand"><span class="ri ri-fw ri-magic-line"></span></div>
-
-                    <div class="spacer"></div>
-
-                    <div class="editing-tool" data-tool="paint-brush"><span class="ri ri-fw ri-brush-line"></span></div>
-                    <div class="editing-tool" data-tool="paint-bucket"><span class="ri ri-fw ri-paint-fill"></span></div>
-                    <div class="editing-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
-<!--                    <div class="editing-tool" data-tool="move"><span class="ri ri-fw ri-hand"></span></div>-->
-                    <div class="editing-tool" data-tool="eyedropper"><span class="ri ri-fw ri-dropper-fill"></span></div>
-
+                    <div class="editing-tool-row">
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="draw-freeform">
+                                <span class="ri ri-fw ri-quill-pen-line"></span>
+                                <span class="freeform-char"></span>
+                            </div>
+                            <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
+                        </div>
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="eraser"><span class="ri ri-fw ri-eraser-line"></span></div>
+                            <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
+                        </div>
+                    </div>
                     <div class="spacer"></div>
 
-                    <div class="color-picker" id="current-color"></div>
+                    <div class="editing-tool-row">
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
+                            <div class="editing-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
+                        </div>
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="selection-line"><span class="icon-line-dashed"></span></div>
+                            <div class="editing-tool" data-tool="selection-wand"><span class="ri ri-fw ri-magic-line"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="spacer"></div>
+
+                    <div class="editing-tool-row">
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="paint-brush"><span class="ri ri-fw ri-brush-line"></span></div>
+                            <div class="editing-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
+                        </div>
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="paint-bucket"><span class="ri ri-fw ri-paint-fill"></span></div>
+                            <div class="editing-tool" data-tool="eyedropper"><span class="ri ri-fw ri-dropper-fill"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="spacer"></div>
+                    <div class="editing-tool-row">
+                        <div class="editing-tool-column">
+                            <div class="color-picker" id="current-color"></div>
+                        </div>
+                    </div>
+
                 </div>
                 <div id="selection-tools" class="sub-tool-menu" style="display: none;">
                     <div class="sub-tool" data-tool="move"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
