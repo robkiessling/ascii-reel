@@ -370,7 +370,7 @@ function colorSwap(cell, options) {
 
     if (options.allLayers && options.allFrames) { // Apply to all cels
         state.iterateAllCels(updateMatchingColorsInCel);
-        triggerRefresh('full', true); // need full refresh since multiple frames in timeline need updating
+        triggerRefresh('full', true); // need full refresh since multiple frames in sidebar need updating
     }
     else if (options.allLayers && !options.allFrames) { // Apply to all layers (of a single frame)
         state.iterateCelsForCurrentFrame(updateMatchingColorsInCel);
@@ -378,7 +378,7 @@ function colorSwap(cell, options) {
     }
     else if (!options.allLayers && options.allFrames) { // Apply to all frames (of a single layer)
         state.iterateCelsForCurrentLayer(updateMatchingColorsInCel);
-        triggerRefresh('full', true); // need full refresh since multiple frames in timeline need updating
+        triggerRefresh('full', true); // need full refresh since multiple frames in sidebar need updating
     }
     else { // Apply to current cel
         updateMatchingColorsInCel(state.currentCel());

@@ -117,13 +117,13 @@ export default class Frames {
     }
 
     _setupActionButtons() {
-        actions.registerAction('timeline.new-frame', () => {
+        actions.registerAction('frames.new-frame', () => {
             const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
             state.createFrame(frameIndex, {});
             this._selectFrame(frameIndex, true);
         });
 
-        actions.registerAction('timeline.duplicate-frame', () => {
+        actions.registerAction('frames.duplicate-frame', () => {
             const currentRange = state.frameRangeSelection();
             state.duplicateFrames(currentRange);
 
@@ -134,7 +134,7 @@ export default class Frames {
             )
         });
 
-        actions.registerAction('timeline.delete-frame', {
+        actions.registerAction('frames.delete-frame', {
             callback: () => {
                 state.deleteFrames(state.frameRangeSelection());
                 this._selectFrame(Math.min(state.frameIndex(), state.frames().length - 1), true);
@@ -142,29 +142,29 @@ export default class Frames {
             enabled: () => state.frames() && state.frames().length > 1
         });
 
-        actions.registerAction('timeline.toggle-onion', () => {
+        actions.registerAction('frames.toggle-onion', () => {
             state.config('onion', !state.config('onion'));
             this._refreshOnion(); // have to refresh this manually since just refreshing chars
             triggerRefresh('chars');
         });
 
-        actions.registerAction('timeline.align-frames-left', () => {
+        actions.registerAction('frames.align-left', () => {
             state.config('frameOrientation', 'left');
             triggerResize();
         });
 
-        actions.registerAction('timeline.align-frames-bottom', () => {
+        actions.registerAction('frames.align-bottom', () => {
             state.config('frameOrientation', 'bottom');
             triggerResize();
         });
 
-        actions.registerAction('timeline.previous-frame', () => {
+        actions.registerAction('frames.previous-frame', () => {
             let index = state.frameRangeSelection().startIndex;
             index -= 1;
             if (index < 0) index = 0;
             this._selectFrame(index, 'changeFrameSingle');
         })
-        actions.registerAction('timeline.next-frame', () => {
+        actions.registerAction('frames.next-frame', () => {
             let index = state.frameRangeSelection().endIndex;
             index += 1;
             if (index >= state.frames().length) index = state.frames().length - 1;

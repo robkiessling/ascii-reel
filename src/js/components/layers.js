@@ -71,7 +71,7 @@ export default class Layers {
         });
 
         this._$list.off('dblclick', '.layer').on('dblclick', '.layer', evt => {
-            actions.callAction('timeline.edit-layer');
+            actions.callAction('layers.edit-layer');
         });
     }
 
@@ -92,7 +92,7 @@ export default class Layers {
     }
 
     _setupActionButtons() {
-        actions.registerAction('timeline.add-layer', () => {
+        actions.registerAction('layers.add-layer', () => {
             const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
             state.createLayer(layerIndex, {
                 name: `Layer ${state.layers().length + 1}`
@@ -100,9 +100,9 @@ export default class Layers {
             this._selectLayer(layerIndex);
         });
 
-        actions.registerAction('timeline.edit-layer', () => this._editLayer());
+        actions.registerAction('layers.edit-layer', () => this._editLayer());
 
-        actions.registerAction('timeline.delete-layer', {
+        actions.registerAction('layers.delete-layer', {
             callback: () => {
                 state.deleteLayer(state.layerIndex());
                 this._selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
@@ -110,7 +110,7 @@ export default class Layers {
             enabled: () => state.layers() && state.layers().length > 1
         });
 
-        actions.registerAction('timeline.toggle-layer-visibility-lock', () => {
+        actions.registerAction('layers.toggle-visibility-lock', () => {
             state.config('lockLayerVisibility', !state.config('lockLayerVisibility'));
             triggerRefresh();
         });

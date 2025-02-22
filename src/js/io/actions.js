@@ -20,13 +20,13 @@ let actionIdToShortcut = {
     'state.undo': { char: 'z', modifiers: [cmdKey] },
     'state.redo': { char: 'z', modifiers: [cmdKey, 'shiftKey'] },
 
-    'timeline.new-frame': { char: 'f', modifiers: [cmdKey, 'shiftKey'] }, // Not using 'n' since that is reserved for new window
-    'timeline.duplicate-frame': { char: 'd', modifiers: [cmdKey, 'shiftKey'] },
-    'timeline.delete-frame': [
+    'frames.new-frame': { char: 'f', modifiers: [cmdKey, 'shiftKey'] }, // Not using 'n' since that is reserved for new window
+    'frames.duplicate-frame': { char: 'd', modifiers: [cmdKey, 'shiftKey'] },
+    'frames.delete-frame': [
         { char: 'Delete', modifiers: [cmdKey] },
         { char: 'Backspace', modifiers: [cmdKey] }
     ],
-    'timeline.toggle-onion': { char: 'o', modifiers: [cmdKey, 'shiftKey'] },
+    'frames.toggle-onion': { char: 'o', modifiers: [cmdKey, 'shiftKey'] },
 
     'view.toggle-grid': { char: 'g', modifiers: [cmdKey] },
     'view.grid-settings': { char: 'g', modifiers: [cmdKey, 'shiftKey'] },

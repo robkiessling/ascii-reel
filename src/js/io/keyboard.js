@@ -155,13 +155,13 @@ function handleArrowKey(e, direction) {
     else {
         switch(direction) {
             case 'left':
-                return actions.callAction('timeline.previous-frame')
+                return actions.callAction('frames.previous-frame')
             case 'up':
-                return actions.callAction('timeline.previous-frame')
+                return actions.callAction('frames.previous-frame')
             case 'right':
-                return actions.callAction('timeline.next-frame')
+                return actions.callAction('frames.next-frame')
             case 'down':
-                return actions.callAction('timeline.next-frame')
+                return actions.callAction('frames.next-frame')
             default:
                 console.warn(`Invalid direction: ${direction}`);
         }
