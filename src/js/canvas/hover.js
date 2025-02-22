@@ -1,7 +1,7 @@
 import {triggerRefresh} from "../index.js";
 import * as state from '../state/state.js';
 import {BRUSH_TOOLS} from "../components/editor.js";
-import {Cell} from "./canvas.js";
+import Cell from "../geometry/cell.js";
 
 export let hoveredCell = null;
 

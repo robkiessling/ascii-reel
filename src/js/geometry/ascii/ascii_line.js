@@ -1,126 +1,5 @@
-/**
- * Handles drawing shapes out of ASCII characters. E.g. rectangles, lines.
- * Note: This is different than just making a line selection and pressing a character to fill the line. That just
- * creates a line of all the same character, whereas an AsciiLine will use many different characters.
- */
-
-import {Cell} from "./canvas.js";
-import {create2dArray} from "../utils/utilities.js";
-import * as state from "../state/state.js";
-import {currentColorIndex} from "../components/editor.js";
-
-class AsciiPolygon {
-    constructor(startCell) {
-        this.start = startCell;
-        this.end = startCell.clone();
-        this.refreshGlyphs();
-    }
-
-    get glyphs() {
-        return this._glyphs;
-    }
-    get topLeft() {
-        return new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
-    }
-    get bottomRight() {
-        return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
-    }
-    get numRows() {
-        return this.bottomRight.row - this.topLeft.row + 1;
-    }
-    get numCols() {
-        return this.bottomRight.col - this.topLeft.col + 1;
-    }
-
-    refreshGlyphs() {
-        this._glyphs = {
-            chars: create2dArray(this.numRows, this.numCols),
-            colors: create2dArray(this.numRows, this.numCols)
-        }
-    }
-}
-
-// Characters used to draw the different types of ascii rectangles. A rectangle is made up of 4 corners (TOP_LEFT,
-// TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT), 2 HORIZONTAL lines, and 2 VERTICAL lines.
-const DRAW_RECT_CHARS = {
-    'printable-ascii-1': {
-        TOP_LEFT: '/',
-        TOP_RIGHT: '\\',
-        BOTTOM_LEFT: '\\',
-        BOTTOM_RIGHT: '/',
-        HORIZONTAL: '-',
-        VERTICAL: '|'
-    },
-    'printable-ascii-2': {
-        TOP_LEFT: '+',
-        TOP_RIGHT: '+',
-        BOTTOM_LEFT: '+',
-        BOTTOM_RIGHT: '+',
-        HORIZONTAL: '-',
-        VERTICAL: '|'
-    },
-    'single-line': {
-        TOP_LEFT: '┌',
-        TOP_RIGHT: '┐',
-        BOTTOM_LEFT: '└',
-        BOTTOM_RIGHT: '┘',
-        HORIZONTAL: '─',
-        VERTICAL: '│'
-    },
-    'double-line': {
-        TOP_LEFT: '╔',
-        TOP_RIGHT: '╗',
-        BOTTOM_LEFT: '╚',
-        BOTTOM_RIGHT: '╝',
-        HORIZONTAL: '═',
-        VERTICAL: '║'
-    }
-}
-
-export class AsciiRect extends AsciiPolygon {
-    get origin() {
-        return this.topLeft;
-    }
-
-    refreshGlyphs() {
-        super.refreshGlyphs();
-
-        const charSheet = DRAW_RECT_CHARS[state.config('drawRect').type];
-        if (charSheet === undefined) {
-            console.error("Invalid char sheet for: ", state.config('drawRect'))
-            return;
-        }
-
-        const lastRow = this.numRows - 1;
-        const lastCol = this.numCols - 1;
-
-        // draw 4 lines and 4 corners
-        for (let row = 0; row <= lastRow; row++) {
-            for (let col = 0; col <= lastCol; col++) {
-                let char;
-                if (col === 0) {
-                    if (row === 0) { char = charSheet.TOP_LEFT; }
-                    else if (row === lastRow) { char = charSheet.BOTTOM_LEFT; }
-                    else { char = charSheet.VERTICAL; }
-                }
-                else if (col === lastCol) {
-                    if (row === 0) { char = charSheet.TOP_RIGHT; }
-                    else if (row === lastRow) { char = charSheet.BOTTOM_RIGHT; }
-                    else { char = charSheet.VERTICAL; }
-                }
-                else {
-                    if (row === 0) { char = charSheet.HORIZONTAL; }
-                    else if (row === lastRow) { char = charSheet.HORIZONTAL; }
-                }
-
-                if (char) {
-                    this._glyphs.chars[row][col] = char;
-                    this._glyphs.colors[row][col] = currentColorIndex();
-                }
-            }
-        }
-    }
-}
+import {currentColorIndex} from "../../components/editor.js";
+import AsciiPolygon from "./ascii_polygon.js";
 
 /**
  * A short segment of a line, used to draw a line of any length by repeating the template over and over.
@@ -220,9 +99,10 @@ class LineTemplate {
 }
 
 /**
- * Contains all the line templates used to draw ascii lines. All directions are represented here (think of it like hands
- * of a clock). We cannot just simply draw half the clock and then invert the lines for the other half; the lines are
- * not exact mirror images. For example, the LineTemplate for [2,8] cannot be inverted to generate the [-2,-8] line.
+ * Contains all the line templates used to draw ascii lines. All directions are represented here (think of it like the
+ * hand of a clock moving all the way around the clock face). Unfortunately we cannot just simply draw half the clock
+ * and invert the lines for the other half; the lines are not exact mirror images. For example, the LineTemplate
+ * for [2,8] cannot be inverted to generate the [-2,-8] line.
  */
 const LINE_TEMPLATES = [
     new LineTemplate([0, 8], [
@@ -416,8 +296,12 @@ function isHorizontalSlope(slope) {
     return slope === 0;
 }
 
-
-export class AsciiLine extends AsciiPolygon {
+/**
+ * Handles drawing a line out of ASCII characters. This is different than just making a line selection and pressing
+ * a keyboard character to fill the line; that would create a line of all the same character whereas this tries
+ * to approximate an actual straight line out of many characters
+ */
+export default class AsciiLine extends AsciiPolygon {
     get origin() {
         return this._origin;
     }
@@ -491,7 +375,5 @@ export class AsciiLine extends AsciiPolygon {
             this._origin.translate(0, -1 * colOffset);
         }
     }
-
-
 }
 

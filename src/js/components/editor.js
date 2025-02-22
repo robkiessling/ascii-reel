@@ -12,7 +12,8 @@ import tippy from 'tippy.js';
 import {capitalizeFirstLetter, translateGlyphs} from "../utils/utilities.js";
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {strings} from "../config/strings.js";
-import {AsciiLine, AsciiRect} from "../canvas/ascii_polygons.js";
+import AsciiRect from "../geometry/ascii/ascii_rect.js";
+import AsciiLine from "../geometry/ascii/ascii_line.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
