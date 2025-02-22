@@ -11,7 +11,7 @@ import {
     confirmDialog,
     createDialog,
     createHTMLFile,
-    createHorizontalMenu,
+    createHorizontalMenu, setIntervalUsingRAF,
 } from "./utilities.js";
 import {CanvasControl} from "./canvas.js";
 import Color from "@sphinxxxx/color-conversion";
@@ -265,6 +265,9 @@ function exportFile(onSuccess) {
         case 'gif':
             exportGif(options);
             break;
+        case 'webm':
+            exportWebm(options);
+            break;
         default:
             console.warn(`Invalid export format: ${options.format}`);
     }
@@ -505,16 +508,7 @@ function exportHtml(options) {
  *  - background: (boolean) whether to include background or not
  */
 function exportGif(options) {
-    const width = options.width;
-    const height = options.height;
-    const fps = options.fps;
-
-    $exportCanvasContainer.toggleClass('is-exporting', true)
-        .width(width / window.devicePixelRatio)
-        .height(height / window.devicePixelRatio);
-
-    exportCanvas.resize();
-    exportCanvas.zoomToFit();
+    setupExportCanvas(options);
 
     const gif = new Animated_GIF.default({
         // disposal value of 2 => Restore to background color after each frame
@@ -526,8 +520,8 @@ function exportGif(options) {
         // Setting the cutoff very low so nothing really gets turned transparent; everything is made fully opaque.
         transparencyCutOff: 0.01,
     })
-    gif.setSize(width, height);
-    gif.setDelay(1000 / fps);
+    gif.setSize(options.width, options.height);
+    gif.setDelay(1000 / options.fps);
     gif.setRepeat(0); // loop forever
 
     state.frames().forEach((frame, i) => {
@@ -537,13 +531,15 @@ function exportGif(options) {
         }
         exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
 
-        gif.addFrameImageData(exportCanvas.context.getImageData(0, 0, width, height));
+        gif.addFrameImageData(exportCanvas.context.getImageData(0, 0, options.width, options.height));
     });
 
     gif.getBlobGIF(function (blob) {
         // $('#export-debug').show().attr('src', URL.createObjectURL(blob)) // For testing
         // window.open(URL.createObjectURL(blob)); // New window
         saveAs(blob, `${state.config('name')}.gif`); // Save to downloads
+
+        gif.destroy();
     })
 }
 
@@ -556,15 +552,7 @@ function exportGif(options) {
  *  - spritesheetRows: # of rows in the spritesheet todo
  */
 function exportPng(options) {
-    const width = options.width;
-    const height = options.height;
-
-    $exportCanvasContainer.toggleClass('is-exporting', true)
-        .width(width / window.devicePixelRatio)
-        .height(height / window.devicePixelRatio);
-
-    exportCanvas.resize();
-    exportCanvas.zoomToFit();
+    setupExportCanvas(options);
 
     function _frameToPng(frame, callback) {
         exportCanvas.clear();
@@ -618,6 +606,71 @@ function exportPng(options) {
     }
 }
 
+
+// Adapted from: https://stackoverflow.com/a/50683349
+// TODO Make numLoops or videoLength options... how long should video go for?
+// TODO Display some kind of status as video is recorded (however long your total video is is how long it takes to record)
+function exportWebm(options) {
+    const numLoops = 1
+    const videoLength = options.fps === 0 ? 1000 : state.frames().length / options.fps * 1000 * numLoops;
+
+    setupExportCanvas(options);
+
+    startAnimation();
+    startRecording();
+
+    function startAnimation(){
+        let frameIndex = 0;
+        setIntervalUsingRAF(() => {
+            exportCanvas.clear();
+            const frame = state.frames()[frameIndex];
+            exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
+            frameIndex = (frameIndex + 1) % state.frames().length;
+        }, 1000 / options.fps, true);
+    }
+    function startRecording() {
+        const chunks = []; // here we will store our recorded media chunks (Blobs)
+        const stream = exportCanvas.canvas.captureStream(); // grab our canvas MediaStream
+        const rec = new MediaRecorder(stream); // init the recorder
+
+        // every time the recorder has new data, we will store it in our array
+        rec.ondataavailable = e => chunks.push(e.data);
+
+        // only when the recorder stops, we construct a complete Blob from all the chunks
+        rec.onstop = e => exportVid(new Blob(chunks, {type: 'video/webm'}));
+
+        rec.start();
+        setTimeout(()=>rec.stop(), videoLength);
+    }
+    function exportVid(blob) {
+        const $body = $('body');
+
+        const $video = $('<video/>', {
+            width: options.width / window.devicePixelRatio,
+            height: options.height / window.devicePixelRatio,
+            src: URL.createObjectURL(blob),
+            controls: true
+        }).appendTo($body);
+
+        const $a = $('<a/>', {
+            download: `${state.config('name')}.webm`,
+            href: $video.attr('src')
+        }).appendTo($body);
+
+        $a.get(0).click(); // trigger download
+
+        $a.remove();
+        $video.remove();
+    }
+}
+
+
+
+
+
+
+
+
 // Converts a frame to a string using the given newLineChar and (optional) lineFormatter
 function exportableFrameString(frame, newLineChar, lineFormatter = function(line) { return line.text; }) {
     let image = '';
@@ -654,7 +707,6 @@ function exportableFrameString(frame, newLineChar, lineFormatter = function(line
     return image;
 }
 
-
 function buildFrameSeparator(options, index, newLineChar) {
     let char;
     let numbered = false;
@@ -690,4 +742,13 @@ function buildFrameSeparator(options, index, newLineChar) {
 
     return numbered ? index.toString() + char.repeat(state.numCols() - index.toString().length) + newLineChar :
         char.repeat(state.numCols()) + newLineChar;
+}
+
+function setupExportCanvas(options) {
+    $exportCanvasContainer.toggleClass('is-exporting', true)
+        .width(options.width / window.devicePixelRatio)
+        .height(options.height / window.devicePixelRatio);
+
+    exportCanvas.resize();
+    exportCanvas.zoomToFit();
 }
