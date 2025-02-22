@@ -1,13 +1,13 @@
 import $ from "jquery";
 import 'jquery-ui/ui/widgets/sortable.js';
 import SimpleBar from 'simplebar';
-import {CanvasControl} from "./canvas.js";
-import {triggerRefresh, triggerResize} from "./index.js";
-import * as actions from "./actions.js";
-import * as state from "./state.js";
-import {createDialog} from "./utilities.js";
+import {CanvasControl} from "../canvas/canvas.js";
+import {triggerRefresh, triggerResize} from "../index.js";
+import * as actions from "../io/actions.js";
+import * as state from "../state/state.js";
+import {createDialog} from "../utils/utilities.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
-import {Range} from "./utilities.js"
+import {Range} from "../utils/utilities.js"
 
 export class Timeline {
     constructor($frameContainer, $layerContainer) {

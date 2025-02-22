@@ -1,11 +1,10 @@
-import $ from "jquery";
-import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translateGlyphs} from "./utilities.js";
+import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translateGlyphs} from "../utils/utilities.js";
 import {Cell, CellArea} from "./canvas.js";
-import {triggerRefresh} from "./index.js";
-import * as state from "./state.js";
-import * as editor from "./editor.js";
-import * as actions from "./actions.js";
-import {shouldModifyAction} from "./actions.js";
+import {triggerRefresh} from "../index.js";
+import * as state from "../state/state.js";
+import * as editor from "../components/editor.js";
+import * as actions from "../io/actions.js";
+import {shouldModifyAction} from "../io/actions.js";
 
 
 // -------------------------------------------------------------------------------- Main API

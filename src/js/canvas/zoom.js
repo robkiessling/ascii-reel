@@ -1,11 +1,11 @@
 import $ from "jquery";
 import Picker from 'vanilla-picker/csp';
 
-import {triggerRefresh} from "./index.js";
-import * as actions from "./actions.js";
-import * as state from './state.js';
-import {createDialog} from "./utilities.js";
-import {strings} from "./strings.js";
+import {triggerRefresh} from "../index.js";
+import * as actions from "../io/actions.js";
+import * as state from '../state/state.js';
+import {createDialog} from "../utils/utilities.js";
+import {strings} from "../config/strings.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 

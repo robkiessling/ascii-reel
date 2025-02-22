@@ -1,6 +1,6 @@
-import {roundForComparison, setIntervalUsingRAF} from "./utilities.js";
+import {roundForComparison, setIntervalUsingRAF} from "../utils/utilities.js";
 import bresenham from "bresenham";
-import {charInBounds, colorStr, numCols, numRows, config} from "./state.js";
+import {charInBounds, colorStr, numCols, numRows, config} from "../state/state.js";
 import {cellHeight, cellWidth} from "./fonts.js";
 
 const WINDOW_BORDER_COLOR = '#31e39d';

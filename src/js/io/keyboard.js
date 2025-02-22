@@ -1,9 +1,9 @@
 import $ from "jquery";
-import * as selection from "./selection.js";
-import * as state from "./state.js";
-import * as editor from "./editor.js";
+import * as selection from "../canvas/selection.js";
+import * as state from "../state/state.js";
+import * as editor from "../components/editor.js";
 import * as actions from "./actions.js";
-import {triggerRefresh} from "./index.js";
+import {triggerRefresh} from "../index.js";
 
 let standardKeyboard = false;
 const $document = $(document);

@@ -1,11 +1,11 @@
 import $ from "jquery";
 import 'jquery-ui/ui/widgets/slider.js';
 
-import * as state from "./state.js";
-import {CanvasControl} from "./canvas.js";
-import {selectionCanvas} from "./index.js";
-import * as actions from "./actions.js";
-import {setIntervalUsingRAF} from "./utilities.js";
+import * as state from "../state/state.js";
+import {CanvasControl} from "../canvas/canvas.js";
+import {selectionCanvas} from "../index.js";
+import * as actions from "../io/actions.js";
+import {setIntervalUsingRAF} from "../utils/utilities.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height

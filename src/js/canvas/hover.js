@@ -1,6 +1,6 @@
-import {triggerRefresh} from "./index.js";
-import * as state from './state.js';
-import {BRUSH_TOOLS} from "./editor.js";
+import {triggerRefresh} from "../index.js";
+import * as state from '../state/state.js';
+import {BRUSH_TOOLS} from "../components/editor.js";
 import {Cell} from "./canvas.js";
 
 export let hoveredCell = null;

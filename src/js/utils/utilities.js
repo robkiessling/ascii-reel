@@ -1,6 +1,6 @@
 import $ from "jquery";
 import 'jquery-ui/ui/widgets/dialog.js';
-import * as keyboard from "./keyboard.js";
+import * as keyboard from "../io/keyboard.js";
 import {hideAll} from "tippy.js";
 
 export function isFunction(value) {

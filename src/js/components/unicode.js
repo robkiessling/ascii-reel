@@ -1,10 +1,10 @@
 import $ from "jquery";
 import SimpleBar from "simplebar";
-import * as actions from "./actions.js";
-import * as state from "./state.js";
+import * as actions from "../io/actions.js";
+import * as state from "../state/state.js";
 import * as editor from "./editor.js";
-import {copyChar} from "./clipboard.js";
-import * as selection from "./selection.js";
+import {copyChar} from "../io/clipboard.js";
+import * as selection from "../canvas/selection.js";
 
 let $container, $charList, $actions, tooltips;
 

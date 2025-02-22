@@ -5,9 +5,9 @@
  */
 
 import {Cell} from "./canvas.js";
-import {create2dArray} from "./utilities.js";
-import * as state from "./state.js";
-import {currentColorIndex} from "./editor.js";
+import {create2dArray} from "../utils/utilities.js";
+import * as state from "../state/state.js";
+import {currentColorIndex} from "../components/editor.js";
 
 class AsciiPolygon {
     constructor(startCell) {

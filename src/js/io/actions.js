@@ -1,8 +1,8 @@
 import $ from "jquery";
-import * as file from "./file.js";
+import * as file from "../menu/file.js";
 import tippy from "tippy.js";
-import {strings} from "./strings.js";
-import {modifierWord, isFunction, isMacOS, modifierAbbr} from "./utilities.js";
+import {strings} from "../config/strings.js";
+import {modifierWord, isFunction, isMacOS, modifierAbbr} from "../utils/utilities.js";
 
 let actions;
 

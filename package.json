@@ -2,7 +2,7 @@
   "name": "ascii-art-maker",
   "version": "1.0.0",
   "description": "Tool for creating ascii images and animations",
-  "main": "index.js",
+  "main": "js/index.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

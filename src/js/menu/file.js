@@ -2,8 +2,8 @@ import $ from "jquery";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
-import * as state from "./state.js";
-import * as actions from "./actions.js";
+import * as state from "../state/state.js";
+import * as actions from "../io/actions.js";
 
 import Animated_GIF from "gif-transparency";
 
@@ -12,10 +12,10 @@ import {
     createDialog,
     createHTMLFile,
     createHorizontalMenu, setIntervalUsingRAF,
-} from "./utilities.js";
-import {CanvasControl} from "./canvas.js";
+} from "../utils/utilities.js";
+import {CanvasControl} from "../canvas/canvas.js";
 import Color from "@sphinxxxx/color-conversion";
-import {fontRatio} from "./fonts.js";
+import {fontRatio} from "../canvas/fonts.js";
 
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 

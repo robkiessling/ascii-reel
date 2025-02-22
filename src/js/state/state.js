@@ -1,12 +1,12 @@
 import $ from "jquery";
-import {create2dArray, eachWithObject, transformValues, translateGlyphs, Range} from "./utilities.js";
-import * as selection from "./selection.js";
-import {triggerRefresh, triggerResize} from "./index.js";
-import * as actions from "./actions.js";
-import * as palette from "./palette.js";
-import * as editor from "./editor.js";
+import {create2dArray, eachWithObject, transformValues, translateGlyphs, Range} from "../utils/utilities.js";
+import * as selection from "../canvas/selection.js";
+import {triggerRefresh, triggerResize} from "../index.js";
+import * as actions from "../io/actions.js";
+import * as palette from "../components/palette.js";
+import * as editor from "../components/editor.js";
 import Color from "@sphinxxxx/color-conversion";
-import {calculateFontRatio} from "./fonts.js";
+import {calculateFontRatio} from "../canvas/fonts.js";
 import {saveState} from "./localstorage.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it in the

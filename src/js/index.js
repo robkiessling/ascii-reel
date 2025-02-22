@@ -1,29 +1,29 @@
 import $ from "jquery";
-import './styles/app.scss'
+import '../styles/app.scss'
 import 'remixicon/fonts/remixicon.css';
 
-import {refreshShortcuts, registerAction} from "./actions.js";
-import { CanvasControl } from "./canvas.js";
-import { init as initClipboard } from "./clipboard.js"
+import {refreshShortcuts, registerAction} from "./io/actions.js";
+import { CanvasControl } from "./canvas/canvas.js";
+import { init as initClipboard } from "./io/clipboard.js"
 import {
     init as initEditor,
     setupMouseEvents as setupEditorMouse,
     refresh as refreshEditor,
     refreshMouseCoords,
     refreshSelectionDimensions
-} from "./editor.js"
-import { init as initFile } from "./file.js";
-import { init as initSettings } from "./settings.js";
-import { setupMouseEvents as setupHoverMouse, hoveredCell, iterateHoveredCells } from "./hover.js";
-import { init as initKeyboard } from "./keyboard.js";
-import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./palette.js";
-import { init as initPreview, canvasControl as previewCanvas, redraw as redrawPreview, reset as resetPreview } from "./preview.js";
-import { init as initUnicode, refresh as refreshUnicode } from "./unicode.js";
-import * as selection from './selection.js';
-import * as state from "./state.js";
-import * as localstorage from "./localstorage.js";
-import { Timeline } from "./timeline.js";
-import { init as initZoom, setupMouseEvents as setupZoomMouse } from './zoom.js';
+} from "./components/editor.js"
+import { init as initFile } from "./menu/file.js";
+import { init as initSettings } from "./menu/settings.js";
+import { setupMouseEvents as setupHoverMouse, hoveredCell, iterateHoveredCells } from "./canvas/hover.js";
+import { init as initKeyboard } from "./io/keyboard.js";
+import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./components/palette.js";
+import { init as initPreview, canvasControl as previewCanvas, redraw as redrawPreview, reset as resetPreview } from "./components/preview.js";
+import { init as initUnicode, refresh as refreshUnicode } from "./components/unicode.js";
+import * as selection from './canvas/selection.js';
+import * as state from "./state/state.js";
+import * as localstorage from "./state/localstorage.js";
+import { Timeline } from "./components/timeline.js";
+import { init as initZoom, setupMouseEvents as setupZoomMouse } from './canvas/zoom.js';
 
 // Note: The order of these initializers does not matter (they should not depend on other modules being initialized)
 initClipboard();

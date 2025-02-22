@@ -1,6 +1,6 @@
 import $ from "jquery";
-import * as state from "./state.js";
-import {roundToDecimal} from "./utilities.js";
+import * as state from "../state/state.js";
+import {roundToDecimal} from "../utils/utilities.js";
 
 const $fontTester = $('#font-ratio-tester');
 

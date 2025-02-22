@@ -1,11 +1,11 @@
 import $ from "jquery";
 import SimpleBar from "simplebar";
-import {triggerRefresh} from "./index.js";
-import * as state from './state.js';
+import {triggerRefresh} from "../index.js";
+import * as state from '../state/state.js';
 import * as editor from './editor.js';
-import * as actions from "./actions.js";
+import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
-import {strings} from "./strings.js";
+import {strings} from "../config/strings.js";
 
 export const DEFAULT_PALETTE = ['rgba(0,0,0,1)', 'rgba(255,255,255,1)'];
 export const DEFAULT_COLOR = 'rgba(0,0,0,1)';

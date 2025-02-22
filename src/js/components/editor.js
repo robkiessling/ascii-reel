@@ -1,18 +1,18 @@
 import $ from "jquery";
 import Picker from 'vanilla-picker/csp';
-import * as state from './state.js';
-import * as selection from './selection.js';
-import {triggerRefresh} from "./index.js";
-import * as keyboard from "./keyboard.js";
+import * as state from '../state/state.js';
+import * as selection from '../canvas/selection.js';
+import {triggerRefresh} from "../index.js";
+import * as keyboard from "../io/keyboard.js";
 import * as palette from "./palette.js";
-import * as actions from "./actions.js";
+import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
-import {hoveredCell, iterateHoveredCells} from "./hover.js";
+import {hoveredCell, iterateHoveredCells} from "../canvas/hover.js";
 import tippy from 'tippy.js';
-import {capitalizeFirstLetter, translateGlyphs} from "./utilities.js";
-import {setupTooltips, shouldModifyAction} from "./actions.js";
-import {strings} from "./strings.js";
-import {AsciiLine, AsciiRect} from "./ascii_polygons.js";
+import {capitalizeFirstLetter, translateGlyphs} from "../utils/utilities.js";
+import {setupTooltips, shouldModifyAction} from "../io/actions.js";
+import {strings} from "../config/strings.js";
+import {AsciiLine, AsciiRect} from "../canvas/ascii_polygons.js";
 
 // -------------------------------------------------------------------------------- Main External API
 

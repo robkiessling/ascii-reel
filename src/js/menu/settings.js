@@ -1,13 +1,13 @@
 import $ from "jquery";
-import * as state from "./state.js";
-import * as actions from "./actions.js";
+import * as state from "../state/state.js";
+import * as actions from "../io/actions.js";
 import Picker from 'vanilla-picker/csp';
 
-import {createDialog} from "./utilities.js";
+import {createDialog} from "../utils/utilities.js";
 import {resetExportDimensions} from "./file.js";
-import {triggerRefresh, triggerResize} from "./index.js";
-import {AVAILABLE_FONTS, calculateFontRatio} from "./fonts.js";
-import {pushStateToHistory} from "./state.js";
+import {triggerRefresh, triggerResize} from "../index.js";
+import {AVAILABLE_FONTS, calculateFontRatio} from "../canvas/fonts.js";
+import {pushStateToHistory} from "../state/state.js";
 
 export function init() {
     setupFontDialog();
