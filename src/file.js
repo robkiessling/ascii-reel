@@ -5,15 +5,14 @@ import { saveAs } from 'file-saver';
 import * as state from "./state.js";
 import * as actions from "./actions.js";
 
-// TODO HACK Had to override gif.js, background option wasn't working.
-//           Fix background: https://github.com/jnordberg/gif.js/pull/46
-//           Fix typo: https://github.com/jnordberg/gif.js/pull/74
-//           Fix transparency: https://github.com/jnordberg/gif.js/pull
-//              - This didn't seem to work no matter what I tried
-// import GIF from 'gif.js.optimized/dist/gif.js';
-import GIF from './vendor/gif.cjs';
+import Animated_GIF from "gif-transparency";
 
-import {confirmDialog, createDialog, createHTMLFile, createHorizontalMenu, isFunction} from "./utilities.js";
+import {
+    confirmDialog,
+    createDialog,
+    createHTMLFile,
+    createHorizontalMenu,
+} from "./utilities.js";
 import {CanvasControl} from "./canvas.js";
 import Color from "@sphinxxxx/color-conversion";
 import {fontRatio} from "./fonts.js";
@@ -141,7 +140,7 @@ const EXPORT_OPTIONS = {
     txt: ['frames', 'frameSeparator'],
     rtf: ['fontSize', 'background', 'frames', 'frameSeparator'],
     html: ['fontSize', 'fps', 'background', 'loop'],
-    gif: ['width', 'height', 'fps', 'background', 'loop'],
+    gif: ['width', 'height', 'fps', 'background'],
 }
 
 // The following options are visible only if 'frames' is set to the given value
@@ -223,7 +222,10 @@ function openExportDialog() {
 
     const $width = $exportOptions.find(`[name="width"]`);
     if (!$width.val()) {
-        $width.val(state.numCols() * DEFAULT_FONT_SIZE).trigger('input');
+        // Default dimensions should be multiplied by the devicePixelRatio so that they don't appear
+        // blurry when downloaded. Reducing the image size smaller can actually increase blurriness
+        // due to rastering. https://stackoverflow.com/questions/55237929/ has a similar problem I faced.
+        $width.val(state.numCols() * DEFAULT_FONT_SIZE * window.devicePixelRatio).trigger('input');
     }
 
     const $fontSize = $exportOptions.find(`[name="fontSize"]`);
@@ -500,10 +502,7 @@ function exportHtml(options) {
  *  - width: width of result
  *  - height: height of result
  *  - fps: frames per second
- *  - background: (boolean) whether to include background or not TODO
- *  - loop: (boolean) whether to loop the animation continuously
- *
- * TODO Limitations: Does not work with alpha. #000000 does not work, have to change to #010101
+ *  - background: (boolean) whether to include background or not
  */
 function exportGif(options) {
     const width = options.width;
@@ -517,35 +516,35 @@ function exportGif(options) {
     exportCanvas.resize();
     exportCanvas.zoomToFit();
 
-    const gif = new GIF({
-        // debug: true,
-        width: width,
-        height: height,
-        repeat: options.loop ? 0 : -1,
-        background: 'rgba(0,0,0,0)',
-        transparent: 'rgba(0,0,0,0)',
-        workers: 5,
-        quality: 5,
-        // workerScript: new URL('gif.js.optimized/dist/gif.worker.js', import.meta.url)
-        workerScript: new URL('./vendor/gif.worker.cjs', import.meta.url)
-    });
+    const gif = new Animated_GIF.default({
+        // disposal value of 2 => Restore to background color after each frame
+        // https://github.com/deanm/omggif/blob/master/omggif.js#L151
+        disposal: 2,
 
-    state.frames().forEach(frame => {
+        // All colors with alpha values less than this cutoff will be made completely transparent, all colors above the
+        // cutoff will be made fully opaque (this is a gif limitation: pixels are either fully transparent or fully opaque).
+        // Setting the cutoff very low so nothing really gets turned transparent; everything is made fully opaque.
+        transparencyCutOff: 0.01,
+    })
+    gif.setSize(width, height);
+    gif.setDelay(1000 / fps);
+    gif.setRepeat(0); // loop forever
+
+    state.frames().forEach((frame, i) => {
         exportCanvas.clear();
         if (options.background && state.config('background')) {
             exportCanvas.drawBackground(state.config('background'));
         }
         exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
-        // gif.addFrame(exportCanvas.canvas, { delay: 1000 / fps }); // doesn't work with multiple frames
-        gif.addFrame(exportCanvas.context, {copy: true, delay: 1000 / fps });
+
+        gif.addFrameImageData(exportCanvas.context.getImageData(0, 0, width, height));
     });
 
-    gif.on('finished', function(blob) {
-        // window.open(URL.createObjectURL(blob));
-        saveAs(blob, `${state.config('name')}.gif`);
-    });
-
-    gif.render();
+    gif.getBlobGIF(function (blob) {
+        // $('#export-debug').show().attr('src', URL.createObjectURL(blob)) // For testing
+        // window.open(URL.createObjectURL(blob)); // New window
+        saveAs(blob, `${state.config('name')}.gif`); // Save to downloads
+    })
 }
 
 /**

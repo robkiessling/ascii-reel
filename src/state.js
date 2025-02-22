@@ -450,7 +450,7 @@ export function fontFamily() {
 // - palette.colors includes only colors that have been saved to the palette
 
 export function colorTable() {
-    return state.colorTable;
+    return state.colorTable.slice(0); // Returning a dup; colorTable should only be modified by colorIndex/vacuum
 }
 export function colorStr(colorIndex) {
     return state.colorTable[colorIndex] === undefined ? palette.DEFAULT_COLOR : state.colorTable[colorIndex];

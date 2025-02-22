@@ -56,7 +56,12 @@ export const strings = {
     'editor.selection.move.name': 'Move Selected Content',
     'editor.selection.move.description': 'When activated, clicking and dragging on the selected area will move the content.',
     'editor.selection.typewriter.name': 'Type Within Selection',
-    'editor.selection.typewriter.description': 'When activated, content can be typed into the selection one character at a time. The cursor can be moved with the arrow keys, and will wrap when it reaches the end of the selection.',
+    'editor.selection.typewriter.description': 'When activated, content can be typed into the selection one character at a time. ' +
+        'The cursor can be moved with the arrow keys, and will wrap when it reaches the end of the selection.' +
+        '\n\nNote: When not activated (i.e. the default), typing a character will fill the entire selection with that character.',
+    // 'editor.selection.typewriter.description': 'Normally, typing any character will fill the entire selection with that character. ' +
+    //     '\n\nHowever, when Type Within Selection is activated, content can be typed into the selection one character at a time. ' +
+    //     'The cursor can be moved with the arrow keys, and will wrap when it reaches the end of the selection.',
     'editor.selection.flip-v.name': 'Flip Vertically',
     'editor.selection.flip-v.description': 'Mirrors the selected content vertically.',
     'editor.selection.flip-v.mirror': 'Mirrors characters when possible, e.g. b => p',

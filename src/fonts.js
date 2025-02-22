@@ -28,7 +28,7 @@ export const AVAILABLE_FONTS = [
 export function calculateFontRatio() {
     $fontTester.show();
     $fontTester.css('font-family', state.fontFamily()).css('font-size', `${cellHeight}px`);
-    cellWidth = roundToDecimal($fontTester.width(), 2);
+    cellWidth = roundToDecimal($fontTester.width(), 4);
     fontRatio = cellWidth / cellHeight;
     $fontTester.hide();
 }
