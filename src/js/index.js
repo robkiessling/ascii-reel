@@ -22,8 +22,9 @@ import { init as initUnicode, refresh as refreshUnicode } from "./components/uni
 import * as selection from './canvas/selection.js';
 import * as state from "./state/state.js";
 import * as localstorage from "./state/localstorage.js";
-import { Timeline } from "./components/timeline.js";
 import { init as initZoom, setupMouseEvents as setupZoomMouse } from './canvas/zoom.js';
+import Frames from "./components/frames.js";
+import Layers from "./components/layers.js";
 
 // Note: The order of these initializers does not matter (they should not depend on other modules being initialized)
 initClipboard();
@@ -41,7 +42,9 @@ localstorage.setupAutoSave();
 
 
 // Set up various controller instances
-export const timeline = new Timeline($('#frame-controller'), $('#layer-controller'));
+const frames = new Frames($('#frame-controller'));
+const layers = new Layers($('#layer-controller'));
+
 export const charCanvas = new CanvasControl($('#char-canvas'), {});
 export const selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
 export const hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
@@ -107,14 +110,15 @@ export function triggerResize(clearSelection = false) {
         selection.clear();
     }
 
-    timeline.refresh(); // This has to happen first, since its configuration can affect canvas boundaries
+    // Refresh frames controller first, since its configuration can affect canvas boundaries
+    frames.refresh();
 
     charCanvas.resize();
     selectionBorderCanvas.resize();
     hoveredCellCanvas.resize();
     selectionCanvas.resize();
     previewCanvas.resize();
-    // Note: timeline frames will be resized during triggerRefresh() since they all have to be rebuilt
+    // Note: frames canvases will be resized during triggerRefresh() since they all have to be rebuilt
 
     previewCanvas.zoomToFit(); // todo just do this once?
     triggerRefresh();
@@ -138,7 +142,7 @@ export function triggerRefresh(type = 'full', saveState = false) {
             case 'chars':
                 redrawCharCanvas();
                 redrawPreview();
-                timeline.currentFrameComponent.redrawGlyphs();
+                frames.currentFrameComponent.redrawGlyphs();
                 break;
             case 'selection':
                 selection.clearCaches();
@@ -175,9 +179,8 @@ export function triggerRefresh(type = 'full', saveState = false) {
                 drawSelection();
                 drawHoveredCell();
                 refreshEditor();
-                timeline.rebuildLayers();
-                timeline.rebuildFrames();
-                timeline.refresh();
+                frames.rebuild();
+                layers.rebuild();
                 refreshPalette();
                 refreshUnicode();
                 break;
