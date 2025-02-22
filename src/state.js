@@ -620,6 +620,8 @@ export function pushFrameToHistory() {
  *                               canvas fontRatio to be recalculated (only needed if font is changed)
  */
 export function pushStateToHistory(options = {}) {
+    // console.log('pushStateToHistory', historyIndex, options);
+
     // Remove anything in the future (all "redo" states are removed)
     if (historyIndex !== undefined) {
         history.splice(historyIndex + 1, history.length);
@@ -660,22 +662,18 @@ function buildHistorySnapshot(options) {
     return {
         state: historyState,
         options: options,
-
-        // Note: I am commenting this out for now because having 'undo' move the selection around can be jarring
-        // selection: selection.serialize(),
     }
 }
 
 function loadStateFromHistory(newIndex, oldIndex) {
+    // console.log('loadStateFromHistory', newIndex, oldIndex);
+
     const newState = history[newIndex];
     const oldState = history[oldIndex];
 
     // We are deep merging the history state into our current state rather than just replacing.
     // That way certain settings (e.g. what tool is selected) is inherited from the current state
     state = $.extend(true, state, newState.state);
-
-    // Note: I am commenting this out for now because having 'undo' move the selection around can be jarring
-    // selection.deserialize(newState.selection);
 
     if (newState.options.requiresCalculateFontRatio || oldState.options.requiresCalculateFontRatio) {
         calculateFontRatio();

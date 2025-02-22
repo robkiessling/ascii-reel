@@ -515,12 +515,17 @@ export class Cell extends Rect {
         return row * cellHeight;
     }
 
-    serialize() {
-        return { row: this.row, col: this.col }
+    get x() {
+        return this.col * cellWidth;
     }
-
-    static deserialize(data) {
-        return new Cell(data.row, data.col);
+    get y() {
+        return this.row * cellHeight;
+    }
+    get width() {
+        return cellWidth;
+    }
+    get height() {
+        return cellHeight;
     }
 
     clone() {
@@ -565,35 +570,6 @@ export class Cell extends Rect {
     isInBounds() {
         return charInBounds(this.row, this.col);
     }
-
-    get row() {
-        return this._row;
-    }
-
-    set row(newValue) {
-        this._row = newValue;
-    }
-
-    get col() {
-        return this._col;
-    }
-
-    set col(newValue) {
-        this._col = newValue;
-    }
-
-    get x() {
-        return this.col * cellWidth;
-    }
-    get y() {
-        return this.row * cellHeight;
-    }
-    get width() {
-        return cellWidth;
-    }
-    get height() {
-        return cellHeight;
-    }
 }
 
 /**
@@ -606,16 +582,21 @@ export class CellArea extends Rect {
         this.bottomRight = bottomRight; // Cell
     }
 
-    serialize() {
-        return { topLeft: this.topLeft.serialize(), bottomRight: this.bottomRight.serialize() }
-    }
-
-    static deserialize(data) {
-        return new CellArea(Cell.deserialize(data.topLeft), Cell.deserialize(data.bottomRight));
-    }
-
     static drawableArea() {
         return new CellArea(new Cell(0, 0), new Cell(numRows() - 1, numCols() - 1));
+    }
+
+    get x() {
+        return this.topLeft.x;
+    }
+    get y() {
+        return this.topLeft.y;
+    }
+    get width() {
+        return this.numCols * cellWidth;
+    }
+    get height() {
+        return this.numRows * cellHeight;
     }
 
     get numRows() {
@@ -650,18 +631,5 @@ export class CellArea extends Rect {
                 callback(r, c);
             }
         }
-    }
-
-    get x() {
-        return this.topLeft.x;
-    }
-    get y() {
-        return this.topLeft.y;
-    }
-    get width() {
-        return this.numCols * cellWidth;
-    }
-    get height() {
-        return this.numRows * cellHeight;
     }
 }

@@ -73,14 +73,14 @@ function setupPan() {
 
     disableRightClick(source);
 
-    source.$canvas.off('mousedown.zoom').on('mousedown.zoom', evt => {
+    source.$canvas.off('mousedown.pan').on('mousedown.pan', evt => {
         if (evt.which !== 2 && evt.which !== 3) { return; } // Only apply to middle-click and right-click
 
         isSliding = true;
         originalPoint = source.pointAtExternalXY(evt.offsetX, evt.offsetY);
     });
 
-    source.$canvas.off('mousemove.zoom').on('mousemove.zoom', evt => {
+    source.$canvas.off('mousemove.pan').on('mousemove.pan', evt => {
         if (isSliding) {
             const currentPoint = source.pointAtExternalXY(evt.offsetX, evt.offsetY);
             const deltas = [currentPoint.x - originalPoint.x, currentPoint.y - originalPoint.y];
@@ -88,7 +88,7 @@ function setupPan() {
         }
     });
 
-    $(document).off('mouseup.zoom').on('mouseup.zoom', evt => {
+    $(document).off('mouseup.pan').on('mouseup.pan', evt => {
         if (isSliding) {
             isSliding = false;
         }
@@ -100,20 +100,20 @@ function setupPreviewPan() {
 
     disableRightClick(preview);
 
-    preview.$canvas.off('mousedown.previewZoom').on('mousedown.previewZoom', evt => {
+    preview.$canvas.off('mousedown.preview-pan').on('mousedown.preview-pan', evt => {
         isSliding = true;
         const target = preview.pointAtExternalXY(evt.offsetX, evt.offsetY);
         updateCanvases(canvasControl => canvasControl.translateToTarget(target));
     });
 
-    preview.$canvas.off('mousemove.previewZoom').on('mousemove.previewZoom', evt => {
+    preview.$canvas.off('mousemove.preview-pan').on('mousemove.preview-pan', evt => {
         if (isSliding) {
             const target = preview.pointAtExternalXY(evt.offsetX, evt.offsetY);
             updateCanvases(canvasControl => canvasControl.translateToTarget(target));
         }
     });
 
-    $(document).off('mouseup.previewZoom').on('mouseup.previewZoom', evt => {
+    $(document).off('mouseup.preview-pan').on('mouseup.preview-pan', evt => {
         if (isSliding) {
             isSliding = false;
         }
