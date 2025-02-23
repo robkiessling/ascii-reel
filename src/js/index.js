@@ -16,11 +16,11 @@ import * as canvasStack from './components/canvas_stack.js';
 import * as selection from './canvas/selection.js';
 import * as state from "./state/state.js";
 import * as localstorage from "./state/localstorage.js";
-import Frames from "./components/frames.js";
-import Layers from "./components/layers.js";
+import * as frames from "./components/frames.js";
+import * as layers from "./components/layers.js";
 import {defer} from "./utils/utilities.js";
 
-// Note: The order of these initializers does not matter (they should not depend on other modules being initialized)
+// Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
 initClipboard();
 initEditor();
 initFileMenu();
@@ -32,12 +32,10 @@ initUnicode();
 preview.init();
 selection.init();
 state.init();
-localstorage.setupAutoSave();
 canvasStack.init();
-
-// Set up various controller instances
-const frames = new Frames($('#frame-controller'));
-const layers = new Layers($('#layer-controller'));
+frames.init();
+layers.init();
+localstorage.setupAutoSave();
 
 // Attach window resize listener
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);

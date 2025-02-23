@@ -7,176 +7,172 @@ import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
 import {createDialog} from "../utils/utilities.js";
 
-export default class Layers {
-    constructor($container) {
-        this._$container = $container;
-        this._init();
-    }
+let $container, $template, $list, $editDialog, $editName;
+let simpleBar, layerComponents, tooltips;
 
-    _init() {
-        this._$template = this._$container.find('.layer-template');
+export function init() {
+    $container = $('#layer-controller');
+    $template = $container.find('.layer-template');
 
-        this._setupList();
-        this._setupActionButtons();
-    }
+    setupList();
+    setupActionButtons();
+}
 
-    refresh() {
-        this._refreshVisibilities();
-    }
+export function refresh() {
+    refreshVisibilities();
+}
 
-    rebuild() {
-        const scrollElement = this._simpleBar.getScrollElement();
-        const scrollTop = scrollElement.scrollTop;
+export function rebuild() {
+    const scrollElement = simpleBar.getScrollElement();
+    const scrollTop = scrollElement.scrollTop;
 
-        this._$list.empty();
-        this._layerComponents = state.layers().map((layer, i) => {
-            return new LayerComponent(this._$template, this._$list, layer, i);
+    $list.empty();
+    layerComponents = state.layers().map((layer, i) => {
+        return new LayerComponent($template, $list, layer, i);
+    });
+
+    scrollElement.scrollTop = scrollTop;
+    simpleBar.recalculate();
+
+    $container.find('[data-action]').each((i, element) => {
+        const $element = $(element);
+        $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
+    });
+
+    this.refresh();
+}
+
+export function currentLayerComponent() {
+    return layerComponents[state.layerIndex()];
+}
+
+function setupList() {
+    $list = $container.find('.list');
+
+    // Custom scrollbar
+    simpleBar = new SimpleBar($list.get(0), {
+        autoHide: false,
+        forceVisible: true
+    });
+    $list = $(simpleBar.getContentElement());
+
+    // Setup drag-n-drop
+    setupSortable();
+
+    setupLayerEditor();
+
+    $list.off('click', '.layer').on('click', '.layer', evt => {
+        const newIndex = layerIndexFromDOM($(evt.currentTarget).index());
+        if (newIndex !== state.layerIndex()) {
+            selectLayer(newIndex);
+        }
+    });
+
+    $list.off('dblclick', '.layer').on('dblclick', '.layer', evt => {
+        actions.callAction('layers.edit-layer');
+    });
+}
+
+function setupSortable() {
+    let draggedIndex;
+    $list.sortable({
+        axis: 'y',
+        placeholder: 'layer placeholder',
+        start: (event, ui) => {
+            draggedIndex = layerIndexFromDOM(ui.item.index());
+        },
+        update: (event, ui) => {
+            const newIndex = layerIndexFromDOM(ui.item.index());
+            state.reorderLayer(draggedIndex, newIndex);
+            selectLayer(newIndex);
+        }
+    });
+}
+
+function setupActionButtons() {
+    actions.registerAction('layers.add-layer', () => {
+        const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
+        state.createLayer(layerIndex, {
+            name: `Layer ${state.layers().length + 1}`
         });
+        selectLayer(layerIndex);
+    });
 
-        scrollElement.scrollTop = scrollTop;
-        this._simpleBar.recalculate();
+    actions.registerAction('layers.edit-layer', () => editLayer());
 
-        this._$container.find('[data-action]').each((i, element) => {
-            const $element = $(element);
-            $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
-        });
+    actions.registerAction('layers.delete-layer', {
+        callback: () => {
+            state.deleteLayer(state.layerIndex());
+            selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
+        },
+        enabled: () => state.layers() && state.layers().length > 1
+    });
 
-        this.refresh();
-    }
+    actions.registerAction('layers.toggle-visibility-lock', () => {
+        state.config('lockLayerVisibility', !state.config('lockLayerVisibility'));
+        triggerRefresh();
+    });
 
-    get currentLayerComponent() {
-        return this._layerComponents[state.layerIndex()];
-    }
+    actions.attachClickHandlers($container);
 
-    _setupList() {
-        this._$list = this._$container.find('.list');
+    tooltips = actions.setupTooltips(
+        $container.find('[data-action]').toArray(),
+        element => $(element).data('action'),
+        { placement: 'top' }
+    );
+}
 
-        // Custom scrollbar
-        this._simpleBar = new SimpleBar(this._$list.get(0), {
-            autoHide: false,
-            forceVisible: true
-        });
-        this._$list = $(this._simpleBar.getContentElement());
+function refreshVisibilities() {
+    if (layerComponents) {
+        layerComponents.forEach(layerComponent => layerComponent.refresh());
 
-        // Setup drag-n-drop
-        this._setupSortable();
+        const locked = state.config('lockLayerVisibility');
+        $container.find('.toggle-visibility-lock').find('.ri')
+            .toggleClass('active', locked)
+            .toggleClass('ri-lock-line', locked)
+            .toggleClass('ri-lock-unlock-line', !locked);
 
-        this._setupLayerEditor();
-
-        this._$list.off('click', '.layer').on('click', '.layer', evt => {
-            const newIndex = this._layerIndexFromDOM($(evt.currentTarget).index());
-            if (newIndex !== state.layerIndex()) {
-                this._selectLayer(newIndex);
-            }
-        });
-
-        this._$list.off('dblclick', '.layer').on('dblclick', '.layer', evt => {
-            actions.callAction('layers.edit-layer');
-        });
-    }
-
-    _setupSortable() {
-        let draggedIndex;
-        this._$list.sortable({
-            axis: 'y',
-            placeholder: 'layer placeholder',
-            start: (event, ui) => {
-                draggedIndex = this._layerIndexFromDOM(ui.item.index());
-            },
-            update: (event, ui) => {
-                const newIndex = this._layerIndexFromDOM(ui.item.index());
-                state.reorderLayer(draggedIndex, newIndex);
-                this._selectLayer(newIndex);
-            }
-        });
-    }
-
-    _setupActionButtons() {
-        actions.registerAction('layers.add-layer', () => {
-            const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
-            state.createLayer(layerIndex, {
-                name: `Layer ${state.layers().length + 1}`
-            });
-            this._selectLayer(layerIndex);
-        });
-
-        actions.registerAction('layers.edit-layer', () => this._editLayer());
-
-        actions.registerAction('layers.delete-layer', {
-            callback: () => {
-                state.deleteLayer(state.layerIndex());
-                this._selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
-            },
-            enabled: () => state.layers() && state.layers().length > 1
-        });
-
-        actions.registerAction('layers.toggle-visibility-lock', () => {
-            state.config('lockLayerVisibility', !state.config('lockLayerVisibility'));
-            triggerRefresh();
-        });
-
-        actions.attachClickHandlers(this._$container);
-
-        this._tooltips = actions.setupTooltips(
-            this._$container.find('[data-action]').toArray(),
-            element => $(element).data('action'),
-            { placement: 'top' }
-        );
-    }
-
-    _refreshVisibilities() {
-        if (this._layerComponents) {
-            this._layerComponents.forEach(layerComponent => layerComponent.refresh());
-
-            const locked = state.config('lockLayerVisibility');
-            this._$container.find('.toggle-visibility-lock').find('.ri')
-                .toggleClass('active', locked)
-                .toggleClass('ri-lock-line', locked)
-                .toggleClass('ri-lock-unlock-line', !locked);
-
-            if (state.currentLayer().visible) {
-                hideCanvasMessage();
-            }
-            else {
-                showCanvasMessage("<span class='ri ri-fw ri-error-warning-line alert'></span>&emsp;The current layer is not visible")
-            }
+        if (state.currentLayer().visible) {
+            hideCanvasMessage();
+        }
+        else {
+            showCanvasMessage("<span class='ri ri-fw ri-error-warning-line alert'></span>&emsp;The current layer is not visible")
         }
     }
+}
 
-    _setupLayerEditor() {
-        this._$editDialog = $("#edit-layer-dialog");
-        createDialog(this._$editDialog, () => this._saveLayer());
+function setupLayerEditor() {
+    $editDialog = $("#edit-layer-dialog");
+    createDialog($editDialog, () => saveLayer());
 
-        this._$editName = this._$editDialog.find('.name');
-    }
+    $editName = $editDialog.find('.name');
+}
 
-    _editLayer() {
-        const layer = state.currentLayer();
-        this._$editName.val(layer.name);
-        this._$editDialog.dialog('open');
-    }
+function editLayer() {
+    const layer = state.currentLayer();
+    $editName.val(layer.name);
+    $editDialog.dialog('open');
+}
 
-    _saveLayer() {
-        state.updateLayer(state.currentLayer(), {
-            name: this._$editName.val()
-        });
+function saveLayer() {
+    state.updateLayer(state.currentLayer(), {
+        name: $editName.val()
+    });
 
-        this._$editDialog.dialog("close");
+    $editDialog.dialog("close");
 
-        state.pushStateToHistory();
-        triggerRefresh();
-    }
+    state.pushStateToHistory();
+    triggerRefresh();
+}
 
-    // Layers are sorted backwards in the DOM
-    _layerIndexFromDOM(index) {
-        return (state.layers().length - 1) - index;
-    }
+// Layers are sorted backwards in the DOM
+function layerIndexFromDOM(index) {
+    return (state.layers().length - 1) - index;
+}
 
-    _selectLayer(index) {
-        state.layerIndex(index);
-        triggerRefresh('full', true);
-    }
-
+function selectLayer(index) {
+    state.layerIndex(index);
+    triggerRefresh('full', true);
 }
 
 
