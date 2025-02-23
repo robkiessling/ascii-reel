@@ -14,6 +14,13 @@ export const strings = {
 
     'state.undo.name': 'Undo',
     'state.redo.name': 'Redo',
+    
+    'view.grid-settings.name': 'Grid Settings',
+    'view.show-grid.name': 'Show Grid',
+    'view.hide-grid.name': 'Hide Grid',
+    'view.zoom-in.name': 'Zoom In',
+    'view.zoom-out.name': 'Zoom Out',
+    'view.zoom-fit.name': 'Zoom Fit',
 
     'settings.open-font-dialog.name': 'Font Settings',
     'settings.open-resize-dialog.name': 'Resize Canvas',
@@ -142,11 +149,4 @@ export const strings = {
     //     '- Text Editor Tool: Pastes the character once\n' +
     //     '- Draw Character Tool: Sets the character\n' +
     //     '- Selections: Fill selected areas with the character',
-
-    'zoom.zoom-in.name': 'Zoom In',
-    'zoom.zoom-out.name': 'Zoom Out',
-    'zoom.zoom-fit.name': 'Zoom Fit',
-    'view.grid-settings.name': 'Grid Settings',
-    'view.show-grid.name': 'Show Grid',
-    'view.hide-grid.name': 'Hide Grid',
 }

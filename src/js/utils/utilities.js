@@ -241,6 +241,10 @@ export function setIntervalUsingRAF(callback, delay, evaluateImmediately = false
     }
 }
 
+// Defers execution to the next event loop cycle, allowing the browser to process pending tasks, update the DOM, etc.
+export function defer(callback) {
+    window.setTimeout(callback, 1);
+}
 
 
 export function createHorizontalMenu($menu, onOpen) {
@@ -352,7 +356,7 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
         },
         close: () => {
             keyboard.toggleStandard(false);
-            setTimeout(() => hideAll(), 1); // Hide all tooltips (sometimes tooltips get stifled by dialog popup)
+            defer(() => hideAll()); // Hide all tooltips (sometimes tooltips get stifled by dialog popup)
             $(document).off('keyboard:enter.dialog');
         },
         buttons: [

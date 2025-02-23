@@ -30,9 +30,9 @@ let actionIdToShortcut = {
 
     'view.toggle-grid': { char: 'g', modifiers: [cmdKey] },
     'view.grid-settings': { char: 'g', modifiers: [cmdKey, 'shiftKey'] },
-    'zoom.zoom-in': { displayChar: '+', char: '=', modifiers: [cmdKey, 'shiftKey'] },
-    'zoom.zoom-out': { displayChar: '-', char: '-', modifiers: [cmdKey, 'shiftKey'] },
-    'zoom.zoom-fit': { char: '0', modifiers: [cmdKey, 'shiftKey'] },
+    'view.zoom-in': { displayChar: '+', char: '=', modifiers: [cmdKey, 'shiftKey'] },
+    'view.zoom-out': { displayChar: '-', char: '-', modifiers: [cmdKey, 'shiftKey'] },
+    'view.zoom-fit': { char: '0', modifiers: [cmdKey, 'shiftKey'] },
 };
 let shortcutToActionId; // populated by refreshShortcuts()
 

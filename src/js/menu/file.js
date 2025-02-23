@@ -11,7 +11,7 @@ import {
     confirmDialog,
     createDialog,
     createHTMLFile,
-    createHorizontalMenu, setIntervalUsingRAF,
+    createHorizontalMenu, setIntervalUsingRAF, defer,
 } from "../utils/utilities.js";
 import {CanvasControl} from "../canvas/canvas.js";
 import Color from "@sphinxxxx/color-conversion";
@@ -100,8 +100,8 @@ function setupUpload() {
     });
 
     actions.registerAction('file.open-file', () => {
-        // Doing asynchronously so main menu has time to close
-        window.setTimeout(() => $uploadInput.trigger('click'), 1);
+        // Defer so main menu has time to close
+        defer(() => $uploadInput.trigger('click'))
     });
 }
 

@@ -2,103 +2,59 @@ import $ from "jquery";
 import '../styles/app.scss'
 import 'remixicon/fonts/remixicon.css';
 
-import {refreshShortcuts, registerAction} from "./io/actions.js";
-import { CanvasControl } from "./canvas/canvas.js";
+import {refreshShortcuts} from "./io/actions.js";
 import { init as initClipboard } from "./io/clipboard.js"
-import {
-    init as initEditor,
-    setupMouseEvents as setupEditorMouse,
-    refresh as refreshEditor,
-    refreshMouseCoords,
-    refreshSelectionDimensions
-} from "./components/editor.js"
-import { init as initFile } from "./menu/file.js";
-import { init as initSettings } from "./menu/settings.js";
-import { setupMouseEvents as setupHoverMouse, hoveredCell, iterateHoveredCells } from "./canvas/hover.js";
+import { init as initEditor, refresh as refreshEditor } from "./components/editor.js"
+import { init as initFileMenu } from "./menu/file.js";
+import { init as initToolsMenu } from "./menu/tools.js";
+import { init as initViewMenu } from "./menu/view.js";
 import { init as initKeyboard } from "./io/keyboard.js";
 import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./components/palette.js";
-import { init as initPreview, canvasControl as previewCanvas, redraw as redrawPreview, reset as resetPreview } from "./components/preview.js";
+import * as preview from "./components/preview.js";
 import { init as initUnicode, refresh as refreshUnicode } from "./components/unicode.js";
+import * as canvasStack from './components/canvas_stack.js';
 import * as selection from './canvas/selection.js';
 import * as state from "./state/state.js";
 import * as localstorage from "./state/localstorage.js";
-import { init as initZoom, setupMouseEvents as setupZoomMouse } from './canvas/zoom.js';
 import Frames from "./components/frames.js";
 import Layers from "./components/layers.js";
+import {defer} from "./utils/utilities.js";
 
 // Note: The order of these initializers does not matter (they should not depend on other modules being initialized)
 initClipboard();
 initEditor();
-initFile();
-initSettings();
+initFileMenu();
+initToolsMenu();
+initViewMenu();
 initKeyboard();
 initPalette();
-initPreview();
 initUnicode();
+preview.init();
 selection.init();
 state.init();
-initZoom();
 localstorage.setupAutoSave();
-
+canvasStack.init();
 
 // Set up various controller instances
 const frames = new Frames($('#frame-controller'));
 const layers = new Layers($('#layer-controller'));
 
-export const charCanvas = new CanvasControl($('#char-canvas'), {});
-export const selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
-export const hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
-export const selectionCanvas = new CanvasControl($('#selection-canvas'), {});
-
-// Bind mouse events to controllers (note: many controllers attach mouse events to the selectionCanvas since it is
-// on top, even though they have their own canvases underneath).
-selection.setupMouseEvents(selectionCanvas);
-setupHoverMouse(selectionCanvas);
-setupEditorMouse(selectionCanvas);
-setupZoomMouse(selectionCanvas, previewCanvas,
-    [selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas]
-);
-
-// TODO These will be moved to other files, such as a settings.js file, once they've been made
-registerAction('preferences', {
-    name: 'Preferences',
-    callback: () => {},
-    enabled: () => false
-});
-registerAction('keyboard-shortcuts', {
-    name: 'Keyboard Shortcuts',
-    callback: () => {},
-    enabled: () => false
-});
-
 // Attach window resize listener
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
 
-// Warn before changing page
-// TODO Do we want this?
-// window.addEventListener('beforeunload', event => {
-//     if (state.hasChanges()) {
-//         // Note: Most browsers use their own unload string instead of this one that is given
-//         event.returnValue = 'Reload site? Changes you made may not be saved.';
-//     }
-// });
-
-// Load initial empty page
-window.setTimeout(() => {
+// Load initial content
+defer(() => {
     const savedState = localstorage.loadState();
-    if (savedState) {
-        state.load(savedState);
-    }
-    else {
-        state.loadNew();
-    }
+    savedState ? state.load(savedState) : state.loadNew();
 
     refreshShortcuts();
 
     if (state.config('tool') === 'text-editor') {
         selection.moveCursorToStart();
     }
-}, 1);
+})
+
+
 
 
 
@@ -113,14 +69,10 @@ export function triggerResize(clearSelection = false) {
     // Refresh frames controller first, since its configuration can affect canvas boundaries
     frames.refresh();
 
-    charCanvas.resize();
-    selectionBorderCanvas.resize();
-    hoveredCellCanvas.resize();
-    selectionCanvas.resize();
-    previewCanvas.resize();
+    canvasStack.resize();
+    preview.resize();
     // Note: frames canvases will be resized during triggerRefresh() since they all have to be rebuilt
 
-    previewCanvas.zoomToFit(); // todo just do this once?
     triggerRefresh();
 }
 
@@ -140,28 +92,28 @@ export function triggerRefresh(type = 'full', saveState = false) {
     type.forEach(type => {
         switch(type) {
             case 'chars':
-                redrawCharCanvas();
-                redrawPreview();
+                canvasStack.redrawCharCanvas();
+                preview.redraw();
                 frames.currentFrameComponent.redrawGlyphs();
                 break;
             case 'selection':
                 selection.clearCaches();
-                drawSelection();
-                drawHoveredCell();
+                canvasStack.drawSelection();
+                canvasStack.drawHoveredCell();
                 refreshEditor();
                 break;
             case 'hoveredCell': // Can be called separately from 'selection' for performance reasons
-                drawHoveredCell();
+                canvasStack.drawHoveredCell();
                 break;
             case 'cursorCell': // Can be called separately from 'selection' for performance reasons
-                drawSelection();
+                canvasStack.drawSelection();
                 refreshEditor();
                 break;
             case 'zoom':
-                redrawCharCanvas();
-                redrawPreview();
-                drawSelection();
-                drawHoveredCell()
+                canvasStack.redrawCharCanvas();
+                preview.redraw();
+                canvasStack.drawSelection();
+                canvasStack.drawHoveredCell()
                 break;
             case 'palette':
                 refreshPalette();
@@ -174,10 +126,10 @@ export function triggerRefresh(type = 'full', saveState = false) {
                 break;
             case 'full':
                 selection.clearCaches();
-                redrawCharCanvas();
-                resetPreview();
-                drawSelection();
-                drawHoveredCell();
+                canvasStack.redrawCharCanvas();
+                preview.reset();
+                canvasStack.drawSelection();
+                canvasStack.drawHoveredCell();
                 refreshEditor();
                 frames.rebuild();
                 layers.rebuild();
@@ -192,55 +144,4 @@ export function triggerRefresh(type = 'full', saveState = false) {
     if (saveState) {
         state.pushStateToHistory(saveState === true ? undefined : { modifiable: saveState });
     }
-}
-
-function redrawCharCanvas() {
-    charCanvas.clear();
-    charCanvas.drawBackground(state.config('background'));
-    charCanvas.drawGlyphs(state.layeredGlyphs(state.currentFrame(), { showMovingContent: true, showDrawingContent: true }));
-
-    const grid = state.config('grid');
-    if (grid.show) {
-        charCanvas.drawGrid(grid.width, grid.spacing, grid.color);
-    }
-
-    if (state.config('onion')) {
-        charCanvas.drawOnion(state.layeredGlyphs(state.previousFrame()));
-    }
-}
-
-function drawSelection() {
-    selectionCanvas.clear();
-    selectionBorderCanvas.clear();
-
-    selectionCanvas.highlightPolygons(selection.polygons);
-
-    if (selection.hasSelection() && !selection.isDrawing) {
-        selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
-    }
-
-    if (selection.cursorCell) {
-        selectionCanvas.drawCursorCell(selection.cursorCell);
-    }
-
-    refreshSelectionDimensions(selection.getSelectedCellArea())
-}
-
-function drawHoveredCell() {
-    hoveredCellCanvas.clear();
-
-    if (hoveredCell && !selection.isDrawing && !selection.isMoving) {
-        // Not showing if the tool is text-editor because when you click on a cell, the cursor doesn't necessarily
-        // go to that cell (it gets rounded up or down, like a real text editor does).
-        if (state.config('tool') !== 'text-editor') {
-            iterateHoveredCells(cell => {
-                if (cell.isInBounds()) {
-                    hoveredCellCanvas.highlightCell(cell);
-                }
-            })
-        }
-    }
-
-    // We don't show mouse coords if we're showing selection dimensions
-    refreshMouseCoords(selection.hasSelection() ? null : hoveredCell);
 }

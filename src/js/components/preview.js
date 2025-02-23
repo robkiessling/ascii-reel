@@ -3,16 +3,17 @@ import 'jquery-ui/ui/widgets/slider.js';
 
 import * as state from "../state/state.js";
 import {CanvasControl} from "../canvas/canvas.js";
-import {selectionCanvas} from "../index.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
+import {getCurrentViewRect} from "./canvas_stack.js";
+import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
 const POPUP_BACKGROUND = '#202124'; // same as $darkest
 const POPUP_RESIZE_DEBOUNCE_LENGTH = 200;
 
-export let canvasControl;
+let canvasControl;
 let previewInterval, previewIndex;
 let $fpsValue, $fpsSlider;
 let tooltips;
@@ -21,6 +22,9 @@ let popup, popupCanvas;
 export function init() {
     const $container = $('#preview-controller');
     canvasControl = new CanvasControl($('#preview-canvas'), {});
+
+    setupScrollZoom(canvasControl, false);
+    setupMousePan(canvasControl, true)
 
     $fpsValue = $('#preview-fps-value');
 
@@ -36,12 +40,17 @@ export function init() {
     setupActionButtons($container);
 }
 
+export function resize() {
+    canvasControl.resize();
+    canvasControl.zoomToFit();
+}
+
 // Just redraw the current preview frame (e.g. if chars got updated)
 export function redraw() {
     canvasControl.clear();
     canvasControl.drawBackground(state.config('background'));
     canvasControl.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
-    canvasControl.drawWindow(selectionCanvas.currentViewRect());
+    canvasControl.drawWindow(getCurrentViewRect());
 
     if (popup && !popup.closed && popupCanvas) {
         popupCanvas.clear();

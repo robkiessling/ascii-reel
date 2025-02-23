@@ -13,6 +13,18 @@ export function init() {
     setupFontDialog();
     setupResizeDialog();
     setupBackgroundDialog();
+
+    // TODO
+    actions.registerAction('preferences', {
+        name: 'Preferences',
+        callback: () => {},
+        enabled: () => false
+    });
+    actions.registerAction('keyboard-shortcuts', {
+        name: 'Keyboard Shortcuts',
+        callback: () => {},
+        enabled: () => false
+    });
 }
 
 
