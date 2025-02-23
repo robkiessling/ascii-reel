@@ -1,4 +1,3 @@
-import $ from "jquery";
 import * as state from "../state/state.js";
 import {roundToDecimal} from "../utils/numbers.js";
 

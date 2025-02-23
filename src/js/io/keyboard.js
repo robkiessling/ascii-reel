@@ -1,4 +1,3 @@
-import $ from "jquery";
 import * as selection from "../canvas/selection.js";
 import * as state from "../state/state.js";
 import * as editor from "../components/editor.js";

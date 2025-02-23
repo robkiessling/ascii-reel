@@ -30,7 +30,7 @@ const CHECKER_SIZE = 10;
 const ZOOM_BOUNDARIES = [0.25, 30];
 const ZOOM_MARGIN = 1.2;
 
-export class CanvasControl {
+export default class CanvasControl {
     constructor($canvas, config = {}) {
         this.$canvas = $canvas;
         this.canvas = this.$canvas.get(0);

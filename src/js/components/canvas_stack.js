@@ -3,8 +3,7 @@
  * so that the actual drawing is independent of the selection polygons, hovered cell effects, etc.
  */
 
-import {CanvasControl} from "../canvas/canvas.js";
-import $ from "jquery";
+import CanvasControl from "../canvas/canvas.js";
 import * as selection from "../canvas/selection.js";
 import {hoveredCell, iterateHoveredCells, setupMouseEvents as setupHoverMouse} from "../canvas/hover.js";
 import {refreshMouseCoords, refreshSelectionDimensions, setupMouseEvents as setupEditorMouse} from "./editor.js";

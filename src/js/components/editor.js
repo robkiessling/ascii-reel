@@ -1,4 +1,3 @@
-import $ from "jquery";
 import Picker from 'vanilla-picker/csp';
 import * as state from '../state/state.js';
 import * as selection from '../canvas/selection.js';

@@ -1,4 +1,3 @@
-import $ from "jquery";
 import SimpleBar from "simplebar";
 import * as actions from "../io/actions.js";
 import * as state from "../state/state.js";

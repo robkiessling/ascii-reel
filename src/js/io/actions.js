@@ -1,4 +1,3 @@
-import $ from "jquery";
 import tippy from "tippy.js";
 import {strings} from "../config/strings.js";
 import {isFunction}from "../utils/utilities.js";

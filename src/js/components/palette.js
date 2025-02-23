@@ -1,4 +1,3 @@
-import $ from "jquery";
 import SimpleBar from "simplebar";
 import {triggerRefresh} from "../index.js";
 import * as state from '../state/state.js';

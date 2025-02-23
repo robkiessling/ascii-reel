@@ -1,10 +1,8 @@
-import $ from "jquery";
-import 'jquery-ui/ui/widgets/sortable.js';
 import SimpleBar from "simplebar";
 import * as state from "../state/state.js";
 import {triggerRefresh, triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";
-import {CanvasControl} from "../canvas/canvas.js";
+import CanvasControl from "../canvas/canvas.js";
 
 let $container, $template, $list;
 let simpleBar, frameComponents, tooltips;
@@ -22,18 +20,36 @@ export function refresh() {
     refreshOnion();
 }
 
+window.setInterval(() => {
+    if ($list.length) {
+        console.log($list.find('.frame.selected').first().visible());
+    }
+}, 500)
+
 export function rebuild() {
     const scrollElement = simpleBar.getScrollElement();
     const scrollLeft = scrollElement.scrollLeft;
     const scrollTop = scrollElement.scrollTop;
+    const prevNumFrames = frameComponents ? frameComponents.length : 0;
 
     $list.empty();
     frameComponents = state.frames().map((frame, i) => {
         return new FrameComponent($template, $list, frame, i);
     });
 
+    // Restore to previous scroll position since content was wiped & re-added
     scrollElement.scrollLeft = scrollLeft;
     scrollElement.scrollTop = scrollTop;
+
+    // If there are frames added/subtracted since last time, scroll to the current selected frame
+    // so user can see what's going on.
+    if (frameComponents.length !== prevNumFrames) {
+        const $selected = $list.find('.frame.selected').first();
+        if (!$selected.visible()) { // Only need to scroll if it's not currently visible
+            $selected.get(0).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
     simpleBar.recalculate();
 
     $container.find('[data-action]').each((i, element) => {

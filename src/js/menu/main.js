@@ -1,4 +1,3 @@
-import $ from "jquery";
 import * as actions from "../io/actions.js";
 
 

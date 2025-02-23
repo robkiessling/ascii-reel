@@ -1,4 +1,3 @@
-import $ from "jquery";
 import * as state from "../state/state.js";
 import * as actions from "../io/actions.js";
 import Picker from 'vanilla-picker/csp';

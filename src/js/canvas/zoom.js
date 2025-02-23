@@ -1,4 +1,3 @@
-import $ from "jquery";
 import {triggerRefresh} from "../index.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;

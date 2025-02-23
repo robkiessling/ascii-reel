@@ -1,8 +1,5 @@
-import $ from "jquery";
-import 'jquery-ui/ui/widgets/slider.js';
-
 import * as state from "../state/state.js";
-import {CanvasControl} from "../canvas/canvas.js";
+import CanvasControl from "../canvas/canvas.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
 import {getCurrentViewRect} from "./canvas_stack.js";

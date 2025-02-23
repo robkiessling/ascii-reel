@@ -1,5 +1,3 @@
-import $ from "jquery";
-import 'jquery-ui/ui/widgets/sortable.js';
 import SimpleBar from "simplebar";
 import * as state from "../state/state.js";
 import {triggerRefresh} from "../index.js";

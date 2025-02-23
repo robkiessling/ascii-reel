@@ -1,5 +1,3 @@
-import $ from "jquery";
-import {transformValues, Range} from "../utils/utilities.js";
 import * as selection from "../canvas/selection.js";
 import {triggerRefresh, triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";

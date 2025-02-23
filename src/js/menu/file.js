@@ -1,4 +1,3 @@
-import $ from "jquery";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -8,7 +7,7 @@ import * as actions from "../io/actions.js";
 import Animated_GIF from "gif-transparency";
 
 import { setIntervalUsingRAF, defer } from "../utils/utilities.js";
-import {CanvasControl} from "../canvas/canvas.js";
+import CanvasControl from "../canvas/canvas.js";
 import Color from "@sphinxxxx/color-conversion";
 import {fontRatio} from "../canvas/font.js";
 import {confirmDialog, createDialog} from "../utils/dialogs.js";

@@ -1,8 +1,10 @@
-import $ from "jquery";
+import 'jquery-ui/ui/widgets/sortable.js';
+import 'jquery-ui/ui/widgets/slider.js';
+import 'jquery-ui/ui/widgets/dialog.js';
+import 'jquery-visible';
 import '../styles/app.scss'
 import 'remixicon/fonts/remixicon.css';
 
-import {refreshShortcuts} from "./io/actions.js";
 import { init as initClipboard } from "./io/clipboard.js"
 import { init as initEditor, refresh as refreshEditor } from "./components/editor.js"
 import { init as initMainMenu } from "./menu/main.js";
@@ -20,7 +22,7 @@ import * as localstorage from "./state/localstorage.js";
 import * as frames from "./components/frames.js";
 import * as layers from "./components/layers.js";
 import {debounce, defer} from "./utils/utilities.js";
-import {resize} from "./state/state.js";
+import {refreshShortcuts} from "./io/actions.js";
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
 initClipboard();

@@ -53,6 +53,7 @@
     "gif-transparency": "2.0.0",
     "jquery": "^3.7.1",
     "jquery-ui": "^1.14.1",
+    "jquery-visible": "^1.2.0",
     "jszip": "^3.10.1",
     "regenerator-runtime": "^0.13.11",
     "remixicon": "^4.6.0",

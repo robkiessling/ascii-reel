@@ -1,5 +1,3 @@
-import $ from "jquery";
-import 'jquery-ui/ui/widgets/dialog.js';
 import * as keyboard from "../io/keyboard.js";
 import {hideAll} from "tippy.js";
 import {defer} from "./utilities.js";

@@ -1,4 +1,3 @@
-import $ from "jquery";
 import * as state from "../state/state.js";
 import {triggerRefresh} from "../index.js";
 import Picker from "vanilla-picker";
