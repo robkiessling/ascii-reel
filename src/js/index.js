@@ -93,7 +93,7 @@ export function triggerRefresh(type = 'full', saveState = false) {
             case 'chars':
                 canvasStack.redrawCharCanvas();
                 preview.redraw();
-                frames.currentFrameComponent.redrawGlyphs();
+                frames.currentFrameComponent().redrawGlyphs();
                 break;
             case 'selection':
                 selection.clearCaches();
