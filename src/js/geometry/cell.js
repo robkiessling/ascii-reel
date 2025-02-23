@@ -1,5 +1,5 @@
 import Rect from "./rect.js";
-import {cellHeight, cellWidth} from "../canvas/fonts.js";
+import {fontHeight, fontWidth} from "../canvas/font.js";
 import bresenham from "bresenham";
 import {charInBounds} from "../state/state.js";
 
@@ -17,23 +17,23 @@ export default class Cell extends Rect {
     // Since x and y are based purely on col/row value, we have these static methods so you can calculate x/y without
     // having to instantiate a new Cell() -- helps with performance
     static x(col) {
-        return col * cellWidth;
+        return col * fontWidth;
     }
     static y(row) {
-        return row * cellHeight;
+        return row * fontHeight;
     }
 
     get x() {
-        return this.col * cellWidth;
+        return this.col * fontWidth;
     }
     get y() {
-        return this.row * cellHeight;
+        return this.row * fontHeight;
     }
     get width() {
-        return cellWidth;
+        return fontWidth;
     }
     get height() {
-        return cellHeight;
+        return fontHeight;
     }
 
     clone() {

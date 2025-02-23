@@ -1,6 +1,6 @@
 import {roundForComparison, setIntervalUsingRAF} from "../utils/utilities.js";
 import {colorStr, numCols, numRows, config} from "../state/state.js";
-import {cellHeight, cellWidth} from "./fonts.js";
+import {fontHeight, fontWidth} from "./font.js";
 import Rect from "../geometry/rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
@@ -58,7 +58,7 @@ export class CanvasControl {
         this.originalTransform = this.context.getTransform();
 
         // Set up font
-        this.context.font = `${cellHeight}px ${config('font')}`;
+        this.context.font = `${fontHeight}px ${config('font')}`;
         this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
 
@@ -334,8 +334,8 @@ export class CanvasControl {
 
     cellAtExternalXY(x, y) {
         const point = this.pointAtExternalXY(x, y);
-        const row = Math.floor(point.y / cellHeight);
-        const col = Math.floor(point.x / cellWidth);
+        const row = Math.floor(point.y / fontHeight);
+        const col = Math.floor(point.x / fontWidth);
         return new Cell(row, col);
     }
 
@@ -344,8 +344,8 @@ export class CanvasControl {
     // click on the right half of a character, it will round up to the next character
     cursorAtExternalXY(x, y) {
         const point = this.pointAtExternalXY(x, y);
-        const row = Math.floor(point.y / cellHeight);
-        const col = Math.round(point.x / cellWidth);
+        const row = Math.floor(point.y / fontHeight);
+        const col = Math.round(point.x / fontWidth);
         return new Cell(row, col);
     }
 

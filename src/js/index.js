@@ -35,7 +35,6 @@ state.init();
 canvasStack.init();
 frames.init();
 layers.init();
-localstorage.setupAutoSave();
 
 // Attach window resize listener
 $(window).off('resize:debounced').on('resize:debounced', triggerResize);
@@ -50,6 +49,8 @@ defer(() => {
     if (state.config('tool') === 'text-editor') {
         selection.moveCursorToStart();
     }
+
+    localstorage.setupAutoSave();
 })
 
 

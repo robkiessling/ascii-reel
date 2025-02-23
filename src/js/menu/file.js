@@ -15,7 +15,7 @@ import {
 } from "../utils/utilities.js";
 import {CanvasControl} from "../canvas/canvas.js";
 import Color from "@sphinxxxx/color-conversion";
-import {fontRatio} from "../canvas/fonts.js";
+import {fontRatio} from "../canvas/font.js";
 
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 

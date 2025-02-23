@@ -1,5 +1,5 @@
 import Rect from "./rect.js";
-import {cellHeight, cellWidth} from "../canvas/fonts.js";
+import {fontHeight, fontWidth} from "../canvas/font.js";
 import Cell from "./cell.js";
 import * as state from "../state/state.js";
 
@@ -24,10 +24,10 @@ export default class CellArea extends Rect {
         return this.topLeft.y;
     }
     get width() {
-        return this.numCols * cellWidth;
+        return this.numCols * fontWidth;
     }
     get height() {
-        return this.numRows * cellHeight;
+        return this.numRows * fontHeight;
     }
 
     get numRows() {

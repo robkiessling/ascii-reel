@@ -6,8 +6,9 @@ import Picker from 'vanilla-picker/csp';
 import {createDialog} from "../utils/utilities.js";
 import {resetExportDimensions} from "./file.js";
 import {triggerRefresh, triggerResize} from "../index.js";
-import {AVAILABLE_FONTS, calculateFontRatio} from "../canvas/fonts.js";
+import {calculateFontRatio} from "../canvas/font.js";
 import {pushStateToHistory} from "../state/state.js";
+import {AVAILABLE_FONTS} from "../config/fonts.js";
 
 export function init() {
     setupFontDialog();
