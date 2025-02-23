@@ -1,9 +1,10 @@
-import {roundForComparison, setIntervalUsingRAF} from "../utils/utilities.js";
+import {setIntervalUsingRAF} from "../utils/utilities.js";
 import {colorStr, numCols, numRows, config} from "../state/state.js";
 import {fontHeight, fontWidth} from "./font.js";
 import Rect from "../geometry/rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
+import {roundForComparison} from "../utils/numbers.js";
 
 const WINDOW_BORDER_COLOR = '#31e39d';
 const WINDOW_BORDER_WIDTH = 4;

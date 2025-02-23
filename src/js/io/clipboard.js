@@ -4,10 +4,10 @@ import "core-js/stable.js";
 
 import * as selection from "../canvas/selection.js";
 import * as state from "../state/state.js";
-import {translateGlyphs} from "../utils/utilities.js";
 import {triggerRefresh} from "../index.js";
 import * as editor from "../components/editor.js";
 import * as actions from "./actions.js";
+import {translateGlyphs} from "../utils/arrays.js";
 
 let copiedSelection = null;
 let copiedText = null;

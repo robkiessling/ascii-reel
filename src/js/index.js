@@ -5,6 +5,7 @@ import 'remixicon/fonts/remixicon.css';
 import {refreshShortcuts} from "./io/actions.js";
 import { init as initClipboard } from "./io/clipboard.js"
 import { init as initEditor, refresh as refreshEditor } from "./components/editor.js"
+import { init as initMainMenu } from "./menu/main.js";
 import { init as initFileMenu } from "./menu/file.js";
 import { init as initToolsMenu } from "./menu/tools.js";
 import { init as initViewMenu } from "./menu/view.js";
@@ -18,11 +19,13 @@ import * as state from "./state/state.js";
 import * as localstorage from "./state/localstorage.js";
 import * as frames from "./components/frames.js";
 import * as layers from "./components/layers.js";
-import {defer} from "./utils/utilities.js";
+import {debounce, defer} from "./utils/utilities.js";
+import {resize} from "./state/state.js";
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
 initClipboard();
 initEditor();
+initMainMenu();
 initFileMenu();
 initToolsMenu();
 initViewMenu();
@@ -37,7 +40,7 @@ frames.init();
 layers.init();
 
 // Attach window resize listener
-$(window).off('resize:debounced').on('resize:debounced', triggerResize);
+$(window).on('resize', debounce(triggerResize));
 
 // Load initial content
 defer(() => {
@@ -61,6 +64,7 @@ defer(() => {
  * Resizes the components that depend on window size. Then triggers a full refresh.
  */
 export function triggerResize(clearSelection = false) {
+    console.log('actual')
     if (clearSelection) {
         selection.clear();
     }

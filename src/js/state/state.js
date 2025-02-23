@@ -1,5 +1,5 @@
 import $ from "jquery";
-import {create2dArray, eachWithObject, transformValues, translateGlyphs, Range} from "../utils/utilities.js";
+import {transformValues, Range} from "../utils/utilities.js";
 import * as selection from "../canvas/selection.js";
 import {triggerRefresh, triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";
@@ -8,6 +8,7 @@ import * as editor from "../components/editor.js";
 import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "../canvas/font.js";
 import {saveState} from "./localstorage.js";
+import ArrayRange, {create2dArray, translateGlyphs} from "../utils/arrays.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it in the
 // CONFIG_KEYS_FOR_HISTORY constant
@@ -100,11 +101,15 @@ export function load(data) {
         colorTable: data.colorTable ? [...data.colorTable] : []
     };
 
-    state.cels = transformValues(data.cels || {}, v => normalizeCel(v));
+    state.cels = Object.fromEntries(
+        Object.entries(data.cels || {}).map(([k, v]) => [k, normalizeCel(v)])
+    )
 
-    sequences = eachWithObject(SEQUENCES, {}, (className, obj) => {
-        obj[className] = Math.max.apply(Math, state[className].map(e => e.id));
-    });
+    // Init sequences according to the highest current id (for each stateKey in SEQUENCES)
+    sequences = SEQUENCES.reduce((obj, stateKey) => {
+        obj[stateKey] = Math.max.apply(Math, state[stateKey].map(e => e.id));
+        return obj;
+    }, {})
 
     importPalette(data.palette ? data.palette : { colors: palette.DEFAULT_PALETTE }, true)
 
@@ -192,8 +197,8 @@ export function frameIndex(newIndex) {
 
 /**
  * Gets and/or sets the frameRangeSelection.
- * @param {Range|null} [newRange] A value of null means the frameRangeSelection will match the currently selected frameIndex().
- * @returns {Range}
+ * @param {ArrayRange|null} [newRange] A value of null means the frameRangeSelection will match the currently selected frameIndex().
+ * @returns {ArrayRange}
  */
 export function frameRangeSelection(newRange) {
     if (newRange !== undefined) {
@@ -201,7 +206,7 @@ export function frameRangeSelection(newRange) {
     }
 
     const serializedRange = config('frameRangeSelection');
-    return serializedRange ? Range.deserialize(serializedRange) : Range.fromSingleIndex(frameIndex());
+    return serializedRange ? ArrayRange.deserialize(serializedRange) : ArrayRange.fromSingleIndex(frameIndex());
 }
 
 export function extendFrameRangeSelection(index) {

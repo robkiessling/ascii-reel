@@ -1,8 +1,9 @@
 import $ from "jquery";
-import * as file from "../menu/file.js";
 import tippy from "tippy.js";
 import {strings} from "../config/strings.js";
-import {modifierWord, isFunction, isMacOS, modifierAbbr} from "../utils/utilities.js";
+import {isFunction}from "../utils/utilities.js";
+import {refresh as refreshMenu} from "../menu/main.js"
+import {isMacOS, modifierAbbr, modifierWord} from "../utils/operating_system.js";
 
 let actions;
 
@@ -121,7 +122,7 @@ export function isActionEnabled(id) {
 export function callAction(id, callbackData) {
     if (isActionEnabled(id)) {
         actions[id].callback(callbackData);
-        file.refreshMenu();
+        refreshMenu();
         return true;
     }
 

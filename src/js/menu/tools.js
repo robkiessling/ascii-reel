@@ -3,12 +3,12 @@ import * as state from "../state/state.js";
 import * as actions from "../io/actions.js";
 import Picker from 'vanilla-picker/csp';
 
-import {createDialog} from "../utils/utilities.js";
 import {resetExportDimensions} from "./file.js";
 import {triggerRefresh, triggerResize} from "../index.js";
 import {calculateFontRatio} from "../canvas/font.js";
 import {pushStateToHistory} from "../state/state.js";
 import {AVAILABLE_FONTS} from "../config/fonts.js";
+import {createDialog} from "../utils/dialogs.js";
 
 export function init() {
     setupFontDialog();

@@ -2,7 +2,6 @@ import $ from "jquery";
 import 'jquery-ui/ui/widgets/sortable.js';
 import SimpleBar from "simplebar";
 import * as state from "../state/state.js";
-import {Range} from "../utils/utilities.js";
 import {triggerRefresh, triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";
 import {CanvasControl} from "../canvas/canvas.js";

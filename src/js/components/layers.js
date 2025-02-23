@@ -5,7 +5,7 @@ import * as state from "../state/state.js";
 import {triggerRefresh} from "../index.js";
 import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
-import {createDialog} from "../utils/utilities.js";
+import {createDialog} from "../utils/dialogs.js";
 
 let $container, $template, $list, $editDialog, $editName;
 let simpleBar, layerComponents, tooltips;

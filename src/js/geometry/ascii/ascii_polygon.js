@@ -1,5 +1,5 @@
 import Cell from "../cell.js";
-import {create2dArray} from "../../utils/utilities.js";
+import {create2dArray} from "../../utils/arrays.js";
 
 export default class AsciiPolygon {
     constructor(startCell) {

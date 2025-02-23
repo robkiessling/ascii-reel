@@ -9,11 +9,12 @@ import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import {hoveredCell, iterateHoveredCells} from "../canvas/hover.js";
 import tippy from 'tippy.js';
-import {capitalizeFirstLetter, translateGlyphs} from "../utils/utilities.js";
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {strings} from "../config/strings.js";
 import AsciiRect from "../geometry/ascii/ascii_rect.js";
 import AsciiLine from "../geometry/ascii/ascii_line.js";
+import {translateGlyphs} from "../utils/arrays.js";
+import {capitalizeFirstLetter} from "../utils/strings.js";
 
 // -------------------------------------------------------------------------------- Main External API
 

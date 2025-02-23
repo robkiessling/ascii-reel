@@ -7,60 +7,22 @@ import * as actions from "../io/actions.js";
 
 import Animated_GIF from "gif-transparency";
 
-import {
-    confirmDialog,
-    createDialog,
-    createHTMLFile,
-    createHorizontalMenu, setIntervalUsingRAF, defer,
-} from "../utils/utilities.js";
+import { setIntervalUsingRAF, defer } from "../utils/utilities.js";
 import {CanvasControl} from "../canvas/canvas.js";
 import Color from "@sphinxxxx/color-conversion";
 import {fontRatio} from "../canvas/font.js";
+import {confirmDialog, createDialog} from "../utils/dialogs.js";
 
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
 
 export function init() {
-    setupMainMenu();
     setupNewFile();
     setupUpload();
     setupSaveDialog();
     setupExportDialog();
 }
 
-
-
-// --------------------------------------------------------------- Main Menu
-
-let $mainMenu, mainMenu;
-
-function setupMainMenu() {
-    $mainMenu = $('#main-menu');
-    mainMenu = createHorizontalMenu($mainMenu, $li => refreshMenu());
-}
-
-export function refreshMenu() {
-    if (mainMenu.isShowing()) {
-        $mainMenu.find('.action-item').each((index, item) => {
-            const $item = $(item);
-            const action = actions.getActionInfo($item.data('action'));
-
-            if (action) {
-                let html = `<span>${action.name}</span>`;
-                if (action.shortcutAbbr) {
-                    html += `<span class="shortcut">${action.shortcutAbbr}</span>`;
-                }
-                $item.html(html);
-                $item.off('click').on('click', () => action.callback());
-                $item.toggleClass('disabled', !action.enabled);
-            }
-            else {
-                $item.empty();
-                $item.off('click');
-            }
-        });
-    }
-}
 
 
 // --------------------------------------------------------------- New File
@@ -670,6 +632,21 @@ function exportWebm(options) {
 
 
 
+
+// Note: Indentation is purposely left-aligned since it gets put exactly as is into HTML file
+function createHTMLFile(title, script, body) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <script>${script}</script>
+</head>
+<body>
+    ${body}
+</body>
+</html>`;
+}
 
 // Converts a frame to a string using the given newLineChar and (optional) lineFormatter
 function exportableFrameString(frame, newLineChar, lineFormatter = function(line) { return line.text; }) {

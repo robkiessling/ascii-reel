@@ -1,6 +1,6 @@
 import $ from "jquery";
 import * as state from "../state/state.js";
-import {roundToDecimal} from "../utils/utilities.js";
+import {roundToDecimal} from "../utils/numbers.js";
 
 const FONT_PT = 16; // Font size for canvas rendering
 

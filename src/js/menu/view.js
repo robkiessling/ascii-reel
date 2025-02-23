@@ -1,10 +1,10 @@
 import $ from "jquery";
-import {createDialog} from "../utils/utilities.js";
 import * as state from "../state/state.js";
 import {triggerRefresh} from "../index.js";
 import Picker from "vanilla-picker";
 import * as actions from "../io/actions.js";
 import {strings} from "../config/strings.js";
+import {createDialog} from "../utils/dialogs.js";
 
 const ALLOWED_GRID_WIDTHS = [1, 2, 3, 4];
 const ALLOWED_GRID_SPACINGS = [1, 2, 4, 5, 8, 10, 16, 20, 32, 50, 64, 100];

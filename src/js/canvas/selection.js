@@ -1,4 +1,3 @@
-import {create2dArray, mirrorCharHorizontally, mirrorCharVertically, translateGlyphs} from "../utils/utilities.js";
 import {triggerRefresh} from "../index.js";
 import * as state from "../state/state.js";
 import * as editor from "../components/editor.js";
@@ -11,6 +10,8 @@ import SelectionWand from "../geometry/selection/selection_wand.js";
 import SelectionLine from "../geometry/selection/selection_line.js";
 import SelectionLasso from "../geometry/selection/selection_lasso.js";
 import SelectionText from "../geometry/selection/selection_text.js";
+import {create2dArray, translateGlyphs} from "../utils/arrays.js";
+import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
 
 
 // -------------------------------------------------------------------------------- Main API
