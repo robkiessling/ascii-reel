@@ -34,6 +34,10 @@ const CHECKER_SIZE = 10;
 const ZOOM_BOUNDARIES = [0.25, 30];
 const ZOOM_MARGIN = 1.2;
 
+/**
+ * Handles all the setup around a <canvas> element (e.g. sizing it for devicePixelRatio), as well as drawing characters
+ * and shapes to it.
+ */
 export default class CanvasControl {
     constructor($canvas, config = {}) {
         this.$canvas = $canvas;

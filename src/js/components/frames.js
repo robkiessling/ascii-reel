@@ -3,6 +3,7 @@ import * as state from "../state/state.js";
 import {triggerRefresh, triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";
 import CanvasControl from "../canvas/canvas.js";
+import ArrayRange from "../utils/arrays.js";
 
 let $container, $template, $list;
 let simpleBar, frameComponents, tooltips;
@@ -96,7 +97,7 @@ function setupSortable() {
 
             // If dragging a frame that is outside the current frameRangeSelection, use that frame as the draggedRange instead
             if (!draggedRange.includes(draggedIndex)) {
-                draggedRange = new Range(draggedIndex, draggedIndex);
+                draggedRange = new ArrayRange(draggedIndex, draggedIndex);
             }
 
             // If dragging multiple frames, we update the frame-index to show the indices of the entire dragged
