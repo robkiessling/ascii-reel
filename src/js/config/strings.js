@@ -18,6 +18,8 @@ export const strings = {
     'view.grid-settings.name': 'Grid Settings',
     'view.show-grid.name': 'Show Grid',
     'view.hide-grid.name': 'Hide Grid',
+    'view.show-whitespace.name': 'Show Whitespace',
+    'view.hide-whitespace.name': 'Hide Whitespace',
     'view.zoom-in.name': 'Zoom In',
     'view.zoom-out.name': 'Zoom Out',
     'view.zoom-fit.name': 'Zoom Fit',

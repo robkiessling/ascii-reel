@@ -11,6 +11,7 @@ const ALLOWED_GRID_SPACINGS = [1, 2, 4, 5, 8, 10, 16, 20, 32, 50, 64, 100];
 export function init() {
     setupGridToggle();
     setupGridDialog();
+    setupWhitespaceToggle();
 
     actions.registerAction('view.zoom-in', {
         callback: () => {},
@@ -86,4 +87,16 @@ function openGridDialog() {
     gridColorPicker.setColor(state.config('grid').color, false);
 
     $gridDialog.dialog('open');
+}
+
+
+
+function setupWhitespaceToggle() {
+    actions.registerAction('view.toggle-whitespace', {
+        name: () => state.config('whitespace') ? strings['view.hide-whitespace.name'] : strings['view.show-whitespace.name'],
+        callback: () => {
+            state.config('whitespace', !state.config('whitespace'));
+            triggerRefresh('chars');
+        }
+    });
 }

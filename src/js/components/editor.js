@@ -101,6 +101,8 @@ export function setupMouseEvents(canvasControl) {
 
     /*  ---------------------  Event Listeners  ---------------------  */
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
+        if (colorPickerOpen) return;
+
         switch(tool) {
             case 'draw-freeform':
                 drawCharShape();
@@ -140,6 +142,8 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
+        if (colorPickerOpen) return;
+
         $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
 
         if (mouseEvent.which !== 1) { return; } // only care about left-click
@@ -164,6 +168,8 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvent, cell, tool) => {
+        if (colorPickerOpen) return;
+
         switch(tool) {
             case 'draw-freeform':
             case 'eraser':
@@ -479,6 +485,7 @@ function finishDrawing() {
 let cachedColorString = null;
 let cachedColorIndex = null;
 let $addToPalette, colorPicker, colorPickerTooltip, addToPaletteTooltip;
+let colorPickerOpen = false;
 
 // Returns the currently selected colorIndex, or creates a new index if a new color is selected.
 // Also caching the result for faster performance since this gets called a lot in a loop
@@ -517,6 +524,7 @@ function setupColorPicker() {
             keyboard.toggleStandard(true);
             colorPickerTooltip.disable();
             $colorPicker.addClass('picker-open');
+            colorPickerOpen = true;
 
             if (SHOW_ADD_ICON) {
                 if (!$addToPalette) {
@@ -547,6 +555,7 @@ function setupColorPicker() {
             keyboard.toggleStandard(false);
             colorPickerTooltip.enable();
             $colorPicker.removeClass('picker-open');
+            colorPickerOpen = false;
         },
         onChange: (color) => {
             $colorPicker.get(0).style.background = color[state.COLOR_FORMAT];

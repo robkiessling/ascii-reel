@@ -24,6 +24,7 @@ const CONFIG_DEFAULTS = {
         spacing: 1,
         color: '#ccc'
     },
+    whitespace: false,
     onion: false,
     lockLayerVisibility: true,
     layerIndex: 0,

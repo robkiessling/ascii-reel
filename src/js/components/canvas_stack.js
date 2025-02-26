@@ -44,7 +44,10 @@ export function resize() {
 export function redrawCharCanvas() {
     charCanvas.clear();
     charCanvas.drawBackground(state.config('background'));
-    charCanvas.drawGlyphs(state.layeredGlyphs(state.currentFrame(), { showMovingContent: true, showDrawingContent: true }));
+    charCanvas.drawGlyphs(
+        state.layeredGlyphs(state.currentFrame(), { showMovingContent: true, showDrawingContent: true }),
+        { showWhitespace: state.config('whitespace') }
+    );
 
     const grid = state.config('grid');
     if (grid.show) {

@@ -12,6 +12,10 @@ const WINDOW_BORDER_WIDTH = 4;
 const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles
 const ONION_OPACITY = 0.25;
 
+const WHITESPACE_CHAR = '·';
+const WHITESPACE_COLOR = 'rgba(115,115,115,0.70)'
+const WHITESPACE_COLOR_INDEX = -1;
+
 const OUTLINE_WIDTH = 0.5;
 
 const CURSOR_CELL_COLOR = '#31e39d';
@@ -96,15 +100,17 @@ export default class CanvasControl {
         }
     }
 
-    drawGlyphs(glyphs) {
+    drawGlyphs(glyphs, options = {}) {
         // Convert individual glyphs into lines of text (of matching color), so we can call fillText as few times as possible
         let lines = [];
         let row, col, rowLength = glyphs.chars.length, colLength = glyphs.chars[0].length;
 
         for (row = 0; row < rowLength; row++) {
-            let line, colorIndex;
+            let line, colorIndex, char;
             for (col = 0; col < colLength; col++) {
                 colorIndex = glyphs.colors[row][col];
+                if (options.showWhitespace && glyphs.chars[row][col] === ' ') colorIndex = WHITESPACE_COLOR_INDEX;
+
                 if (line && colorIndex !== line.colorIndex) {
                     // Have to make new line
                     lines.push(line);
@@ -115,12 +121,16 @@ export default class CanvasControl {
                     // Increase row by 0.5 so it is centered in cell
                     line = { x: Cell.x(col), y: Cell.y(row + 0.5), colorIndex: colorIndex, text: '' }
                 }
-                line.text += (glyphs.chars[row][col] === '' ? ' ' : glyphs.chars[row][col]);
+
+                char = glyphs.chars[row][col] === '' ? ' ' : glyphs.chars[row][col];
+                if (options.showWhitespace && glyphs.chars[row][col] === ' ') char = WHITESPACE_CHAR;
+
+                line.text += char;
             }
             if (line) { lines.push(line); }
         }
         lines.forEach(line => {
-            this.context.fillStyle = colorStr(line.colorIndex);
+            this.context.fillStyle = line.colorIndex === WHITESPACE_COLOR_INDEX ? WHITESPACE_COLOR : colorStr(line.colorIndex)
             this.context.fillText(line.text, line.x, line.y);
         });
     }
