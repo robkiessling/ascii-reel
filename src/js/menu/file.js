@@ -156,7 +156,9 @@ function setupExportDialog() {
             $exportOptions.find(`[name="${option}"]`).closest('label').show();
         });
 
-        setupExportPreview(format);
+        toggleExportPreview(format);
+
+        $exportOptions.find(`[name="background"]`).closest('label').toggle(!!state.config('background'))
 
         if (EXPORT_OPTIONS[format].includes('frames')) {
             $exportOptions.find('[name="frames"]').trigger('change');
@@ -170,6 +172,9 @@ function setupExportDialog() {
                 EXPORT_OPTIONS[$exportFormat.val()].includes(option) && framesValue === dependency
             );
         }
+
+        // TODO [png-spritesheet] special case: spritesheet not supported for png
+        $('#spritesheet-png-warning').toggle(framesValue === 'spritesheet' && $exportFormat.val() === 'png');
     });
 
     $exportOptions.find('[name="width"]').on('input', evt => {
@@ -186,7 +191,7 @@ function setupExportDialog() {
     actions.registerAction('file.export-file', () => openExportDialog());
 }
 
-function setupExportPreview(format) {
+function toggleExportPreview(format) {
     const showPreview = SHOW_EXPORT_PREVIEW_FOR.includes(format);
     $exportPreview.toggle(showPreview);
     $exportOptions.find('input, select').off('change.example-text');
@@ -233,7 +238,26 @@ function openExportDialog() {
         $fontSize.val(DEFAULT_FONT_SIZE);
     }
 
+    const $spritesheetRows = $exportOptions.find(`[name="spritesheetRows"]`);
+    const $spritesheetCols = $exportOptions.find(`[name="spritesheetColumns"]`);
+    if (!$spritesheetRows.val() && !$spritesheetCols.val()) {
+        const { rows, cols } = optimalSpritesheetLayout();
+        $spritesheetRows.val(rows);
+        $spritesheetCols.val(cols);
+    }
+
     $exportFormat.trigger('change');
+}
+
+function optimalSpritesheetLayout() {
+    const frameCount = state.frames().length;
+
+    if (frameCount <= 0) return { rows: 0, cols: 0 };
+
+    const rows = Math.ceil(Math.sqrt(frameCount));
+    const cols = Math.ceil(frameCount / rows);
+
+    return { rows, cols };
 }
 
 // Resets the export width input, so that the next time the export dialog is opened it recalculates good defaults
@@ -284,6 +308,11 @@ function validateExportOptions() {
     let options = {};
     let isValid = true;
 
+    // TODO [png-spritesheet] Special case: do not allow spritesheet export with png
+    if ($exportFormat.val() === 'png' && $exportOptions.find(`[name="frames"]`).val() === 'spritesheet') {
+        isValid = false;
+    }
+
     EXPORT_OPTIONS[$exportFormat.val()].forEach(option => {
         // Special case: skip option if it is dependent on a different 'frames' value
         if (EXPORT_FRAMES_DEPENDENCIES[option] !== undefined) {
@@ -295,9 +324,7 @@ function validateExportOptions() {
 
         const $input = $exportOptions.find(`[name="${option}"]`);
         let value = $input.val();
-        if ($input.is(':checkbox')) {
-            value = $input.is(':checked');
-        }
+        if ($input.is(':checkbox')) value = $input.is(':checked');
 
         if (EXPORT_OPTION_VALIDATORS[option]) {
             switch(EXPORT_OPTION_VALIDATORS[option].type) {

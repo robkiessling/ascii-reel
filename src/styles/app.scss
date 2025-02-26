@@ -830,6 +830,14 @@ body {
     }
   }
 
+  .export-warning {
+    border: 1px solid $alert;
+    padding: 1rem;
+    .ri {
+      color: $alert;
+    }
+  }
+
 }
 
 

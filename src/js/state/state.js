@@ -478,7 +478,7 @@ export function layeredGlyphs(frame, options = {}) {
 
 // Returns the stored font as a string that can be entered as a CSS font-family attribute (including fallbacks)
 export function fontFamily() {
-    return `"${config('font')}", monospace`
+    return `'${config('font')}', monospace`
 }
 
 
