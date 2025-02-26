@@ -1,16 +1,15 @@
-@import 'simplebar/dist/simplebar.css';
-@import 'jquery-ui/themes/base/core';
-@import 'jquery-ui/themes/base/dialog';
-@import 'jquery-ui/themes/base/sortable';
-@import 'jquery-ui/themes/base/slider';
-@import 'jquery-ui/themes/base/tabs';
-@import 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
-@import 'vanilla-picker/dist/vanilla-picker.csp.css';
-@import 'tippy.js/dist/tippy.css';
-@import 'tippy.js/dist/border.css';
+@use 'simplebar/dist/simplebar.css';
+@use 'jquery-ui/themes/base/core';
+@use 'jquery-ui/themes/base/dialog';
+@use 'jquery-ui/themes/base/sortable';
+@use 'jquery-ui/themes/base/slider';
+@use 'jquery-ui/themes/base/tabs';
+@use 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
+@use 'vanilla-picker/dist/vanilla-picker.csp.css';
+@use 'tippy.js/dist/tippy.css';
+@use 'tippy.js/dist/border.css';
 
-
-@import 'icon-fonts/style.css';
+@use 'icon-fonts/style.css';
 
 // Matching font to the user's OS using GitHub's approach: https://css-tricks.com/snippets/css/system-font-stack/#aa-method-1-system-fonts-at-the-element-level
 // Note: This is the font used in the general UI, not the canvas (canvas font is configurable by user)
