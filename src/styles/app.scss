@@ -800,6 +800,38 @@ body {
   transform: translateX(-50%);
 }
 
+#export-file-dialog {
+  #example-container {
+    display: flex;
+    flex-direction: column;
+
+    .side-by-side {
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1rem;
+
+      img {
+        height: 10rem;
+        border: 1px solid $darkest;
+      }
+      #example-text {
+        flex-grow: 1;
+        background: white;
+        border: 1px solid $darkest;
+        color: $darkest;
+        height: 15rem;
+        overflow-y: scroll;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    }
+  }
+
+}
+
 
 
 #canvas-details {

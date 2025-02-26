@@ -20,12 +20,6 @@ export function refresh() {
     refreshOnion();
 }
 
-window.setInterval(() => {
-    if ($list.length) {
-        console.log($list.find('.frame.selected').first().visible());
-    }
-}, 500)
-
 export function rebuild() {
     const scrollElement = simpleBar.getScrollElement();
     const scrollLeft = scrollElement.scrollLeft;

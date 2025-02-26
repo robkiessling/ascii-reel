@@ -361,7 +361,7 @@ function colorSwap(cell, options) {
     if (targetChar === '') { return; }
 
     const updateMatchingColorsInCel = (cel) => {
-        state.iterateCellsForCel(cel, (row, col, char, color, cel) => {
+        state.iterateCellsForCel(cel, (row, col, char, color) => {
             if (color === targetColor) {
                 state.setCelGlyph(cel, row, col, char, currentColorIndex())
             }

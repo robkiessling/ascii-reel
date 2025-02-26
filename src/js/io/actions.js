@@ -34,7 +34,7 @@ let actionIdToShortcut = {
     'view.zoom-out': { displayChar: '-', char: '-', modifiers: [cmdKey, 'shiftKey'] },
     'view.zoom-fit': { char: '0', modifiers: [cmdKey, 'shiftKey'] },
 };
-let shortcutToActionId; // populated by refreshShortcuts()
+let shortcutToActionId = {}; // populated by refreshShortcuts()
 
 
 /**

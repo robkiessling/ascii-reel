@@ -323,6 +323,7 @@
         <label>
             Format:
             <select id="export-file-format" class="w-7">
+                <option value="json">JSON</option>
                 <option value="gif">GIF</option>
                 <option value="png">PNG</option>
                 <option value="txt">Plain Text</option>
@@ -334,6 +335,26 @@
         <div id="export-options">
             <label>
                 Font size: <input type="text" name="fontSize">
+            </label>
+            <label>
+                Frame Structure:
+                <select name="frameStructure">
+                    <option value="array-chars">Array: chars</option>
+                    <option value="obj-chars">Object: chars</option>
+                    <option value="obj-chars-colors">Object: chars, colors</option>
+                    <option value="obj-chars-colors-colorTable">Object: chars, colors, colorTable</option>
+                </select>
+            </label>
+            <label>
+                Color Format:
+                <select name="colorFormat">
+                    <option value="hex-str">Hex string</option>
+                    <option value="rgba-str">RGBA string</option>
+                    <option value="rgba-array">RGBA array</option>
+                </select>
+            </label>
+            <label>
+                <input type="checkbox" name="mergeCharRows" checked="checked"> Merge char rows into strings
             </label>
             <label>
                 Dimensions:
@@ -375,6 +396,15 @@
                 </select>
             </label>
         </div>
+        <div id="example-container">
+            <hr/>
+            <div>Example JSON (for 1 sample frame, shown on left):</div>
+            <div class="side-by-side">
+                <img id="example-img" alt="ABCDEF"/>
+                <pre id="example-text"></pre>
+            </div>
+        </div>
+
     </div>
 
     <div id="export-canvas-container">

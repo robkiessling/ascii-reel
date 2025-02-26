@@ -7,6 +7,8 @@ import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "../canvas/font.js";
 import {saveState} from "./localstorage.js";
 import ArrayRange, {create2dArray, translateGlyphs} from "../utils/arrays.js";
+import {currentColorIndex} from "../components/editor.js";
+import {getRandomInt} from "../utils/rng.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it in the
 // CONFIG_KEYS_FOR_HISTORY constant
@@ -103,13 +105,34 @@ export function load(data) {
         Object.entries(data.cels || {}).map(([k, v]) => [k, normalizeCel(v)])
     )
 
+    // Prune any unused frames, layers, and/or cels. This should only happen if file was modified outside of app.
+    const usedCelIds = new Set();
+    state.frames.forEach(frame => {
+        state.layers.forEach(layer => {
+            const celId = getCelId(layer.id, frame.id);
+            if (cel(layer, frame)) {
+                usedCelIds.add(celId)
+            } else {
+                console.warn(`No cel found for (${celId}) -- inserting blank cel`)
+                createCel(layer, frame);
+            }
+        })
+    })
+    for (const [celId, cel] of Object.entries(state.cels)) {
+        if (!usedCelIds.has(celId)) {
+            console.warn(`Cel (${celId}) is unused in frames/layers -- deleting cel`)
+            delete state.cels[celId];
+        }
+    }
+
     // Init sequences according to the highest current id (for each stateKey in SEQUENCES)
     sequences = SEQUENCES.reduce((obj, stateKey) => {
         obj[stateKey] = Math.max.apply(Math, state[stateKey].map(e => e.id));
         return obj;
     }, {})
 
-    importPalette(data.palette ? data.palette : { colors: palette.DEFAULT_PALETTE }, true)
+    importPalette(data.palette ? data.palette : { colors: palette.DEFAULT_PALETTE }, true);
+    vacuumColorTable();
 
     calculateFontRatio();
     triggerResize(true);
@@ -364,7 +387,7 @@ export function iterateCellsForCel(cel, callback) {
     let row, col, rowLength = numRows(), colLength = numCols();
     for (row = 0; row < rowLength; row++) {
         for (col = 0; col < colLength; col++) {
-            callback(row, col, cel.chars[row][col], cel.colors[row][col], cel);
+            callback(row, col, cel.chars[row][col], cel.colors[row][col]);
         }
     }
 }
@@ -434,6 +457,17 @@ export function layeredGlyphs(frame, options = {}) {
                 }
             });
         }
+
+        if (options.convertEmptyStrToSpace) {
+            for (r = 0; r < chars.length; r++) {
+                for (c = 0; c < chars[r].length; c++) {
+                    if (chars[r][c] === '') {
+                        chars[r][c] = ' ';
+                        // colors[r][c] will be left at default (0)
+                    }
+                }
+            }
+        }
     }
 
     return {
@@ -459,7 +493,25 @@ export function colorStr(colorIndex) {
     return state.colorTable[colorIndex] === undefined ? palette.DEFAULT_COLOR : state.colorTable[colorIndex];
 }
 
-// TODO Vacuum the colorTable every so often
+// Cleans out any unused colors from colorTable (adjusting cel color indices appropriately)
+export function vacuumColorTable() {
+    let newIndex = 0;
+    const colorIndexMapping = new Map();
+
+    iterateAllCels(cel => {
+        iterateCellsForCel(cel, (r, c, char, colorIndex) => {
+            if (!colorIndexMapping.has(colorIndex)) colorIndexMapping.set(colorIndex, newIndex++)
+            cel.colors[r][c] = colorIndexMapping.get(colorIndex);
+        })
+    })
+
+    const newColorTable = [];
+    for (const [oldIndex, newIndex] of colorIndexMapping.entries()) {
+        newColorTable[newIndex] = state.colorTable[oldIndex];
+    }
+    state.colorTable = newColorTable;
+}
+
 export function colorIndex(colorStr) {
     let index = state.colorTable.indexOf(colorStr);
 
@@ -668,15 +720,21 @@ function buildHistorySnapshot(options) {
     }
 }
 
+// We are deep merging the config into our current state config, and replacing everything else.
+// That way certain settings (e.g. what tool is selected) is inherited from the current state
+function loadHistorySnapshot(snapshot) {
+    const historyState = $.extend(true, {}, snapshot.state);
+    historyState.config = $.extend(true, {}, state.config, snapshot.state.config)
+    state = historyState;
+}
+
 function loadStateFromHistory(newIndex, oldIndex) {
     // console.log('loadStateFromHistory', newIndex, oldIndex);
 
     const newState = history[newIndex];
     const oldState = history[oldIndex];
 
-    // We are deep merging the history state into our current state rather than just replacing.
-    // That way certain settings (e.g. what tool is selected) is inherited from the current state
-    state = $.extend(true, state, newState.state);
+    loadHistorySnapshot(newState);
 
     if (newState.options.requiresCalculateFontRatio || oldState.options.requiresCalculateFontRatio) {
         calculateFontRatio();

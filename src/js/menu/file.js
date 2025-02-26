@@ -5,12 +5,15 @@ import * as state from "../state/state.js";
 import * as actions from "../io/actions.js";
 
 import Animated_GIF from "gif-transparency";
+import dedent from "dedent-js";
 
 import { setIntervalUsingRAF, defer } from "../utils/utilities.js";
 import CanvasControl from "../canvas/canvas.js";
 import Color from "@sphinxxxx/color-conversion";
 import {fontRatio} from "../canvas/font.js";
 import {confirmDialog, createDialog} from "../utils/dialogs.js";
+
+import exampleExportImg from "../../images/example-export.png";
 
 const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
 
@@ -102,7 +105,10 @@ const EXPORT_OPTIONS = {
     rtf: ['fontSize', 'background', 'frames', 'frameSeparator'],
     html: ['fontSize', 'fps', 'background', 'loop'],
     gif: ['width', 'height', 'fps', 'background'],
+    json: ['frameStructure', 'colorFormat', 'mergeCharRows']
 }
+
+const SHOW_EXPORT_PREVIEW_FOR = ['json']
 
 // The following options are visible only if 'frames' is set to the given value
 const EXPORT_FRAMES_DEPENDENCIES = {
@@ -120,13 +126,14 @@ const EXPORT_OPTION_VALIDATORS = {
     spritesheetRows: { type: 'integer' }
 }
 
-let $exportFileDialog, $exportFormat, $exportOptions;
+let $exportFileDialog, $exportFormat, $exportOptions, $exportPreview;
 let $exportCanvasContainer, exportCanvas;
 
 function setupExportDialog() {
     $exportFileDialog = $('#export-file-dialog');
     $exportFormat = $exportFileDialog.find('#export-file-format');
     $exportOptions = $exportFileDialog.find('#export-options');
+    $exportPreview = $exportFileDialog.find('#example-container');
     $exportCanvasContainer = $('#export-canvas-container');
     exportCanvas = new CanvasControl($('#export-canvas'), {});
 
@@ -135,10 +142,10 @@ function setupExportDialog() {
             $exportFileDialog.dialog('close');
         });
     }, 'Export', {
-        minWidth: 500,
-        maxWidth: 500,
-        minHeight: 500,
-        maxHeight: 500
+        minWidth: 700,
+        maxWidth: 700,
+        minHeight: 550,
+        maxHeight: 550
     });
 
     $exportFormat.on('change', evt => {
@@ -149,7 +156,11 @@ function setupExportDialog() {
             $exportOptions.find(`[name="${option}"]`).closest('label').show();
         });
 
-        $exportOptions.find('[name="frames"]').trigger('change');
+        setupExportPreview(format);
+
+        if (EXPORT_OPTIONS[format].includes('frames')) {
+            $exportOptions.find('[name="frames"]').trigger('change');
+        }
     });
 
     $exportOptions.find('[name="frames"]').on('change', evt => {
@@ -173,6 +184,34 @@ function setupExportDialog() {
     });
 
     actions.registerAction('file.export-file', () => openExportDialog());
+}
+
+function setupExportPreview(format) {
+    const showPreview = SHOW_EXPORT_PREVIEW_FOR.includes(format);
+    $exportPreview.toggle(showPreview);
+    $exportOptions.find('input, select').off('change.example-text');
+
+    if (showPreview) {
+        $exportOptions.find('input, select').on('change.example-text', () => refreshPreview());
+        refreshPreview();
+    }
+
+    function refreshPreview() {
+        $exportPreview.find('#example-img').attr('src', exampleExportImg);
+
+        const { isValid, options } = validateExportOptions();
+        if (!isValid) {
+            $exportPreview.find('#example-text').html('Invalid options selected above.');
+            return;
+        }
+
+        switch(format) {
+            case 'json':
+                return refreshJsonExportPreview(options);
+            default:
+                console.warn(`No preview handler for ${format}`)
+        }
+    }
 }
 
 
@@ -206,11 +245,14 @@ export function resetExportDimensions() {
 function exportFile(onSuccess) {
     const { isValid, options } = validateExportOptions();
 
-    if (!isValid) {
-        return;
-    }
+    if (!isValid) return;
+
+    state.vacuumColorTable(); // We embed the colorTable into some formats; this ensures it is as small as possible
 
     switch($exportFormat.val()) {
+        case 'json':
+            exportJson(options);
+            break;
         case 'png':
             exportPng(options);
             break;
@@ -286,6 +328,168 @@ function validateExportOptions() {
         options: options
     };
 }
+
+function refreshJsonExportPreview(options) {
+    let frameExample = '';
+
+    const getColor = (colorStr) => {
+        const color = new Color(colorStr);
+        switch (options.colorFormat) {
+            case 'hex-str':
+                return `'${color.hex}'`
+            case 'rgba-str':
+                return `'${color.rgbaString}'`
+            case 'rgba-array':
+                return `[${color.rgba.join(',')}]`
+            default:
+                return 'Invalid'
+        }
+    }
+    const getCharRow = (str) => {
+        return options.mergeCharRows ? `'${str}'` : `[${str.split('').map(char => `'${char}'`).join(', ')}]`
+    }
+
+    switch(options.frameStructure) {
+        case 'array-chars':
+            frameExample = dedent`
+            {
+                fps: 0,
+                background: null,
+                frames: [
+                    ${getCharRow('aa')},
+                    ${getCharRow('bb')},
+                    ${getCharRow('%!')},
+                ]
+            }
+            `;
+            break;
+        case 'obj-chars':
+            frameExample = dedent`
+            {
+                fps: 0,
+                background: null,
+                frames: [
+                    {
+                        chars: [
+                            ${getCharRow('aa')},
+                            ${getCharRow('bb')},
+                            ${getCharRow('%!')},
+                        ]
+                    }
+                ]
+            }`
+            break;
+        case 'obj-chars-colors':
+            frameExample = dedent`
+            {
+                fps: 0,
+                background: null,
+                frames: [
+                    {
+                        chars: [
+                            ${getCharRow('aa')},
+                            ${getCharRow('bb')},
+                            ${getCharRow('%!')},
+                        ],
+                        colors: [
+                            [ ${getColor('#000000ff')}, ${getColor('#ff0000ff')} ],
+                            [ ${getColor('#0000ffff')}, ${getColor('#ff0000ff')} ],
+                            [ ${getColor('#00ff00ff')}, ${getColor('#ff0000ff')} ]
+                        ]
+                    }
+                ]
+            }`
+            break;
+        case 'obj-chars-colors-colorTable':
+            frameExample = dedent`
+            {
+                fps: 0,
+                background: null,
+                frames: [
+                    {
+                        chars: [
+                            ${getCharRow('aa')},
+                            ${getCharRow('bb')},
+                            ${getCharRow('%!')},
+                        ],
+                        colors: [
+                            [ 0, 1 ],
+                            [ 2, 1 ],
+                            [ 3, 1 ]
+                        ]
+                    }
+                ],
+                colorTable: [
+                    ${getColor('#000000ff')},
+                    ${getColor('#ff0000ff')},
+                    ${getColor('#0000ffff')},
+                    ${getColor('#00ff00ff')}
+                ]
+            }`
+            break;
+        default:
+            console.warn(`Unknown frameStructure: ${options.frameStructure}`);
+    }
+
+    $exportPreview.find('#example-text').html(frameExample);
+}
+
+function exportJson(options = {}) {
+    const encodeColor = (colorStr) => {
+        const color = new Color(colorStr);
+        switch (options.colorFormat) {
+            case 'hex-str':
+                return color.hex
+            case 'rgba-str':
+                return color.rgbaString
+            case 'rgba-array':
+                return color.rgba
+            default:
+                return null
+        }
+    }
+
+    const jsonData = {
+        width: state.numCols(),
+        height: state.numRows(),
+        fps: state.config('fps'),
+        background: state.config('background') ? encodeColor(state.config('background')) : null,
+        frames: []
+    }
+
+    state.frames().forEach((frame, i) => {
+        const glyphs = state.layeredGlyphs(frame, { showAllLayers: true, convertEmptyStrToSpace: true });
+        let jsonFrame;
+        switch (options.frameStructure) {
+            case 'array-chars':
+                jsonFrame = glyphs.chars;
+                if (options.mergeCharRows) jsonFrame = jsonFrame.map(row => row.join(''));
+                break;
+            case 'obj-chars':
+                jsonFrame = { chars: glyphs.chars };
+                if (options.mergeCharRows) jsonFrame.chars = jsonFrame.chars.map(row => row.join(''));
+                break;
+            case 'obj-chars-colors':
+                jsonFrame = { chars: glyphs.chars, colors: glyphs.colors };
+                if (options.mergeCharRows) jsonFrame.chars = jsonFrame.chars.map(row => row.join(''));
+                jsonFrame.colors = jsonFrame.colors.map(row => row.map(colorIndex => {
+                    return encodeColor(state.colorStr(colorIndex))
+                }));
+                break;
+            case 'obj-chars-colors-colorTable':
+                jsonFrame = { chars: glyphs.chars, colors: glyphs.colors };
+                if (options.mergeCharRows) jsonFrame.chars = jsonFrame.chars.map(row => row.join(''));
+                jsonData.colorTable = state.colorTable().map(colorStr => encodeColor(colorStr))
+                break;
+        }
+        jsonData.frames.push(jsonFrame);
+    });
+
+    const jsonString = JSON.stringify(jsonData);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    saveAs(blob, `${state.config('name')}.json`);
+}
+
 
 /**
  * options:
@@ -651,7 +855,7 @@ function createHTMLFile(title, script, body) {
 function exportableFrameString(frame, newLineChar, lineFormatter = function(line) { return line.text; }) {
     let image = '';
 
-    const glyphs = state.layeredGlyphs(frame, { showAllLayers: true });
+    const glyphs = state.layeredGlyphs(frame, { showAllLayers: true, convertEmptyStrToSpace: true });
     let row, col, rowLength = glyphs.chars.length, colLength = glyphs.chars[0].length;
 
     for (row = 0; row < rowLength; row++) {
@@ -670,7 +874,7 @@ function exportableFrameString(frame, newLineChar, lineFormatter = function(line
             if (!line) {
                 line = { colorIndex: colorIndex, text: '' }
             }
-            line.text += (glyphs.chars[row][col] === '' ? ' ' : glyphs.chars[row][col]);
+            line.text += glyphs.chars[row][col];
         }
 
         if (line) { lines.push(line); }

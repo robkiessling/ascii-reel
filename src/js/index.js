@@ -51,9 +51,7 @@ defer(() => {
 
     refreshShortcuts();
 
-    if (state.config('tool') === 'text-editor') {
-        selection.moveCursorToStart();
-    }
+    if (state.config('tool') === 'text-editor') selection.moveCursorToStart();
 
     localstorage.setupAutoSave();
 })
@@ -66,10 +64,7 @@ defer(() => {
  * Resizes the components that depend on window size. Then triggers a full refresh.
  */
 export function triggerResize(clearSelection = false) {
-    console.log('actual')
-    if (clearSelection) {
-        selection.clear();
-    }
+    if (clearSelection) selection.clear();
 
     // Refresh frames controller first, since its configuration can affect canvas boundaries
     frames.refresh();
@@ -91,9 +86,8 @@ export function triggerResize(clearSelection = false) {
  *                  pushStateToHistory for more information)
  */
 export function triggerRefresh(type = 'full', saveState = false) {
-    if (!Array.isArray(type)) {
-        type = [type];
-    }
+    if (!Array.isArray(type)) type = [type];
+
     type.forEach(type => {
         switch(type) {
             case 'chars':
