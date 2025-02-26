@@ -7,7 +7,7 @@
  */
 import * as state from "./state.js";
 
-const STATE_KEY = 'state';
+const STATE_KEY = 'ascii-art-maker';
 const AUTO_SAVE_INTERVAL = 5000;
 
 export function loadState() {

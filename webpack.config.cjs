@@ -26,7 +26,7 @@ module.exports = {
     devServer: {
         static: {
             // Local filesystem directory where static html files are served
-            directory: path.resolve(__dirname, 'src')
+            directory: path.resolve(__dirname, 'dist')
         },
 
         // Don't really like live reloading; prefer to reload myself
