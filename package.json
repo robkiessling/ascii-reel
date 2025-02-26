@@ -60,7 +60,7 @@
     "jszip": "^3.10.1",
     "regenerator-runtime": "^0.13.11",
     "remixicon": "^4.6.0",
-    "simplebar": "^5.3.9",
+    "simplebar": "^6.3.0",
     "tippy.js": "^6.3.7",
     "vanilla-picker": "^2.12.3"
   }
