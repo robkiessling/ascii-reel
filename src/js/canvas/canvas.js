@@ -9,7 +9,8 @@ import {roundForComparison} from "../utils/numbers.js";
 const WINDOW_BORDER_COLOR = '#31e39d';
 const WINDOW_BORDER_WIDTH = 4;
 
-const SELECTION_COLOR = '#4c8bf5'; // Note: Opacity is set in css... this is so I don't have to deal with overlapping rectangles
+// Note: selection canvas overall opacity is set in css, that way I don't have to care about overlapping opacities
+const SELECTION_COLOR = '#4c8bf5';
 const ONION_OPACITY = 0.25;
 
 const WHITESPACE_CHAR = '·';
@@ -35,8 +36,7 @@ const ZOOM_BOUNDARIES = [0.25, 30];
 const ZOOM_MARGIN = 1.2;
 
 /**
- * Handles all the setup around a <canvas> element (e.g. sizing it for devicePixelRatio), as well as drawing characters
- * and shapes to it.
+ * Handles all the setup around a <canvas> element, drawing to the canvas, and zooming/translating the canvas view.
  */
 export default class CanvasControl {
     constructor($canvas, config = {}) {

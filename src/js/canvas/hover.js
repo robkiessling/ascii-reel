@@ -3,6 +3,8 @@ import * as state from '../state/state.js';
 import {BRUSH_TOOLS} from "../components/editor.js";
 import Cell from "../geometry/cell.js";
 
+// Currently there is only ever one canvasControl hooked up to the hoveredCell; the hoveredCell tracks
+// what cell is being hovered over on that specific canvasControl.
 export let hoveredCell = null;
 
 export function setupMouseEvents(canvasControl) {

@@ -1,3 +1,7 @@
+/**
+ * UI component for palette management, rendered on the right sidebar.
+ */
+
 import SimpleBar from "simplebar";
 import {triggerRefresh} from "../index.js";
 import * as state from '../state/state.js';

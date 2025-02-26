@@ -1,3 +1,10 @@
+/**
+ * This is the UI component for the canvas editing tools:
+ * - The editing toolbar on the left of the main canvas (e.g. free draw, draw line, paint brush, etc.)
+ * - The "submenu" toolbar that appears on the left when you've made a selection, or to choose a brush size, etc.
+ * - The color picker on the left toolbar
+ */
+
 import Picker from 'vanilla-picker/csp';
 import * as state from '../state/state.js';
 import * as selection from '../canvas/selection.js';

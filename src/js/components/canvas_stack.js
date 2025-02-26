@@ -1,6 +1,14 @@
 /**
- * This is the main canvas editor in the center of the page. It contains a stack of CanvasControls
- * so that the actual drawing is independent of the selection polygons, hovered cell effects, etc.
+ * This is the UI component for the main canvas editor in the center of the page. It contains a stack of CanvasControls:
+ * - charCanvas: The canvas that renders chars
+ * - hoveredCellCanvas: The canvas that renders a rectangular box over the hovered cell. This is its own canvas so we
+ *   can rapidly update it as the mouse moves without having to re-render any of the chars, selection polygons, etc.
+ * - selectionCanvas: The canvas that renders selection polygons (light blue). This canvas has an overall 0.5 opacity
+ *   so that you can see chars through the selections. We opt for this global opacity (instead of drawing each polygon
+ *   at 0.5 opacity) so we don't have to worry about overlapping opacities.
+ *   The selectionCanvas is also the canvas on top of the others, so it receives all the mouse events.
+ * - selectionBorderCanvas: The canvas that renders the borders of selections. Basically just renders some parts of the
+ *   selection polygons that would have been on the selectionCanvas but that needed full opacity.
  */
 
 import CanvasControl from "../canvas/canvas.js";

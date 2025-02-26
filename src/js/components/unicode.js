@@ -1,3 +1,7 @@
+/**
+ * UI component for the unicode character selector on the bottom-right of the page.
+ */
+
 import SimpleBar from "simplebar";
 import * as actions from "../io/actions.js";
 import * as state from "../state/state.js";

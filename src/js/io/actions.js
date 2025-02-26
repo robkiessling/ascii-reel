@@ -2,7 +2,7 @@ import tippy from "tippy.js";
 import {strings} from "../config/strings.js";
 import {isFunction}from "../utils/utilities.js";
 import {refresh as refreshMenu} from "../menu/main.js"
-import {isMacOS, modifierAbbr, modifierWord} from "../utils/operating_system.js";
+import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
 
 let actions;
 

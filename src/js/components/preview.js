@@ -1,3 +1,7 @@
+/**
+ * UI component for the canvas preview in the top-right area of the page.
+ */
+
 import * as state from "../state/state.js";
 import CanvasControl from "../canvas/canvas.js";
 import * as actions from "../io/actions.js";

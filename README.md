@@ -14,7 +14,7 @@ designed to aid manually drawing ASCII animations.
 ## Why make ASCII art?
 
 - It's fun and easy (at least, once you get the hang of it!)
-- Are you making a 2D game and suck at pixel art? Try make it out of ASCII!
+- Are you making a 2D game and suck at pixel art? Make the art out of ASCII instead!
 
 ## Why use this tool?
 
@@ -23,15 +23,14 @@ designed to aid manually drawing ASCII animations.
   - It's hard to move text around without it shifting everything
   - When exporting the final art to something like JSON, you have to 
   convert all the rows to strings, escape all the `\` and `"` characters, etc.
-- When making ASCII animations, it gets even harder to keep track of all the 
-  frames.
-- This tool has quality of life improvements over a text editor, such as:
+- When making animations, it gets even harder to keep track of all the frames.
+- This tool has many quality of life improvements over a text editor, such as:
   - An onion tool to see what the previous frame was
   - ASCII rectangle/line drawing helpers - draw a line of characters with the click of a mouse!
   - Layering: For complex animations, where a background is static but the foreground
     is moving. 
   - Coloring: This tool supports coloring individual characters
-  - Preview the animation while you're working on it
+  - Continuously preview the animation while you're working on it
 
 ## Dev
 

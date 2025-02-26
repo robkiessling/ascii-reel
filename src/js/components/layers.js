@@ -1,3 +1,7 @@
+/**
+ * UI component for layer management, rendered on the right sidebar.
+ */
+
 import SimpleBar from "simplebar";
 import * as state from "../state/state.js";
 import {triggerRefresh} from "../index.js";

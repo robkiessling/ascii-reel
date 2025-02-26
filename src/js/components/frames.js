@@ -1,3 +1,7 @@
+/**
+ * UI component for frame management. Can be rendered on the left or bottom of the screen depending on user settings.
+ */
+
 import SimpleBar from "simplebar";
 import * as state from "../state/state.js";
 import {triggerRefresh, triggerResize} from "../index.js";
