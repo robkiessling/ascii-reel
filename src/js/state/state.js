@@ -41,6 +41,7 @@ const CONFIG_DEFAULTS = {
     drawLine: {
         type: 'basic'
     },
+    lastExportOptions: {}
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',

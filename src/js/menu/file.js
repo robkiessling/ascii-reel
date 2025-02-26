@@ -128,6 +128,7 @@ const EXPORT_OPTION_VALIDATORS = {
 
 let $exportFileDialog, $exportFormat, $exportOptions, $exportPreview;
 let $exportCanvasContainer, exportCanvas;
+let firstTimeOpeningExport = true;
 
 function setupExportDialog() {
     $exportFileDialog = $('#export-file-dialog');
@@ -139,6 +140,7 @@ function setupExportDialog() {
 
     createDialog($exportFileDialog, () => {
         exportFile(() => {
+            saveExportSettings();
             $exportFileDialog.dialog('close');
         });
     }, 'Export', {
@@ -159,6 +161,7 @@ function setupExportDialog() {
         toggleExportPreview(format);
 
         $exportOptions.find(`[name="background"]`).closest('label').toggle(!!state.config('background'))
+        $('#spritesheet-png-warning').toggle(showPngSpritesheetWarning());
 
         if (EXPORT_OPTIONS[format].includes('frames')) {
             $exportOptions.find('[name="frames"]').trigger('change');
@@ -173,8 +176,7 @@ function setupExportDialog() {
             );
         }
 
-        // TODO [png-spritesheet] special case: spritesheet not supported for png
-        $('#spritesheet-png-warning').toggle(framesValue === 'spritesheet' && $exportFormat.val() === 'png');
+        $('#spritesheet-png-warning').toggle(showPngSpritesheetWarning());
     });
 
     $exportOptions.find('[name="width"]').on('input', evt => {
@@ -224,6 +226,15 @@ function openExportDialog() {
     $exportFileDialog.dialog('open');
 
     $exportOptions.find(`[name="fps"]`).val(state.config('fps'));
+
+    // If it's the first time opening the export dialog, set its values according to the last saved export settings
+    if (firstTimeOpeningExport && state.config('lastExportOptions')) {
+        for (const [key, value] of Object.entries(state.config('lastExportOptions'))) {
+            const $input = $exportOptions.find(`[name="${key}"]`);
+            $input.is(':checkbox') ? $input.prop('checked', !!value) : $input.val(value);
+        }
+        firstTimeOpeningExport = false;
+    }
 
     const $width = $exportOptions.find(`[name="width"]`);
     if (!$width.val()) {
@@ -302,14 +313,18 @@ function exportFile(onSuccess) {
     onSuccess();
 }
 
+// TODO Special case: do not allow spritesheet export with png
+function showPngSpritesheetWarning() {
+    return $exportFormat.val() === 'png' && $exportOptions.find(`[name="frames"]`).val() === 'spritesheet';
+}
+
 function validateExportOptions() {
     $exportOptions.find('.error').removeClass('error');
 
     let options = {};
     let isValid = true;
 
-    // TODO [png-spritesheet] Special case: do not allow spritesheet export with png
-    if ($exportFormat.val() === 'png' && $exportOptions.find(`[name="frames"]`).val() === 'spritesheet') {
+    if (showPngSpritesheetWarning()) {
         isValid = false;
     }
 
@@ -354,6 +369,11 @@ function validateExportOptions() {
         isValid: isValid,
         options: options
     };
+}
+
+function saveExportSettings() {
+    const { isValid, options } = validateExportOptions();
+    if (isValid) state.config('lastExportOptions', options);
 }
 
 function refreshJsonExportPreview(options) {
