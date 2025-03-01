@@ -3,7 +3,6 @@ import 'jquery-ui/ui/widgets/slider.js';
 import 'jquery-ui/ui/widgets/dialog.js';
 import 'jquery-visible';
 import '../styles/app.scss'
-import 'remixicon/fonts/remixicon.css';
 
 import { init as initClipboard } from "./io/clipboard.js"
 import { init as initEditor, refresh as refreshEditor } from "./components/editor.js"

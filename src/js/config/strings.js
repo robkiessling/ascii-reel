@@ -151,4 +151,7 @@ export const strings = {
     //     '- Text Editor Tool: Pastes the character once\n' +
     //     '- Draw Character Tool: Sets the character\n' +
     //     '- Selections: Fill selected areas with the character',
+
+
+    'warnings.current-layer-not-visible': 'The current layer is not visible'
 }

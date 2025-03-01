@@ -9,7 +9,8 @@
 @use 'tippy.js/dist/tippy.css';
 @use 'tippy.js/dist/border.css';
 
-@use 'icon-fonts/style.css';
+@use 'icomoon/style.css';
+@use 'remixicon/remixicon.css';
 
 // Matching font to the user's OS using GitHub's approach: https://css-tricks.com/snippets/css/system-font-stack/#aa-method-1-system-fonts-at-the-element-level
 // Note: This is the font used in the general UI, not the canvas (canvas font is configurable by user)
@@ -541,6 +542,9 @@ body {
       border-color: var(--primary-color);
       background: var(--primary-color);
       color: black;
+      button {
+        color: black;
+      }
     }
 
     &.layer-template {
@@ -556,6 +560,12 @@ body {
     button {
       margin: 0;
       padding-bottom: 0;
+
+      height: 20px;
+
+      .ri {
+        font-size: 1rem;
+      }
 
       &:hover {
         background: none;
@@ -907,6 +917,14 @@ body {
 
   &:active {
     cursor: grabbing;
+  }
+}
+
+button {
+  width: 30px;
+  height: 30px;
+  .ri {
+    font-size: 1.25rem;
   }
 }
 

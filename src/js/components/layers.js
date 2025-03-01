@@ -8,6 +8,7 @@ import {triggerRefresh} from "../index.js";
 import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
 import {createDialog} from "../utils/dialogs.js";
+import {strings} from "../config/strings.js";
 
 let $container, $template, $list, $editDialog, $editName;
 let simpleBar, layerComponents, tooltips;
@@ -130,15 +131,18 @@ function refreshVisibilities() {
 
         const locked = state.config('lockLayerVisibility');
         $container.find('.toggle-visibility-lock').find('.ri')
-            .toggleClass('active', locked)
             .toggleClass('ri-lock-line', locked)
             .toggleClass('ri-lock-unlock-line', !locked);
 
-        if (state.currentLayer().visible) {
-            hideCanvasMessage();
-        }
-        else {
-            showCanvasMessage("<span class='ri ri-fw ri-error-warning-line alert'></span>&emsp;The current layer is not visible")
+        hideCanvasMessage();
+
+        // When visibility is not locked, it can be easy to start editing a layer that is not actually visible on screen.
+        // To help avoid this, we show a warning message if the current layer is not visible.
+        if (!locked && !state.currentLayer().visible) {
+            showCanvasMessage(
+                "<span class='ri ri-fw ri-error-warning-line alert'></span>&emsp;" +
+                strings['warnings.current-layer-not-visible']
+            )
         }
     }
 }
@@ -203,7 +207,6 @@ class LayerComponent {
         this._$container.find('.toggle-visibility')
             .toggleClass('invisible', state.config('lockLayerVisibility'))
             .find('.ri')
-            .toggleClass('active', this._layer.visible)
             .toggleClass('ri-eye-line', this._layer.visible)
             .toggleClass('ri-eye-off-line', !this._layer.visible);
     }
