@@ -1,21 +1,17 @@
-import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import dedent from "dedent-js";
+import Color from "@sphinxxxx/color-conversion";
 
 import * as state from "../state/state.js";
 import * as actions from "../io/actions.js";
-
-import Animated_GIF from "gif-transparency";
-import dedent from "dedent-js";
-
 import { setIntervalUsingRAF, defer } from "../utils/utilities.js";
 import CanvasControl from "../canvas/canvas.js";
-import Color from "@sphinxxxx/color-conversion";
 import {fontRatio} from "../canvas/font.js";
 import {confirmDialog, createDialog} from "../utils/dialogs.js";
-
 import exampleExportImg from "../../images/example-export.png";
+import {importJSZip, importAnimated_GIF} from "../utils/lazy_loaders.js";
 
-const FILE_EXTENSION = 'ascii'; // TODO Think of a file extension to use
+const FILE_EXTENSION = 'asciireel';
 
 
 export function init() {
@@ -552,12 +548,14 @@ function exportTxt(options = {}) {
 
     switch(options.frames) {
         case 'zip':
-            const zip = new JSZip();
-            state.frames().forEach((frame, index) => {
-                zip.file(`${index}.txt`, _frameToTxt(frame));
-            });
-            zip.generateAsync({type:"blob"}).then(function(content) {
-                saveAs(content, `${state.config('name')}.zip`);
+            importJSZip(JSZip => {
+                const zip = new JSZip();
+                state.frames().forEach((frame, index) => {
+                    zip.file(`${index}.txt`, _frameToTxt(frame));
+                });
+                zip.generateAsync({type:"blob"}).then(function(content) {
+                    saveAs(content, `${state.config('name')}.zip`);
+                });
             });
             break;
         case 'current':
@@ -638,12 +636,14 @@ function exportRtf(options) {
 
     switch(options.frames) {
         case 'zip':
-            const zip = new JSZip();
-            state.frames().forEach((frame, index) => {
-                zip.file(`${index}.rtf`, _buildRtfFile(_frameToRtf(frame)));
-            });
-            zip.generateAsync({type:"blob"}).then(function(content) {
-                saveAs(content, `${state.config('name')}.zip`);
+            importJSZip(JSZip => {
+                const zip = new JSZip();
+                state.frames().forEach((frame, index) => {
+                    zip.file(`${index}.rtf`, _buildRtfFile(_frameToRtf(frame)));
+                });
+                zip.generateAsync({type:"blob"}).then(function(content) {
+                    saveAs(content, `${state.config('name')}.zip`);
+                });
             });
             break;
         case 'current':
@@ -722,36 +722,38 @@ function exportHtml(options) {
 function exportGif(options) {
     setupExportCanvas(options);
 
-    const gif = new Animated_GIF.default({
-        // disposal value of 2 => Restore to background color after each frame
-        // https://github.com/deanm/omggif/blob/master/omggif.js#L151
-        disposal: 2,
+    importAnimated_GIF(Animated_GIF => {
+        const gif = new Animated_GIF.default({
+            // disposal value of 2 => Restore to background color after each frame
+            // https://github.com/deanm/omggif/blob/master/omggif.js#L151
+            disposal: 2,
 
-        // All colors with alpha values less than this cutoff will be made completely transparent, all colors above the
-        // cutoff will be made fully opaque (this is a gif limitation: pixels are either fully transparent or fully opaque).
-        // Setting the cutoff very low so nothing really gets turned transparent; everything is made fully opaque.
-        transparencyCutOff: 0.01,
-    })
-    gif.setSize(options.width, options.height);
-    gif.setDelay(1000 / options.fps);
-    gif.setRepeat(0); // loop forever
+            // All colors with alpha values less than this cutoff will be made completely transparent, all colors above the
+            // cutoff will be made fully opaque (this is a gif limitation: pixels are either fully transparent or fully opaque).
+            // Setting the cutoff very low so nothing really gets turned transparent; everything is made fully opaque.
+            transparencyCutOff: 0.01,
+        })
+        gif.setSize(options.width, options.height);
+        gif.setDelay(1000 / options.fps);
+        gif.setRepeat(0); // loop forever
 
-    state.frames().forEach((frame, i) => {
-        exportCanvas.clear();
-        if (options.background && state.config('background')) {
-            exportCanvas.drawBackground(state.config('background'));
-        }
-        exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
+        state.frames().forEach((frame, i) => {
+            exportCanvas.clear();
+            if (options.background && state.config('background')) {
+                exportCanvas.drawBackground(state.config('background'));
+            }
+            exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
 
-        gif.addFrameImageData(exportCanvas.context.getImageData(0, 0, options.width, options.height));
-    });
+            gif.addFrameImageData(exportCanvas.context.getImageData(0, 0, options.width, options.height));
+        });
 
-    gif.getBlobGIF(function (blob) {
-        // $('#export-debug').show().attr('src', URL.createObjectURL(blob)) // For testing
-        // window.open(URL.createObjectURL(blob)); // New window
-        saveAs(blob, `${state.config('name')}.gif`); // Save to downloads
+        gif.getBlobGIF(function (blob) {
+            // $('#export-debug').show().attr('src', URL.createObjectURL(blob)) // For testing
+            // window.open(URL.createObjectURL(blob)); // New window
+            saveAs(blob, `${state.config('name')}.gif`); // Save to downloads
 
-        gif.destroy();
+            gif.destroy();
+        })
     })
 }
 
@@ -783,25 +785,27 @@ function exportPng(options) {
 
     switch(options.frames) {
         case 'zip':
-            const zip = new JSZip();
+            importJSZip(JSZip => {
+                const zip = new JSZip();
 
-            // Build the zip file using callbacks since canvas.toBlob is asynchronous
-            function addFrameToZip(index) {
-                if (index <= state.frames().length - 1) {
-                    _frameToPng(state.frames()[index], blob => {
-                        zip.file(`${index}.png`, blob);
-                        addFrameToZip(index + 1);
-                    });
+                // Build the zip file using callbacks since canvas.toBlob is asynchronous
+                function addFrameToZip(index) {
+                    if (index <= state.frames().length - 1) {
+                        _frameToPng(state.frames()[index], blob => {
+                            zip.file(`${index}.png`, blob);
+                            addFrameToZip(index + 1);
+                        });
+                    }
+                    else {
+                        // Finished adding all frames; save the zip file
+                        zip.generateAsync({type:"blob"}).then(function(content) {
+                            saveAs(content, `${state.config('name')}.zip`);
+                            complete();
+                        });
+                    }
                 }
-                else {
-                    // Finished adding all frames; save the zip file
-                    zip.generateAsync({type:"blob"}).then(function(content) {
-                        saveAs(content, `${state.config('name')}.zip`);
-                        complete();
-                    });
-                }
-            }
-            addFrameToZip(0);
+                addFrameToZip(0);
+            });
             break;
         case 'current':
             _frameToPng(state.currentFrame(), blob => {

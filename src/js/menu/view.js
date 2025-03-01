@@ -1,6 +1,6 @@
 import * as state from "../state/state.js";
 import {triggerRefresh} from "../index.js";
-import Picker from "vanilla-picker";
+import Picker from "vanilla-picker/csp";
 import * as actions from "../io/actions.js";
 import {strings} from "../config/strings.js";
 import {createDialog} from "../utils/dialogs.js";

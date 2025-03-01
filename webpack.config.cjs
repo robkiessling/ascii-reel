@@ -2,18 +2,25 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 module.exports = {
     entry: path.resolve(__dirname, 'src', 'js', 'index.js'),
     mode: 'development',
 
-    // Uncomment the following to help debug build errors
+    // Uncomment the following to help debug errors during the build process:
     // stats: {
     //     errorDetails: true
     // },
 
-    // Uncomment the following to help debug javascript errors in `/dist` builds:
+    // Uncomment the following to help debug javascript errors raised in production builds (after minification):
     // devtool: "source-map",
+
+    // Doubling max sizes, since we almost go over the default 244KiB max with just jquery & jquery-ui alone
+    performance: {
+        maxEntrypointSize: 512000,
+        maxAssetSize: 512000
+    },
 
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -30,7 +37,13 @@ module.exports = {
         new webpack.ProvidePlugin({
             $: "jquery",
             jQuery: "jquery"
-        })
+        }),
+
+        // Uncomment the following to analyze bundle component sizes (run `npm run build` after uncommenting
+        // and go to localhost:8888):
+        // new BundleAnalyzerPlugin({
+        //     generateStatsFile: true
+        // })
     ],
     devServer: {
         static: {
