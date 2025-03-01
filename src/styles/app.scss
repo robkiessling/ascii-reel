@@ -18,25 +18,20 @@ $font-monospace: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Liberation Mon
 
 $font-size-base: 14px;
 
-//$highlight: #f48225;
-//$highlight-dark: #e67920;
-
-$highlight: #31e39d;
-$highlight-dark: #1cca85;
-
-$highlight2: #4C8BF5;
-$highlight2-dark: #3873d7;
-
-$alert: #f48225;
-
-
-$darkest: #202124;
-$darker: #282C2F;
-$dark: #323639;
-$medium-dark: #424649; // custom
-$light: #868889; // custom
-$lighter: #c6c6c7; // custom
-$lightest: #D6D6D7;
+// The following use css variables (as opposed to scss variables) so they can be read by javascript (colors.js)
+// The colors were made using random palette generation at https://coolors.co
+:root {
+  --primary-color: #20FC8F;
+  --secondary-color: #4C8BF5;
+  --alert-color: #f48225;
+  --darkest: #202124;
+  --darker: #282C2F;
+  --dark: #323639;
+  --grey: #424649;
+  --light: #868889;
+  --lighter: #c6c6c7;
+  --lightest: #D6D6D7;
+}
 
 $header-height: 38px;
 $header-border-size: 3px;
@@ -52,7 +47,7 @@ $palette-triangle-size: 7px;
 $palette-icon-spacing: 4px;
 $editing-tool-size: 3rem;
 $sub-tool-size: 2.5rem;
-$simplebar-track-color: $darker;
+$simplebar-track-color: var(--darker);
 
 
 html, body {
@@ -68,7 +63,7 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
-  background: $darkest;
+  background: var(--darkest);
 }
 
 #header-content {
@@ -78,11 +73,22 @@ body {
   justify-content: space-between;
   align-items: center;
 
-  #file-name {
-    margin-left: 1rem;
-    color: white;
+  .center-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
+}
+
+.center-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  letter-spacing: 1px;
 }
 
 #body-content {
@@ -206,7 +212,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: $dark;
+    background: var(--dark);
     border: 3px solid transparent;
     color: white;
     font-size: 2rem;
@@ -215,12 +221,12 @@ body {
 
     &:hover:not(.selected) {
       cursor: pointer;
-      background: $medium-dark;
+      background: var(--grey);
     }
 
     &.selected {
-      border-color: $highlight;
-      background: $medium-dark;
+      border-color: var(--primary-color);
+      background: var(--grey);
     }
 
     &[data-tool="draw-freeform"] {
@@ -240,10 +246,10 @@ body {
   }
 
   #current-color {
-    border: 5px solid $dark;
+    border: 5px solid var(--dark);
 
     &:hover, &.picker-open {
-      border: 5px solid $medium-dark;
+      border: 5px solid var(--grey);
     }
   }
 }
@@ -259,8 +265,9 @@ body {
   display: flex;
   flex-direction: column;
 
-  background: $light;
-  border: 3px solid $highlight2;
+  background: var(--light);
+  //border: 3px solid var(--secondary-color);
+  border: 4px solid var(--secondary-color);
 
   .sub-tool {
     width: $sub-tool-size;
@@ -268,23 +275,23 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: $dark;
-    border: 1px solid $darker;
+    background: var(--dark);
+    border: 1px solid var(--darker);
     color: white;
     font-size: 1.5rem;
     box-sizing: border-box;
 
     &:hover:not(.disabled) {
       cursor: pointer;
-      background: $medium-dark;
+      background: var(--grey);
     }
 
     &.disabled {
-      color: $light;
+      color: var(--light);
     }
 
     &.active {
-      color: $highlight;
+      color: var(--primary-color);
     }
   }
 }
@@ -300,15 +307,15 @@ body {
 
   display: flex;
   align-items: center;
-  background: $dark;
+  background: var(--dark);
   color: white;
-  border: 3px solid $alert;
+  border: 3px solid var(--alert-color);
   padding: 0.5rem 1rem;
 }
 
 
 #canvas-container {
-  background: $lightest;
+  background: var(--lightest);
   flex: 1;
 
   position: relative;
@@ -319,11 +326,11 @@ body {
 }
 
 .simplebar-scrollbar::before {
-  background-color: $lightest;
+  background-color: var(--lightest);
 }
 
 .simplebar-scrollbar.simplebar-hover::before, .simplebar-dragging .simplebar-scrollbar::before {
-  background-color: $light;
+  background-color: var(--light);
   opacity: 0.6;
 }
 
@@ -359,8 +366,8 @@ body {
     max-height: $frame-size;
 
     cursor: pointer;
-    border: $frame-border-size solid $light;
-    background: $lightest;
+    border: $frame-border-size solid var(--light);
+    background: var(--lightest);
 
     .frame-index {
       display: flex;
@@ -372,15 +379,15 @@ body {
       height: 25px;
       justify-content: center;
       align-items: center;
-      background: $light;
+      background: var(--light);
       color: white;
     }
 
     &.selected {
-      border-color: $highlight;
+      border-color: var(--primary-color);
       .frame-index {
         color: black;
-        background: $highlight;
+        background: var(--primary-color);
       }
     }
 
@@ -389,8 +396,8 @@ body {
     }
 
     &.placeholder {
-      background: $dark;
-      border: $frame-border-size dashed $highlight;
+      background: var(--dark);
+      border: $frame-border-size dashed var(--primary-color);
     }
 
     &.range-selection-sibling {
@@ -490,12 +497,12 @@ body {
     height: $preview-size;
     width: $preview-size;
 
-    background: $lightest;
+    background: var(--lightest);
   }
   #preview-fps-container {
     display: flex;
     align-items: center;
-    background: $dark;
+    background: var(--dark);
 
     #preview-fps-value {
       font-size: 0.875rem;
@@ -522,17 +529,17 @@ body {
     max-width: $right-col-width - $scrollbar-width;
     padding: 2px 2px 2px 6px;
 
-    background: $dark;
+    background: var(--dark);
     color: white;
-    border: 2px solid $light;
+    border: 2px solid var(--light);
     box-sizing: border-box;
 
     font-size: 0.875rem;
     cursor: pointer;
 
     &.selected {
-      border-color: $highlight;
-      background: $highlight;
+      border-color: var(--primary-color);
+      background: var(--primary-color);
       color: black;
     }
 
@@ -541,8 +548,8 @@ body {
     }
 
     &.placeholder {
-      background: $dark;
-      border: $frame-border-size dashed $highlight;
+      background: var(--dark);
+      border: $frame-border-size dashed var(--primary-color);
       height: 1.5rem;
     }
 
@@ -553,6 +560,10 @@ body {
       &:hover {
         background: none;
       }
+    }
+
+    .layer-name {
+      //color: white;
     }
   }
 }
@@ -583,8 +594,8 @@ body {
           left: 0;
 
           border-width: $palette-triangle-size;
-          border-left-color: $highlight;
-          border-top-color: $highlight;
+          border-left-color: var(--primary-color);
+          border-top-color: var(--primary-color);
         }
 
         &::after {
@@ -599,7 +610,7 @@ body {
     }
 
     .message {
-      color: $light;
+      color: var(--light);
       font-size: 0.875rem;
       font-style: italic;
     }
@@ -618,14 +629,14 @@ body {
       cursor: pointer;
 
       background: #000;
-      box-shadow: inset 0 0 0 1px $darkest;
+      box-shadow: inset 0 0 0 1px var(--darkest);
 
       &:active {
-        background: $darker;
+        background: var(--darker);
       }
 
       &:hover {
-        box-shadow: inset 0 0 0 1px $highlight;
+        box-shadow: inset 0 0 0 1px var(--primary-color);
       }
     }
   }
@@ -653,7 +664,7 @@ body {
         cursor: pointer;
 
         &.selected {
-          background: $highlight2;
+          background: var(--secondary-color);
         }
       }
     }
@@ -682,7 +693,7 @@ body {
     height: 100%;
 
     &.hovered {
-      background-color: $dark;
+      background-color: var(--dark);
       cursor: pointer;
     }
     &.visible {
@@ -703,7 +714,7 @@ body {
     > ul {
       display: none;
       position: absolute;
-      background-color: $dark;
+      background-color: var(--dark);
       color: white;
       list-style: none;
       padding: 0;
@@ -721,18 +732,18 @@ body {
 
         &.disabled {
           pointer-events: none;
-          color: $light;
+          color: var(--light);
         }
 
         &:hover {
-          background: $medium-dark;
+          background: var(--grey);
           cursor: pointer;
         }
 
         &.break {
           pointer-events: none;
           cursor: default;
-          border-bottom: 1px solid $light;
+          border-bottom: 1px solid var(--light);
           padding: 0;
           margin: 0.5rem 0;
         }
@@ -747,7 +758,7 @@ body {
 
 #main-menu {
   .shortcut {
-    color: $light;
+    color: var(--light);
     margin-left: 1rem;
   }
 }
@@ -813,13 +824,13 @@ body {
 
       img {
         height: 10rem;
-        border: 1px solid $darkest;
+        border: 1px solid var(--darkest);
       }
       #example-text {
         flex-grow: 1;
         background: white;
-        border: 1px solid $darkest;
-        color: $darkest;
+        border: 1px solid var(--darkest);
+        color: var(--darkest);
         height: 15rem;
         overflow-y: scroll;
         margin: 0;
@@ -830,10 +841,10 @@ body {
   }
 
   .export-warning {
-    border: 1px solid $alert;
+    border: 1px solid var(--alert-color);
     padding: 1rem;
     .ri {
-      color: $alert;
+      color: var(--alert-color);
     }
   }
 
@@ -876,7 +887,7 @@ body {
 }
 
 .alert {
-  color: $alert;
+  color: var(--alert-color);
 }
 
 // Remove text highlighting https://stackoverflow.com/a/4407335
@@ -901,7 +912,7 @@ body {
 
 .ri {
   &.active {
-    color: $highlight2;
+    color: var(--primary-color);
   }
 }
 
@@ -921,14 +932,15 @@ body {
 }
 
 .section-header {
-  color: $light;
+  color: var(--light);
+
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 0.875rem;
 }
 
 hr {
-  border-color: $lightest !important;
+  border-color: var(--lightest) !important;
   margin: 0.75rem 0;
 }
 
@@ -943,7 +955,7 @@ button {
   line-height: 1;
 
   &:hover {
-    background: $dark;
+    background: var(--dark);
   }
 
   &:disabled, &.disabled {
@@ -957,11 +969,12 @@ button {
   .ui-slider-handle {
     width: 0.8em;
     height: 0.8em;
-    background: $highlight2;
-    border-color: $dark;
+    background: var(--primary-color);
+    border-color: var(--dark);
 
     &.ui-state-active {
-      background: $highlight2-dark;
+      //background: var(--secondary-color-dark);
+      background: color-mix(in srgb, var(--primary-color) 80%, black 20%)
     }
   }
 
@@ -994,14 +1007,14 @@ button {
 }
 
 .ui-dialog {
-  background: $light;
+  background: var(--light);
 
   &.ui-widget-content {
-    border: 2px solid $lightest;
+    border: 2px solid var(--lightest);
   }
 
   .ui-widget-header {
-    background: $dark;
+    background: var(--dark);
     color: white;
     margin-bottom: 0.5rem;
 
@@ -1026,15 +1039,15 @@ button {
         margin: 0 -1rem;
         padding: 1rem 1rem 0 1rem;
 
-        border-bottom: 2px solid $highlight2;
+        border-bottom: 2px solid var(--secondary-color);
 
         li.ui-tab {
           border: none;
-          //border-bottom: 1px solid $highlight2;
+          //border-bottom: 1px solid var(--secondary-color);
         }
 
         li.ui-state-active {
-          background: $highlight2;
+          background: var(--secondary-color);
         }
       }
     }
@@ -1052,26 +1065,26 @@ button {
   }
 }
 .ui-widget-overlay {
-  background: $darkest;
+  background: var(--darkest);
   opacity: 0.75;
 }
 .ui-button {
-  background: $lightest;
-  color: $darkest;
-  border-color: $darkest;
+  background: var(--lightest);
+  color: var(--darkest);
+  border-color: var(--darkest);
 
   &:hover {
-    background: $lighter;
-    border-color: $darkest;
+    background: var(--lighter);
+    border-color: var(--darkest);
   }
 
   &.call-out {
     color: white;
-    background: $highlight2;
+    background: var(--secondary-color);
 
-    &:hover {
-      background: $highlight2-dark;
-    }
+    //&:hover {
+    //  background: var(--secondary-color-dark);
+    //}
   }
 }
 
@@ -1125,14 +1138,10 @@ button {
   //    width: 20px;
   //    padding: 0.2em 0;
   //
-  //    background: $highlight;
+  //    background: var(--primary-color);
   //    box-shadow: 0 0 0 1px silver;
   //
   //    border-radius: 0;
-  //
-  //    &:hover {
-  //      background: $highlight-dark;
-  //    }
   //  }
   //}
 }
@@ -1149,12 +1158,12 @@ button {
 .tippy-content {
   .title {
     font-weight: bold;
-    color: $highlight;
+    color: var(--primary-color);
   }
 
   .shortcut {
     margin-left: 1rem;
-    color: $light;
+    color: var(--light);
   }
 
   .description {

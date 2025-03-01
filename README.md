@@ -1,11 +1,11 @@
 # ascii-art-maker
 A tool to help create ASCII animations!
 
-![Editor](public/swashbuckler/swashbuckler-editor.png)
+![Editor](docs/swashbuckler/swashbuckler-editor.png)
 
 **Result:**
 
-<img src="public/swashbuckler/swashbuckler.gif" width="208" alt="Swashbuckler GIF">
+<img src="docs/swashbuckler/swashbuckler.gif" width="208" alt="Swashbuckler GIF">
 
 Note: This tool does **not** convert images to ASCII; it is 
 designed to aid manually drawing ASCII animations.

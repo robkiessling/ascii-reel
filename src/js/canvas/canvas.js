@@ -5,12 +5,13 @@ import Rect from "../geometry/rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
+import {PRIMARY, SECONDARY} from "../config/colors.js";
 
-const WINDOW_BORDER_COLOR = '#31e39d';
+const WINDOW_BORDER_COLOR = PRIMARY;
 const WINDOW_BORDER_WIDTH = 4;
 
 // Note: selection canvas overall opacity is set in css, that way I don't have to care about overlapping opacities
-const SELECTION_COLOR = '#4c8bf5';
+const SELECTION_COLOR = SECONDARY;
 const ONION_OPACITY = 0.25;
 
 const WHITESPACE_CHAR = '·';
@@ -19,7 +20,7 @@ const WHITESPACE_COLOR_INDEX = -1;
 
 const OUTLINE_WIDTH = 0.5;
 
-const CURSOR_CELL_COLOR = '#31e39d';
+const CURSOR_CELL_COLOR = PRIMARY;
 const CURSOR_WIDTH = 0.35;
 
 const DASH_OUTLINE_LENGTH = 5;

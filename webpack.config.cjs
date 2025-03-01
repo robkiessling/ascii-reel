@@ -21,6 +21,7 @@ module.exports = {
         new HtmlWebpackPlugin({
             hash: true,
             template: path.resolve(__dirname, 'src', 'index.html'),
+            favicon: path.resolve(__dirname, 'public/favicon.png')
         }),
         new webpack.ProvidePlugin({
             $: "jquery",
@@ -30,7 +31,7 @@ module.exports = {
     devServer: {
         static: {
             // Local filesystem directory where static html files are served
-            directory: path.resolve(__dirname, 'dist')
+            directory: path.resolve(__dirname, 'public')
         },
 
         // Don't really like live reloading; prefer to reload myself
