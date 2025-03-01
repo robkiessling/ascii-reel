@@ -42,7 +42,7 @@ export function rebuild() {
         $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
     });
 
-    this.refresh();
+    refresh();
 }
 
 export function currentLayerComponent() {

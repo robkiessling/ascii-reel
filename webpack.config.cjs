@@ -7,9 +7,13 @@ module.exports = {
     entry: path.resolve(__dirname, 'src', 'js', 'index.js'),
     mode: 'development',
 
+    // Uncomment the following to help debug build errors
     // stats: {
     //     errorDetails: true
     // },
+
+    // Uncomment the following to help debug javascript errors in `/dist` builds:
+    // devtool: "source-map",
 
     output: {
         path: path.resolve(__dirname, 'dist'),
