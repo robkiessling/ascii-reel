@@ -7,22 +7,22 @@ import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "../canvas/font.js";
 import {saveState} from "./localstorage.js";
 import ArrayRange, {create2dArray, translateGlyphs} from "../utils/arrays.js";
-import {currentColorIndex} from "../components/editor.js";
-import {getRandomInt} from "../utils/rng.js";
+import {DEFAULT_COLOR} from "../components/palette.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it in the
 // CONFIG_KEYS_FOR_HISTORY constant
 const CONFIG_DEFAULTS = {
     name: 'New Sprite',
-    dimensions: [10, 5],
+    dimensions: [20, 10],
     font: 'monospace',
     background: false,
     fps: 6,
     grid: {
-        show: false,
-        width: 1,
-        spacing: 1,
-        color: '#ccc'
+        show: true,
+        minorGridEnabled: true,
+        minorGridSpacing: 1,
+        majorGridEnabled: true,
+        majorGridSpacing: 5,
     },
     whitespace: false,
     onion: false,
@@ -495,23 +495,57 @@ export function colorStr(colorIndex) {
     return state.colorTable[colorIndex] === undefined ? palette.DEFAULT_COLOR : state.colorTable[colorIndex];
 }
 
-// Cleans out any unused colors from colorTable (adjusting cel color indices appropriately)
+// Cleans out any unused colors from colorTable (adjusting cel color indices appropriately). Colors can become unused
+// if, for example, some text was drawn with that color but then re-painted with a new color.
+// This method also ensures all cel colors actually exist in the colorTable.
 export function vacuumColorTable() {
-    let newIndex = 0;
-    const colorIndexMapping = new Map();
+    // Ensure colorTable has at least one entry so we can use index 0 as a fallback
+    if (!state.colorTable[0]) state.colorTable[0] = DEFAULT_COLOR;
 
+    let newIndex = 0;
+    const vacuumMap = new Map(); // maps original colorIndexes to their new vacuumed colorIndex
+    const dupUpdateMap = getDupColorUpdateMap(); // keeps track of any duplicate colorTable values
+    
     iterateAllCels(cel => {
         iterateCellsForCel(cel, (r, c, char, colorIndex) => {
-            if (!colorIndexMapping.has(colorIndex)) colorIndexMapping.set(colorIndex, newIndex++)
-            cel.colors[r][c] = colorIndexMapping.get(colorIndex);
+            // If colorTable does not have a value for the current colorIndex, we set the colorIndex to 0
+            if (!state.colorTable[colorIndex]) colorIndex = 0;
+            
+            // If the color value of a colorIndex is duplicated by an earlier colorIndex, we use that earlier colorIndex
+            if (dupUpdateMap.has(colorIndex)) colorIndex = dupUpdateMap.get(colorIndex);
+
+            // Add any new color indexes to the vacuum map
+            if (!vacuumMap.has(colorIndex)) vacuumMap.set(colorIndex, newIndex++)
+            
+            // Update the cel color to use the vacuumed index
+            cel.colors[r][c] = vacuumMap.get(colorIndex);
         })
     })
 
-    const newColorTable = [];
-    for (const [oldIndex, newIndex] of colorIndexMapping.entries()) {
-        newColorTable[newIndex] = state.colorTable[oldIndex];
+    const vacuumedColorTable = [];
+    for (const [oldIndex, newIndex] of vacuumMap.entries()) {
+        vacuumedColorTable[newIndex] = state.colorTable[oldIndex];
     }
-    state.colorTable = newColorTable;
+    state.colorTable = vacuumedColorTable;
+}
+
+// Returns a map of any duplicate colorTable values, where the key is the dup index and the value is the original index.
+// E.g. if colorTable is ['#000000', '#ff0000', '#00ff00', '#ff0000'], index 3 (the second '#ff0000') is a duplicate,
+// so the returned map would be { 3 => 1 }, since any cel that uses colorIndex 3 can be replaced with colorIndex 1.
+function getDupColorUpdateMap() {
+    const updateMap = new Map();
+    const colorStrToIndexMap = new Map();
+    state.colorTable.forEach((colorStr, colorIndex) => {
+        if (colorStrToIndexMap.has(colorStr)) {
+            // It is a duplicate
+            updateMap.set(colorIndex, colorStrToIndexMap.get(colorStr))
+        }
+        else {
+            // It is an original
+            colorStrToIndexMap.set(colorStr, colorIndex);
+        }
+    })
+    return updateMap;
 }
 
 export function colorIndex(colorStr) {

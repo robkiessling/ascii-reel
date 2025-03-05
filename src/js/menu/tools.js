@@ -8,6 +8,7 @@ import {calculateFontRatio} from "../canvas/font.js";
 import {pushStateToHistory} from "../state/state.js";
 import {AVAILABLE_FONTS} from "../config/fonts.js";
 import {createDialog} from "../utils/dialogs.js";
+import {recalculateBGColors} from "../canvas/background.js";
 
 export function init() {
     setupFontDialog();
@@ -172,6 +173,7 @@ function setupBackgroundDialog() {
 
     createDialog($backgroundDialog, () => {
         state.config('background', getBackgroundValue());
+        recalculateBGColors();
         triggerRefresh('full', true);
         $backgroundDialog.dialog('close');
     }, 'Save', {

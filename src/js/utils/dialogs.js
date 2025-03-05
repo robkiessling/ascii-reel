@@ -51,7 +51,11 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
             }
 
             keyboard.toggleStandard(true);
-            $(document).on('keyboard:enter.dialog', onAccept);
+
+            $(document).on('keyboard:enter.dialog', () => {
+                const $acceptButton = $dialog.dialog('widget').find('button.call-out');
+                if ($acceptButton.length === 1) $acceptButton.trigger('click');
+            });
 
             $dialog.find('.highlight:first').select();
         },

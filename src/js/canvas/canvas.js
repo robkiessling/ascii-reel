@@ -1,11 +1,12 @@
 import {setIntervalUsingRAF} from "../utils/utilities.js";
-import {colorStr, numCols, numRows, config} from "../state/state.js";
+import {colorStr, numCols, numRows, fontFamily} from "../state/state.js";
 import {fontHeight, fontWidth} from "./font.js";
 import Rect from "../geometry/rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
 import {PRIMARY, SECONDARY} from "../config/colors.js";
+import {drawCheckerboard, getHoverColor, HOVER_CELL_OPACITY} from "./background.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY;
 const WINDOW_BORDER_WIDTH = 4;
@@ -25,13 +26,6 @@ const CURSOR_WIDTH = 0.35;
 
 const DASH_OUTLINE_LENGTH = 5;
 const DASH_OUTLINE_FPS = 60;
-
-const HIGHLIGHT_CELL_COLOR = '#fff';
-const HIGHLIGHT_CELL_OPACITY = 0.15;
-
-const CHECKERBOARD_A = '#4c4c4c';
-const CHECKERBOARD_B = '#555';
-const CHECKER_SIZE = 10;
 
 const ZOOM_BOUNDARIES = [0.25, 30];
 const ZOOM_MARGIN = 1.2;
@@ -68,7 +62,7 @@ export default class CanvasControl {
         this.originalTransform = this.context.getTransform();
 
         // Set up font
-        this.context.font = `${fontHeight}px ${config('font')}`;
+        this.context.font = `${fontHeight}px ${fontFamily()}`;
         this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
 
@@ -202,8 +196,8 @@ export default class CanvasControl {
     }
 
     highlightCell(cell) {
-        this.context.fillStyle = HIGHLIGHT_CELL_COLOR;
-        this.context.globalAlpha = HIGHLIGHT_CELL_OPACITY;
+        this.context.fillStyle = getHoverColor();
+        this.context.globalAlpha = HOVER_CELL_OPACITY;
         this.context.fillRect(...cell.xywh);
     }
 
@@ -250,6 +244,8 @@ export default class CanvasControl {
     }
 
     drawGrid(width, spacing, color) {
+        if (!spacing) return;
+
         this.context.strokeStyle = color;
         this.context.lineWidth = width / this._currentZoom();
 
@@ -271,31 +267,7 @@ export default class CanvasControl {
     _fillCheckerboard() {
         // First, draw a checkerboard over full area (checkerboard does not change depending on zoom; this way we have
         // a static number of checkers and performance is consistent).
-        this.usingFullArea((fullArea) => {
-            this.context.beginPath();
-            this.context.fillStyle = CHECKERBOARD_A;
-            this.context.rect(...fullArea.xywh);
-            this.context.fill();
-
-            this.context.beginPath();
-            this.context.fillStyle = CHECKERBOARD_B;
-            let rowStartsOnB = false;
-            let x, y;
-            let maxX = roundForComparison(fullArea.x + fullArea.width);
-            let maxY = roundForComparison(fullArea.y + fullArea.height);
-
-            for (x = fullArea.x; roundForComparison(x) < maxX; x += CHECKER_SIZE) {
-                let isCheckered = rowStartsOnB;
-                for (y = fullArea.y; roundForComparison(y) < maxY; y += CHECKER_SIZE) {
-                    if (isCheckered) {
-                        this.context.rect(x, y, CHECKER_SIZE, CHECKER_SIZE);
-                    }
-                    isCheckered = !isCheckered;
-                }
-                rowStartsOnB = !rowStartsOnB;
-            }
-            this.context.fill();
-        });
+        this.usingFullArea(fullArea => drawCheckerboard(this.context, fullArea));
 
         // Clear the 4 edges between the drawable area and the full area
         const drawableArea = CellArea.drawableArea();
@@ -311,7 +283,6 @@ export default class CanvasControl {
             topLeft.x, drawableArea.y + drawableArea.height,
             bottomRight.x - topLeft.x, bottomRight.y - (drawableArea.y + drawableArea.height)
         );
-
     }
     
     

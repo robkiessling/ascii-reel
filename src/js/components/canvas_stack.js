@@ -17,6 +17,7 @@ import {hoveredCell, iterateHoveredCells, setupMouseEvents as setupHoverMouse} f
 import {refreshMouseCoords, refreshSelectionDimensions, setupMouseEvents as setupEditorMouse} from "./editor.js";
 import {addCanvasListeners, setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
 import * as state from "../state/state.js";
+import {getMajorGridColor, getMinorGridColor} from "../canvas/background.js";
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
 
@@ -59,7 +60,8 @@ export function redrawCharCanvas() {
 
     const grid = state.config('grid');
     if (grid.show) {
-        charCanvas.drawGrid(grid.width, grid.spacing, grid.color);
+        if (grid.minorGridEnabled) charCanvas.drawGrid(1, grid.minorGridSpacing, getMinorGridColor());
+        if (grid.majorGridEnabled) charCanvas.drawGrid(1, grid.majorGridSpacing, getMajorGridColor());
     }
 
     if (state.config('onion')) {

@@ -12,6 +12,5 @@ export const AVAILABLE_FONTS = [
     'Lucida Console',
     'Menlo',
     'Monaco',
-    'Segoe UI Mono',
-    'Verdana'
+    'Segoe UI Mono'
 ];

@@ -485,18 +485,30 @@
     </div>
 
     <div id="grid-dialog" title="Grid Settings" class="dialog-form">
-        <label>
-            Grid Width:
-            <select id="grid-width" class="w-6"></select>
-        </label>
-        <label>
-            Grid Spacing:
-            <select id="grid-spacing" class="w-6"></select>
-        </label>
+        <div id="major-grid-settings">
+            <label>
+                <input type="checkbox" class="enable-grid"> Show Major Grid
+            </label>
+            <div class="grid-settings">
+                <label>
+                    Major grid spacing:
+                    <input type="number" class="grid-spacing">
+                </label>
+            </div>
+        </div>
 
-        <label style="padding-top: 0.5rem;">Grid Color:</label>
-        <div class="color-picker-container">
-            <div class="color-picker"></div>
+        <br>
+
+        <div id="minor-grid-settings">
+            <label>
+                <input type="checkbox" class="enable-grid"> Show Minor Grid
+            </label>
+            <div class="grid-settings">
+                <label>
+                    Minor grid spacing:
+                    <input type="number" class="grid-spacing">
+                </label>
+            </div>
         </div>
     </div>
 
