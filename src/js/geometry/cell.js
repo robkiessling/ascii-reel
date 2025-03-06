@@ -23,6 +23,15 @@ export default class Cell extends Rect {
         return row * fontHeight;
     }
 
+    // Convert to/from its object representation (so we can store it in json state)
+    static deserialize(data) {
+        if (!data || data.row === undefined || data.col === undefined) return null;
+        return new Cell(data.row, data.col);
+    }
+    serialize() {
+        return { row: this.row, col: this.col };
+    }
+
     get x() {
         return this.col * fontWidth;
     }

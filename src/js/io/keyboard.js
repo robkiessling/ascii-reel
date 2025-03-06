@@ -71,6 +71,7 @@ function setupKeydownListener() {
                 break;
             case 'Tab':
                 state.endHistoryModification();
+
                 if (e.shiftKey) {
                     // If shift key is pressed, we move in opposite direction
                     selection.cursorCell ? selection.moveCursorInDirection('left', false) : selection.moveInDirection('left', 1);
@@ -83,7 +84,10 @@ function setupKeydownListener() {
                     selection.finishMovingContent();
                 }
                 else {
-                    state.endHistoryModification();
+                    // Push a state to the history where the cursor is at the end of the current line -- that way when
+                    // you undo, the first undo just jumps back to the previous line with cursor at end.
+                    if (selection.cursorCell) state.pushStateToHistory();
+
                     if (e.shiftKey) {
                         // If shift key is pressed, we move in opposite direction
                         selection.cursorCell ? selection.moveCursorInDirection('up', false) : selection.moveInDirection('up', 1);

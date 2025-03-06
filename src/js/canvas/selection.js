@@ -12,6 +12,7 @@ import SelectionLasso from "../geometry/selection/selection_lasso.js";
 import SelectionText from "../geometry/selection/selection_text.js";
 import {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
+import {modifyHistory, pushStateToHistory} from "../state/state.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -432,9 +433,13 @@ export function moveCursorTo(cell, updateOrigin = true) {
     if (movableContent) { finishMovingContent(); } // Cannot move content and show cursor at the same time
 
     cursorCell = cell;
+    state.config('cursorPosition', cell.serialize());
 
     if (updateOrigin) {
         cursorCellOrigin = cell;
+
+        // Update the current history slice so that if you undo to the slice, the cursor will be at the most recent position
+        modifyHistory(history => history.state.config.cursorPosition = cell.serialize())
     }
 
     triggerRefresh('cursorCell');
@@ -448,12 +453,10 @@ export function moveCursorToStart() {
         return;
     }
 
+    // Move cursor to top-left of current selection
     cacheUniqueSortedCells();
     const cellData = caches.cellsLeftToRight[0];
-
-    if (cellData) {
-        moveCursorTo(new Cell(cellData[0], cellData[1]));
-    }
+    if (cellData) moveCursorTo(new Cell(cellData[0], cellData[1]));
 }
 
 // When using the text-editor tool, moves the cursor down one row and back to the origin column.
@@ -533,6 +536,8 @@ export function moveCursorInDirection(direction, updateOrigin = true, amount = 1
 
 export function hideCursor() {
     cursorCell = null;
+    state.config('cursorPosition', {});
+
     triggerRefresh('cursorCell');
 }
 

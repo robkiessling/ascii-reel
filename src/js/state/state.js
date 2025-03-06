@@ -8,6 +8,8 @@ import {calculateFontRatio} from "../canvas/font.js";
 import {saveState} from "./localstorage.js";
 import ArrayRange, {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {DEFAULT_COLOR} from "../components/palette.js";
+import Cell from "../geometry/cell.js";
+import {moveCursorTo} from "../canvas/selection.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it in the
 // CONFIG_KEYS_FOR_HISTORY constant
@@ -42,7 +44,8 @@ const CONFIG_DEFAULTS = {
     drawLine: {
         type: 'basic'
     },
-    lastExportOptions: {}
+    lastExportOptions: {},
+    cursorPosition: {},
 }
 const LAYER_DEFAULTS = {
     name: 'Layer',
@@ -62,7 +65,7 @@ const MAX_HISTORY = 50; // Max number of states to remember in the history. Incr
 // By default, config keys are not saved to the history. That way when the user presses 'undo' their tool doesn't
 // revert (for example). However, some config settings need to be able to be undone; those are listed here:
 const CONFIG_KEYS_FOR_HISTORY = new Set([
-    'font', 'dimensions', 'background', 'frameIndex', 'layerIndex', 'frameRangeSelection'
+    'font', 'dimensions', 'background', 'frameIndex', 'layerIndex', 'frameRangeSelection', 'cursorPosition'
 ])
 
 
@@ -772,6 +775,11 @@ function loadStateFromHistory(newIndex, oldIndex) {
 
     loadHistorySnapshot(newState);
 
+    const cursorCell = Cell.deserialize(config('cursorPosition'));
+    if (config('tool') === 'text-editor' && cursorCell) {
+        moveCursorTo(cursorCell, false)
+    }
+
     if (newState.options.requiresCalculateFontRatio || oldState.options.requiresCalculateFontRatio) {
         calculateFontRatio();
     }
@@ -814,3 +822,9 @@ export function endHistoryModification() {
     }
 }
 
+// Modifies the current history slice
+export function modifyHistory(callback) {
+    if (history.length) {
+        callback(history[historyIndex])
+    }
+}

@@ -107,6 +107,10 @@ function pasteGlyphs(glyphs, limitToSelection) {
         // Paste glyphs at topLeft of entire selected area
         const topLeft = pasteAtCursor ? selection.cursorCell : selection.getSelectedCellArea().topLeft;
         translateGlyphs(glyphs, topLeft, (r, c, char, color) => {
+            // Copied empty cells do not override existing cells (if you want to override existing cells to make them
+            // blank, original copy should have spaces not empty cells)
+            if (char === '') return;
+
             if (!limitToSelection || selection.isSelectedCell({row: r, col: c})) {
                 state.setCurrentCelGlyph(r, c, char, color);
             }
