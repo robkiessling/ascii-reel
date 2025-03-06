@@ -26,7 +26,7 @@ export function init() {
         const char = $(evt.currentTarget).data('unicode-char');
 
         copyChar(char);
-        selection.setSelectionToSingleChar(char, editor.currentColorIndex());
+        selection.setSelectionToSingleChar(char, state.primaryColorIndex());
         if (state.config('tool') === 'draw-freeform') editor.setFreeformChar(char);
     });
 

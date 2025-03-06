@@ -63,7 +63,7 @@ defer(() => {
  * Resizes the components that depend on window size. Then triggers a full refresh.
  */
 export function triggerResize(clearSelection = false) {
-    if (clearSelection) selection.clear();
+    if (clearSelection) selection.clear(false); // The clear doesn't need to trigger a refresh; it will be done later
 
     // Refresh frames controller first, since its configuration can affect canvas boundaries
     frames.refresh();

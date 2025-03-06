@@ -127,7 +127,7 @@ function setupKeydownListener() {
                         return;
                     }
                     
-                    selection.setSelectionToSingleChar(char, editor.currentColorIndex());
+                    selection.setSelectionToSingleChar(char, state.primaryColorIndex());
                 }
                 else {
                     // Unrecognized input; let browser handle as normal

@@ -40,11 +40,11 @@ export function hasTarget() {
     return hasSelection() || cursorCell;
 }
 
-export function clear() {
+export function clear(refresh = true) {
     if (movableContent) { finishMovingContent(); }
     if (cursorCell) { hideCursor(); }
     polygons = [];
-    triggerRefresh('selection');
+    if (refresh) triggerRefresh('selection');
 }
 
 // Empties the selection's contents. Does not clear the selection.

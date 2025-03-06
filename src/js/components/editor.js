@@ -42,10 +42,7 @@ export function init() {
 }
 
 export function refresh() {
-    if (cachedColorString === null) {
-        // initial color picker state
-        selectColor(palette.DEFAULT_COLOR);
-    }
+    selectColor(state.config('primaryColor'))
 
     $editingTools.find('.editing-tool').removeClass('selected');
     $editingTools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
@@ -115,10 +112,10 @@ export function setupMouseEvents(canvasControl) {
                 drawCharShape();
                 break;
             case 'draw-rect':
-                startDrawing(AsciiRect);
+                startDrawing(AsciiRect, state.config('drawRect').type);
                 break;
             case 'draw-line':
-                startDrawing(AsciiLine);
+                startDrawing(AsciiLine, state.config('drawLine').type);
                 break;
             case 'eraser':
                 erase();
@@ -274,9 +271,12 @@ function refreshSelectionTools() {
 }
 
 function paintSelection() {
+    const primaryColorIndex = state.primaryColorIndex();
+
     selection.getSelectedCells().forEach(cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
+        state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
     });
+
     triggerRefresh('chars', true);
 }
 
@@ -305,13 +305,14 @@ function setupBrushSubMenu() {
 
 function drawCharShape() {
     let hasChanges = false;
+    const primaryColorIndex = state.primaryColorIndex();
 
     iterateHoveredCells(cell => {
         const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
 
         // Only updating char if it is actually different (this needs to be efficient since we call this on mousemove)
-        if (currentChar !== undefined && (currentChar !== freeformChar || currentColor !== currentColorIndex())) {
-            state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, currentColorIndex());
+        if (currentChar !== undefined && (currentChar !== freeformChar || currentColor !== primaryColorIndex)) {
+            state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex);
             hasChanges = true;
         }
     });
@@ -341,13 +342,14 @@ function erase() {
 
 function paintShape() {
     let hasChanges = false;
+    const primaryColorIndex = state.primaryColorIndex();
 
     iterateHoveredCells(cell => {
         const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
 
         // Only refreshing if color is actually different (this needs to be efficient since we call this on mousemove)
-        if (currentChar !== undefined && currentColor !== currentColorIndex()) {
-            state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
+        if (currentChar !== undefined && currentColor !== primaryColorIndex) {
+            state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
             hasChanges = true;
         }
     });
@@ -360,8 +362,10 @@ function paintShape() {
 function paintConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return; }
 
+    const primaryColorIndex = state.primaryColorIndex();
+
     selection.getConnectedCells(cell, options).forEach(cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, undefined, currentColorIndex());
+        state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
     })
 
     triggerRefresh('chars', true);
@@ -373,10 +377,12 @@ function colorSwap(cell, options) {
     const [targetChar, targetColor] = state.getCurrentCelGlyph(cell.row, cell.col);
     if (targetChar === '') { return; }
 
+    const primaryColorIndex = state.primaryColorIndex();
+
     const updateMatchingColorsInCel = (cel) => {
         state.iterateCellsForCel(cel, (row, col, char, color) => {
             if (color === targetColor) {
-                state.setCelGlyph(cel, row, col, char, currentColorIndex())
+                state.setCelGlyph(cel, row, col, char, primaryColorIndex)
             }
         });
     }
@@ -458,8 +464,8 @@ function setupDrawLineSubMenu() {
 
 export let drawingContent = null;
 
-function startDrawing(klass) {
-    drawingContent = new klass(hoveredCell);
+function startDrawing(klass, type) {
+    drawingContent = new klass(hoveredCell, type);
     triggerRefresh('chars');
 }
 
@@ -468,7 +474,7 @@ function updateDrawing() {
 
     if (hoveredCell && !hoveredCell.equals(drawingContent.end)) {
         drawingContent.end = hoveredCell;
-        drawingContent.refreshGlyphs();
+        drawingContent.refreshGlyphs(state.primaryColorIndex());
         triggerRefresh('chars');
     }
 }
@@ -489,30 +495,12 @@ function finishDrawing() {
 
 // -------------------------------------------------------------------------------- Color Picker
 
-let cachedColorString = null;
-let cachedColorIndex = null;
-let $addToPalette, colorPicker, colorPickerTooltip, addToPaletteTooltip;
+let colorPicker, colorPickerTooltip, $addToPalette, addToPaletteTooltip;
 let colorPickerOpen = false;
-
-// Returns the currently selected colorIndex, or creates a new index if a new color is selected.
-// Also caching the result for faster performance since this gets called a lot in a loop
-export function currentColorIndex() {
-    if (cachedColorIndex !== null) {
-        return cachedColorIndex;
-    }
-    return state.colorIndex(cachedColorString);
-}
-
-// Returns color string of currently selected color. Note: color might not yet be a part of state's colorTable
-export function currentColorString() {
-    return cachedColorString;
-}
 
 export function selectColor(colorStr) {
     colorPicker.setColor(colorStr, false);
 }
-
-const SHOW_ADD_ICON = false; // todo decide how I want to do this. Note: there is also associated css to uncomment
 
 function setupColorPicker() {
     const $colorPicker = $('#current-color');
@@ -533,27 +521,17 @@ function setupColorPicker() {
             $colorPicker.addClass('picker-open');
             colorPickerOpen = true;
 
-            if (SHOW_ADD_ICON) {
-                if (!$addToPalette) {
-                    $addToPalette = $('<div>', {
-                        class: 'add-to-palette',
-                        html: '<button><span class="ri ri-fw ri-alert-line"></span></button>'
-                    }).appendTo($colorPicker.find('.picker_wrapper'));
-                }
-            }
-            else {
-                if (!$addToPalette) {
-                    $addToPalette = $colorPicker.find('.picker_sample');
-                    addToPaletteTooltip = tippy($addToPalette.get(0), {
-                        content: () => {
-                            return `<span class="title">Add Color To Palette</span><br>` +
-                                `<span>This color is not currently saved to your palette. Click here if you want to add it.</span>`;
-                        },
-                        placement: 'right',
-                        offset: [0, 20],
-                        allowHTML: true,
-                    })
-                }
+            if (!$addToPalette) {
+                $addToPalette = $colorPicker.find('.picker_sample');
+                addToPaletteTooltip = tippy($addToPalette.get(0), {
+                    content: () => {
+                        return `<span class="title">Add Color To Palette</span><br>` +
+                            `<span>This color is not currently saved to your palette. Click here if you want to add it.</span>`;
+                    },
+                    placement: 'right',
+                    offset: [0, 20],
+                    allowHTML: true,
+                })
             }
 
             refreshAddToPalette();
@@ -565,9 +543,8 @@ function setupColorPicker() {
             colorPickerOpen = false;
         },
         onChange: (color) => {
-            $colorPicker.get(0).style.background = color[state.COLOR_FORMAT];
-            cachedColorString = color[state.COLOR_FORMAT];
-            cachedColorIndex = null;
+            state.config('primaryColor', color[state.COLOR_FORMAT]);
+            $colorPicker.css('background', state.config('primaryColor'));
 
             refreshAddToPalette();
             triggerRefresh('paletteSelection');
@@ -575,7 +552,7 @@ function setupColorPicker() {
     });
 
     $colorPicker.on('click', '.add-to-palette', () => {
-        state.addColor(cachedColorString);
+        state.addColor(state.config('primaryColor'));
 
         refreshAddToPalette();
         triggerRefresh('palette', true);
@@ -583,30 +560,25 @@ function setupColorPicker() {
 }
 
 function refreshAddToPalette() {
-    if ($addToPalette) {
-        if (SHOW_ADD_ICON) {
-            $addToPalette.toggleClass('hidden', !state.isNewColor(cachedColorString));
-        }
-        else {
-            $addToPalette.empty();
+    if (!$addToPalette) return;
 
-            if (state.isNewColor(cachedColorString)) {
-                $addToPalette.addClass('add-to-palette');
+    $addToPalette.empty();
 
-                const [h, s, l, a] = new Color(cachedColorString).hsla; // Break colorStr into hsla components
+    if (state.isNewColor(state.config('primaryColor'))) {
+        $addToPalette.addClass('add-to-palette');
 
-                $('<span>', {
-                    css: { color: l <= 0.5 ? 'white' : 'black' },
-                    class: 'ri ri-fw ri-alert-line'
-                }).appendTo($addToPalette);
+        const [h, s, l, a] = new Color(state.config('primaryColor')).hsla; // Break colorStr into hsla components
 
-                addToPaletteTooltip.enable();
-            }
-            else {
-                $addToPalette.removeClass('add-to-palette');
-                addToPaletteTooltip.disable();
-            }
-        }
+        $('<span>', {
+            css: { color: l <= 0.5 ? 'white' : 'black' },
+            class: 'ri ri-fw ri-alert-line'
+        }).appendTo($addToPalette);
+
+        addToPaletteTooltip.enable();
+    }
+    else {
+        $addToPalette.removeClass('add-to-palette');
+        addToPaletteTooltip.disable();
     }
 }
 

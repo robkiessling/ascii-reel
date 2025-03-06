@@ -1,5 +1,3 @@
-import * as state from "../../state/state.js";
-import {currentColorIndex} from "../../components/editor.js";
 import AsciiPolygon from "./ascii_polygon.js";
 
 /**
@@ -52,12 +50,12 @@ export default class AsciiRect extends AsciiPolygon {
         return this.topLeft;
     }
 
-    refreshGlyphs() {
+    refreshGlyphs(colorIndex) {
         super.refreshGlyphs();
 
-        const charSheet = DRAW_RECT_CHARS[state.config('drawRect').type];
+        const charSheet = DRAW_RECT_CHARS[this.drawType];
         if (charSheet === undefined) {
-            console.error("Invalid char sheet for: ", state.config('drawRect'))
+            console.error("Invalid char sheet for: ", this.drawType)
             return;
         }
 
@@ -85,7 +83,7 @@ export default class AsciiRect extends AsciiPolygon {
 
                 if (char) {
                     this._glyphs.chars[row][col] = char;
-                    this._glyphs.colors[row][col] = currentColorIndex();
+                    this._glyphs.colors[row][col] = colorIndex;
                 }
             }
         }

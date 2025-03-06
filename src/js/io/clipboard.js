@@ -137,6 +137,7 @@ function convertGlyphsToText(glyphs) {
 const MAX_TEXT_LENGTH = 100000; // Upper limit just in case the OS clipboard had a huge amount of text copied
 function convertTextToGlyphs(text) {
     let chars = [], colors = [];
+    const primaryColorIndex = state.primaryColorIndex()
     
     text.slice(0, MAX_TEXT_LENGTH).split(/\r?\n/).forEach((line, r) => {
         chars[r] = [];
@@ -144,7 +145,7 @@ function convertTextToGlyphs(text) {
 
         line.split('').forEach((char, c) => {
             chars[r][c] = char;
-            colors[r][c] = editor.currentColorIndex() // todo could read color from rtf
+            colors[r][c] = primaryColorIndex // todo could read color from rtf
         })
     });
 

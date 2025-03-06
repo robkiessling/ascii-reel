@@ -11,8 +11,8 @@ import {DEFAULT_COLOR} from "../components/palette.js";
 import Cell from "../geometry/cell.js";
 import {moveCursorTo} from "../canvas/selection.js";
 
-// Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it in the
-// CONFIG_KEYS_FOR_HISTORY constant
+// Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it
+// in the CONFIG_KEYS_FOR_HISTORY constant below
 const CONFIG_DEFAULTS = {
     name: 'New Sprite',
     dimensions: [20, 10],
@@ -34,6 +34,7 @@ const CONFIG_DEFAULTS = {
     frameOrientation: 'left',
     frameRangeSelection: null, // A value of null means the range will match the currently selected frameIndex
     tool: 'text-editor',
+    primaryColor: DEFAULT_COLOR,
     brush: {
         shape: 'square',
         size: 1
@@ -47,6 +48,14 @@ const CONFIG_DEFAULTS = {
     lastExportOptions: {},
     cursorPosition: {},
 }
+
+// By default, config keys are not saved to the history. That way, when the user presses 'undo', settings like their
+// current tool don't revert. However, some config settings need to be able to be undone; those are listed here:
+const CONFIG_KEYS_FOR_HISTORY = new Set([
+    'font', 'dimensions', 'background', 'frameIndex', 'layerIndex', 'frameRangeSelection', 'cursorPosition'
+])
+
+
 const LAYER_DEFAULTS = {
     name: 'Layer',
     visible: true
@@ -61,12 +70,6 @@ const SEQUENCES = ['layers', 'frames'];
 export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and use to display
 
 const MAX_HISTORY = 50; // Max number of states to remember in the history. Increasing this value will use more memory.
-
-// By default, config keys are not saved to the history. That way when the user presses 'undo' their tool doesn't
-// revert (for example). However, some config settings need to be able to be undone; those are listed here:
-const CONFIG_KEYS_FOR_HISTORY = new Set([
-    'font', 'dimensions', 'background', 'frameIndex', 'layerIndex', 'frameRangeSelection', 'cursorPosition'
-])
 
 
 
@@ -564,6 +567,10 @@ export function colorIndex(colorStr) {
     }
 
     return index;
+}
+
+export function primaryColorIndex() {
+    return colorIndex(config('primaryColor'));
 }
 
 export function sortedPalette() {

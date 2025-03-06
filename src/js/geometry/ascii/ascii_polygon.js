@@ -2,9 +2,10 @@ import Cell from "../cell.js";
 import {create2dArray} from "../../utils/arrays.js";
 
 export default class AsciiPolygon {
-    constructor(startCell) {
+    constructor(startCell, drawType) {
         this.start = startCell;
         this.end = startCell.clone();
+        this.drawType = drawType;
         this.refreshGlyphs();
     }
 

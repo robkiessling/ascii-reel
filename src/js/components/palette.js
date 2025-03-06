@@ -103,7 +103,7 @@ export function refresh() {
 
 export function refreshSelection() {
     $colorList.find('.color.selected').removeClass('selected');
-    $colorList.find(`.color[data-color="${editor.currentColorString()}"]`).addClass('selected');
+    $colorList.find(`.color[data-color="${state.config('primaryColor')}"]`).addClass('selected');
 
     $actions.each((i, element) => {
         const $element = $(element);

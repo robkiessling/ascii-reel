@@ -1,4 +1,3 @@
-import {currentColorIndex} from "../../components/editor.js";
 import AsciiPolygon from "./ascii_polygon.js";
 
 /**
@@ -306,10 +305,10 @@ export default class AsciiLine extends AsciiPolygon {
         return this._origin;
     }
 
-    refreshGlyphs() {
+    refreshGlyphs(colorIndex) {
         // Short-circuit if line is only one single character long
         if (this.start.equals(this.end)) {
-            this._glyphs = { chars: [['-']], colors: [[currentColorIndex()]] }
+            this._glyphs = { chars: [['-']], colors: [[colorIndex]] }
             this._origin = this.start;
             return;
         }
@@ -322,7 +321,7 @@ export default class AsciiLine extends AsciiPolygon {
         // See _convertObjToArray function for info on why we initially store _glyphs as an object
         this._glyphs = { chars: {}, colors: {} };
         lineTemplate.followLinePath(lineLength, (glyphR, glyphC, char) => {
-            this._setGlyph(glyphR, glyphC, char, currentColorIndex());
+            this._setGlyph(glyphR, glyphC, char, colorIndex);
         })
         this._glyphs.chars = this._convertObjToArray(this._glyphs.chars);
         this._glyphs.colors = this._convertObjToArray(this._glyphs.colors);
