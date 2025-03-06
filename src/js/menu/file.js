@@ -10,6 +10,7 @@ import {fontRatio} from "../canvas/font.js";
 import {confirmDialog, createDialog} from "../utils/dialogs.js";
 import exampleExportImg from "../../images/example-export.png";
 import {importJSZip, importAnimated_GIF} from "../utils/lazy_loaders.js";
+import {getState} from "../state/state.js";
 
 const FILE_EXTENSION = 'asciireel';
 
@@ -74,7 +75,7 @@ function setupSaveDialog() {
 
     createDialog($saveFileDialog, () => {
         state.config('name', $saveFileDialog.find('.name').val());
-        const blob = new Blob([state.stringify()], {type: "text/plain;charset=utf-8"});
+        const blob = new Blob([JSON.stringify(state.getState())], {type: "text/plain;charset=utf-8"});
         saveAs(blob, `${state.config('name')}.${FILE_EXTENSION}`)
         $saveFileDialog.dialog('close');
     });

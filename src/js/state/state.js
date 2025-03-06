@@ -142,11 +142,15 @@ export function load(data) {
     calculateFontRatio();
     triggerResize(true);
     pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
-    saveState(stringify());
+    saveState(getState());
 }
 
-export function stringify() {
-    return JSON.stringify(state);
+
+export function getState() {
+    return state;
+}
+export function replaceState(newState) {
+    state = newState;
 }
 
 export function numRows() {
