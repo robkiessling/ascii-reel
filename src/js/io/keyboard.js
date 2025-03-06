@@ -152,7 +152,7 @@ function handleArrowKey(e, direction) {
             // move the entire selection
             selection.cursorCell ?
                 selection.moveCursorInDirection(direction) :
-                selection.moveInDirection(direction, 1, !e.shiftKey);
+                selection.moveInDirection(direction, 1, !e.shiftKey, true, false);
         }
     }
     else {

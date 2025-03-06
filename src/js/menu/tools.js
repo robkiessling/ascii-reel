@@ -111,6 +111,7 @@ function setupResizeDialog() {
                 const columns = Math.round(rows / state.numRows() * state.numCols());
                 $columns.val(columns);
             }).trigger('input.ratio');
+
             $columns.on('input.ratio', evt => {
                 const columns = $(evt.currentTarget).val();
                 const rows = Math.round(columns / state.numCols() * state.numRows());
@@ -133,7 +134,8 @@ function setupResizeDialog() {
 
 function openResizeDialog() {
     $resizeDialog.find('[name="rows"]').val(state.numRows());
-    $resizeDialog.find('[name="aspect-ratio"]').prop('checked', true).trigger('change');
+    $resizeDialog.find('[name="columns"]').val(state.numCols());
+    $resizeDialog.find('[name="aspect-ratio"]').trigger('change');
 
     $resizeDialog.dialog('open');
 }

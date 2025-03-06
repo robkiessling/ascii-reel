@@ -608,11 +608,25 @@ function moveDelta(rowDelta, colDelta) {
     triggerRefresh(refresh);
 }
 
-// Move all polygons in a particular direction
-export function moveInDirection(direction, amount, moveStart = true, moveEnd = true) {
+/**
+ * Move all selection polygons in a particular direction
+ * @param direction {String} Direction to move selection ('left'/'up'/'right'/'down')
+ * @param amount {Number} Number of cells to move the selection
+ * @param moveStart {Boolean} If false, the start cell of the polygon will not be moved
+ * @param moveEnd {Boolean} If false, the end cell of the polygon will not be moved
+ * @param moveContent {Boolean} If true (and we are not already moving content), the chars underneath the selection
+ *   polygons will be moved along with the selection.
+ */
+export function moveInDirection(direction, amount, moveStart = true, moveEnd = true, moveContent = true) {
     if (!hasTarget()) {
         return;
     }
+
+    // If we are already moving content, do not do any special moveContent handling; the content will already be moved
+    // with the selection
+    if (movableContent) moveContent = false;
+
+    if (moveContent) startMovingContent();
 
     switch(direction) {
         case 'left':
@@ -629,6 +643,11 @@ export function moveInDirection(direction, amount, moveStart = true, moveEnd = t
             break;
         default:
             console.warn(`Invalid direction: ${direction}`);
+    }
+
+    if (moveContent) {
+        finishMovingContent();
+        return; // finishMovingContent will trigger a refresh
     }
 
     triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
