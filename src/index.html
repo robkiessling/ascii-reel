@@ -2,9 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AsciiReel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>ASCII Reel</title>
+    <style>
+        /* Critical CSS -- do not show page until DOMContentLoaded to avoid flash of unstyled content */
+        body { opacity: 0; }
+    </style>
 </head>
+
 <body>
+    <div id="mobile-warning">
+        <div>
+            The <span class="primary-color">ASCII Reel</span> app is desktop-only
+        </div>
+        <div>
+            <a class="link" href="https://github.com/robkiessling/ascii-reel" target="_blank">
+                <span class="ri ri-fw ri-github-fill"></span> GitHub
+            </a>
+        </div>
+    </div>
 
     <div id="header-content">
         <ul id="main-menu" class="horizontal-menu no-select">
@@ -56,10 +72,11 @@
             </li>
         </ul>
         <div class="center-title"></div>
-        <div>
-            <button id="theme-button">
-                <span class="ri ri-fw"></span>
-            </button>
+        <div class="right-side-buttons">
+            <button id="theme-button"><span class="ri ri-fw"></span></button>
+            <a class="button" href="https://github.com/robkiessling/ascii-reel" target="_blank">
+                <span class="ri ri-fw ri-github-fill"></span>
+            </a>
         </div>
 
         <input id="upload-file" type="file" hidden>

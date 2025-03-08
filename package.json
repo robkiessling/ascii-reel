@@ -5,11 +5,11 @@
   "main": "js/index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "webpack-dev-server",
     "build": "webpack --mode production",
     "postinstall": "patch-package",
-    "deploy-github": "npm run build && gh-pages -d dist"
+    "deploy-github": "npm run build && gh-pages -d dist",
+    "analyze-bundle": "webpack --mode production --env analyze-bundle=true"
   },
   "repository": {
     "type": "git",

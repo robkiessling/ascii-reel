@@ -35,7 +35,7 @@ This will populate the collection of selected icons in the UI.
 5. Click the "Collection" button again, this time click "Export Collection"
 to download an updated `.remixicon` file. Name it `RemixIcon_Collection.remixicon` and 
 replace the existing file in this directory.
-6. Click the "↓ Fonts" button to download a zip of the `.css`, `.woff`, `.woff2`, etc. files.
+6. Click the "↓ Fonts" button to download a zip of the various font files.
 7. Expand the zip and copy the `.css`, `.ttf`, `.woff`, and `.woff2` files to this directory
 (replacing the existing files).
 You don't need to copy the `.less`, `.eot`, `.svg` files since I don't care about supporting IE9

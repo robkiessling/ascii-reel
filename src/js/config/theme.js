@@ -1,7 +1,6 @@
 import {readGlobalSetting, saveGlobalSetting} from "../state/localstorage.js";
 import {triggerRefresh} from "../index.js";
 import {recalculateBGColors} from "../canvas/background.js";
-import tippy from "tippy.js";
 
 export const THEMES = {
     dark: { name: 'dark', remixicon: 'ri-moon-line', nextTheme: 'light' },
@@ -20,11 +19,6 @@ function setupThemeButton() {
     $themeButton.off('click').on('click', () => {
         saveGlobalSetting('theme', currentTheme(true).nextTheme);
         refresh(true);
-    })
-
-    tippy($themeButton.get(0), {
-        content: () => `Toggle Dark-Mode`,
-        placement: 'left'
     })
 }
 

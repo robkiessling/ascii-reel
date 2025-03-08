@@ -78,6 +78,7 @@ $font-size-base: 14px;
 $header-height: 38px;
 $header-border-size: 3px;
 $main-spacing: 0.5rem;
+$button-size: 30px;
 $right-col-width: 225px;
 $preview-size: $right-col-width;
 $frame-size: 85px;
@@ -121,6 +122,9 @@ body {
     transform: translateX(-50%);
   }
 
+  .right-side-buttons {
+    margin-right: 0.5rem;
+  }
 }
 
 .center-title {
@@ -335,6 +339,40 @@ body {
     }
   }
 }
+
+
+/* Hiding entire app on mobile devices */
+#mobile-warning {
+  display: none;
+}
+
+@media (max-width: 850px), (max-height: 500px) {
+  #mobile-warning {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 100%;
+    padding: 4rem;
+    gap: 1rem;
+    font-size: 2rem;
+    .ri { font-size: 2rem; }
+
+    // Always using dark-mode settings for this message
+    color: white;
+    background: #202124;
+
+    > div {
+      text-align: center;
+    }
+  }
+
+  #header-content, #body-content {
+    display: none !important;
+  }
+}
+
+
 
 #canvas-message {
   position: absolute;
@@ -928,6 +966,10 @@ body {
   visibility: hidden; // Will still take up space, but be invisible
 }
 
+.primary-color {
+  color: var(--color-primary)
+}
+
 .alert {
   color: var(--color-alert);
 }
@@ -949,14 +991,6 @@ body {
 
   &:active {
     cursor: grabbing;
-  }
-}
-
-button {
-  width: 30px;
-  height: 30px;
-  .ri {
-    font-size: 1.25rem;
   }
 }
 
@@ -994,15 +1028,18 @@ hr {
   margin: 0.75rem 0;
 }
 
-button {
+button, .button {
   background: none;
   border: none;
   color: var(--color-font);
-  cursor: pointer;
-  border-radius: 2px;
+
+  width: $button-size;
+  height: $button-size;
   padding: 3px;
   margin: 3px;
+  border-radius: 2px;
   line-height: 1;
+  cursor: pointer;
 
   &:hover {
     background: var(--color-surface);
@@ -1013,6 +1050,24 @@ button {
     background: none;
     cursor: default;
   }
+
+  .ri {
+    font-size: 1.25rem;
+  }
+}
+
+// Class that can be applied to a <a> to make it look like a button
+.button {
+  display: inline-block;
+  line-height: $button-size;
+  text-align: center;
+  padding: 0;
+  text-decoration: none;
+}
+
+.link {
+  text-decoration: none;
+  color: var(--color-button-confirm-bg);
 }
 
 .ui-slider {

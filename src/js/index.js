@@ -47,6 +47,9 @@ $(window).on('resize', debounce(triggerResize));
 
 // Load initial content
 defer(() => {
+    /* Critical CSS -- do not show page until DOMContentLoaded to avoid flash of unstyled content */
+    $('body').css('opacity', 1);
+
     const savedState = localstorage.readState();
     savedState ? state.load(savedState) : state.loadNew();
 
