@@ -1,4 +1,4 @@
-# ascii-art-maker
+# ascii-reel
 A tool to help create ASCII animations!
 
 ![Editor](docs/swashbuckler/swashbuckler-editor.png)
