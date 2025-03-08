@@ -37,10 +37,10 @@ $font-size-base: 14px;
   --color-font-muted: #868889;
   --color-font-heavy-muted: #555;
   --color-font-inverted: black;
-  --color-font-title: color-mix(in srgb, var(--color-primary) 80%, white 20%);
+  --color-font-title: color-mix(in srgb, var(--color-primary) 70%, white);
 
   --color-layer-bg: var(--color-surface);
-  --color-canvas-bg: #D6D6D7;
+  --color-canvas-bg: #a3a3a3;
   --color-button-bg: #D6D6D7;
   --color-button-font: #000;
 
@@ -50,6 +50,7 @@ $font-size-base: 14px;
   --color-dialog-bg: #424649;
   --color-alert: #f48225;
   --color-selection: #1E90FF;
+  --color-main-menu-bg: var(--color-background-border);
 }
 
 /* Colors: Light Mode */
@@ -112,6 +113,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: var(--color-main-menu-bg);
 
   .center-title {
     position: absolute;
@@ -535,6 +537,7 @@ body {
     width: $preview-size;
 
     background: var(--color-canvas-bg);
+    outline: 1px solid var(--color-background-border);
   }
   #preview-fps-container {
     display: flex;

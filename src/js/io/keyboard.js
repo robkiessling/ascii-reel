@@ -9,6 +9,7 @@ const $document = $(document);
 
 export function init() {
     setupKeydownListener();
+    setupCompositionListener();
 }
 
 // When standard keyboard is enabled, the keyboard works as normal (e.g. cmd-v will paste according to browser
@@ -33,6 +34,10 @@ function setupKeydownListener() {
             return;
         }
 
+        // A 'Dead' char is received when composition starts (see composition section below)
+        if (char === 'Dead') return;
+        if (isComposing) return;
+
         // Shortcuts
         if (e.metaKey || e.ctrlKey || e.altKey) {
             let modifiers = [];
@@ -45,6 +50,11 @@ function setupKeydownListener() {
                 return;
             }
         }
+
+        // If the metaKey/ctrlKey did not reach one of our shortcuts, we return so that normal browser shortcuts work
+        // (e.g. cmd-N for new window). We do not return early for altKey, because sometimes that key can be used to
+        // write/compose special characters.
+        if (e.metaKey || e.ctrlKey) return;
 
         switch (char) {
             case 'Escape':
@@ -116,18 +126,7 @@ function setupKeydownListener() {
                 break;
             default:
                 if (producesText(code) && char.length === 1) {
-                    if (e.metaKey || e.ctrlKey) {
-                        // Returning here allows browser commands that we haven't overridden (e.g. cmd-N).
-                        // We do not return early for altKey, because sometimes the option key is used to write special characters.
-                        return;
-                    }
-
-                    if (state.config('tool') === 'draw-freeform') {
-                        editor.setFreeformChar(char);
-                        return;
-                    }
-                    
-                    selection.setSelectionToSingleChar(char, state.primaryColorIndex());
+                    handleSingleChar(char);
                 }
                 else {
                     // Unrecognized input; let browser handle as normal
@@ -171,6 +170,14 @@ function handleArrowKey(e, direction) {
     }
 }
 
+function handleSingleChar(char, moveCursor = true) {
+    if (state.config('tool') === 'draw-freeform') {
+        editor.setFreeformChar(char);
+        return;
+    }
+
+    selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCursor);
+}
 
 function handleStandardKeyboard(char, e) {
     if (char === 'Enter') {
@@ -179,11 +186,65 @@ function handleStandardKeyboard(char, e) {
     }
 }
 
-// Returns true if the keycode produces some kind of text character
+// Returns true if the keycode produces some kind of standard text character
 function producesText(code) {
     return (code === 32) ||             // space bar
         (code >= 48 && code <= 57) ||   // 0-9
         (code >= 65 && code <= 90) ||   // a-z
         (code >= 186 && code <= 192) || // ;=,-./`
         (code >= 219 && code <= 222);   // [\]'
+}
+
+
+
+/**
+ * ---------------------------------------------------------------------------------- Composition
+ *
+ * Composition is a way to type special characters by pressing a sequence of keys. For example, on macOS you can
+ * press option+e once to create a ´ character (with an underline under it). Then you can press another character
+ * such as e, i, or a, to create é, í, or á, respectively.
+ *
+ * We simulate this in the canvas by listening for compositionstart/update/end and drawing each intermediate
+ * composition char.
+ */
+
+let isComposing = false;
+
+function setupCompositionListener() {
+    // To ensure composition works (even though the user is not typing into an input) we create a hidden input
+    // offscreen that we focus on keydown
+    let hiddenInput = $("<input>").css({
+        position: "absolute",
+        left: "-9999px",
+        opacity: 0
+    }).appendTo("body");
+
+    $document.on("keydown.composition", function(event) {
+        if (!standardKeyboard) {
+            hiddenInput.focus(); // Ensure composition starts
+        }
+    });
+
+    $document.on('compositionstart', e => {
+        isComposing = true;
+    });
+
+    $document.on('compositionupdate', e => {
+        const str = e.originalEvent.data;
+
+        // The str can be two characters long if composition failed, e.g. "`" + "x" = "`x"
+        // We always take the last character, so even if composition failed we still print the failing char (e.g. "x")
+        const char = str.charAt(str.length - 1)
+
+        // When writing the char, do not move the cursor yet (moveCursor=false) because we might not be done composing
+        handleSingleChar(char, false);
+    });
+
+    $document.on('compositionend', e => {
+        isComposing = false;
+
+        // Since we didn't move the cursor in compositionupdate (moveCursor=false), we move the cursor now that
+        // composition is finished
+        selection.moveCursorInDirection('right', false)
+    })
 }

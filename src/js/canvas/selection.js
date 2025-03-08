@@ -81,14 +81,14 @@ export function allowMovement(tool, mouseEvent) {
     return !(tool === 'text-editor' && mouseEvent.shiftKey)
 }
 
-export function setSelectionToSingleChar(char, color) {
+export function setSelectionToSingleChar(char, color, moveCursor = true) {
     if (movableContent) {
         updateMovableContent(char, color);
     }
     else if (cursorCell) {
         // update cursor cell and then move to next cell
         state.setCurrentCelGlyph(cursorCell.row, cursorCell.col, char, color);
-        moveCursorInDirection('right', false);
+        if (moveCursor) moveCursorInDirection('right', false);
     }
     else {
         // update entire selection

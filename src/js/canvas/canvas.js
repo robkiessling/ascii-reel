@@ -20,13 +20,13 @@ const WHITESPACE_COLOR_INDEX = -1;
 const OUTLINE_WIDTH = 0.5;
 
 const CURSOR_CELL_COLOR = PRIMARY_COLOR;
-const CURSOR_WIDTH = 0.35;
+const CURSOR_WIDTH = 0.5;
 
 const DASH_OUTLINE_LENGTH = 5;
 const DASH_OUTLINE_FPS = 60;
 
 const ZOOM_BOUNDARIES = [0.25, 30];
-const ZOOM_MARGIN = 1.2;
+const ZOOM_MARGIN = 1.25;
 
 /**
  * Handles all the setup around a <canvas> element, drawing to the canvas, and zooming/translating the canvas view.

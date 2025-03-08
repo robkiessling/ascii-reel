@@ -80,7 +80,7 @@ export function drawSelection() {
     }
 
     if (selection.cursorCell) {
-        selectionCanvas.drawCursorCell(selection.cursorCell);
+        selectionBorderCanvas.drawCursorCell(selection.cursorCell);
     }
 
     refreshSelectionDimensions(selection.getSelectedCellArea())
