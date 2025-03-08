@@ -11,6 +11,7 @@ import {confirmDialog, createDialog} from "../utils/dialogs.js";
 import exampleExportImg from "../../images/example-export.png";
 import {importJSZip, importAnimated_GIF} from "../utils/lazy_loaders.js";
 import {getState} from "../state/state.js";
+import SimpleBar from "simplebar";
 
 const FILE_EXTENSION = 'asciireel';
 
@@ -126,6 +127,7 @@ const EXPORT_OPTION_VALIDATORS = {
 let $exportFileDialog, $exportFormat, $exportOptions, $exportPreview;
 let $exportCanvasContainer, exportCanvas;
 let firstTimeOpeningExport = true;
+let exportTextSimpleBar;
 
 function setupExportDialog() {
     $exportFileDialog = $('#export-file-dialog');
@@ -188,6 +190,11 @@ function setupExportDialog() {
     });
 
     actions.registerAction('file.export-file', () => openExportDialog());
+
+    exportTextSimpleBar = new SimpleBar($('#example-text').get(0), {
+        autoHide: false,
+        forceVisible: true
+    });
 }
 
 function toggleExportPreview(format) {
@@ -205,7 +212,7 @@ function toggleExportPreview(format) {
 
         const { isValid, options } = validateExportOptions();
         if (!isValid) {
-            $exportPreview.find('#example-text').html('Invalid options selected above.');
+            $exportPreview.find('#example-text pre').html('Invalid options selected above.');
             return;
         }
 
@@ -475,7 +482,8 @@ function refreshJsonExportPreview(options) {
             console.warn(`Unknown frameStructure: ${options.frameStructure}`);
     }
 
-    $exportPreview.find('#example-text').html(frameExample);
+    $exportPreview.find('#example-text pre').html(frameExample);
+    exportTextSimpleBar.recalculate();
 }
 
 function exportJson(options = {}) {

@@ -145,7 +145,7 @@ export function load(data) {
     calculateFontRatio();
     triggerResize(true);
     pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
-    saveState(getState());
+    saveState();
 }
 
 

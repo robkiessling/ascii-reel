@@ -5,14 +5,12 @@ import Rect from "../geometry/rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
-import {PRIMARY, SECONDARY} from "../config/colors.js";
+import {PRIMARY_COLOR, SELECTION_COLOR} from "../config/colors.js";
 import {drawCheckerboard, getHoverColor, HOVER_CELL_OPACITY} from "./background.js";
 
-const WINDOW_BORDER_COLOR = PRIMARY;
+const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 4;
 
-// Note: selection canvas overall opacity is set in css, that way I don't have to care about overlapping opacities
-const SELECTION_COLOR = SECONDARY;
 const ONION_OPACITY = 0.25;
 
 const WHITESPACE_CHAR = '·';
@@ -21,7 +19,7 @@ const WHITESPACE_COLOR_INDEX = -1;
 
 const OUTLINE_WIDTH = 0.5;
 
-const CURSOR_CELL_COLOR = PRIMARY;
+const CURSOR_CELL_COLOR = PRIMARY_COLOR;
 const CURSOR_WIDTH = 0.35;
 
 const DASH_OUTLINE_LENGTH = 5;
@@ -142,6 +140,7 @@ export default class CanvasControl {
     }
 
     highlightPolygons(polygons) {
+        // Note: selection canvas overall opacity is set in css, that way I don't have to care about overlapping opacities
         this.context.fillStyle = SELECTION_COLOR;
         polygons.forEach(polygon => polygon.draw(this.context));
     }

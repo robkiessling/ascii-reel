@@ -56,7 +56,11 @@
             </li>
         </ul>
         <div class="center-title"></div>
-        <div></div>
+        <div>
+            <button id="theme-button">
+                <span class="ri ri-fw"></span>
+            </button>
+        </div>
 
         <input id="upload-file" type="file" hidden>
     </div>
@@ -332,7 +336,6 @@
                 <option value="html">HTML</option>
             </select>
         </label>
-        <hr>
         <div id="export-options">
             <label>
                 Font size: <input type="text" name="fontSize">
@@ -398,11 +401,10 @@
             </label>
         </div>
         <div id="example-container">
-            <hr/>
             <div>Example JSON (for 1 sample frame, shown on left):</div>
-            <div class="side-by-side">
+            <div id="example-img-and-text">
                 <img id="example-img" alt="ABCDEF"/>
-                <pre id="example-text"></pre>
+                <div id="example-text"><pre></pre></div>
             </div>
         </div>
         <div id="spritesheet-png-warning" class="export-warning">

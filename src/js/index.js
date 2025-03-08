@@ -20,10 +20,12 @@ import * as state from "./state/state.js";
 import * as localstorage from "./state/localstorage.js";
 import * as frames from "./components/frames.js";
 import * as layers from "./components/layers.js";
+import { init as initTheme } from "./config/theme.js"
 import {debounce, defer} from "./utils/utilities.js";
 import {refreshShortcuts} from "./io/actions.js";
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
+initTheme();
 initClipboard();
 initEditor();
 initMainMenu();
@@ -45,7 +47,7 @@ $(window).on('resize', debounce(triggerResize));
 
 // Load initial content
 defer(() => {
-    const savedState = localstorage.loadState();
+    const savedState = localstorage.readState();
     savedState ? state.load(savedState) : state.loadNew();
 
     refreshShortcuts();

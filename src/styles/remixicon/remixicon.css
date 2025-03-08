@@ -8,9 +8,9 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1740813594771") format("woff2"),
-    url("remixicon/remixicon.woff?t=1740813594771") format("woff"),
-    url('remixicon/remixicon.ttf?t=1740813594771') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
+    src: url("remixicon/remixicon.woff2?t=1741402959753") format("woff2"),
+    url("remixicon/remixicon.woff?t=1741402959753") format("woff"),
+    url('remixicon/remixicon.ttf?t=1741402959753') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
     font-display: swap;
 }
 
@@ -72,3 +72,6 @@
 .ri-settings-5-line:before { content: "\f0ea"; }
 .ri-information-line:before { content: "\ee59"; }
 .ri-focus-3-line:before { content: "\ed4c"; }
+.ri-computer-line:before { content: "\ebca"; }
+.ri-moon-line:before { content: "\ef75"; }
+.ri-sun-line:before { content: "\f1bf"; }

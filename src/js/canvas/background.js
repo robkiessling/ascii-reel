@@ -2,6 +2,7 @@ import * as state from "../state/state.js";
 import Color from "@sphinxxxx/color-conversion";
 import {COLOR_FORMAT} from "../state/state.js";
 import {roundForComparison} from "../utils/numbers.js";
+import {currentTheme, THEMES} from "../config/theme.js";
 
 
 // ------------------------------------------------------------- Grid / Hover Color Calculations
@@ -34,7 +35,7 @@ export function getHoverColor() {
 
 export function recalculateBGColors() {
     const background = state.config('background');
-    const backgroundColor = new Color(background ? background : CHECKERBOARD_A);
+    const backgroundColor = new Color(background ? background : checkerboardA());
     let [h, s, l, a] = backgroundColor.hsla;
 
     if (l < 0.5) {
@@ -64,20 +65,44 @@ function colorFromHslaArray(hsla) {
  * Checkerboard is the pattern of grey squares used to represent a transparent background
  */
 
-const CHECKERBOARD_A = '#4c4c4c';
-const CHECKERBOARD_B = '#555';
+// Dark mode checkerboard
+const CHECKERBOARD_DARK_A = '#4c4c4c';
+const CHECKERBOARD_DARK_B = '#555';
+
+// Light mode checkerboard
+const CHECKERBOARD_LIGHT_A = '#ccc';
+const CHECKERBOARD_LIGHT_B = '#ddd';
+
 const CHECKER_SIZE = 10;
 
+function checkerboardA() {
+    switch (currentTheme().name) {
+        case THEMES.light.name:
+            return CHECKERBOARD_LIGHT_A;
+        default:
+            return CHECKERBOARD_DARK_A;
+    }
+}
+
+function checkerboardB() {
+    switch (currentTheme().name) {
+        case THEMES.light.name:
+            return CHECKERBOARD_LIGHT_B;
+        default:
+            return CHECKERBOARD_DARK_B;
+    }
+}
+
 export function drawCheckerboard(context, area) {
-    // First, fill entire area with CHECKERBOARD_A color
+    // First, fill entire area with checkerboard-A color
     context.beginPath();
-    context.fillStyle = CHECKERBOARD_A;
+    context.fillStyle = checkerboardA();
     context.rect(...area.xywh);
     context.fill();
 
-    // Then draw many little squares for CHECKERBOARD_B color
+    // Then draw many little squares for checkerboard-B color
     context.beginPath();
-    context.fillStyle = CHECKERBOARD_B;
+    context.fillStyle = checkerboardB();
     let rowStartsOnB = false;
     let x, y;
     let maxX = roundForComparison(area.x + area.width);

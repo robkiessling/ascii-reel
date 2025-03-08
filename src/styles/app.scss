@@ -4,7 +4,7 @@
 @use 'jquery-ui/themes/base/sortable';
 @use 'jquery-ui/themes/base/slider';
 @use 'jquery-ui/themes/base/tabs';
-@use 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
+@use 'jquery-ui-theme'; /* Can't import straight from npm, images were broken. So just copied non-image parts over */
 @use 'vanilla-picker/dist/vanilla-picker.csp.css';
 @use 'tippy.js/dist/tippy.css';
 @use 'tippy.js/dist/border.css';
@@ -12,44 +12,83 @@
 @use 'icomoon/style.css';
 @use 'remixicon/remixicon.css';
 
-// Matching font to the user's OS using GitHub's approach: https://css-tricks.com/snippets/css/system-font-stack/#aa-method-1-system-fonts-at-the-element-level
-// Note: This is the font used in the general UI, not the canvas (canvas font is configurable by user)
+/**
+  Matching font to the user's OS using GitHub's approach:
+  https://css-tricks.com/snippets/css/system-font-stack/#aa-method-1-system-fonts-at-the-element-level
+  Note: This is the font used in the general UI, not the canvas (canvas font is configurable by user)
+ */
 $font-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
 $font-monospace: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Liberation Mono", Menlo, Monaco, Consolas, monospace;
-
 $font-size-base: 14px;
 
-// The following use css variables (as opposed to scss variables) so they can be read by javascript (colors.js)
-// The colors were made using random palette generation at https://coolors.co
+/* Colors: Dark Mode (default) */
 :root {
-  --primary-color: #20FC8F;
-  --secondary-color: #4C8BF5;
-  --alert-color: #f48225;
-  --darkest: #202124;
-  --darker: #282C2F;
-  --dark: #323639;
-  --grey: #424649;
-  --light: #868889;
-  --lighter: #c6c6c7;
-  --lightest: #D6D6D7;
+  /* Neon Violet -- Electric Purple (retro) */
+  --color-primary: #9933FF;
+
+  --color-deep: #000000;
+  --color-background: #202124;
+  --color-background-border: #282C2F;
+  --color-surface: #323639;
+  --color-surface-hover: #424649;
+  --color-contrast: #868889;
+
+  --color-font: white;
+  --color-font-muted: #868889;
+  --color-font-heavy-muted: #555;
+  --color-font-inverted: black;
+  --color-font-title: color-mix(in srgb, var(--color-primary) 80%, white 20%);
+
+  --color-layer-bg: var(--color-surface);
+  --color-canvas-bg: #D6D6D7;
+  --color-button-bg: #D6D6D7;
+  --color-button-font: #000;
+
+  /* The following are currently the same in dark/light mode */
+  --color-button-confirm-bg: #3273F6;
+  --color-button-confirm-font: #fff;
+  --color-dialog-bg: #424649;
+  --color-alert: #f48225;
+  --color-selection: #1E90FF;
 }
+
+/* Colors: Light Mode */
+[data-theme='light'] {
+  --color-deep: #e6e6ec;
+  --color-background: #ffffff;
+  --color-background-border: #f0f2f4;
+  --color-surface: #e6e6ec;
+  --color-surface-hover: #d9d8e6;
+  --color-contrast: #c9c8d6;
+
+  --color-font: #000000;
+  --color-font-muted: #868889;
+  --color-font-heavy-muted: #bbb;
+  --color-font-inverted: white;
+  --color-font-title: var(--color-primary);
+
+  --color-layer-bg: var(--color-background-border);
+  --color-canvas-bg: #f6f8fa;
+  --color-button-bg: #f6f8fa;
+  --color-button-font: #000;
+}
+
 
 $header-height: 38px;
 $header-border-size: 3px;
 $main-spacing: 0.5rem;
-$right-col-width: 220px;
+$right-col-width: 225px;
 $preview-size: $right-col-width;
 $frame-size: 85px;
 $frame-border-size: 3px;
 $layers-height: 125px;
 $scrollbar-width: 18px;
 $palette-icon-size: 30px;
-$palette-triangle-size: 7px;
+$palette-triangle-size: 8px;
 $palette-icon-spacing: 4px;
 $editing-tool-size: 3rem;
 $sub-tool-size: 2.5rem;
-$simplebar-track-color: var(--darker);
-
+$simplebar-track-color: var(--color-background-border);
 
 html, body {
   height: 100%;
@@ -58,18 +97,18 @@ html, body {
 
   font-family: $font-sans-serif;
   font-size: $font-size-base;
-  color: white;
+  color: var(--color-font);
 }
 
 body {
   display: flex;
   flex-direction: column;
-  background: var(--darkest);
+  background: var(--color-background);
 }
 
 #header-content {
   height: $header-height;
-  border-bottom: $header-border-size solid black;
+  border-bottom: $header-border-size solid var(--color-deep);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -87,7 +126,7 @@ body {
   justify-content: center;
   align-items: center;
 
-  color: var(--primary-color);
+  color: var(--color-primary);
   font-size: 1.25rem;
   letter-spacing: 1px;
 }
@@ -118,7 +157,7 @@ body {
 // 'unicode' sections, each taking up 1/3 of the remaining height.
 #side-content {
   min-width: $right-col-width;
-  margin: $main-spacing $main-spacing $main-spacing 0;
+  margin: 0 $main-spacing $main-spacing 0;
 
   display: flex;
   flex-direction: column;
@@ -213,21 +252,20 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: var(--dark);
+    background: var(--color-surface);
     border: 3px solid transparent;
-    color: white;
     font-size: 2rem;
     box-sizing: border-box;
     position: relative;
 
     &:hover:not(.selected) {
       cursor: pointer;
-      background: var(--grey);
+      background: var(--color-surface-hover);
     }
 
     &.selected {
-      border-color: var(--primary-color);
-      background: var(--grey);
+      border-color: var(--color-primary);
+      background: var(--color-surface-hover);
     }
 
     &[data-tool="draw-freeform"] {
@@ -247,28 +285,27 @@ body {
   }
 
   #current-color {
-    border: 5px solid var(--dark);
+    border: 5px solid var(--color-surface);
 
     &:hover, &.picker-open {
-      border: 5px solid var(--grey);
+      border: 5px solid var(--color-surface-hover);
     }
   }
 }
 
 .sub-tool-menu {
   position: absolute;
-  left: calc(#{$editing-tool-size} * 2 + 9px);
+  left: calc(#{$editing-tool-size} * 2 + 8px);
   top: 50%;
   transform: translate(0, -50%);
-  margin-left: 2px;
+  margin-left: 6px;
   z-index: 1;
 
   display: flex;
   flex-direction: column;
 
-  background: var(--light);
-  //border: 3px solid var(--secondary-color);
-  border: 4px solid var(--secondary-color);
+  //border: 4px solid var(--color-selection);
+  border: 2px solid var(--color-primary);
 
   .sub-tool {
     width: $sub-tool-size;
@@ -276,23 +313,23 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: var(--dark);
-    border: 1px solid var(--darker);
-    color: white;
+    background: var(--color-surface);
+    border: 1px solid var(--color-background-border);
     font-size: 1.5rem;
     box-sizing: border-box;
+    overflow: hidden;
 
     &:hover:not(.disabled) {
       cursor: pointer;
-      background: var(--grey);
+      background: var(--color-surface-hover);
     }
 
     &.disabled {
-      color: var(--light);
+      color: var(--color-font-muted);
     }
 
     &.active {
-      color: var(--primary-color);
+      color: var(--color-primary);
     }
   }
 }
@@ -308,15 +345,14 @@ body {
 
   display: flex;
   align-items: center;
-  background: var(--dark);
-  color: white;
-  border: 3px solid var(--alert-color);
+  background: var(--color-surface);
+  border: 3px solid var(--color-alert);
   padding: 0.5rem 1rem;
 }
 
 
 #canvas-container {
-  background: var(--lightest);
+  background: var(--color-canvas-bg);
   flex: 1;
 
   position: relative;
@@ -327,12 +363,13 @@ body {
 }
 
 .simplebar-scrollbar::before {
-  background-color: var(--lightest);
+  background-color: var(--color-contrast);
+  opacity: 0.75;
 }
 
 .simplebar-scrollbar.simplebar-hover::before, .simplebar-dragging .simplebar-scrollbar::before {
-  background-color: var(--light);
-  opacity: 0.6;
+  background-color: var(--color-contrast);
+  opacity: 0.9;
 }
 
 
@@ -367,8 +404,8 @@ body {
     max-height: $frame-size;
 
     cursor: pointer;
-    border: $frame-border-size solid var(--light);
-    background: var(--lightest);
+    border: $frame-border-size solid var(--color-contrast);
+    background: var(--color-canvas-bg);
 
     .frame-index {
       display: flex;
@@ -380,15 +417,14 @@ body {
       height: 25px;
       justify-content: center;
       align-items: center;
-      background: var(--light);
-      color: white;
+      background: var(--color-contrast);
     }
 
     &.selected {
-      border-color: var(--primary-color);
+      border-color: var(--color-primary);
       .frame-index {
-        color: black;
-        background: var(--primary-color);
+        color: var(--color-font-inverted);
+        background: var(--color-primary);
       }
     }
 
@@ -397,8 +433,8 @@ body {
     }
 
     &.placeholder {
-      background: var(--dark);
-      border: $frame-border-size dashed var(--primary-color);
+      background: var(--color-surface);
+      border: $frame-border-size dashed var(--color-primary);
     }
 
     &.range-selection-sibling {
@@ -498,16 +534,15 @@ body {
     height: $preview-size;
     width: $preview-size;
 
-    background: var(--lightest);
+    background: var(--color-canvas-bg);
   }
   #preview-fps-container {
     display: flex;
     align-items: center;
-    background: var(--dark);
+    background: var(--color-background);
 
     #preview-fps-value {
       font-size: 0.875rem;
-      color: white;
       margin-left: 0.5rem;
       min-width: 3rem;
       display: flex;
@@ -530,21 +565,19 @@ body {
     max-width: $right-col-width - $scrollbar-width;
     padding: 2px 2px 2px 6px;
 
-    background: var(--dark);
-    color: white;
-    border: 2px solid var(--light);
+    background: var(--color-layer-bg);
+    border: 2px solid transparent;
     box-sizing: border-box;
 
     font-size: 0.875rem;
     cursor: pointer;
 
+    &:not(:last-child) {
+      border-bottom: 2px solid var(--color-surface-hover);
+    }
+
     &.selected {
-      border-color: var(--primary-color);
-      background: var(--primary-color);
-      color: black;
-      button {
-        color: black;
-      }
+      border-color: var(--color-primary);
     }
 
     &.layer-template {
@@ -552,8 +585,8 @@ body {
     }
 
     &.placeholder {
-      background: var(--dark);
-      border: $frame-border-size dashed var(--primary-color);
+      background: var(--color-surface);
+      border: $frame-border-size dashed var(--color-primary);
       height: 1.5rem;
     }
 
@@ -571,10 +604,6 @@ body {
         background: none;
       }
     }
-
-    .layer-name {
-      //color: white;
-    }
   }
 }
 
@@ -587,6 +616,7 @@ body {
       margin-right: $palette-icon-spacing;
       margin-bottom: $palette-icon-spacing;
       cursor: pointer;
+      border: 1px solid var(--color-background-border);
 
       // Make a small triangle in the top-left corner of the square
       &.selected {
@@ -604,23 +634,23 @@ body {
           left: 0;
 
           border-width: $palette-triangle-size;
-          border-left-color: var(--primary-color);
-          border-top-color: var(--primary-color);
+          border-left-color: var(--color-primary);
+          border-top-color: var(--color-primary);
         }
 
         &::after {
-          top: 1px;
-          left: 1px;
+          top: 2px;
+          left: 2px;
 
-          border-width: $palette-triangle-size - 2px;
-          border-left-color: #000;
-          border-top-color: #000;
+          border-width: $palette-triangle-size - 3.5px;
+          border-left-color: var(--color-surface);
+          border-top-color: var(--color-surface);
         }
       }
     }
 
     .message {
-      color: var(--light);
+      color: var(--color-font-muted);
       font-size: 0.875rem;
       font-style: italic;
     }
@@ -638,15 +668,15 @@ body {
       justify-content: center;
       cursor: pointer;
 
-      background: #000;
-      box-shadow: inset 0 0 0 1px var(--darkest);
+      background: var(--color-deep);
+      box-shadow: inset 0 0 0 1px var(--color-background);
 
       &:active {
-        background: var(--darker);
+        background: var(--color-background);
       }
 
       &:hover {
-        box-shadow: inset 0 0 0 1px var(--primary-color);
+        box-shadow: inset 0 0 0 1px var(--color-primary);
       }
     }
   }
@@ -670,11 +700,11 @@ body {
         flex: 1 1 auto;
 
         margin: 2px;
-        background: white;
+        background: var(--color-font);
         cursor: pointer;
 
         &.selected {
-          background: var(--secondary-color);
+          background: var(--color-primary);
         }
       }
     }
@@ -684,7 +714,7 @@ body {
 #font-dialog {
   .font-example {
     margin-bottom: 0.75rem;
-    border-left: 1px solid white;
+    border-left: 1px solid var(--color-font);
     padding: 0.25rem;
   }
 }
@@ -703,7 +733,7 @@ body {
     height: 100%;
 
     &.hovered {
-      background-color: var(--dark);
+      background-color: var(--color-surface);
       cursor: pointer;
     }
     &.visible {
@@ -717,15 +747,12 @@ body {
       display: flex;
       align-items: center;
       padding: 0 1rem;
-
-      color: white;
     }
 
     > ul {
       display: none;
       position: absolute;
-      background-color: var(--dark);
-      color: white;
+      background-color: var(--color-surface);
       list-style: none;
       padding: 0;
 
@@ -742,18 +769,18 @@ body {
 
         &.disabled {
           pointer-events: none;
-          color: var(--light);
+          color: var(--color-font-muted);
         }
 
         &:hover {
-          background: var(--grey);
+          background: var(--color-surface-hover);
           cursor: pointer;
         }
 
         &.break {
           pointer-events: none;
           cursor: default;
-          border-bottom: 1px solid var(--light);
+          border-bottom: 1px solid var(--color-contrast);
           padding: 0;
           margin: 0.5rem 0;
         }
@@ -768,7 +795,7 @@ body {
 
 #main-menu {
   .shortcut {
-    color: var(--light);
+    color: var(--color-font-muted);
     margin-left: 1rem;
   }
 }
@@ -822,10 +849,11 @@ body {
 
 #export-file-dialog {
   #example-container {
+    margin-top: 3rem;
     display: flex;
     flex-direction: column;
 
-    .side-by-side {
+    #example-img-and-text {
       display: flex;
       flex-direction: row;
       gap: 1rem;
@@ -834,27 +862,29 @@ body {
 
       img {
         height: 10rem;
-        border: 1px solid var(--darkest);
+        border: 1px solid var(--color-background-border);
       }
       #example-text {
         flex-grow: 1;
-        background: white;
-        border: 1px solid var(--darkest);
-        color: var(--darkest);
+        min-width: 0;
+        background: var(--color-surface-hover);
+        border: 1px solid var(--color-background-border);
         height: 15rem;
-        overflow-y: scroll;
         margin: 0;
-        white-space: pre-wrap;
-        word-break: break-word;
+        pre {
+          margin: 0.5rem 0;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
       }
     }
   }
 
   .export-warning {
-    border: 1px solid var(--alert-color);
+    border: 1px solid var(--color-alert);
     padding: 1rem;
     .ri {
-      color: var(--alert-color);
+      color: var(--color-alert);
     }
   }
 
@@ -868,7 +898,6 @@ body {
   margin-top: 1rem;
 
   font-family: $font-monospace; // Using monospace so coords don't shift around as they are rapidly updated
-  color: white;
 
   .canvas-dimensions, .mouse-coordinates, .selection-dimensions {
     display: flex;
@@ -897,7 +926,7 @@ body {
 }
 
 .alert {
-  color: var(--alert-color);
+  color: var(--color-alert);
 }
 
 // Remove text highlighting https://stackoverflow.com/a/4407335
@@ -930,7 +959,7 @@ button {
 
 .ri {
   &.active {
-    color: var(--primary-color);
+    color: var(--color-primary);
   }
 }
 
@@ -950,7 +979,7 @@ button {
 }
 
 .section-header {
-  color: var(--light);
+  color: var(--color-font-muted);
 
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -958,26 +987,26 @@ button {
 }
 
 hr {
-  border-color: var(--lightest) !important;
+  border-color: var(--color-surface-hover) !important;
   margin: 0.75rem 0;
 }
 
 button {
   background: none;
   border: none;
-  color: white;
+  color: var(--color-font);
   cursor: pointer;
   border-radius: 2px;
-  padding: 4px;
-  margin: 4px;
+  padding: 3px;
+  margin: 3px;
   line-height: 1;
 
   &:hover {
-    background: var(--dark);
+    background: var(--color-surface);
   }
 
   &:disabled, &.disabled {
-    color: #666;
+    color: var(--color-font-heavy-muted);
     background: none;
     cursor: default;
   }
@@ -987,12 +1016,11 @@ button {
   .ui-slider-handle {
     width: 0.8em;
     height: 0.8em;
-    background: var(--primary-color);
-    border-color: var(--dark);
+    background: var(--color-primary);
+    border-color: var(--color-surface);
 
     &.ui-state-active {
-      //background: var(--secondary-color-dark);
-      background: color-mix(in srgb, var(--primary-color) 80%, black 20%)
+      background: color-mix(in srgb, var(--color-primary) 80%, black 20%)
     }
   }
 
@@ -1001,17 +1029,6 @@ button {
 
     .ui-slider-handle {
       top: -0.3em;
-
-      &.with-text {
-        width: 2.2rem;
-        height: 1rem;
-        top: -0.3rem;
-        margin-left: -1.1rem;
-
-        font-size: 0.85rem;
-        color: white;
-        text-align: center;
-      }
     }
   }
 }
@@ -1025,55 +1042,36 @@ button {
 }
 
 .ui-dialog {
-  background: var(--light);
+  background: var(--color-surface);
 
   &.ui-widget-content {
-    border: 2px solid var(--lightest);
+    border: 2px solid var(--color-background-border);
   }
 
   .ui-widget-header {
-    background: var(--dark);
-    color: white;
+    background: none;
+    color: var(--color-font);
     margin-bottom: 0.5rem;
+
+    border: none;
+    border-bottom: 1px solid var(--color-surface-hover);
 
     .ui-dialog-titlebar-close.hidden {
       display: none;
     }
   }
   .ui-dialog-content {
-    color: white;
+    color: var(--color-font);
 
     > label, > div {
       display: block;
       margin-bottom: 1rem;
     }
-
-    // Special formatting if we're showing ui-tabs inside of a dialog
-    &.ui-tabs {
-      padding-top: 0;
-      border: none;
-
-      .ui-tabs-nav {
-        margin: 0 -1rem;
-        padding: 1rem 1rem 0 1rem;
-
-        border-bottom: 2px solid var(--secondary-color);
-
-        li.ui-tab {
-          border: none;
-          //border-bottom: 1px solid var(--secondary-color);
-        }
-
-        li.ui-state-active {
-          background: var(--secondary-color);
-        }
-      }
-    }
-
   }
   .ui-dialog-buttonpane {
     background: none;
     padding: 0;
+    border-top: 1px solid var(--color-surface-hover);
 
     button {
       margin: 0.5rem 0.3rem 0.5rem 0.2rem;
@@ -1083,34 +1081,34 @@ button {
   }
 }
 .ui-widget-overlay {
-  background: var(--darkest);
+  background: var(--color-dialog-bg);
   opacity: 0.75;
 }
 .ui-button {
-  background: var(--lightest);
-  color: var(--darkest);
-  border-color: var(--darkest);
+  background: var(--color-button-bg);
+  color: var(--color-button-font);
+  border-color: var(--color-background-border);
+
+  &:focus {
+    background: var(--color-button-bg);
+    border-color: var(--color-background-border);
+    color: var(--color-button-font);
+  }
 
   &:hover {
-    background: var(--lighter);
-    border-color: var(--darkest);
+    background: color-mix(in srgb, var(--color-button-bg) 98%, black);
+    border-color: var(--color-background-border);
+    color: var(--color-button-font);
   }
 
   &.call-out {
-    color: white;
-    background: var(--secondary-color);
+    color: var(--color-button-confirm-font);
+    background: var(--color-button-confirm-bg);
 
-    //&:hover {
-    //  background: var(--secondary-color-dark);
-    //}
+    &:hover {
+      background: color-mix(in srgb, var(--color-button-confirm-bg) 90%, black);
+    }
   }
-}
-
-.ui-corner-all,
-.ui-corner-top,
-.ui-corner-left,
-.ui-corner-tl {
-  border-radius: 0;
 }
 
 .ui-tabs {
@@ -1148,21 +1146,25 @@ button {
 .icon-line-dashed, .icon-line-solid {
   transform: rotate(-45deg);
 }
-//.icon-paint-bucket {
-//  margin-left: 0.25rem;
-//}
 
+/* Tooltip styling: https://atomiks.github.io/tippyjs/v6/themes/ */
+.tippy-box {
+  border: 1px solid #000;
+  background: var(--color-surface);
+  color: var(--color-font);
 
-// tooltip styling https://atomiks.github.io/tippyjs/v6/themes/
-.tippy-content {
+  .tippy-arrow {
+    color: var(--color-surface)
+  }
+
   .title {
     font-weight: bold;
-    color: var(--primary-color);
+    color: var(--color-font-title);
   }
 
   .shortcut {
     margin-left: 1rem;
-    color: var(--light);
+    color: var(--color-font-muted);
   }
 
   .description {
@@ -1176,16 +1178,11 @@ button {
 
     .modifier-key {
       font-size: 0.55rem;
-      border: 1px solid white;
+      border: 1px solid var(--color-font);
       padding: 2px 6px;
       margin-right: 6px;
       border-radius: 4px;
     }
   }
 }
-.tippy-box {
-  border: 1px solid black;
-}
-
-
 

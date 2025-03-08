@@ -8,63 +8,112 @@
 
 import {getState, replaceState} from "./state.js";
 import {triggerRefresh} from "../index.js";
+import {refresh as refreshTheme} from "../config/theme.js"
 
-const STORAGE_KEY = 'ascii-reel';
-const AUTO_SAVE_INTERVAL = 5000;
 
-export function loadState() {
+
+
+// ------------------------------------------------------------------------- Local Storage Helpers
+
+function getLocalStorage(storageKey) {
     try {
-        const serializedState = localStorage.getItem(STORAGE_KEY);
-        if (serializedState === null) {
-            return undefined;
-        }
-        return JSON.parse(serializedState);
+        const serializedItem = localStorage.getItem(storageKey);
+        if (serializedItem === null) return undefined;
+        return JSON.parse(serializedItem);
     } catch (err) {
+        console.error('Error getting localstorage: ', err);
         return undefined;
     }
 }
 
-export function saveState(stateObj) {
+function setLocalStorage(storageKey, value, postMessage) {
     if (!isLeader) return;
 
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
-        channel.postMessage({ type: "update", state: stateObj })
+        localStorage.setItem(storageKey, JSON.stringify(value));
+        channel.postMessage(postMessage)
     } catch (err) {
-        console.error('Error saving state: ', err);
+        console.error('Error setting localstorage: ', err);
     }
+}
+
+
+// ------------------------------------------------------------------------- Storing State
+const STATE_KEY = 'ascii-reel-state';
+const STATE_MSG = "update-state";
+const AUTO_SAVE_INTERVAL = 5000;
+
+export function readState() {
+    return getLocalStorage(STATE_KEY);
+}
+
+export function saveState() {
+    const stateObj = getState();
+    setLocalStorage(STATE_KEY, stateObj, { type: STATE_MSG, state: stateObj });
 }
 
 export function resetState() {
     try {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STATE_KEY);
     } catch (err) {
         console.error('Error resetting state: ', err);
     }
 }
 
 export function setupAutoSave() {
-    window.setInterval(() => {
-        saveState(getState());
-    }, AUTO_SAVE_INTERVAL);
+    window.setInterval(() => saveState(), AUTO_SAVE_INTERVAL);
 }
+
+function onAnotherTabStateUpdate(otherTabState) {
+    replaceState(otherTabState);
+    triggerRefresh();
+}
+
+// ------------------------------------------------------------------------- Global Settings
+const GLOBAL_SETTINGS_KEY = 'ascii-reel-global';
+const GLOBAL_SETTINGS_MSG = 'update-global-settings';
+
+export function readGlobalSetting(key) {
+    const settings = getLocalStorage(GLOBAL_SETTINGS_KEY) || {};
+    return settings[key];
+}
+
+export function saveGlobalSetting(key, value) {
+    const settings = getLocalStorage(GLOBAL_SETTINGS_KEY) || {};
+    settings[key] = value;
+    setLocalStorage(GLOBAL_SETTINGS_KEY, settings, { type: GLOBAL_SETTINGS_MSG, setting: key });
+}
+
+function onAnotherTabGlobalSettingsUpdate(key) {
+    switch(key) {
+        case 'theme':
+            refreshTheme(true);
+            break;
+    }
+}
+
 
 // ------------------------------------------------------------------------- BroadcastChannel / Leader Election
 // Using BroadcastChannel to ensure all tabs are editing the same localstorage file
 
 const CHANNEL_KEY = 'ascii-reel-channel';
+const LEADER_MSG = "update-leader";
+
 const channel = new BroadcastChannel(CHANNEL_KEY);
 let isLeader = false;
 
 // Listen for messages from other tabs
 channel.onmessage = (event) => {
     switch(event.data.type) {
-        case "leader": // another tab is now the leader
+        case LEADER_MSG:
+            // Another tab is now the leader
             isLeader = false;
             break;
-        case "update": // received a state update from another tab
-            replaceState(event.data.state);
-            triggerRefresh();
+        case STATE_MSG:
+            onAnotherTabStateUpdate(event.data.state);
+            break;
+        case GLOBAL_SETTINGS_MSG:
+            onAnotherTabGlobalSettingsUpdate(event.data.setting);
             break;
         default:
             console.warn(`Unknown BroadcastChannel message: ${event.data.type}`);
@@ -82,10 +131,10 @@ function electLeader() {
     if (document.visibilityState === "visible") {
         // Current tab is now the leader
         isLeader = true;
-        channel.postMessage({ type: "leader" });
+        channel.postMessage({ type: LEADER_MSG });
     } else {
         // If current tab used to be the leader and is no longer the leader, save its final state to localstorage
-        if (isLeader) saveState(getState());
+        if (isLeader) saveState();
         isLeader = false;
     }
 }

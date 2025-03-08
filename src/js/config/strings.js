@@ -135,8 +135,8 @@ export const strings = {
     'palette.open-settings.description': 'TODO',
 
     'unicode.information.name': 'Extended ASCII Helper',
-    'unicode.information.description': 'The following table provides quick access to several Extended ASCII characters. ' +
-        'These characters are not technically ASCII, but can be helpful if you are not limited to the 128 Standard ASCII characters.\n\n' +
+    'unicode.information.description': 'The following table provides quick access to several "Extended ASCII" characters. ' +
+        'These characters are not actually ASCII, but can make drawing easier if you are not strictly limited to the 128 ASCII characters.\n\n' +
         'Click on a character below to copy it to your clipboard. ' +
         'It can also have additional effects depending on your current tool:\n' +
         '- Text Editor Tool: Pastes the character once\n' +
