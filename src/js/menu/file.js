@@ -10,7 +10,6 @@ import {fontRatio} from "../canvas/font.js";
 import {confirmDialog, createDialog} from "../utils/dialogs.js";
 import exampleExportImg from "../../images/example-export.png";
 import {importJSZip, importAnimated_GIF} from "../utils/lazy_loaders.js";
-import {getState} from "../state/state.js";
 import SimpleBar from "simplebar";
 
 const FILE_EXTENSION = 'asciireel';
@@ -30,7 +29,7 @@ export function init() {
 function setupNewFile() {
     actions.registerAction('file.new-file', () => {
         // TODO ask for dimensions, etc.
-        confirmDialog('Create new animation?', 'Any unsaved changes will be lost.', () => state.loadNew());
+        confirmDialog('Create new animation?', 'Any unsaved changes will be lost.', () => state.newState());
     });
 }
 

@@ -103,18 +103,18 @@ export function drawCheckerboard(context, area) {
     // Then draw many little squares for checkerboard-B color
     context.beginPath();
     context.fillStyle = checkerboardB();
-    let rowStartsOnB = false;
     let x, y;
     let maxX = roundForComparison(area.x + area.width);
     let maxY = roundForComparison(area.y + area.height);
+    let colStartsOnB = false;
 
     for (x = area.x; roundForComparison(x) < maxX; x += CHECKER_SIZE) {
-        let isCheckered = rowStartsOnB;
+        let isCheckered = colStartsOnB;
         for (y = area.y; roundForComparison(y) < maxY; y += CHECKER_SIZE) {
             if (isCheckered) context.rect(x, y, CHECKER_SIZE, CHECKER_SIZE);
             isCheckered = !isCheckered;
         }
-        rowStartsOnB = !rowStartsOnB;
+        colStartsOnB = !colStartsOnB;
     }
     context.fill();
 }

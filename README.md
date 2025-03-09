@@ -22,8 +22,8 @@ This tool has many advantages over a normal text editor, such as:
   - Layer support
   - Reference sheet for extended ASCII characters
 - Animating (multiple frames)
-  - Ability to easily duplicate and re-order your frames
-  - Ability to copy a section of one frame to all frames
+  - Easily duplicate and re-order your frames
+  - Copy a section of one frame to all frames
   - Onion tool to see previous frame
   - Continuously preview the animation as you're working on it
 - Exporting

@@ -5,11 +5,12 @@ import * as palette from "../components/palette.js";
 import * as editor from "../components/editor.js";
 import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "../canvas/font.js";
-import {saveState} from "./localstorage.js";
+import {resetState, saveState} from "./localstorage.js";
 import ArrayRange, {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {DEFAULT_COLOR} from "../components/palette.js";
 import Cell from "../geometry/cell.js";
 import {moveCursorTo} from "../canvas/selection.js";
+import { saveAs } from 'file-saver';
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it
 // in the CONFIG_KEYS_FOR_HISTORY constant below
@@ -65,7 +66,7 @@ const CELL_DEFAULTS = {
     chars: [[]],
     colors: [[]]
 }
-const SEQUENCES = ['layers', 'frames'];
+const CREATE_SEQUENCES_FOR = ['layers', 'frames'];
 
 export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and use to display
 
@@ -91,29 +92,59 @@ export function init() {
 let state = {};
 let sequences = {};
 
-export function loadNew() {
-    load({
+export function newState() {
+    return load({
         layers: [{ id: 1 }],
         frames: [{ id: 1 }],
         cels: { '1,1': {} }
     });
 }
 
+/**
+ * Loads the given data. If data cannot be loaded will show an error message to user
+ *
+ * @param {Object} data State data to load
+ * @returns {boolean} Returns true if the load was successful, false if not
+ */
 export function load(data) {
-    resetHistory();
+    try {
+        resetHistory();
 
-    state = {
-        config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure indices are in bounds
-        layers: data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
-        frames: data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame)),
-        colorTable: data.colorTable ? [...data.colorTable] : []
-    };
+        state = {
+            config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure indices are in bounds
+            layers: (data.layers || []).map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
+            frames: (data.frames || []).map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame)),
+            colorTable: data.colorTable ? [...data.colorTable] : []
+        };
 
-    state.cels = Object.fromEntries(
-        Object.entries(data.cels || {}).map(([k, v]) => [k, normalizeCel(v)])
-    )
+        // This is done after building the state object above because normalizeCel depends on state.config.dimensions
+        state.cels = Object.fromEntries(
+            Object.entries(data.cels || {}).map(([k, v]) => [k, normalizeCel(v)])
+        )
 
-    // Prune any unused frames, layers, and/or cels. This should only happen if file was modified outside of app.
+        pruneUnusedState();
+        initSequences();
+        ensureRequiredState();
+
+        importPalette(data.palette ? data.palette : { colors: palette.DEFAULT_PALETTE }, true);
+        vacuumColorTable();
+
+        calculateFontRatio();
+        triggerResize(true);
+        pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
+        saveState();
+        
+        return true;
+    } catch (error) {
+        console.error("Failed to load state:", error.message);
+        console.error("Stack trace:\n", error.stack);
+        onLoadError(data);
+        return false;
+    }
+}
+
+// Prune any unused frames, layers, and/or cels. This is only needed if the file was manually modified outside of app.
+function pruneUnusedState() {
     const usedCelIds = new Set();
     state.frames.forEach(frame => {
         state.layers.forEach(layer => {
@@ -132,22 +163,21 @@ export function load(data) {
             delete state.cels[celId];
         }
     }
-
-    // Init sequences according to the highest current id (for each stateKey in SEQUENCES)
-    sequences = SEQUENCES.reduce((obj, stateKey) => {
-        obj[stateKey] = Math.max.apply(Math, state[stateKey].map(e => e.id));
-        return obj;
-    }, {})
-
-    importPalette(data.palette ? data.palette : { colors: palette.DEFAULT_PALETTE }, true);
-    vacuumColorTable();
-
-    calculateFontRatio();
-    triggerResize(true);
-    pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
-    saveState();
 }
 
+// Init sequences according to the highest current id
+function initSequences() {
+    sequences = CREATE_SEQUENCES_FOR.reduce((obj, stateKey) => {
+        obj[stateKey] = Math.max(...state[stateKey].map(e => e.id), 0);
+        return obj;
+    }, {})
+}
+
+// Ensure at least 1 frame and 1 layer
+function ensureRequiredState() {
+    if (state.layers.length === 0) createLayer(0);
+    if (state.frames.length === 0) createFrame(0);
+}
 
 export function getState() {
     return state;
@@ -838,4 +868,32 @@ export function modifyHistory(callback) {
     if (history.length) {
         callback(history[historyIndex])
     }
+}
+
+
+// -------------------------------------------------------------------------------- Error handling
+const $loadError = $('#load-error');
+
+function onLoadError(attemptedData) {
+    // Clear out state since it is invalid; that way isValid() returns false
+    state = {};
+
+    // Remove all document event listeners since the document is dead
+    $(document).off('mousedown').off('mouseup').off('click');
+
+    $loadError.show();
+
+    $loadError.find('.download').off('click').on('click', e => {
+        const blob = new Blob([JSON.stringify(attemptedData)], { type: "application/json" });
+        saveAs(blob, `ascii-reel-corrupted.json`);
+    });
+
+    $loadError.find('.reset').off('click').on('click', e => {
+        resetState();
+        location.reload();
+    });
+}
+
+export function isValid() {
+    return state && Object.keys(state).length > 0;
 }

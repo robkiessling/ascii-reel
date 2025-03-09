@@ -11,17 +11,6 @@
 </head>
 
 <body>
-    <div id="mobile-warning">
-        <div>
-            The <span class="primary-color">ASCII Reel</span> app is desktop-only
-        </div>
-        <div>
-            <a class="link" href="https://github.com/robkiessling/ascii-reel" target="_blank">
-                <span class="ri ri-fw ri-github-fill"></span> GitHub
-            </a>
-        </div>
-    </div>
-
     <div id="header-content">
         <ul id="main-menu" class="horizontal-menu no-select">
             <li>
@@ -437,7 +426,6 @@
         <canvas id="export-canvas"></canvas>
     </div>
 
-
     <div id="font-dialog" title="Font Settings" class="dialog-form">
         <label>
             Canvas Font: <select id="font-select"></select>
@@ -538,8 +526,49 @@
         </label>
     </div>
 
-    <span id="font-ratio-tester">A</span>
+    <span id="font-ratio-tester" style="display: none;">A</span>
     <img id="export-debug" alt="for testing export" hidden>
+
+    <div id="mobile-warning">
+        <div>
+            The <span class="primary-color">ASCII Reel</span> app is desktop-only
+        </div>
+        <div>
+            <a class="link" href="https://github.com/robkiessling/ascii-reel" target="_blank">
+                <span class="ri ri-fw ri-github-fill"></span> GitHub
+            </a>
+        </div>
+    </div>
+
+    <div id="load-error" style="display: none;">
+        <div class="title">
+            <span class="ri ri-fw ri-error-warning-line error"></span>
+            <span>Failed to load saved content</span>
+        </div>
+        <table>
+            <tbody>
+            <tr>
+                <td>
+                    To download a copy of the corrupted content:<br>
+                    (for manual troubleshooting)
+                </td>
+                <td>
+                    <button class="download text-button ui-button call-out">Download</button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    To reset to a fresh canvas:<br>
+                    <span class="ri ri-fw ri-error-warning-line error"></span>
+                    Will lose any content saved in the browser!
+                </td>
+                <td>
+                    <button class="reset text-button ui-button error">Reset</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 
 </body>
 </html>

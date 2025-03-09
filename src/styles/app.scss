@@ -42,13 +42,15 @@ $font-size-base: 14px;
   --color-layer-bg: var(--color-surface);
   --color-canvas-bg: #a3a3a3;
   --color-button-bg: #D6D6D7;
+  --color-button-bg-hover: #d9d9d9;
   --color-button-font: #000;
 
   /* The following are currently the same in dark/light mode */
   --color-button-confirm-bg: #3273F6;
   --color-button-confirm-font: #fff;
   --color-dialog-bg: #424649;
-  --color-alert: #f48225;
+  --color-warning: #f48225;
+  --color-error: #f42525;
   --color-selection: #1E90FF;
   --color-main-menu-bg: var(--color-background-border);
 }
@@ -71,6 +73,7 @@ $font-size-base: 14px;
   --color-layer-bg: var(--color-background-border);
   --color-canvas-bg: #f6f8fa;
   --color-button-bg: #f6f8fa;
+  --color-button-bg-hover: #f0f2f4;
   --color-button-font: #000;
 }
 
@@ -79,6 +82,7 @@ $header-height: 38px;
 $header-border-size: 3px;
 $main-spacing: 0.5rem;
 $button-size: 30px;
+$button-border-radius: 4px;
 $right-col-width: 225px;
 $preview-size: $right-col-width;
 $frame-size: 85px;
@@ -340,6 +344,27 @@ body {
   }
 }
 
+#load-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  font-size: 1rem;
+  position: absolute;
+  background: var(--color-background);
+  z-index: 2;
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  table {
+    border-collapse: separate; /* Needed for border-spacing to work */
+    border-spacing: 0.5rem 2rem;
+  }
+}
 
 /* Hiding entire app on mobile devices */
 #mobile-warning {
@@ -386,7 +411,7 @@ body {
   display: flex;
   align-items: center;
   background: var(--color-surface);
-  border: 3px solid var(--color-alert);
+  border: 3px solid var(--color-warning);
   padding: 0.5rem 1rem;
 }
 
@@ -852,7 +877,7 @@ body {
     width: 4rem;
 
     &.error {
-      outline: 1px solid red;
+      outline: 1px solid var(--color-error);
     }
   }
 
@@ -922,10 +947,10 @@ body {
   }
 
   .export-warning {
-    border: 1px solid var(--color-alert);
+    border: 1px solid var(--color-warning);
     padding: 1rem;
     .ri {
-      color: var(--color-alert);
+      color: var(--color-warning);
     }
   }
 
@@ -970,8 +995,11 @@ body {
   color: var(--color-primary)
 }
 
-.alert {
-  color: var(--color-alert);
+.warning {
+  color: var(--color-warning);
+}
+.error {
+  color: var(--color-error);
 }
 
 // Remove text highlighting https://stackoverflow.com/a/4407335
@@ -1037,7 +1065,7 @@ button, .button {
   height: $button-size;
   padding: 3px;
   margin: 3px;
-  border-radius: 2px;
+  border-radius: $button-border-radius;
   line-height: 1;
   cursor: pointer;
 
@@ -1063,6 +1091,13 @@ button, .button {
   text-align: center;
   padding: 0;
   text-decoration: none;
+}
+
+.text-button {
+  height: auto;
+  width: auto;
+  min-width: 8rem;
+  padding: 1rem;
 }
 
 .link {
@@ -1154,7 +1189,8 @@ button, .button {
   }
 
   &:hover {
-    background: color-mix(in srgb, var(--color-button-bg) 98%, black);
+    //background: color-mix(in srgb, var(--color-button-bg) 95%, black); // todo check lightmode
+    background: var(--color-button-bg-hover);
     border-color: var(--color-background-border);
     color: var(--color-button-font);
   }
@@ -1165,6 +1201,24 @@ button, .button {
 
     &:hover {
       background: color-mix(in srgb, var(--color-button-confirm-bg) 90%, black);
+    }
+  }
+
+  &.warning {
+    color: var(--color-button-confirm-font);
+    background: var(--color-warning);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-warning) 90%, black);
+    }
+  }
+
+  &.error {
+    color: var(--color-button-confirm-font);
+    background: var(--color-error);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-error) 90%, black);
     }
   }
 }

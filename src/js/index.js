@@ -47,17 +47,17 @@ $(window).on('resize', debounce(triggerResize));
 
 // Load initial content
 defer(() => {
-    /* Critical CSS -- do not show page until DOMContentLoaded to avoid flash of unstyled content */
+    /* Critical CSS -- not showing page until DOMContentLoaded to avoid flash of unstyled content */
     $('body').css('opacity', 1);
 
     const savedState = localstorage.readState();
-    savedState ? state.load(savedState) : state.loadNew();
+    const successfulLoad = savedState ? state.load(savedState) : state.newState();
 
-    refreshShortcuts();
-
-    if (state.config('tool') === 'text-editor') selection.moveCursorToStart();
-
-    localstorage.setupAutoSave();
+    if (successfulLoad) {
+        refreshShortcuts();
+        localstorage.setupAutoSave();
+        if (state.config('tool') === 'text-editor') selection.moveCursorToStart();
+    }
 })
 
 
@@ -68,6 +68,8 @@ defer(() => {
  * Resizes the components that depend on window size. Then triggers a full refresh.
  */
 export function triggerResize(clearSelection = false) {
+    if (!state.isValid()) return;
+
     if (clearSelection) selection.clear(false); // The clear doesn't need to trigger a refresh; it will be done later
 
     // Refresh frames controller first, since its configuration can affect canvas boundaries
@@ -90,6 +92,8 @@ export function triggerResize(clearSelection = false) {
  *                  pushStateToHistory for more information)
  */
 export function triggerRefresh(type = 'full', saveState = false) {
+    if (!state.isValid()) return;
+
     if (!Array.isArray(type)) type = [type];
 
     type.forEach(type => {

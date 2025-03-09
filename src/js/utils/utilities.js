@@ -43,7 +43,12 @@ export function setIntervalUsingRAF(callback, delay, evaluateImmediately = false
         then = now;
 
         if (progress >= delay) {
-            callback();
+            try {
+                callback();
+            } catch (exception) {
+                console.error(`setIntervalUsingRAF encountered an error: ${exception}`);
+                stop = true;
+            }
             progress = progress % delay;
         }
 
