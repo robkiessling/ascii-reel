@@ -1,0 +1,56 @@
+@use 'variables' as *;
+
+// The following styles are used to generate full page-blocking content (a div coverts entire page and displays a message)
+
+#load-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  font-size: 1rem;
+  position: absolute;
+  background: var(--color-background);
+  z-index: 2;
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  table {
+    border-collapse: separate; // Needed for border-spacing to work
+    border-spacing: 0.5rem 2rem;
+  }
+}
+
+/* Hiding entire app on mobile devices */
+#mobile-warning {
+  display: none;
+}
+
+@media (max-width: 850px), (max-height: 500px) {
+  #mobile-warning {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 100%;
+    padding: 4rem;
+    gap: 1rem;
+    font-size: 2rem;
+    .ri { font-size: 2rem; }
+
+    // Always using dark-mode settings for this message
+    color: white;
+    background: #202124;
+
+    > div {
+      text-align: center;
+    }
+  }
+
+  #header-content, #body-content {
+    display: none !important;
+  }
+}

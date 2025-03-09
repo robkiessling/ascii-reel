@@ -1,0 +1,58 @@
+@use 'variables' as *;
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+
+  font-family: $font-sans-serif;
+  font-size: $font-size-base;
+  color: var(--color-font);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+}
+
+#header-content {
+  height: $header-height;
+  border-bottom: $header-border-size solid var(--color-deep);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-main-menu-bg);
+}
+
+#body-content {
+  flex: 1; // Fill remaining width
+  height: calc(100vh - #{$header-height} - #{$header-border-size} - 2 * #{$main-spacing});
+
+  display: flex;
+}
+
+#frames-and-canvas {
+  flex: 1; // Fill remaining width
+  margin: $main-spacing;
+
+  display: flex;
+
+  &.frames-on-bottom {
+    flex-direction: column;
+  }
+  &.frames-on-left {
+    flex-direction: row-reverse;
+    margin-left: 0.15rem;
+  }
+}
+
+#tools-and-canvas {
+  flex: 1;
+  min-height: 0; // This combined with flex:1 makes the div not use more space than available https://stackoverflow.com/a/76670135
+
+  display: flex;
+  flex-direction: row;
+  position: relative;
+}
+

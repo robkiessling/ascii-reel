@@ -1,0 +1,226 @@
+@use 'variables' as *;
+
+// The side-content is composed of a 'preview' section which is a fixed height, and then 'layers', 'palette', and
+// 'unicode' sections, each taking up 1/3 of the remaining height.
+#side-content {
+  min-width: $right-col-width;
+  margin: 0 $main-spacing $main-spacing 0;
+
+  display: flex;
+  flex-direction: column;
+
+  .side-separator {
+    height: 1rem;
+  }
+
+  // Each side-content-flex-section takes up an equal height of the side-content
+  // Also correctly sets up the flexbox if the section has a .tools and/or .list sub-components
+  .side-content-flex-section {
+    flex: 1; // fill equal parts of the remaining space
+    overflow-y: hidden;
+
+    display: flex;
+    flex-direction: column;
+
+    .tools {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+
+      margin-right: $scrollbar-width;
+
+      > div {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    .list {
+      max-width: $right-col-width;
+      flex: 1;
+
+      // https://github.com/Grsmto/simplebar/issues/473#issuecomment-653741529
+      overflow-y: auto;
+      height: 100%;
+
+      .simplebar-content {
+        display: flex;
+        flex-direction: column;
+      }
+      .simplebar-track.simplebar-vertical {
+        background-color: var(--color-background-border);
+      }
+
+      &.as-rows {
+        .simplebar-content {
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+      }
+    }
+  }
+}
+
+
+#preview-controller {
+  .tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #preview-canvas-container {
+    position: relative;
+    height: $preview-size;
+    width: $preview-size;
+
+    background: var(--color-canvas-bg);
+    outline: 1px solid var(--color-background-border);
+  }
+  #preview-fps-container {
+    display: flex;
+    align-items: center;
+    background: var(--color-background);
+
+    #preview-fps-value {
+      font-size: 0.875rem;
+      margin-left: 0.5rem;
+      min-width: 3rem;
+      display: flex;
+      justify-content: center;
+    }
+    #preview-fps-slider {
+      flex: 1;
+      margin: 0.5rem;
+    }
+  }
+}
+
+#layer-controller {
+  .layer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    max-width: $right-col-width - $scrollbar-width;
+    padding: 2px 2px 2px 6px;
+
+    background: var(--color-layer-bg);
+    border: 2px solid transparent;
+    box-sizing: border-box;
+
+    font-size: 0.875rem;
+    cursor: pointer;
+
+    &:not(:last-child) {
+      border-bottom: 2px solid var(--color-surface-hover);
+    }
+
+    &.selected {
+      border-color: var(--color-primary);
+    }
+
+    &.layer-template {
+      display: none;
+    }
+
+    &.placeholder {
+      background: var(--color-surface);
+      border: $frame-border-size dashed var(--color-primary);
+      height: 1.5rem;
+    }
+
+    button {
+      margin: 0;
+      padding-bottom: 0;
+
+      height: 20px;
+
+      .ri {
+        font-size: 1rem;
+      }
+
+      &:hover {
+        background: none;
+      }
+    }
+  }
+}
+
+#palette-controller {
+  .list {
+    .color {
+      display: inline-block;
+      width: $palette-icon-size;
+      height: $palette-icon-size;
+      margin-right: $palette-icon-spacing;
+      margin-bottom: $palette-icon-spacing;
+      cursor: pointer;
+      border: 1px solid var(--color-background-border);
+
+      // Make a small triangle in the top-left corner of the square
+      &.selected {
+        position: relative;
+
+        &::before, &::after {
+          content: '';
+          position: absolute;
+          border-color: transparent;
+          border-style: solid;
+        }
+
+        &::before {
+          top: 0;
+          left: 0;
+
+          border-width: $palette-triangle-size;
+          border-left-color: var(--color-primary);
+          border-top-color: var(--color-primary);
+        }
+
+        &::after {
+          top: 2px;
+          left: 2px;
+
+          border-width: $palette-triangle-size - 3.5px;
+          border-left-color: var(--color-surface);
+          border-top-color: var(--color-surface);
+        }
+      }
+    }
+
+    .message {
+      color: var(--color-font-muted);
+      font-size: 0.875rem;
+      font-style: italic;
+    }
+  }
+}
+
+#unicode-controller {
+  .list {
+    .unicode-option {
+      height: 1.8rem;
+      width: 1.8rem;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+
+      background: var(--color-deep);
+      box-shadow: inset 0 0 0 1px var(--color-background);
+
+      &:active {
+        background: var(--color-background);
+      }
+
+      &:hover {
+        box-shadow: inset 0 0 0 1px var(--color-primary);
+      }
+    }
+  }
+}
+

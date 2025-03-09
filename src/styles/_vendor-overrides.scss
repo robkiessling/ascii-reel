@@ -1,0 +1,220 @@
+@use 'variables' as *;
+
+
+// ---------------------------------------------------------------------- tippy.js (tooltips)
+// Docs: https://atomiks.github.io/tippyjs/v6/themes/
+
+.tippy-box {
+  border: 1px solid #000;
+  background: var(--color-surface);
+  color: var(--color-font);
+
+  .tippy-arrow {
+    color: var(--color-surface)
+  }
+
+  .title {
+    font-weight: bold;
+    color: var(--color-font-title);
+  }
+
+  .shortcut {
+    margin-left: 1rem;
+    color: var(--color-font-muted);
+  }
+
+  .description {
+    margin: 2px 0;
+  }
+
+  .modifier-desc {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+
+    .modifier-key {
+      font-size: 0.55rem;
+      border: 1px solid var(--color-font);
+      padding: 2px 6px;
+      margin-right: 6px;
+      border-radius: 4px;
+    }
+  }
+}
+
+
+// ---------------------------------------------------------------------- vanilla-picker (color picker)
+
+.picker_wrapper {
+  .picker_editor {
+    width: 7rem;
+  }
+
+  .picker_done {
+    display: none;
+  }
+
+  .picker_sample {
+    &.add-to-palette {
+      cursor: pointer;
+    }
+
+    .ri {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1rem;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------- remixicon (and other icons)
+
+.ri-fw {
+  display: inline-block;
+}
+
+.ri {
+  &.active {
+    color: var(--color-primary);
+  }
+}
+
+.icon-line-dashed, .icon-line-solid {
+  transform: rotate(-45deg);
+}
+
+// ---------------------------------------------------------------------- simplebar (custom scrollbar)
+
+.simplebar-scrollbar::before {
+  background-color: var(--color-contrast);
+  opacity: 0.75;
+}
+
+.simplebar-scrollbar.simplebar-hover::before, .simplebar-dragging .simplebar-scrollbar::before {
+  background-color: var(--color-contrast);
+  opacity: 0.9;
+}
+
+// ---------------------------------------------------------------------- jQuery UI
+
+.ui-slider {
+  .ui-slider-handle {
+    width: 0.8em;
+    height: 0.8em;
+    background: var(--color-primary);
+    border-color: var(--color-surface);
+
+    &.ui-state-active {
+      background: color-mix(in srgb, var(--color-primary) 80%, black 20%)
+    }
+  }
+
+  &.ui-slider-horizontal {
+    height: 0.4em;
+
+    .ui-slider-handle {
+      top: -0.3em;
+    }
+  }
+}
+
+.ui-widget {
+  font-family: $font-sans-serif;
+
+  button {
+    font-family: $font-sans-serif;
+  }
+}
+
+.ui-dialog {
+  background: var(--color-surface);
+
+  &.ui-widget-content {
+    border: 2px solid var(--color-background-border);
+  }
+
+  .ui-widget-header {
+    background: none;
+    color: var(--color-font);
+    margin-bottom: 0.5rem;
+
+    border: none;
+    border-bottom: 1px solid var(--color-surface-hover);
+
+    .ui-dialog-titlebar-close.hidden {
+      display: none;
+    }
+  }
+  .ui-dialog-content {
+    color: var(--color-font);
+
+    > label, > div {
+      display: block;
+      margin-bottom: 1rem;
+    }
+  }
+  .ui-dialog-buttonpane {
+    background: none;
+    padding: 0;
+    border-top: 1px solid var(--color-surface-hover);
+
+    button {
+      margin: 0.5rem 0.3rem 0.5rem 0.2rem;
+      padding: 0.25rem 0.5rem;
+      min-width: 5rem;
+    }
+  }
+}
+
+.ui-widget-overlay {
+  background: var(--color-dialog-bg);
+  opacity: 0.75;
+}
+
+.ui-button {
+  background: var(--color-button-bg);
+  color: var(--color-button-font);
+  border-color: var(--color-background-border);
+
+  &:focus {
+    background: var(--color-button-bg);
+    border-color: var(--color-background-border);
+    color: var(--color-button-font);
+  }
+
+  &:hover {
+    //background: color-mix(in srgb, var(--color-button-bg) 95%, black); // todo check lightmode
+    background: var(--color-button-bg-hover);
+    border-color: var(--color-background-border);
+    color: var(--color-button-font);
+  }
+
+  &.call-out {
+    color: var(--color-button-confirm-font);
+    background: var(--color-button-confirm-bg);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-button-confirm-bg) 90%, black);
+    }
+  }
+
+  &.warning {
+    color: var(--color-button-confirm-font);
+    background: var(--color-warning);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-warning) 90%, black);
+    }
+  }
+
+  &.error {
+    color: var(--color-button-confirm-font);
+    background: var(--color-error);
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-error) 90%, black);
+    }
+  }
+}

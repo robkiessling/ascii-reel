@@ -1,0 +1,149 @@
+@use 'variables' as *;
+
+#frame-controller {
+  display: flex;
+  // Note: More flex settings get set below, depending on frames-on-left vs. frames-on-bottom
+
+  .tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    > div {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .frame-list {
+    .simplebar-content {
+      display: flex;
+    }
+  }
+
+  .frame {
+    flex: 1 0 auto;
+
+    position: relative;
+    width: $frame-size;
+    max-width: $frame-size;
+    height: $frame-size;
+    max-height: $frame-size;
+
+    cursor: pointer;
+    border: $frame-border-size solid var(--color-contrast);
+    background: var(--color-canvas-bg);
+
+    .frame-index {
+      display: flex;
+      position: absolute;
+      top: -#{$frame-border-size};
+      left: -#{$frame-border-size};
+      z-index: 2;
+      width: 25px;
+      height: 25px;
+      justify-content: center;
+      align-items: center;
+      background: var(--color-contrast);
+    }
+
+    &.selected {
+      border-color: var(--color-primary);
+      .frame-index {
+        color: var(--color-font-inverted);
+        background: var(--color-primary);
+      }
+    }
+
+    &.frame-template {
+      display: none;
+    }
+
+    &.placeholder {
+      background: var(--color-surface);
+      border: $frame-border-size dashed var(--color-primary);
+    }
+
+    &.range-selection-sibling {
+      visibility: hidden;
+    }
+  }
+}
+
+.frames-on-left #frame-controller {
+  flex-direction: row;
+  margin-right: 1rem;
+
+  .tools {
+    flex-direction: column;
+    margin-right: 2px;
+
+    .section-header {
+      writing-mode: vertical-rl;
+      //transform: rotate(180deg);
+      margin-bottom: 0.5rem;
+    }
+
+    > div {
+      flex-direction: column;
+    }
+  }
+
+  .frame-list {
+    width: $frame-size + 2 * $frame-border-size + $scrollbar-width;
+
+    // https://github.com/Grsmto/simplebar/issues/473#issuecomment-653741529
+    overflow-y: auto;
+    height: 100%;
+
+    .simplebar-content-wrapper {
+      height: 100% !important;
+    }
+    .simplebar-content {
+      flex-direction: column;
+    }
+    .simplebar-track.simplebar-vertical {
+      background-color: var(--color-background-border);
+    }
+  }
+
+  .frame {
+    margin-bottom: 6px;
+  }
+}
+
+.frames-on-bottom #frame-controller {
+  flex-direction: column;
+  margin-top: 1rem;
+
+  .tools {
+    flex-direction: row;
+    margin-bottom: 2px;
+
+    .section-header {
+      margin-right: 1rem;
+    }
+
+    > div {
+      flex-direction: row;
+    }
+  }
+
+  .frame-list {
+    height: $frame-size + 2 * $frame-border-size + $scrollbar-width;
+
+    .simplebar-content-wrapper {
+      width: 100% !important; // note: this is not really needed, but the height:100% is needed in other orientation
+    }
+    .simplebar-content {
+      flex-direction: row;
+    }
+    .simplebar-track.simplebar-horizontal {
+      background-color: var(--color-background-border);
+    }
+  }
+
+  .frame {
+    margin-right: 6px;
+  }
+}

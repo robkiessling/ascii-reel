@@ -1,0 +1,86 @@
+
+// This file uses both CSS variables (CSS custom properties) and SCSS variables. It uses CSS variables
+// for colors so that the javascript files can reference them.
+
+// The following colors are the same regardless of dark-mode / light-mode
+:root {
+  --color-primary: #9933FF;
+
+  --color-button-confirm-bg: #3273F6;
+  --color-button-confirm-font: #fff;
+  --color-dialog-bg: #424649;
+  --color-warning: #f48225;
+  --color-error: #f42525;
+  --color-selection: #1E90FF;
+  --color-main-menu-bg: var(--color-background-border);
+}
+
+// Colors: Dark Mode (default)
+:root {
+  --color-deep: #000000;
+  --color-background: #202124;
+  --color-background-border: #282C2F;
+  --color-surface: #323639;
+  --color-surface-hover: #424649;
+  --color-contrast: #868889;
+
+  --color-font: white;
+  --color-font-muted: #868889;
+  --color-font-heavy-muted: #555;
+  --color-font-inverted: black;
+  --color-font-title: color-mix(in srgb, var(--color-primary) 70%, white);
+
+  --color-layer-bg: var(--color-surface);
+  --color-canvas-bg: #a3a3a3;
+  --color-button-bg: #D6D6D7;
+  --color-button-bg-hover: #d9d9d9;
+  --color-button-font: #000;
+}
+
+// Colors: Light Mode
+[data-theme='light'] {
+  --color-deep: #e6e6ec;
+  --color-background: #ffffff;
+  --color-background-border: #f0f2f4;
+  --color-surface: #e6e6ec;
+  --color-surface-hover: #d9d8e6;
+  --color-contrast: #c9c8d6;
+
+  --color-font: #000000;
+  --color-font-muted: #868889;
+  --color-font-heavy-muted: #bbb;
+  --color-font-inverted: white;
+  --color-font-title: var(--color-primary);
+
+  --color-layer-bg: var(--color-background-border);
+  --color-canvas-bg: #f6f8fa;
+  --color-button-bg: #f6f8fa;
+  --color-button-bg-hover: #f0f2f4;
+  --color-button-font: #000;
+}
+
+/**
+  Matching font to the user's OS using GitHub's approach:
+  https://css-tricks.com/snippets/css/system-font-stack/#aa-method-1-system-fonts-at-the-element-level
+  Note: This is the font used in the general UI, not the canvas (canvas font is configurable by user)
+ */
+$font-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+$font-monospace: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Liberation Mono", Menlo, Monaco, Consolas, monospace;
+$font-size-base: 14px;
+
+$header-height: 38px;
+$header-border-size: 3px;
+$main-spacing: 0.5rem;
+$button-size: 30px;
+$button-border-radius: 4px;
+$right-col-width: 225px;
+$preview-size: $right-col-width;
+$frame-size: 85px;
+$frame-border-size: 3px;
+$layers-height: 125px;
+$scrollbar-width: 18px;
+$palette-icon-size: 30px;
+$palette-triangle-size: 8px;
+$palette-icon-spacing: 4px;
+$editing-tool-size: 3rem;
+$sub-tool-size: 2.5rem;

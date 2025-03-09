@@ -1,0 +1,101 @@
+@use 'variables' as *;
+
+.dialog-form {
+  label {
+    display: block;
+    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+
+  input[type="text"], input[type="number"] {
+    width: 4rem;
+
+    &.error {
+      outline: 1px solid var(--color-error);
+    }
+  }
+
+  .color-picker-container {
+    .picker_wrapper {
+      font-size: 8px; // This affects overall size/scaling of the vanilla color picker
+    }
+  }
+}
+
+#resize-dialog {
+  .anchor-options {
+    display: flex;
+    flex-direction: column;
+    height: 100px;
+    width: 100px;
+
+    > div {
+      flex: 1 1 auto;
+
+      display: flex;
+      flex-direction: row;
+
+      > div {
+        flex: 1 1 auto;
+
+        margin: 2px;
+        background: var(--color-font);
+        cursor: pointer;
+
+        &.selected {
+          background: var(--color-primary);
+        }
+      }
+    }
+  }
+}
+
+#font-dialog {
+  .font-example {
+    margin-bottom: 0.75rem;
+    border-left: 1px solid var(--color-font);
+    padding: 0.25rem;
+  }
+}
+
+#export-file-dialog {
+  #example-container {
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: column;
+
+    #example-img-and-text {
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1rem;
+
+      img {
+        height: 10rem;
+        border: 1px solid var(--color-background-border);
+      }
+      #example-text {
+        flex-grow: 1;
+        min-width: 0;
+        background: var(--color-surface-hover);
+        border: 1px solid var(--color-background-border);
+        height: 15rem;
+        margin: 0;
+        pre {
+          margin: 0.5rem 0;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+      }
+    }
+  }
+
+  .export-warning {
+    border: 1px solid var(--color-warning);
+    padding: 1rem;
+    .ri {
+      color: var(--color-warning);
+    }
+  }
+}

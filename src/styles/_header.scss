@@ -1,0 +1,98 @@
+@use 'variables' as *;
+
+#header-content {
+  #main-menu {
+    .shortcut {
+      color: var(--color-font-muted);
+      margin-left: 1rem;
+    }
+  }
+
+  .center-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    color: var(--color-primary);
+    font-size: 1.25rem;
+    letter-spacing: 1px;
+  }
+
+  .right-side-buttons {
+    margin-right: 0.5rem;
+  }
+}
+
+.horizontal-menu {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: default;
+
+  > li {
+    position: relative;
+    display: inline-block;
+    height: 100%;
+
+    &.hovered {
+      background-color: var(--color-surface);
+      cursor: pointer;
+    }
+    &.visible {
+      > ul {
+        display: block;
+      }
+    }
+
+    > span {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+    }
+
+    > ul {
+      display: none;
+      position: absolute;
+      background-color: var(--color-surface);
+      list-style: none;
+      padding: 0;
+
+      min-width: 12rem;
+      box-shadow: 0 0.5rem 1rem 0 rgba(0,0,0,0.2);
+      z-index: 3;
+      cursor: default;
+
+      > li {
+        padding: 0.75rem 1rem;
+        white-space: nowrap;
+        display: flex;
+        justify-content: space-between;
+
+        &.disabled {
+          pointer-events: none;
+          color: var(--color-font-muted);
+        }
+
+        &:hover {
+          background: var(--color-surface-hover);
+          cursor: pointer;
+        }
+
+        &.break {
+          pointer-events: none;
+          cursor: default;
+          border-bottom: 1px solid var(--color-contrast);
+          padding: 0;
+          margin: 0.5rem 0;
+        }
+      }
+    }
+  }
+}

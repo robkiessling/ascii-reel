@@ -1,0 +1,70 @@
+@use 'variables' as *;
+
+#canvas-container {
+  background: var(--color-canvas-bg);
+  flex: 1;
+
+  position: relative;
+
+  #selection-canvas {
+    // Set opacity on overall canvas (not using globalAlpha) due to overlapping polygons
+    opacity: 0.5;
+  }
+}
+
+#canvas-message {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, 0);
+  margin-left: calc(#{$editing-tool-size} / 2);
+  margin-top: 2px;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  background: var(--color-surface);
+  border: 3px solid var(--color-warning);
+  padding: 0.5rem 1rem;
+}
+
+#canvas-details {
+  display: flex;
+  flex-direction: row;
+  margin-top: 1rem;
+
+  // Using monospace so coords don't shift around as they are rapidly updated
+  font-family: $font-monospace;
+
+  .canvas-dimensions, .mouse-coordinates, .selection-dimensions {
+    display: flex;
+    align-items: center;
+
+    &:not(:last-child) {
+      margin-right: 1rem;
+    }
+  }
+}
+
+#export-canvas-container {
+  display: none;
+
+  &.is-exporting {
+    display: block; // Show so canvas has correct width/height dimensions
+    visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
+#export-debug {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#font-ratio-tester {
+  position: absolute;
+}

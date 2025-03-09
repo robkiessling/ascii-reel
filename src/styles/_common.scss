@@ -1,0 +1,77 @@
+@use 'variables' as *;
+
+.full {
+  width: 100%;
+  height: 100%;
+}
+
+.absolute-center {
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform: translate(-50%, -50%);
+}
+
+.spacer {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.invisible {
+  visibility: hidden; // Will still take up space, but be invisible
+}
+
+.primary-color {
+  color: var(--color-primary)
+}
+
+.warning {
+  color: var(--color-warning);
+}
+.error {
+  color: var(--color-error);
+}
+
+// Remove text highlighting https://stackoverflow.com/a/4407335
+.no-select {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
+
+.draggable {
+  cursor: move; /* fallback */
+  cursor: grab; /* W3C standards syntax, all modern browser */
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.section-header {
+  color: var(--color-font-muted);
+
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.875rem;
+}
+
+hr {
+  border-color: var(--color-surface-hover) !important;
+  margin: 0.75rem 0;
+}
+
+// Hide annoying outline when keyboard is used (if you don't have a mouse, you're gunna have a bad time anyway)
+:focus-visible {
+  outline: none;
+}
+
+@for $i from 0 through 20 {
+  .w-#{$i} {
+    width: #{$i}rem;
+  }
+}
