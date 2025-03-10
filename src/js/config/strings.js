@@ -106,6 +106,10 @@ export const strings = {
     'frames.delete-frame.description': 'Deletes the currently selected frame(s).',
     'frames.toggle-onion.name': 'Toggle Onion',
     'frames.toggle-onion.description': 'When enabled, the previous frame will be faintly displayed.',
+    'frames.show-component.name': 'Maximize',
+    'frames.show-component.description': 'Shows the frames component.',
+    'frames.hide-component.name': 'Minimize',
+    'frames.hide-component.description': 'Hides the frames component.',
     'frames.align-left.name': 'Align Frames: Left',
     'frames.align-left.description': 'Positions the frames on the left side of the screen.',
     'frames.align-bottom.name': 'Align Frames: Bottom',
@@ -153,5 +157,5 @@ export const strings = {
     //     '- Selections: Fill selected areas with the character',
 
 
-    'warnings.current-layer-not-visible': 'The current layer is not visible'
+    'warnings.current-layer-not-visible': 'The current layer is not visible!'
 }

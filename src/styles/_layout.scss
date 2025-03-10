@@ -56,3 +56,14 @@ body {
   position: relative;
 }
 
+.minimized {
+  flex: 0 1 auto !important;
+
+  button:not(.show-when-minimized) {
+    display: none;
+  }
+
+  .minimizable {
+    display: none !important;
+  }
+}

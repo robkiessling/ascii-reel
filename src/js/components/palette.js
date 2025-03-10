@@ -9,6 +9,7 @@ import * as editor from './editor.js';
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import {strings} from "../config/strings.js";
+import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 
 export const DEFAULT_PALETTE = ['rgba(0,0,0,1)', 'rgba(255,255,255,1)'];
 export const DEFAULT_COLOR = 'rgba(0,0,0,1)';
@@ -44,6 +45,11 @@ export function init() {
 }
 
 function setupActionButtons() {
+    actions.registerAction('palette.toggle-component', () => {
+        toggleComponent('palette');
+        refresh();
+    })
+
     actions.registerAction('palette.sort-colors', {
         name: () => {
             return strings[`palette.sort-colors.name.${state.getPaletteSortBy()}`]
@@ -78,6 +84,8 @@ function setupActionButtons() {
 }
 
 export function refresh() {
+    refreshComponentVisibility($container, 'palette');
+
     $colorList.empty();
 
     const colors = state.sortedPalette();

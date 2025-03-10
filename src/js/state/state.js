@@ -34,6 +34,9 @@ const CONFIG_DEFAULTS = {
     frameIndex: 0,
     frameOrientation: 'left',
     frameRangeSelection: null, // A value of null means the range will match the currently selected frameIndex
+    minimizedComponents: {
+        layers: true
+    },
     tool: 'text-editor',
     primaryColor: DEFAULT_COLOR,
     brush: {
@@ -94,7 +97,7 @@ let sequences = {};
 
 export function newState() {
     return load({
-        layers: [{ id: 1 }],
+        layers: [{ id: 1, name: 'Layer 1' }],
         frames: [{ id: 1 }],
         cels: { '1,1': {} }
     });
@@ -195,7 +198,7 @@ export function numCols() {
 
 export function config(key, newValue) {
     if (newValue !== undefined) { state.config[key] = newValue; }
-    return state.config[key];
+    return state.config && state.config[key];
 }
 
 
@@ -216,7 +219,8 @@ export function currentLayer() {
 
 export function createLayer(index, data) {
     const layer = $.extend({}, LAYER_DEFAULTS, {
-        id: ++sequences.layers
+        id: ++sequences.layers,
+        name: `Layer ${state.layers.length + 1}`
     }, data);
 
     state.layers.splice(index, 0, layer);
@@ -247,6 +251,9 @@ function celIdsForLayer(layer) {
     return state.frames.map(frame => getCelId(layer.id, frame.id));
 }
 
+export function isMinimized(componentKey) {
+    return !!(config('minimizedComponents') || {})[componentKey];
+}
 
 // -------------------------------------------------------------------------------- Frames
 

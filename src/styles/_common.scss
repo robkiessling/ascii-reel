@@ -75,3 +75,9 @@ hr {
     width: #{$i}rem;
   }
 }
+
+@each $angle in 90, 180, 270 {
+  .rotate#{$angle} {
+    transform: rotate(#{$angle}deg);
+  }
+}

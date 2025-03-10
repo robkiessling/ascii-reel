@@ -18,7 +18,7 @@
   left: 50%;
   transform: translate(-50%, 0);
   margin-left: calc(#{$editing-tool-size} / 2);
-  margin-top: 2px;
+  margin-top: 4px;
   z-index: 1;
 
   display: flex;
@@ -31,7 +31,7 @@
 #canvas-details {
   display: flex;
   flex-direction: row;
-  margin-top: 1rem;
+  margin-top: auto; // forces details to always be at bottom of page, even if all other sections are minimized
 
   // Using monospace so coords don't shift around as they are rapidly updated
   font-family: $font-monospace;

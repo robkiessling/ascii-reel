@@ -204,10 +204,13 @@
 <!--                        </button>-->
                     </div>
                     <div>
-                        <button class="align-frames-left" data-action="frames.align-left">
+                        <button class="show-when-minimized" data-action="frames.toggle-component">
+                            <span class="ri ri-fw ri-sidebar-fold-line"></span>
+                        </button>
+                        <button class="show-when-minimized" data-action="frames.align-left">
                             <span class="ri ri-fw ri-layout-left-line"></span>
                         </button>
-                        <button class="align-frames-bottom" data-action="frames.align-bottom">
+                        <button class="show-when-minimized" data-action="frames.align-bottom">
                             <span class="ri ri-fw ri-layout-bottom-line"></span>
                         </button>
                     </div>
@@ -216,32 +219,36 @@
                     <span class="frame-index"></span>
                     <canvas class="absolute-center full"></canvas>
                 </div>
-                <div class="frame-list"></div>
+                <div class="list minimizable"></div>
             </div>
         </div>
         <div id="side-content">
             <div id="preview-controller">
                 <div class="tools">
-                    <span class="section-header no-select">Preview</span>
+                    <button data-action="preview.toggle-component" class="component-toggle-header show-when-minimized">
+                        <span class="ri ri-fw ri-arrow-down-s-fill"></span>
+                        <span class="section-header no-select">Preview</span>
+                    </button>
                     <button data-action="preview.open-popup">
                         <span class="ri ri-fw ri-external-link-line"></span>
                     </button>
                 </div>
-                <div id="preview-canvas-container">
+                <div id="preview-canvas-container" class="minimizable">
                     <canvas id="preview-canvas" class="absolute-center full draggable"></canvas>
                 </div>
-                <div id="preview-fps-container">
+                <div id="preview-fps-container" class="minimizable">
                     <div id="preview-fps-value"></div>
                     <div id="preview-fps-slider"></div>
                 </div>
             </div>
 
-            <div class="side-separator"></div>
-
             <div id="layer-controller" class="side-content-flex-section">
                 <div class="tools">
                     <div>
-                        <span class="section-header no-select">Layers</span>
+                        <button data-action="layers.toggle-component" class="component-toggle-header show-when-minimized">
+                            <span class="ri ri-fw ri-arrow-down-s-fill"></span>
+                            <span class="section-header no-select">Layers</span>
+                        </button>
                     </div>
                     <div>
                         <button data-action="layers.add-layer">
@@ -264,15 +271,16 @@
                         <span class="ri ri-fw"></span>
                     </button>
                 </div>
-                <div class="list"></div>
+                <div class="list minimizable"></div>
             </div>
-
-            <div class="side-separator"></div>
 
             <div id="palette-controller" class="side-content-flex-section">
                 <div class="tools">
                     <div>
-                        <span class="section-header no-select">Palette</span>
+                        <button data-action="palette.toggle-component" class="component-toggle-header show-when-minimized">
+                            <span class="ri ri-fw ri-arrow-down-s-fill"></span>
+                            <span class="section-header no-select">Palette</span>
+                        </button>
                     </div>
                     <div>
                         <button data-action="palette.sort-colors">
@@ -286,15 +294,16 @@
                         </button>
                     </div>
                 </div>
-                <div class="list as-rows"></div>
+                <div class="list as-rows minimizable"></div>
             </div>
-
-            <div class="side-separator"></div>
 
             <div id="unicode-controller" class="side-content-flex-section">
                 <div class="tools">
                     <div>
-                        <span class="section-header no-select">Extended ASCII</span>
+                        <button data-action="unicode.toggle-component" class="component-toggle-header show-when-minimized">
+                            <span class="ri ri-fw ri-arrow-down-s-fill"></span>
+                            <span class="section-header no-select">Extended ASCII</span>
+                        </button>
                     </div>
                     <div>
                         <button data-action="unicode.information">
@@ -302,7 +311,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="list as-rows no-select"></div>
+                <div class="list as-rows no-select minimizable"></div>
             </div>
 
             <div id="canvas-details">

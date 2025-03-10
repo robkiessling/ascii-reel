@@ -15,7 +15,7 @@
     }
   }
 
-  .frame-list {
+  .list {
     .simplebar-content {
       display: flex;
     }
@@ -74,6 +74,11 @@
   flex-direction: row;
   margin-right: 1rem;
 
+  // Only showing the border when minimized; when maximized the scrollbar track is a good enough border
+  &.minimized {
+    border-right: 1px solid var(--color-surface);
+  }
+
   .tools {
     flex-direction: column;
     margin-right: 2px;
@@ -89,7 +94,7 @@
     }
   }
 
-  .frame-list {
+  .list {
     width: $frame-size + 2 * $frame-border-size + $scrollbar-width;
 
     // https://github.com/Grsmto/simplebar/issues/473#issuecomment-653741529
@@ -116,6 +121,8 @@
   flex-direction: column;
   margin-top: 1rem;
 
+  border-top: 1px solid var(--color-surface);
+
   .tools {
     flex-direction: row;
     margin-bottom: 2px;
@@ -129,7 +136,7 @@
     }
   }
 
-  .frame-list {
+  .list {
     height: $frame-size + 2 * $frame-border-size + $scrollbar-width;
 
     .simplebar-content-wrapper {

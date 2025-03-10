@@ -9,6 +9,7 @@ import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
 import {createDialog} from "../utils/dialogs.js";
 import {strings} from "../config/strings.js";
+import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 
 let $container, $template, $list, $editDialog, $editName;
 let simpleBar, layerComponents, tooltips;
@@ -22,6 +23,7 @@ export function init() {
 }
 
 export function refresh() {
+    refreshComponentVisibility($container, 'layers');
     refreshVisibilities();
 }
 
@@ -93,11 +95,14 @@ function setupSortable() {
 }
 
 function setupActionButtons() {
+    actions.registerAction('layers.toggle-component', () => {
+        toggleComponent('layers');
+        refresh();
+    })
+
     actions.registerAction('layers.add-layer', () => {
         const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
-        state.createLayer(layerIndex, {
-            name: `Layer ${state.layers().length + 1}`
-        });
+        state.createLayer(layerIndex);
         selectLayer(layerIndex);
     });
 
@@ -140,7 +145,7 @@ function refreshVisibilities() {
         // To help avoid this, we show a warning message if the current layer is not visible.
         if (!locked && !state.currentLayer().visible) {
             showCanvasMessage(
-                "<span class='ri ri-fw ri-error-warning-line alert'></span>&emsp;" +
+                "<span class='ri ri-fw ri-error-warning-line warning'></span>&emsp;" +
                 strings['warnings.current-layer-not-visible']
             )
         }

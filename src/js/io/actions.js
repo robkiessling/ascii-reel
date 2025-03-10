@@ -148,7 +148,11 @@ export function setupTooltips(targets, getActionId, options = {}) {
         content: tooltipContentBuilder(getActionId),
         placement: 'right',
         hideOnClick: false,
-        allowHTML: true
+        allowHTML: true,
+        onShow(tooltipInstance) {
+            // If there is no tooltip content (e.g. action has no name/description), hide the tip (do not show an empty bubble)
+            if (tooltipInstance.props.content.length === 0) return false;
+        }
     }, options));
 
     tooltips.refreshContent = () => {
@@ -177,34 +181,32 @@ function tooltipContentBuilder(getActionId) {
     return element => {
         const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
         const actionInfo = getActionInfo(actionId);
+        if (!actionInfo) return '';
+        if (!actionInfo.name && !actionInfo.description) return '';
 
-        if (actionInfo) {
-            let modifiers = '';
-            if (ACTION_MODIFIERS[actionId]) {
-                ACTION_MODIFIERS[actionId].forEach(modification => {
-                    const modifierKey = modifierWord(MODIFIER_KEYS[modification]);
-                    const modifierDesc = strings[modification];
-                    modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
-                });
-            }
-
-            const htmlDescription = actionInfo.description ? actionInfo.description.replace(/\n/g, '<br/>') : '';
-
-            if (actionInfo.name) {
-                return `<div class="header">` +
-                    `<span class="title">${actionInfo.name}</span>` +
-                    `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
-                    `</div>` +
-                    `<div class="description">${htmlDescription}</div>` +
-                    modifiers;
-            }
-            else {
-                return `<div class="description">${htmlDescription}</div>` +
-                modifiers;
-            }
+        let modifiers = '';
+        if (ACTION_MODIFIERS[actionId]) {
+            ACTION_MODIFIERS[actionId].forEach(modification => {
+                const modifierKey = modifierWord(MODIFIER_KEYS[modification]);
+                const modifierDesc = strings[modification];
+                modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
+            });
         }
 
-        return '(Unknown)';
+        const htmlDescription = actionInfo.description ? actionInfo.description.replace(/\n/g, '<br/>') : '';
+
+        if (actionInfo.name) {
+            return `<div class="header">` +
+                `<span class="title">${actionInfo.name}</span>` +
+                `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
+                `</div>` +
+                `<div class="description">${htmlDescription}</div>` +
+                modifiers;
+        }
+        else {
+            return `<div class="description">${htmlDescription}</div>` +
+                modifiers;
+        }
     }
 }
 

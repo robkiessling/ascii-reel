@@ -1,14 +1,5 @@
 @use 'variables' as *;
 
-// Class that can be applied to a <a> to make it look like a button
-.button {
-  display: inline-block;
-  line-height: $button-size;
-  text-align: center;
-  padding: 0;
-  text-decoration: none;
-}
-
 button, .button {
   background: none;
   border: none;
@@ -16,8 +7,8 @@ button, .button {
 
   width: $button-size;
   height: $button-size;
-  padding: 3px;
-  margin: 3px;
+  padding: $button-spacing;
+  margin: $button-spacing;
   border-radius: $button-border-radius;
   line-height: 1;
   cursor: pointer;
@@ -35,6 +26,15 @@ button, .button {
   .ri {
     font-size: 1.25rem;
   }
+}
+
+// Class that can be applied to a <a> to make it look like a button
+.button {
+  display: inline-block;
+  line-height: $button-size;
+  text-align: center;
+  padding: 0;
+  text-decoration: none;
 }
 
 .text-button {

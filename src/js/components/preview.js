@@ -8,20 +8,21 @@ import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
 import {getCurrentViewRect} from "./canvas_stack.js";
 import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
+import {getDynamicColor} from "../config/colors.js";
+import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
-const POPUP_BACKGROUND = '#202124'; // same as $darkest
 const POPUP_RESIZE_DEBOUNCE_LENGTH = 200;
 
 let canvasControl;
 let previewInterval, previewIndex;
-let $fpsValue, $fpsSlider;
+let $container, $fpsValue, $fpsSlider;
 let tooltips;
 let popup, popupCanvas;
 
 export function init() {
-    const $container = $('#preview-controller');
+    $container = $('#preview-controller');
     canvasControl = new CanvasControl($('#preview-canvas'), {});
 
     setupScrollZoom(canvasControl, false);
@@ -38,10 +39,12 @@ export function init() {
         }
     });
 
-    setupActionButtons($container);
+    setupActionButtons();
 }
 
 export function resize() {
+    refreshComponentVisibility($container, 'preview');
+
     canvasControl.resize();
     canvasControl.zoomToFit();
 }
@@ -87,7 +90,12 @@ export function reset() {
     }
 }
 
-function setupActionButtons($container) {
+function setupActionButtons() {
+    actions.registerAction('preview.toggle-component', () => {
+        toggleComponent('preview');
+        resize();
+    })
+
     actions.registerAction('preview.open-popup', {
         callback: () => openPopup()
     });
@@ -119,7 +127,7 @@ function openPopup() {
     popup.document.head.innerHTML = `
        <style>
             body { margin: 0; }
-            #canvas { background: ${POPUP_BACKGROUND}; }
+            #canvas { background: ${getDynamicColor('--color-background')}; }
         </style>
     `;
     popup.document.body.innerHTML = '<canvas id="canvas">';

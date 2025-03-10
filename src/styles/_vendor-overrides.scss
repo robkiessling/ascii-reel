@@ -21,6 +21,10 @@
   .shortcut {
     margin-left: 1rem;
     color: var(--color-font-muted);
+
+    &:empty {
+      margin-left: 0;
+    }
   }
 
   .description {

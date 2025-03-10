@@ -8,6 +8,7 @@ import * as state from "../state/state.js";
 import * as editor from "./editor.js";
 import {copyChar} from "../io/clipboard.js";
 import * as selection from "../canvas/selection.js";
+import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 
 let $container, $charList, $actions, tooltips;
 
@@ -34,7 +35,14 @@ export function init() {
 }
 
 function setupActionButtons() {
+    actions.registerAction('unicode.toggle-component', () => {
+        toggleComponent('unicode');
+        refresh();
+    })
+
     actions.registerAction('unicode.information', () => {}); // No callback at the moment;
+
+    actions.attachClickHandlers($container);
 
     tooltips = actions.setupTooltips(
         $container.find('[data-action]').toArray(),
@@ -57,6 +65,8 @@ const UNICODE_CHARS = [
 ]
 
 export function refresh() {
+    refreshComponentVisibility($container, 'unicode');
+
     $charList.empty();
 
     UNICODE_CHARS.forEach((char, i) => {

@@ -8,6 +8,8 @@ import {triggerRefresh, triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";
 import CanvasControl from "../canvas/canvas.js";
 import ArrayRange from "../utils/arrays.js";
+import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
+import {strings} from "../config/strings.js";
 
 let $container, $template, $list;
 let simpleBar, frameComponents, tooltips;
@@ -64,7 +66,7 @@ export function currentFrameComponent() {
 }
 
 function setupList() {
-    $list = $container.find('.frame-list');
+    $list = $container.find('.list');
 
     // Custom scrollbar
     simpleBar = new SimpleBar($list.get(0), {
@@ -160,12 +162,23 @@ function setupActionButtons() {
         triggerRefresh('chars');
     });
 
+    actions.registerAction('frames.toggle-component', {
+        name: () => strings[state.isMinimized('frames') ? 'frames.show-component.name' : 'frames.hide-component.name'],
+        description: () => strings[state.isMinimized('frames') ? 'frames.show-component.description' : 'frames.hide-component.description'],
+        callback: () => {
+            toggleComponent('frames');
+            triggerResize();
+        }
+    });
+
     actions.registerAction('frames.align-left', () => {
+        toggleComponent('frames', false);
         state.config('frameOrientation', 'left');
         triggerResize();
     });
 
     actions.registerAction('frames.align-bottom', () => {
+        toggleComponent('frames', false);
         state.config('frameOrientation', 'bottom');
         triggerResize();
     });
@@ -194,14 +207,31 @@ function setupActionButtons() {
 function refreshAlignment() {
     const orientation = state.config('frameOrientation');
 
+    // Minimized frames component:
+    refreshComponentVisibility($container, 'frames');
+    const minimized = state.isMinimized('frames');
+    $container.find('[data-action="frames.toggle-component"]').find('.ri')
+        .toggleClass('active', minimized)
+        .toggleClass('ri-sidebar-fold-line', !minimized)
+        .toggleClass('ri-sidebar-unfold-line', minimized)
+        .toggleClass('rotate270', orientation === 'bottom');
+
+    // Frames on left vs. bottom:
     $('#frames-and-canvas')
         .toggleClass('frames-on-left', orientation === 'left')
         .toggleClass('frames-on-bottom', orientation === 'bottom');
-    $container.find('.align-frames-left').toggleClass('disabled', orientation === 'left')
-        .find('.ri').toggleClass('active', orientation === 'left');
-    $container.find('.align-frames-bottom').toggleClass('disabled', orientation === 'bottom')
-        .find('.ri').toggleClass('active', orientation === 'bottom');
+
+    const framesLeftActive = orientation === 'left' && !minimized;
+    $container.find('[data-action="frames.align-left"]').toggleClass('disabled', framesLeftActive)
+        .find('.ri').toggleClass('active', framesLeftActive);
+
+    const framesBottomActive = orientation === 'bottom' && !minimized;
+    $container.find('[data-action="frames.align-bottom"]').toggleClass('disabled', framesBottomActive)
+        .find('.ri').toggleClass('active', framesBottomActive);
+
     $list.sortable('option', 'axis', orientation === 'left' ? 'y' : 'x');
+
+    tooltips.refreshContent();
 
     tooltips.forEach(tooltip => {
         tooltip.setProps({
