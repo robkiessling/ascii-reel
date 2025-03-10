@@ -47,7 +47,7 @@ export default class CanvasControl {
         this.canvas.style.width = "100%";
         this.canvas.style.height = "100%";
 
-        // Fix canvas PPI https://stackoverflow.com/a/65124939/4904996
+        // Fix canvas PPI https://stackoverflow.com/a/65124939
         let ratio = window.devicePixelRatio;
         this.canvas.width = this.outerWidth * ratio;
         this.canvas.height = this.outerHeight * ratio;
