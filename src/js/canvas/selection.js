@@ -56,8 +56,8 @@ export function empty() {
 
 // Select entire canvas
 export function selectAll() {
-    // selectAll works with both text-editor and selection-rect tools; only switch tools if not using one of those already
-    if (state.config('tool') !== 'text-editor' && state.config('tool') !== 'selection-rect') {
+    // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
+    if (!['text-editor', 'selection-rect'].includes(state.config('tool'))) {
         editor.changeTool('selection-rect');
     }
 
@@ -338,9 +338,8 @@ export function setupMouseEvents(canvasControl) {
         else if (isMoving) {
             moveDelta(cell.row - moveStep.row, cell.col - moveStep.col);
 
-            if (!hasMoved && (cell.row !== moveStep.row || cell.col !== moveStep.col)) {
-                hasMoved = true;
-            }
+            if (!hasMoved && !moveStep.equals(cell)) hasMoved = true;
+
             moveStep = cell;
         }
     });
@@ -352,6 +351,8 @@ export function setupMouseEvents(canvasControl) {
             triggerRefresh('selection');
         }
         else if (isMoving) {
+            // For text-editor, if you click somewhere in the selected area (and we're not trying to move the underlying
+            // content or the selected area) it will immediately place the cursor into that spot, removing the selection.
             if (tool === 'text-editor' && !movableContent && !hasMoved) {
                 clear();
                 moveCursorTo(cell);

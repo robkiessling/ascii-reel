@@ -18,6 +18,7 @@ import {refreshMouseCoords, refreshSelectionDimensions, setupMouseEvents as setu
 import {addCanvasListeners, setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
 import * as state from "../state/state.js";
 import {getMajorGridColor, getMinorGridColor} from "../canvas/background.js";
+import {config} from "../state/state.js";
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
 
@@ -35,7 +36,7 @@ export function init() {
     setupEditorMouse(selectionCanvas);
 
     setupScrollZoom(selectionCanvas, true);
-    setupMousePan(selectionCanvas, false, [3])
+    setupMousePan(selectionCanvas, false, () => config('tool') === 'pan' ? [1, 3] : [3])
     addCanvasListeners([selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas])
 }
 
@@ -86,17 +87,23 @@ export function drawSelection() {
     refreshSelectionDimensions(selection.getSelectedCellArea())
 }
 
+const HIDE_HOVER_EFFECT_FOR_TOOLS = new Set([
+    // Not showing hover cell for text-editor, since clicking on a cell does not necessarily go to that cell (it gets
+    // rounded up/down like a real text editor does).
+    'text-editor',
+
+    // Not showing hover cell for these tools since they affect entire canvas, not one cell
+    'pan',
+    'move-all'
+])
+
 export function drawHoveredCell() {
     hoveredCellCanvas.clear();
 
     if (hoveredCell && !selection.isDrawing && !selection.isMoving) {
-        // Not showing if the tool is text-editor because when you click on a cell, the cursor doesn't necessarily
-        // go to that cell (it gets rounded up or down, like a real text editor does).
-        if (state.config('tool') !== 'text-editor') {
+        if (!HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.config('tool'))) {
             iterateHoveredCells(cell => {
-                if (cell.isInBounds()) {
-                    hoveredCellCanvas.highlightCell(cell);
-                }
+                if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
             })
         }
     }

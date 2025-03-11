@@ -71,7 +71,7 @@
         <input id="upload-file" type="file" hidden>
     </div>
 
-    <div id="body-content">
+    <div id="main-content">
 
         <div id="frames-and-canvas" class="frames-on-left">
             <div id="tools-and-canvas">
@@ -104,6 +104,17 @@
                         <div class="editing-tool-column">
                             <div class="editing-tool" data-tool="selection-line"><span class="icon-line-dashed"></span></div>
                             <div class="editing-tool" data-tool="selection-wand"><span class="ri ri-fw ri-magic-line"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="spacer"></div>
+
+                    <div class="editing-tool-row">
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="pan">H</div>
+                        </div>
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="move-all"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
                         </div>
                     </div>
 
@@ -178,6 +189,7 @@
                     <canvas id="selection-canvas" class="absolute-center full"></canvas>
                 </div>
             </div>
+
             <div id="frame-controller">
                 <div class="tools">
                     <div>
@@ -195,13 +207,6 @@
                         <button class="toggle-onion" data-action="frames.toggle-onion">
                             <span class="ri ri-fw ri-stack-line"></span>
                         </button>
-                        <span class="spacer"></span>
-<!--                        <button data-action="frames.previous-frame">-->
-<!--                            <span class="ri ri-fw ri-arrow-up-line"></span>-->
-<!--                        </button>-->
-<!--                        <button data-action="frames.next-frame">-->
-<!--                            <span class="ri ri-fw ri-arrow-down-line"></span>-->
-<!--                        </button>-->
                     </div>
                     <div>
                         <button class="show-when-minimized" data-action="frames.toggle-component">
@@ -222,6 +227,7 @@
                 <div class="list minimizable"></div>
             </div>
         </div>
+
         <div id="side-content">
             <div id="preview-controller">
                 <div class="tools">

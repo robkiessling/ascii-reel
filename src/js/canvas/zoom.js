@@ -1,4 +1,5 @@
 import {triggerRefresh} from "../index.js";
+import {isFunction} from "../utils/utilities.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 
@@ -24,12 +25,15 @@ export function setupScrollZoom(canvasControl, isTargetted = false) {
  * Adds mouse event handlers to a canvasControl so clicking-and-dragging pans the view
  * @param canvasControl The canvas controller to apply mouse event handlers to
  * @param snapToCenter If true, canvas view will snap so that its center is at mouse
- * @param forMouseButtons Which mouse buttons (left/right/middle) trigger panning. Uses jQuery's event.which enum:
- *   1=left, 2=middle, 3=right
+ * @param {Array|Function} forMouseButtons Which mouse buttons (left/right/middle) should trigger panning. If param is
+ *   an array, the integers in the array are the allowed mouse buttons. If param is a function, the function will be
+ *   evaluated on mousedown and should return an array of integers representing the allowed mouse buttons (this can be
+ *   useful if the mouse buttons that affect panning can change over time). Mouse button integers are based on jQuery's
+ *   event.which enum: 1=left, 2=middle, 3=right
  */
 export function setupMousePan(canvasControl, snapToCenter, forMouseButtons = [1,2,3]) {
     if (!canvasControl.$canvas.attr('id')) console.warn("<canvas/> needs an `id` attr for mouse panning to function correctly")
-    const jQueryNS = `pan-${canvasControl.$canvas.attr('id')}`;
+    const jQueryNS = `pan-${canvasControl.$canvas.attr('id')}`; // Put each canvas listener into its own namespace
 
     let isPanning;
     let originalPoint;
@@ -37,7 +41,8 @@ export function setupMousePan(canvasControl, snapToCenter, forMouseButtons = [1,
     canvasControl.preventStandardRightClick();
 
     canvasControl.$canvas.off(`mousedown.${jQueryNS}`).on(`mousedown.${jQueryNS}`, evt => {
-        if (!forMouseButtons.includes(evt.which)) return;
+        const allowedMouseButtons = isFunction(forMouseButtons) ? forMouseButtons() : forMouseButtons;
+        if (!allowedMouseButtons.includes(evt.which)) return;
 
         isPanning = true;
         originalPoint = canvasControl.pointAtExternalXY(evt.offsetX, evt.offsetY);

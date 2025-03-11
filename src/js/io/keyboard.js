@@ -20,9 +20,8 @@ export function toggleStandard(enable) {
 
 function setupKeydownListener() {
     $document.keydown(function(e) {
-        const code = e.which // Note: This is normalized by jQuery. Keycodes https://keycode.info/
-        const char = e.key; // E.g. a A 1 Control Alt Shift Meta Enter [ { \ /
-        // console.log(code, char);
+        const char = e.key; // E.g. x X 1 Control Alt Shift Meta Enter [ { \ /
+        // console.log(char);
 
         if (standardKeyboard) {
             handleStandardKeyboard(char, e);
@@ -35,16 +34,11 @@ function setupKeydownListener() {
         }
 
         // A 'Dead' char is received when composition starts (see composition section below)
-        if (char === 'Dead') return;
-        if (isComposing) return;
+        if (char === 'Dead' || isComposing) return;
 
         // Shortcuts
         if (e.metaKey || e.ctrlKey || e.altKey) {
-            let modifiers = [];
-            if (e.metaKey) { modifiers.push('metaKey'); }
-            if (e.ctrlKey) { modifiers.push('ctrlKey'); }
-            if (e.altKey) { modifiers.push('altKey'); }
-            if (e.shiftKey) { modifiers.push('shiftKey'); }
+            const modifiers = ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'].filter(modifier => e[modifier]);
             if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
                 e.preventDefault();
                 return;
@@ -58,87 +52,95 @@ function setupKeydownListener() {
 
         switch (char) {
             case 'Escape':
-                state.endHistoryModification();
-                if (state.config('tool') === 'text-editor') {
-                    selection.clear();
-                }
-                else {
-                    // Regular selection: If cursor is showing, escape just hides the cursor but keeps the selection intact
-                    selection.cursorCell ? selection.hideCursor() : selection.clear();
-                }
-                break;
-            case 'ArrowLeft':
-                handleArrowKey(e, 'left');
-                break;
-            case 'ArrowUp':
-                handleArrowKey(e, 'up');
-                break;
-            case 'ArrowRight':
-                handleArrowKey(e, 'right');
-                break;
-            case 'ArrowDown':
-                handleArrowKey(e, 'down');
+                handleEscapeKey();
                 break;
             case 'Tab':
-                state.endHistoryModification();
-
-                if (e.shiftKey) {
-                    // If shift key is pressed, we move in opposite direction
-                    selection.cursorCell ? selection.moveCursorInDirection('left', false) : selection.moveInDirection('left', 1);
-                } else {
-                    selection.cursorCell ? selection.moveCursorInDirection('right', false) : selection.moveInDirection('right', 1);
-                }
+                handleTabKey(e);
                 break;
             case 'Enter':
-                if (selection.movableContent) {
-                    selection.finishMovingContent();
-                }
-                else {
-                    // Push a state to the history where the cursor is at the end of the current line -- that way when
-                    // you undo, the first undo just jumps back to the previous line with cursor at end.
-                    if (selection.cursorCell) state.pushStateToHistory();
-
-                    if (e.shiftKey) {
-                        // If shift key is pressed, we move in opposite direction
-                        selection.cursorCell ? selection.moveCursorInDirection('up', false) : selection.moveInDirection('up', 1);
-                    } else {
-                        // 'Enter' key differs from 'ArrowDown' in that the cursor will go to the start of the next line (like Excel)
-                        selection.cursorCell ? selection.moveCursorCarriageReturn() : selection.moveInDirection('down', 1);
-                    }
-                }
+                handleEnterKey(e);
                 break;
-
             case 'Backspace':
             case 'Delete':
-                if (selection.movableContent) {
-                    selection.updateMovableContent('', 0);
-                }
-                else if (selection.cursorCell) {
-                    if (char === 'Backspace') {
-                        selection.moveCursorInDirection('left', false);
-                    }
-                    state.setCurrentCelGlyph(selection.cursorCell.row, selection.cursorCell.col, '', 0);
-                }
-                else {
-                    selection.empty();
-                }
-                triggerRefresh('chars', 'backspace');
+                handleBackspaceKey(e);
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+            case 'ArrowRight':
+            case 'ArrowDown':
+                handleArrowKey(e, char);
                 break;
             default:
-                if (producesText(code) && char.length === 1) {
-                    handleSingleChar(char);
-                }
-                else {
-                    // Unrecognized input; let browser handle as normal
-                    return;
-                }
+                if (char.length !== 1) return; // Unrecognized input; let browser handle as normal
+                handleSingleChar(char);
         }
 
         e.preventDefault();
     });
 }
 
-function handleArrowKey(e, direction) {
+function handleEscapeKey() {
+    state.endHistoryModification();
+
+    if (state.config('tool') === 'text-editor') {
+        selection.clear();
+    }
+    else {
+        // Regular selection: If cursor is showing, escape just hides the cursor but keeps the selection intact
+        selection.cursorCell ? selection.hideCursor() : selection.clear();
+    }
+}
+
+function handleTabKey(e) {
+    state.endHistoryModification();
+
+    if (e.shiftKey) {
+        // If shift key is pressed, we move in opposite direction
+        selection.cursorCell ? selection.moveCursorInDirection('left', false) : selection.moveInDirection('left', 1);
+    } else {
+        selection.cursorCell ? selection.moveCursorInDirection('right', false) : selection.moveInDirection('right', 1);
+    }
+}
+
+function handleEnterKey(e) {
+    if (selection.movableContent) {
+        selection.finishMovingContent();
+    }
+    else {
+        // Push a state to the history where the cursor is at the end of the current line -- that way when
+        // you undo, the first undo just jumps back to the previous line with cursor at end.
+        if (selection.cursorCell) state.pushStateToHistory();
+
+        if (e.shiftKey) {
+            // If shift key is pressed, we move in opposite direction
+            selection.cursorCell ? selection.moveCursorInDirection('up', false) : selection.moveInDirection('up', 1);
+        } else {
+            // 'Enter' key differs from 'ArrowDown' in that the cursor will go to the start of the next line (like Excel)
+            selection.cursorCell ? selection.moveCursorCarriageReturn() : selection.moveInDirection('down', 1);
+        }
+    }
+}
+
+function handleBackspaceKey(e) {
+    if (selection.movableContent) {
+        selection.updateMovableContent('', 0);
+    }
+    else if (selection.cursorCell) {
+        if (char === 'Backspace') {
+            selection.moveCursorInDirection('left', false);
+        }
+        state.setCurrentCelGlyph(selection.cursorCell.row, selection.cursorCell.col, '', 0);
+    }
+    else {
+        selection.empty();
+    }
+
+    triggerRefresh('chars', 'backspace');
+}
+
+function handleArrowKey(e, arrowKey) {
+    const direction = arrowKeyToDirection(arrowKey);
+
     if (selection.hasTarget()) {
         state.endHistoryModification();
 
@@ -170,6 +172,19 @@ function handleArrowKey(e, direction) {
     }
 }
 
+function arrowKeyToDirection(arrowKey) {
+    switch (arrowKey) {
+        case 'ArrowLeft':
+            return 'left';
+        case 'ArrowUp':
+            return 'up'
+        case 'ArrowRight':
+            return 'right';
+        case 'ArrowDown':
+            return 'down';
+    }
+}
+
 function handleSingleChar(char, moveCursor = true) {
     if (state.config('tool') === 'draw-freeform') {
         editor.setFreeformChar(char);
@@ -184,15 +199,6 @@ function handleStandardKeyboard(char, e) {
         $document.trigger('keyboard:enter');
         e.preventDefault();
     }
-}
-
-// Returns true if the keycode produces some kind of standard text character
-function producesText(code) {
-    return (code === 32) ||             // space bar
-        (code >= 48 && code <= 57) ||   // 0-9
-        (code >= 65 && code <= 90) ||   // a-z
-        (code >= 186 && code <= 192) || // ;=,-./`
-        (code >= 219 && code <= 222);   // [\]'
 }
 
 
@@ -219,10 +225,8 @@ function setupCompositionListener() {
         opacity: 0
     }).appendTo("body");
 
-    $document.on("keydown.composition", function(event) {
-        if (!standardKeyboard) {
-            hiddenInput.focus(); // Ensure composition starts
-        }
+    $document.on("keydown.composition", () => {
+        if (!standardKeyboard) hiddenInput.focus(); // Use hidden input to ensure composition starts
     });
 
     $document.on('compositionstart', e => {

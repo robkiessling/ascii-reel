@@ -25,7 +25,7 @@ body {
   background: var(--color-main-menu-bg);
 }
 
-#body-content {
+#main-content {
   flex: 1; // Fill remaining width
   height: calc(100vh - #{$header-height} - #{$header-border-size} - 2 * #{$main-spacing});
 

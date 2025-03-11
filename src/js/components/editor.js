@@ -21,6 +21,7 @@ import AsciiRect from "../geometry/ascii/ascii_rect.js";
 import AsciiLine from "../geometry/ascii/ascii_line.js";
 import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter} from "../utils/strings.js";
+import {modifierAbbr} from "../utils/os.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -140,6 +141,14 @@ export function setupMouseEvents(canvasControl) {
                     addToPalette: shouldModifyAction('editor.tools.eyedropper.add-to-palette', mouseEvent)
                 });
                 break;
+            case 'pan':
+                // Pan tool is already handled by the setupMousePan() call in canvas_stack.js
+                break;
+            case 'move-all':
+                // TODO
+                // selection.selectAll();
+                // selection.startMovingContent();
+                break;
             default:
                 return; // Ignore all other tools
         }
@@ -201,7 +210,16 @@ function setupEditingTools() {
     $editingTools.find('.editing-tool').each(function(i, element) {
         const $element = $(element);
         const tool = $element.data('tool');
-        actions.registerAction(actionIdForTool(tool), () => changeTool(tool));
+        const actionData = { callback: () => changeTool(tool) }
+
+        // Some tools have custom shortcuts
+        switch (tool) {
+            case 'pan':
+                actionData.shortcutAbbr = 'Right Click'
+                break;
+        }
+
+        actions.registerAction(actionIdForTool(tool), actionData);
     });
 
     $editingTools.off('click', '.editing-tool').on('click', '.editing-tool', evt => {
@@ -234,8 +252,8 @@ function setupSelectionTools() {
         });
     }
     
-    registerAction('move', () => selection.toggleMovingContent(), false, true, '⌘ Click');
-    registerAction('typewriter', () => selection.toggleCursor(), true, false, 'Double click');
+    registerAction('move', () => selection.toggleMovingContent(), false, true, `${modifierAbbr('metaKey')}Click`);
+    registerAction('typewriter', () => selection.toggleCursor(), true, false, 'Double Click');
     registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('editor.selection.flip-v.mirror', e)));
     registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('editor.selection.flip-h.mirror', e)));
     registerAction('clone', () => selection.cloneToAllFrames());
@@ -605,7 +623,8 @@ function cursorStyle(evt, mouseEvent, cell, tool) {
         case 'color-swap':
         case 'eyedropper':
             return 'cell';
-        case 'move':
+        case 'pan':
+        case 'move-all':
             return 'grab';
         default:
             return 'default';
