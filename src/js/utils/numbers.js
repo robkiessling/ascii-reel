@@ -15,3 +15,9 @@ export function roundToDecimal(number, numDecimals) {
 export function roundForComparison(number) {
     return roundToDecimal(number, 5);
 }
+
+// Need to use this (instead of num % mod) if the starting num can be negative
+// https://stackoverflow.com/a/17323608
+export function mod(num, mod) {
+    return ((num % mod) + mod) % mod;
+}

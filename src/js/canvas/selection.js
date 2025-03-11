@@ -323,6 +323,8 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
+        // TODO This could be more efficient, could just trigger refreshes if cell is different than last?
+
         if (isDrawing) {
             if (tool === 'text-editor') {
                 cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
@@ -338,7 +340,9 @@ export function setupMouseEvents(canvasControl) {
         else if (isMoving) {
             moveDelta(cell.row - moveStep.row, cell.col - moveStep.col);
 
-            if (!hasMoved && !moveStep.equals(cell)) hasMoved = true;
+            // Keep track of whether we've moved to a new cell. Note: moving to a new cell and then moving back
+            // will still count as movement (hasMoved:true).
+            if (!moveStep.equals(cell)) hasMoved = true;
 
             moveStep = cell;
         }

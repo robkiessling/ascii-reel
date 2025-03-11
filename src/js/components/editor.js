@@ -10,7 +10,6 @@ import * as state from '../state/state.js';
 import * as selection from '../canvas/selection.js';
 import {triggerRefresh} from "../index.js";
 import * as keyboard from "../io/keyboard.js";
-import * as palette from "./palette.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import {hoveredCell, iterateHoveredCells} from "../canvas/hover.js";
@@ -105,6 +104,8 @@ export function setupMouseEvents(canvasControl) {
     canvasControl.$canvas.on('mouseleave', evt => _emitEvent('editor:mouseleave', evt));
 
     /*  ---------------------  Event Listeners  ---------------------  */
+    let prevCell; // Used to keep track of whether the mousemove is entering a new cell
+
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
         if (colorPickerOpen) return;
 
@@ -122,7 +123,7 @@ export function setupMouseEvents(canvasControl) {
                 erase();
                 break;
             case 'paint-brush':
-                paintShape();
+                paintBrush();
                 break;
             case 'paint-bucket':
                 paintConnectedCells(cell, {
@@ -145,9 +146,7 @@ export function setupMouseEvents(canvasControl) {
                 // Pan tool is already handled by the setupMousePan() call in canvas_stack.js
                 break;
             case 'move-all':
-                // TODO
-                // selection.selectAll();
-                // selection.startMovingContent();
+                startMoveAll(cell, mouseEvent);
                 break;
             default:
                 return; // Ignore all other tools
@@ -161,6 +160,12 @@ export function setupMouseEvents(canvasControl) {
 
         if (mouseEvent.which !== 1) { return; } // only care about left-click
 
+        // Keep track of whether the mousemove has reached a new cell (helps with performance, so we can just redraw
+        // when a new cell is reached, not on every pixel change)
+        const isNewCell = !prevCell || !prevCell.equals(cell);
+        prevCell = cell;
+        if (!isNewCell) return;
+
         switch(tool) {
             case 'draw-freeform':
                 drawCharShape();
@@ -173,7 +178,10 @@ export function setupMouseEvents(canvasControl) {
                 erase();
                 break;
             case 'paint-brush':
-                paintShape();
+                paintBrush();
+                break;
+            case 'move-all':
+                updateMoveAll(cell, isNewCell);
                 break;
             default:
                 return; // Ignore all other tools
@@ -193,6 +201,9 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-rect':
             case 'draw-line':
                 finishDrawing();
+                break;
+            case 'move-all':
+                finishMoveAll();
                 break;
             default:
                 return; // Ignore all other tools
@@ -322,59 +333,23 @@ function setupBrushSubMenu() {
 }
 
 function drawCharShape() {
-    let hasChanges = false;
     const primaryColorIndex = state.primaryColorIndex();
+    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
 
-    iterateHoveredCells(cell => {
-        const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
-
-        // Only updating char if it is actually different (this needs to be efficient since we call this on mousemove)
-        if (currentChar !== undefined && (currentChar !== freeformChar || currentColor !== primaryColorIndex)) {
-            state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex);
-            hasChanges = true;
-        }
-    });
-
-    if (hasChanges) {
-        triggerRefresh('chars', 'drawCharShape');
-    }
+    triggerRefresh('chars', 'drawCharShape');
 }
 
 function erase() {
-    let hasChanges = false;
+    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
 
-    iterateHoveredCells(cell => {
-        const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
-
-        // Only updating char if it is actually different (this needs to be efficient since we call this on mousemove)
-        if (currentChar !== undefined && currentChar !== '') {
-            state.setCurrentCelGlyph(cell.row, cell.col, '', 0);
-            hasChanges = true;
-        }
-    });
-
-    if (hasChanges) {
-        triggerRefresh('chars', 'erase');
-    }
+    triggerRefresh('chars', 'erase');
 }
 
-function paintShape() {
-    let hasChanges = false;
+function paintBrush() {
     const primaryColorIndex = state.primaryColorIndex();
+    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
 
-    iterateHoveredCells(cell => {
-        const [currentChar, currentColor] = state.getCurrentCelGlyph(cell.row, cell.col);
-
-        // Only refreshing if color is actually different (this needs to be efficient since we call this on mousemove)
-        if (currentChar !== undefined && currentColor !== primaryColorIndex) {
-            state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
-            hasChanges = true;
-        }
-    });
-
-    if (hasChanges) {
-        triggerRefresh('chars', 'paintShape');
-    }
+    triggerRefresh('chars', 'paintBrush');
 }
 
 function paintConnectedCells(cell, options) {
@@ -390,37 +365,21 @@ function paintConnectedCells(cell, options) {
 }
 
 function colorSwap(cell, options) {
-    if (!cell.isInBounds()) { return; }
+    if (!cell.isInBounds()) return;
 
     const [targetChar, targetColor] = state.getCurrentCelGlyph(cell.row, cell.col);
-    if (targetChar === '') { return; }
+    if (targetChar === '') return;
 
     const primaryColorIndex = state.primaryColorIndex();
 
-    const updateMatchingColorsInCel = (cel) => {
+    state.iterateCels(options.allLayers, options.allFrames, cel => {
         state.iterateCellsForCel(cel, (row, col, char, color) => {
-            if (color === targetColor) {
-                state.setCelGlyph(cel, row, col, char, primaryColorIndex)
-            }
+            if (color === targetColor) state.setCelGlyph(cel, row, col, char, primaryColorIndex);
         });
-    }
+    })
 
-    if (options.allLayers && options.allFrames) { // Apply to all cels
-        state.iterateAllCels(updateMatchingColorsInCel);
-        triggerRefresh('full', true); // need full refresh since multiple frames in sidebar need updating
-    }
-    else if (options.allLayers && !options.allFrames) { // Apply to all layers (of a single frame)
-        state.iterateCelsForCurrentFrame(updateMatchingColorsInCel);
-        triggerRefresh('chars', true);
-    }
-    else if (!options.allLayers && options.allFrames) { // Apply to all frames (of a single layer)
-        state.iterateCelsForCurrentLayer(updateMatchingColorsInCel);
-        triggerRefresh('full', true); // need full refresh since multiple frames in sidebar need updating
-    }
-    else { // Apply to current cel
-        updateMatchingColorsInCel(state.currentCel());
-        triggerRefresh('chars', true);
-    }
+    // Need full refresh if multiple frames in sidebar need updating
+    triggerRefresh(options.allFrames ? 'full' : 'chars', true);
 }
 
 function eyedropper(cell, options) {
@@ -510,6 +469,41 @@ function finishDrawing() {
 
 
 
+// -------------------------------------------------------------------------------- Move-all tool
+// The move-all tool moves all content in the canvas
+
+let moveAllOrigin = null; // Where the move started
+export let moveAllOffset = null; // How far from the origin the move is
+export let moveAllModifiers = {}; // What modifiers were used (e.g. all layers, wrapping) at the start of the move
+
+function startMoveAll(cell, mouseEvent) {
+    moveAllOrigin = cell;
+
+    moveAllModifiers = {
+        allLayers: shouldModifyAction('editor.tools.move-all.all-layers', mouseEvent),
+        allFrames: shouldModifyAction('editor.tools.move-all.all-frames', mouseEvent),
+        wrap: shouldModifyAction('editor.tools.move-all.wrap', mouseEvent),
+    }
+}
+
+function updateMoveAll(cell, isNewCell) {
+    if (moveAllOrigin && isNewCell) {
+        moveAllOffset = [cell.row - moveAllOrigin.row, cell.col - moveAllOrigin.col];
+        triggerRefresh('chars');
+    }
+}
+
+function finishMoveAll() {
+    if (moveAllOffset) {
+        state.iterateCels(moveAllModifiers.allLayers, moveAllModifiers.allFrames, cel => {
+            state.translateCel(cel, moveAllOffset[0], moveAllOffset[1], moveAllModifiers.wrap)
+        });
+
+        moveAllOffset = null;
+        moveAllOrigin = null;
+        triggerRefresh('full', true);
+    }
+}
 
 // -------------------------------------------------------------------------------- Color Picker
 

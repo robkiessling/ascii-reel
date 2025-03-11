@@ -11,6 +11,7 @@ import {DEFAULT_COLOR} from "../components/palette.js";
 import Cell from "../geometry/cell.js";
 import {moveCursorTo} from "../canvas/selection.js";
 import { saveAs } from 'file-saver';
+import {mod} from "../utils/numbers.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it
 // in the CONFIG_KEYS_FOR_HISTORY constant below
@@ -354,7 +355,7 @@ function celIdsForFrame(frame) {
 // -------------------------------------------------------------------------------- Cels
 // The term "cel" is short for "celluloid" https://en.wikipedia.org/wiki/Cel
 // In this app, it represents one image in a specific frame and layer
-// Note: This is different than a "Cell" (in this app, a "cell" refers to a row/column pair in the canvas)
+// Note: This is different from a "Cell" (in this app, a "cell" refers to a row/column pair in the canvas)
 
 function createCel(layer, frame, data = {}) {
     const celId = getCelId(layer.id, frame.id);
@@ -432,6 +433,32 @@ export function iterateCelsForCurrentFrame(callback) {
     });
 }
 
+/**
+ * Iterates through cels. Which cels are iterated over depends on the allLayers and allFrames params.
+ * @param {Boolean} allLayers If true, will include cels across all layers. If false, just includes cels for current layer.
+ * @param {Boolean} allFrames If true, will include cels across all frames. If false, just includes cels for current frame.
+ * @param {function(cel)} celCallback Callback called for each cel being iterated over
+ */
+export function iterateCels(allLayers, allFrames, celCallback) {
+    if (allLayers && allFrames) {
+        // Apply to all cels
+        iterateAllCels(celCallback);
+    }
+    else if (!allLayers && allFrames) {
+        // Apply to all frames of a single layer
+        iterateCelsForCurrentLayer(celCallback);
+    }
+    else if (allLayers && !allFrames) {
+        // Apply to all layers (of a single frame)
+        iterateCelsForCurrentFrame(celCallback);
+    }
+    else {
+        // Apply to current cel
+        celCallback(currentCel());
+    }
+}
+
+
 export function iterateCellsForCel(cel, callback) {
     let row, col, rowLength = numRows(), colLength = numCols();
     for (row = 0; row < rowLength; row++) {
@@ -468,28 +495,40 @@ export function charInBounds(row, col) {
 
 // Aggregates all visible layers for a frame
 export function layeredGlyphs(frame, options = {}) {
-    // let result = create2dArray(numRows(), numCols(), () => ['', 0]);
     let chars = create2dArray(numRows(), numCols(), '');
     let colors = create2dArray(numRows(), numCols(), 0);
 
-    let l, layer, celChars, celColors, r, c;
+    let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
+
     for (l = 0; l < state.layers.length; l++) {
         layer = state.layers[l];
-        if (options.showAllLayers || (state.config.lockLayerVisibility ? l === layerIndex() : layer.visible)) {
+        isCurrentLayer = l === layerIndex();
+
+        if (options.showAllLayers || (state.config.lockLayerVisibility ? isCurrentLayer : layer.visible)) {
             celChars = cel(layer, frame).chars;
             celColors = cel(layer, frame).colors;
-            for (r = 0; r < celChars.length; r++) {
-                for (c = 0; c < celChars[r].length; c++) {
-                    if (celChars[r][c] !== '') {
-                        chars[r][c] = celChars[r][c];
-                        colors[r][c] = celColors[r][c];
+            const offset = options.showOffsetContent && editor.moveAllOffset;
+            
+            for (celR = 0; celR < celChars.length; celR++) {
+                for (celC = 0; celC < celChars[celR].length; celC++) {
+                    if (celChars[celR][celC] === '') continue;
+
+                    r = celR;
+                    c = celC;
+
+                    if (offset && (editor.moveAllModifiers.allLayers || isCurrentLayer)) {
+                        ({ r, c } = getOffsetPosition(celR, celC, offset[0], offset[1], editor.moveAllModifiers.wrap));
+                        if (!charInBounds(r, c)) continue;
                     }
+
+                    chars[r][c] = celChars[celR][celC];
+                    colors[r][c] = celColors[celR][celC];
                 }
             }
         }
 
-        // If there is movableContent, we show it on top of the rest of the layer
-        if (options.showMovingContent && l === layerIndex() && selection.movableContent) {
+        // If there is movableContent, show it on top of the rest of the layer
+        if (options.showMovingContent && isCurrentLayer && selection.movableContent) {
             translateGlyphs(selection.movableContent, selection.getSelectedCellArea().topLeft, (r, c, char, color) => {
                 if (char !== undefined && charInBounds(r, c)) {
                     chars[r][c] = char;
@@ -498,7 +537,8 @@ export function layeredGlyphs(frame, options = {}) {
             });
         }
 
-        if (options.showDrawingContent && l === layerIndex() && editor.drawingContent) {
+        // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
+        if (options.showDrawingContent && isCurrentLayer && editor.drawingContent) {
             translateGlyphs(editor.drawingContent.glyphs, editor.drawingContent.origin, (r, c, char, color) => {
                 if (char !== undefined && charInBounds(r, c)) {
                     chars[r][c] = char;
@@ -524,6 +564,46 @@ export function layeredGlyphs(frame, options = {}) {
         colors: colors
     };
 }
+
+/**
+ * Shifts all the contents (chars/colors) of a cel.
+ * @param cel The cel to affect
+ * @param {Number} rowOffset How many rows to shift (can be negative)
+ * @param {Number} colOffset How many columns to shift content (can be negative)
+ * @param {Boolean} wrap If true, shifting content past the cel boundaries will wrap it around to the other side
+ */
+export function translateCel(cel, rowOffset, colOffset, wrap = false) {
+    let chars = create2dArray(numRows(), numCols(), '');
+    let colors = create2dArray(numRows(), numCols(), 0);
+
+    let celR, celC, r, c;
+    for (celR = 0; celR < cel.chars.length; celR++) {
+        for (celC = 0; celC < cel.chars[celR].length; celC++) {
+            ({ r, c } = getOffsetPosition(celR, celC, rowOffset, colOffset, wrap));
+
+            if (charInBounds(r, c)) {
+                chars[r][c] = cel.chars[celR][celC];
+                colors[r][c] = cel.colors[celR][celC];
+            }
+        }
+    }
+
+    cel.chars = chars;
+    cel.colors = colors;
+}
+
+function getOffsetPosition(r, c, rowOffset, colOffset, wrap) {
+    r += rowOffset;
+    c += colOffset;
+
+    if (wrap) {
+        r = mod(r, numRows());
+        c = mod(c, numCols());
+    }
+
+    return { r, c }
+}
+
 
 // Returns the stored font as a string that can be entered as a CSS font-family attribute (including fallbacks)
 export function fontFamily() {
