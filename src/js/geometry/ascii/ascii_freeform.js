@@ -6,13 +6,13 @@ import {roundToDecimal} from "../../utils/numbers.js";
 const DEBUG = false;
 
 /**
- * Represents one char in the freehand line being drawn. Keeps track of a startPixel (the first pixel moused over as the
+ * Represents one char in the freeform line being drawn. Keeps track of a startPixel (the first pixel moused over as the
  * mouse entered the cell) and an endPixel (the latest pixel moused over). Each of these pixels is an x,y coordinate
  * relative to the origin of the cell.
  * 
  * A char is chosen based on these two pixels (using the slope between them, etc.)
  */
-class FreehandChar {
+class FreeformChar {
     constructor(cell, startPixel) {
         this.cell = cell;
         this.startPixel = startPixel;
@@ -40,7 +40,7 @@ class FreehandChar {
     }
 
     /**
-     * If the line drawn through the cell is less than a specified amount, we delete the freehand char. This is
+     * If the line drawn through the cell is less than a specified amount, we delete the freeform char. This is
      * essential so that diagonal lines are limited to just being 1 char wide as they are drawn:
      *
      * As a diagonal line is drawn, it is highly unlikely that it passes exactly through the corner of each cell.
@@ -89,7 +89,7 @@ class FreehandChar {
 }
 
 /**
- * Creates FreehandChars between the fromCell and toCell. Uses Bresenham line approximation to calculate which cells
+ * Creates FreeformChars between the fromCell and toCell. Uses Bresenham line approximation to calculate which cells
  * are crossed, then calculates the slope of the line through each of the approximated cells.
  *
  * E.g. say we are drawing from [0,0] to [2,6]. The Bresenham line approximation would be:
@@ -109,7 +109,7 @@ class FreehandChar {
  * These lines that are drawn through each group are used to calculate the startPixel/endPixel of each cell within the
  * group (startPixel is the pixel where the line enters the cell, endPixel is the pixel where the line leaves the cell).
  */
-class FreehandInterpolator {
+class FreeformInterpolator {
     constructor(fromCell, toCell) {
         this.fromCell = fromCell;
         this.toCell = toCell;
@@ -222,76 +222,76 @@ class FreehandInterpolator {
 }
 
 /**
- * Handles drawing a freehand line out of ASCII characters. The line can have many twists and turns as the user draws.
- * Chars will be chosen to best fit the line; see FreehandChar class for details on how chars are chosen.
+ * Handles drawing a freeform line out of ASCII characters. The line can have many twists and turns as the user draws.
+ * Chars will be chosen to best fit the line; see FreeformChar class for details on how chars are chosen.
  */
-export default class AsciiFreehand extends AsciiPolygon {
+export default class AsciiFreeform extends AsciiPolygon {
     constructor(...args) {
         super(...args);
 
-        this.freehandChars = [];
+        this._freeformChars = [];
         this.prevCell = null;
     }
 
-    get lastFreehandChar() {
-        if (this.freehandChars.length === 0) return null;
-        return this.freehandChars[this.freehandChars.length - 1];
+    get lastFreeformChar() {
+        if (this._freeformChars.length === 0) return null;
+        return this._freeformChars[this._freeformChars.length - 1];
     }
 
     recalculate(mouseEvent) {
         const cellPixel = this.options.canvas.cellPixelAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY, true);
 
-        // Start a new FreehandChar if we're entering a new cell:
-        if (!this.prevCell || !this.prevCell.equals(this.end)) this._newFreehandChar(cellPixel);
+        // Start a new FreeformChar if we're entering a new cell:
+        if (!this.prevCell || !this.prevCell.equals(this.end)) this._newFreeformChar(cellPixel);
 
-        // Update the latest FreehandChar as the mouse moves:
-        this.lastFreehandChar.update(cellPixel);
+        // Update the latest FreeformChar as the mouse moves:
+        this.lastFreeformChar.update(cellPixel);
 
-        // Convert freehandChars array into glyphs/origin for rendering purposes:
+        // Convert _freeformChars array into glyphs/origin for rendering purposes:
         this._populateGlyphs();
 
         // Upkeep
         this.prevCell = this.end;
     }
 
-    _newFreehandChar(cellPixel) {
-        // If the last FreehandChar should be pruned, delete it (see FreehandChar.shouldPrune() for more details)
-        if (this.freehandChars.length > 1 && this.lastFreehandChar.shouldPrune()) {
-            this.freehandChars.pop();
+    _newFreeformChar(cellPixel) {
+        // If the last FreeformChar should be pruned, delete it (see FreeformChar.shouldPrune() for more details)
+        if (this._freeformChars.length > 1 && this.lastFreeformChar.shouldPrune()) {
+            this._freeformChars.pop();
         }
 
-        if (this.lastFreehandChar) {
-            // Check if we are "doubling back" to the previous cell. If so, we do not create a new FreehandChar;
+        if (this.lastFreeformChar) {
+            // Check if we are "doubling back" to the previous cell. If so, we do not create a new FreeformChar;
             // we go back to updating that previous cell.
-            if (this.lastFreehandChar.cell.equals(this.end)) return;
+            if (this.lastFreeformChar.cell.equals(this.end)) return;
 
             // If new cell is not adjacent to the last cell, we must interpolate the missing cells. This can happen
             // if the user moves the mouse very fast across the canvas.
-            if (!this.lastFreehandChar.cell.isAdjacentTo(this.end)) {
-                this._interpolate(this.lastFreehandChar.cell, this.end)
+            if (!this.lastFreeformChar.cell.isAdjacentTo(this.end)) {
+                this._interpolate(this.lastFreeformChar.cell, this.end)
             }
         }
 
-        this.freehandChars.push(new FreehandChar(this.end, cellPixel));
+        this._freeformChars.push(new FreeformChar(this.end, cellPixel));
     }
 
     _interpolate(fromCell, toCell) {
-        const interpolator = new FreehandInterpolator(fromCell, toCell);
+        const interpolator = new FreeformInterpolator(fromCell, toCell);
 
         interpolator.interpolate((cell, startPixel, endPixel) => {
             if (DEBUG) { console.log('  interpolated: ', cell.row, cell.col, startPixel, endPixel); }
 
-            const freehandChar = new FreehandChar(cell, startPixel);
-            freehandChar.update(endPixel);
-            this.freehandChars.push(freehandChar);
+            const freeformChar = new FreeformChar(cell, startPixel);
+            freeformChar.update(endPixel);
+            this._freeformChars.push(freeformChar);
         })
     }
 
-    // Converts the array of FreehandChars (whose cells are using absolute positions for row/col) into a 2d array of
+    // Converts the array of FreeformChars (whose cells are using absolute positions for row/col) into a 2d array of
     // glyphs for easy rendering.
     _populateGlyphs() {
         let minRow, minCol, maxRow, maxCol;
-        this._iterateFreehandChars((freehandChar, absoluteR, absoluteC) => {
+        this._iterateFreeformChars((freeformChar, absoluteR, absoluteC) => {
             if (minRow === undefined || absoluteR < minRow) minRow = absoluteR;
             if (minCol === undefined || absoluteC < minCol) minCol = absoluteC;
             if (maxRow === undefined || absoluteR > maxRow) maxRow = absoluteR;
@@ -308,17 +308,17 @@ export default class AsciiFreehand extends AsciiPolygon {
             colors: create2dArray(numRows, numCols),
         }
 
-        this._iterateFreehandChars((freehandChar, absoluteR, absoluteC) => {
-            this._glyphs.chars[absoluteR - minRow][absoluteC - minCol] = freehandChar.char;
+        this._iterateFreeformChars((freeformChar, absoluteR, absoluteC) => {
+            this._glyphs.chars[absoluteR - minRow][absoluteC - minCol] = freeformChar.char;
             this._glyphs.colors[absoluteR - minRow][absoluteC - minCol] = this.options.colorIndex;
         })
     }
 
-    _iterateFreehandChars(callback) {
-        this.freehandChars.forEach(freehandChar => {
-            const absoluteR = freehandChar.cell.row;
-            const absoluteC = freehandChar.cell.col;
-            callback(freehandChar, absoluteR, absoluteC)
+    _iterateFreeformChars(callback) {
+        this._freeformChars.forEach(freeformChar => {
+            const absoluteR = freeformChar.cell.row;
+            const absoluteC = freeformChar.cell.col;
+            callback(freeformChar, absoluteR, absoluteC)
         })
     }
 

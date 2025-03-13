@@ -16,6 +16,18 @@
   display: inline-block;
   width: 1rem;
   height: 1rem;
+
+  &.title {
+    // Not showing spacer titles at the moment
+    display: none;
+
+    //display: flex;
+    //width: auto;
+    //justify-content: center;
+    //align-items: center;
+    //font-size: 0.75rem;
+    //letter-spacing: 0.5px;
+  }
 }
 
 .invisible {

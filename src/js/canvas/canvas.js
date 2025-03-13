@@ -392,7 +392,7 @@ export default class CanvasControl {
         if (newZoom < ZOOM_BOUNDARIES[0]) { newZoom = ZOOM_BOUNDARIES[0]; delta = newZoom / currentZoom; }
         if (newZoom > ZOOM_BOUNDARIES[1]) { newZoom = ZOOM_BOUNDARIES[1]; delta = newZoom / currentZoom; }
         if (newZoom < this._minZoom) { newZoom = this._minZoom; delta = newZoom / currentZoom; }
-        if (roundForComparison(newZoom) === roundForComparison(currentZoom)) { return; }
+        if (roundForComparison(newZoom) === roundForComparison(currentZoom)) return;
 
         if (!target) {
             target = this.pointAtExternalXY(this.outerWidth / 2, this.outerHeight / 2)

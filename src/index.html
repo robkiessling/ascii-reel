@@ -76,30 +76,44 @@
         <div id="frames-and-canvas" class="frames-on-left">
             <div id="tools-and-canvas">
                 <div id="editing-tools">
+
+                    <div class="spacer title">Edit</div>
+
                     <div class="editing-tool-row">
                         <div class="editing-tool-column">
                             <div class="editing-tool" data-tool="text-editor"><span class="ri ri-fw ri-text"></span></div>
-                        </div>
-                    </div>
-                    <div class="editing-tool-row">
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="draw-freeform">
-                                <span class="ri ri-fw ri-quill-pen-line"></span>
+
+                            <div class="editing-tool" data-tool="draw-freeform-char">
+                                <span class="ri ri-fw ri-pencil-line"></span>
                                 <span class="freeform-char"></span>
                             </div>
-                            <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
                         </div>
                         <div class="editing-tool-column">
                             <div class="editing-tool" data-tool="eraser"><span class="ri ri-fw ri-eraser-line"></span></div>
-                            <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
+
+                            <div class="editing-tool" data-tool="fill-char">
+                                <span class="ri ri-fw ri-paint-fill"></span>
+                                <span class="freeform-char"></span>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="spacer"></div>
+                    <div class="spacer title">ASCII Draw</div>
+
                     <div class="editing-tool-row">
                         <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="draw-freehand">F</div>
+                            <div class="editing-tool" data-tool="draw-freeform-ascii"><span class="ri ri-fw ri-quill-pen-line"></span></div>
+                            <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
+                        </div>
+                        <div class="editing-tool-column">
+                            <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
+                            <div class="editing-tool" data-tool="draw-circle"><span class="ri ri-fw ri-circle-line"></span></div>
                         </div>
                     </div>
+
                     <div class="spacer"></div>
+                    <div class="spacer title">Select</div>
 
                     <div class="editing-tool-row">
                         <div class="editing-tool-column">
@@ -113,10 +127,11 @@
                     </div>
 
                     <div class="spacer"></div>
+                    <div class="spacer title">Move</div>
 
                     <div class="editing-tool-row">
                         <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="pan">H</div>
+                            <div class="editing-tool" data-tool="pan"><span class="ri ri-fw ri-hand"></span></div>
                         </div>
                         <div class="editing-tool-column">
                             <div class="editing-tool" data-tool="move-all"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
@@ -124,6 +139,7 @@
                     </div>
 
                     <div class="spacer"></div>
+                    <div class="spacer title">Color</div>
 
                     <div class="editing-tool-row">
                         <div class="editing-tool-column">
@@ -131,7 +147,7 @@
                             <div class="editing-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
                         </div>
                         <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="paint-bucket"><span class="ri ri-fw ri-paint-fill"></span></div>
+                            <div class="editing-tool" data-tool="fill-color"><span class="ri ri-fw ri-paint-fill"></span></div>
                             <div class="editing-tool" data-tool="eyedropper"><span class="ri ri-fw ri-dropper-line"></span></div>
                         </div>
                     </div>
@@ -150,7 +166,7 @@
                     <div class="sub-tool" data-tool="flip-v"><span class="ri ri-fw ri-flip-vertical-fill"></span></div>
                     <div class="sub-tool" data-tool="flip-h"><span class="ri ri-fw ri-flip-horizontal-fill"></span></div>
                     <div class="sub-tool" data-tool="clone"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
-                    <div class="sub-tool" data-tool="paint-bucket"><span class="ri ri-fw ri-paint-fill"></span></div>
+                    <div class="sub-tool" data-tool="fill-color"><span class="ri ri-fw ri-paint-fill"></span></div>
                     <div class="sub-tool" data-tool="resize"><span class="ri ri-fw ri-crop-line"></span></div>
                     <div class="sub-tool" data-tool="close"><span class="ri ri-fw ri-close-line"></span></div>
                 </div>
@@ -313,7 +329,7 @@
                     <div>
                         <button data-action="unicode.toggle-component" class="component-toggle-header show-when-minimized">
                             <span class="ri ri-fw ri-arrow-down-s-fill"></span>
-                            <span class="section-header no-select">Extended ASCII</span>
+                            <span class="section-header no-select">Characters</span>
                         </button>
                     </div>
                     <div>

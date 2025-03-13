@@ -13,7 +13,7 @@ export function setupScrollZoom(canvasControl, isTargetted = false) {
         evt.preventDefault();
 
         const deltaY = evt.originalEvent.deltaY;
-        if (deltaY === 0) { return; }
+        if (deltaY === 0) return;
 
         const scaledDelta = Math.pow(ZOOM_SCROLL_FACTOR, -deltaY / 100);
         const target = isTargetted ? canvasControl.pointAtExternalXY(evt.offsetX, evt.offsetY) : undefined;

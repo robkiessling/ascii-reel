@@ -18,7 +18,7 @@ import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {strings} from "../config/strings.js";
 import AsciiRect from "../geometry/ascii/ascii_rect.js";
 import AsciiLine from "../geometry/ascii/ascii_line.js";
-import AsciiFreehand from "../geometry/ascii/ascii_freehand.js";
+import AsciiFreeform from "../geometry/ascii/ascii_freeform.js";
 import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
@@ -89,13 +89,13 @@ export function hideCanvasMessage() {
 export function setupMouseEvents(canvasControl) {
     /*  ---------------------  Emitting Events  ---------------------  */
     function _emitEvent(name, mouseEvent) {
-        if (!canvasControl.initialized) { return; }
+        if (!canvasControl.initialized) return;
         const cell = canvasControl.cellAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
         canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.config('tool')])
     }
 
     canvasControl.$canvas.on('mousedown', evt => {
-        if (evt.which !== 1) { return; } // Only apply to left-click
+        if (evt.which !== 1) return; // Only apply to left-click
         _emitEvent('editor:mousedown', evt);
     });
     canvasControl.$canvas.on('mousemove', evt => _emitEvent('editor:mousemove', evt));
@@ -111,8 +111,15 @@ export function setupMouseEvents(canvasControl) {
         if (colorPickerOpen) return;
 
         switch(tool) {
-            case 'draw-freeform':
-                drawCharShape();
+            case 'draw-freeform-char':
+                drawFreeformChar();
+                break;
+            case 'fill-char':
+                fillConnectedCells(cell, freeformChar, state.primaryColorIndex(), {
+                    diagonal: shouldModifyAction('editor.tools.fill-char.diagonal', mouseEvent),
+                    charblind: false,
+                    colorblind: shouldModifyAction('editor.tools.fill-char.colorblind', mouseEvent)
+                });
                 break;
             case 'draw-rect':
                 startDrawing(AsciiRect, { drawType: state.config('drawRect').type });
@@ -120,8 +127,8 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-line':
                 startDrawing(AsciiLine, { drawType: state.config('drawLine').type });
                 break;
-            case 'draw-freehand':
-                startDrawing(AsciiFreehand, { canvas: canvasControl }, [mouseEvent]);
+            case 'draw-freeform-ascii':
+                startDrawing(AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
                 break;
             case 'eraser':
                 erase();
@@ -129,10 +136,11 @@ export function setupMouseEvents(canvasControl) {
             case 'paint-brush':
                 paintBrush();
                 break;
-            case 'paint-bucket':
-                paintConnectedCells(cell, {
-                    diagonal: true,
-                    colorblind: shouldModifyAction('editor.tools.paint-bucket.colorblind', mouseEvent)
+            case 'fill-color':
+                fillConnectedCells(cell, undefined, state.primaryColorIndex(), {
+                    diagonal: shouldModifyAction('editor.tools.fill-color.diagonal', mouseEvent),
+                    charblind: true,
+                    colorblind: shouldModifyAction('editor.tools.fill-color.colorblind', mouseEvent)
                 });
                 break;
             case 'color-swap':
@@ -162,7 +170,7 @@ export function setupMouseEvents(canvasControl) {
 
         $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
 
-        if (mouseEvent.which !== 1) { return; } // only care about left-click
+        if (mouseEvent.which !== 1) return; // only care about left-click
 
         // Keep track of whether the mousemove has reached a new cell (helps with performance, so we can just redraw
         // when a new cell is reached, not on every pixel change)
@@ -170,16 +178,16 @@ export function setupMouseEvents(canvasControl) {
         prevCell = cell;
 
         switch(tool) {
-            case 'draw-freeform':
+            case 'draw-freeform-char':
                 if (!isNewCell) return;
-                drawCharShape();
+                drawFreeformChar();
                 break;
             case 'draw-rect':
             case 'draw-line':
                 if (!isNewCell) return;
                 updateDrawing();
                 break;
-            case 'draw-freehand':
+            case 'draw-freeform-ascii':
                 // Do not return early if we're still on the same cell; we need pixel accuracy
                 updateDrawing([mouseEvent]);
                 break;
@@ -204,7 +212,7 @@ export function setupMouseEvents(canvasControl) {
         if (colorPickerOpen) return;
 
         switch(tool) {
-            case 'draw-freeform':
+            case 'draw-freeform-char':
             case 'eraser':
             case 'paint-brush':
                 // These handlers save a 'modifiable' state during mousemove, so end modifications on mouseup
@@ -212,7 +220,7 @@ export function setupMouseEvents(canvasControl) {
                 break;
             case 'draw-rect':
             case 'draw-line':
-            case 'draw-freehand':
+            case 'draw-freeform-ascii':
                 finishDrawing();
                 break;
             case 'move-all':
@@ -251,7 +259,15 @@ function setupEditingTools() {
         actions.callAction(actionIdForTool($element.data('tool')));
     });
 
-    setupTooltips('.editing-tool', element => actionIdForTool($(element).data('tool')));
+    const $leftTools = $editingTools.find('.editing-tool-column:first-child .editing-tool').toArray();
+    const $rightTools = $editingTools.find('.editing-tool-column:last-child .editing-tool').toArray();
+    const TIP_X_OFFSET = 15; // Move the tip a bit to the right so it's over the canvas
+    setupTooltips($leftTools, element => actionIdForTool($(element).data('tool')), {
+        offset: [0, TIP_X_OFFSET + 43] // 42px for the button to the right ($editing-tool-size), 1px for margin
+    });
+    setupTooltips($rightTools, element => actionIdForTool($(element).data('tool')), {
+        offset: [0, TIP_X_OFFSET]
+    });
 }
 
 function actionIdForTool(tool) {
@@ -281,7 +297,7 @@ function setupSelectionTools() {
     registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('editor.selection.flip-v.mirror', e)));
     registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('editor.selection.flip-h.mirror', e)));
     registerAction('clone', () => selection.cloneToAllFrames());
-    registerAction('paint-bucket', () => paintSelection());
+    registerAction('fill-color', () => paintSelection());
     registerAction('resize', () => resizeToSelection());
     registerAction('close', () => selection.clear(), true, true, 'Esc');
 
@@ -330,7 +346,7 @@ function resizeToSelection() {
 
 // -------------------------------------------------------------------------------- Brushing shapes / painting
 
-export const BRUSH_TOOLS = ['draw-freeform', 'eraser', 'paint-brush'];
+export const BRUSH_TOOLS = ['draw-freeform-char', 'eraser', 'paint-brush'];
 
 function setupBrushSubMenu() {
     brushSubMenu = new ToolSubMenu({
@@ -345,11 +361,11 @@ function setupBrushSubMenu() {
     })
 }
 
-function drawCharShape() {
+function drawFreeformChar() {
     const primaryColorIndex = state.primaryColorIndex();
     iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
 
-    triggerRefresh('chars', 'drawCharShape');
+    triggerRefresh('chars', 'drawFreeformChar');
 }
 
 function erase() {
@@ -358,23 +374,21 @@ function erase() {
     triggerRefresh('chars', 'erase');
 }
 
+function fillConnectedCells(cell, char, colorIndex, options) {
+    if (!cell.isInBounds()) return;
+
+    selection.getConnectedCells(cell, options).forEach(cell => {
+        state.setCurrentCelGlyph(cell.row, cell.col, char, colorIndex);
+    })
+
+    triggerRefresh('chars', true);
+}
+
 function paintBrush() {
     const primaryColorIndex = state.primaryColorIndex();
     iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
 
     triggerRefresh('chars', 'paintBrush');
-}
-
-function paintConnectedCells(cell, options) {
-    if (!cell.isInBounds()) { return; }
-
-    const primaryColorIndex = state.primaryColorIndex();
-
-    selection.getConnectedCells(cell, options).forEach(cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
-    })
-
-    triggerRefresh('chars', true);
 }
 
 function colorSwap(cell, options) {
@@ -418,7 +432,20 @@ function setupFreeformChar() {
 
 export function setFreeformChar(char) {
     freeformChar = char;
-    $freeformChar.html(freeformChar);
+
+    // Making it possible to visualize characters that don't actually take up space
+    let visibleChar = char;
+    if (char === ' ') visibleChar = '␣';
+    if (char === '') visibleChar = '∅';
+
+    $freeformChar.html(visibleChar);
+}
+
+export function shouldUpdateFreeformChar() {
+    // return state.config('tool') === 'draw-freeform-char' || state.config('tool') === 'fill-char';
+
+    // Currently we are always updating the freeform char, even if a freeform tool is not selected
+    return true;
 }
 
 
@@ -471,7 +498,7 @@ function updateDrawing(recalculateArgs = []) {
 }
 
 function finishDrawing() {
-    if (!drawingContent) { return; }
+    if (!drawingContent) return;
 
     translateGlyphs(drawingContent.glyphs, drawingContent.origin, (r, c, char, color) => {
         state.setCurrentCelGlyph(r, c, char, color);
@@ -623,11 +650,12 @@ function cursorStyle(evt, mouseEvent, cell, tool) {
             return selection.isSelectedCell(cell) ? 'grab' : 'cell';
         case 'draw-rect':
         case 'draw-line':
-        case 'draw-freeform':
-            return 'cell';
+        case 'draw-freeform-ascii':
+        case 'draw-freeform-char':
+        case 'fill-char':
         case 'eraser':
         case 'paint-brush':
-        case 'paint-bucket':
+        case 'fill-color':
         case 'color-swap':
         case 'eyedropper':
             return 'cell';

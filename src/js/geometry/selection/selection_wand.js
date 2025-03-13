@@ -63,6 +63,7 @@ export default class SelectionWand extends SelectionPolygon {
         const cellHash = {};
         const [startChar, startColor] = state.getCurrentCelGlyph(this.start.row, this.start.col);
         const isBlank = startChar === '';
+        const charblind = this.options.charblind;
         const colorblind = this.options.colorblind;
         const diagonal = this.options.diagonal;
 
@@ -74,13 +75,16 @@ export default class SelectionWand extends SelectionPolygon {
         function spread(cell) {
             if (cellHash[cellKey(cell)] === undefined) {
                 const [char, color] = state.getCurrentCelGlyph(cell.row, cell.col);
-                if (char === undefined) { return; }
+                if (char === undefined) return;
 
                 // If starting character was blank, only keep blank cells. Otherwise only keep non-blank cells
-                if (isBlank ? char !== '' : char === '') { return; }
+                if (isBlank ? char !== '' : char === '') return;
+
+                // Character values have to match unless charblind option is true
+                if (!isBlank && !charblind && char !== startChar) return;
 
                 // Character colors have to match unless colorblind option is true
-                if (!isBlank && !colorblind && color !== startColor) { return; }
+                if (!isBlank && !colorblind && color !== startColor) return;
 
                 // Add cell to result
                 cellHash[cellKey(cell)] = new Cell(cell.row, cell.col);

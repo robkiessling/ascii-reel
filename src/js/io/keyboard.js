@@ -135,6 +135,10 @@ function handleBackspaceKey(char) {
         selection.empty();
     }
 
+    if (editor.shouldUpdateFreeformChar()) {
+        editor.setFreeformChar('');
+    }
+
     triggerRefresh('chars', 'backspace');
 }
 
@@ -186,9 +190,8 @@ function arrowKeyToDirection(arrowKey) {
 }
 
 function handleSingleChar(char, moveCursor = true) {
-    if (state.config('tool') === 'draw-freeform') {
+    if (editor.shouldUpdateFreeformChar()) {
         editor.setFreeformChar(char);
-        return;
     }
 
     selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCursor);

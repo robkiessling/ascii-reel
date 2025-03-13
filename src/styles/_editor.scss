@@ -43,18 +43,19 @@
       background: var(--color-surface-hover);
     }
 
-    &[data-tool="draw-freeform"] {
-      > span:not(.freeform-char) {
-        position: absolute;
-        top: 6px;
-        left: 2px;
-        font-size: 1.5rem;
-      }
+    &[data-tool="draw-freeform-char"], &[data-tool="fill-char"] {
       > .freeform-char {
         position: absolute;
-        bottom: 5px;
-        right: 7px;
-        font-size: 1rem;
+        bottom: 1px;
+        right: 4px;
+        font-size: 0.875rem;
+      }
+    }
+
+    &[data-tool="fill-char"] {
+      > .ri-paint-fill {
+        // clip off the droplet coming out of the paint bucket (it will be replaced with a char)
+        clip-path: polygon(0% 0%, 100% 0%, 100% 45%, 45% 100%, 0% 100%)
       }
     }
   }

@@ -8,9 +8,9 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1741596704401") format("woff2"),
-    url("remixicon/remixicon.woff?t=1741596704401") format("woff"),
-    url('remixicon/remixicon.ttf?t=1741596704401') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
+    src: url("remixicon/remixicon.woff2?t=1741858538559") format("woff2"),
+    url("remixicon/remixicon.woff?t=1741858538559") format("woff"),
+    url('remixicon/remixicon.ttf?t=1741858538559') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
     font-display: swap;
 }
 
@@ -80,3 +80,6 @@
 .ri-arrow-down-s-fill:before { content: "\ea4d"; }
 .ri-sidebar-unfold-line:before { content: "\f45e"; }
 .ri-sidebar-fold-line:before { content: "\f45c"; }
+.ri-hand:before { content: "\f445"; }
+.ri-quill-pen-ai-line:before { content: "\f597"; }
+.ri-circle-line:before { content: "\f3c2"; }

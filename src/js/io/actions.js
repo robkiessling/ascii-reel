@@ -222,12 +222,13 @@ function tooltipContentBuilder(getActionId) {
  *      b) the strings.js const (this is where it gets the modification description)
  */
 const ACTION_MODIFIERS = {
+    'editor.tools.fill-char': ['editor.tools.fill-char.diagonal', 'editor.tools.fill-char.colorblind'],
     'editor.tools.selection-rect': ['editor.tools.selection.multiple', 'editor.tools.selection-rect.outline'],
     'editor.tools.selection-line': ['editor.tools.selection.multiple'],
     'editor.tools.selection-lasso': ['editor.tools.selection.multiple'],
-    'editor.tools.selection-wand': ['editor.tools.selection.multiple', 'editor.tools.selection-wand.colorblind'],
+    'editor.tools.selection-wand': ['editor.tools.selection.multiple', 'editor.tools.selection-wand.diagonal', 'editor.tools.selection-wand.colorblind'],
     'editor.tools.move-all': ['editor.tools.move-all.all-layers', 'editor.tools.move-all.all-frames', 'editor.tools.move-all.wrap'],
-    'editor.tools.paint-bucket': ['editor.tools.paint-bucket.colorblind'],
+    'editor.tools.fill-color': ['editor.tools.fill-color.diagonal', 'editor.tools.fill-color.colorblind'],
     'editor.tools.color-swap': ['editor.tools.color-swap.all-layers', 'editor.tools.color-swap.all-frames'],
     'editor.tools.eyedropper': ['editor.tools.eyedropper.add-to-palette'],
     'editor.selection.flip-v': ['editor.selection.flip-v.mirror'],
@@ -236,10 +237,14 @@ const ACTION_MODIFIERS = {
 
 // Defines what modifier key is used for the effect. These are static; they won't be customizable by the user.
 const MODIFIER_KEYS = {
+    'editor.tools.fill-char.diagonal': 'altKey',
+    'editor.tools.fill-char.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.tools.selection.multiple': 'shiftKey',
     'editor.tools.selection-rect.outline': isMacOS() ? 'metaKey' : 'ctrlKey',
+    'editor.tools.selection-wand.diagonal': 'altKey',
     'editor.tools.selection-wand.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
-    'editor.tools.paint-bucket.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
+    'editor.tools.fill-color.diagonal': 'altKey',
+    'editor.tools.fill-color.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.tools.move-all.all-layers': 'shiftKey',
     'editor.tools.move-all.all-frames': isMacOS() ? 'metaKey' : 'ctrlKey',
     'editor.tools.move-all.wrap': 'altKey',
