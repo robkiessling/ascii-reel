@@ -38,6 +38,8 @@ export const strings = {
     'editor.tools.draw-rect.description': 'Click and drag to draw a rectangle out of ASCII characters.',
     'editor.tools.draw-line.name': 'Draw Line Tool',
     'editor.tools.draw-line.description': 'Click and drag to draw a line out of ASCII characters.',
+    'editor.tools.draw-freehand.name': 'Freehand Tool',
+    'editor.tools.draw-freehand.description': 'Click and drag to freehand draw a line out of ASCII characters.',
     'editor.tools.selection.multiple': 'Create multiple selections',
     'editor.tools.selection-rect.name': 'Rectangle Selection',
     'editor.tools.selection-rect.description': 'Click and drag to select a rectangular area.',

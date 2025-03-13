@@ -62,7 +62,7 @@ function setupKeydownListener() {
                 break;
             case 'Backspace':
             case 'Delete':
-                handleBackspaceKey(e);
+                handleBackspaceKey(char);
                 break;
             case 'ArrowLeft':
             case 'ArrowUp':
@@ -121,7 +121,7 @@ function handleEnterKey(e) {
     }
 }
 
-function handleBackspaceKey(e) {
+function handleBackspaceKey(char) {
     if (selection.movableContent) {
         selection.updateMovableContent('', 0);
     }

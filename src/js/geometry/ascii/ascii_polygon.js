@@ -1,34 +1,27 @@
-import Cell from "../cell.js";
-import {create2dArray} from "../../utils/arrays.js";
-
+/**
+ * Base class for Ascii drawings. Subclasses will override recalculate() function.
+ */
 export default class AsciiPolygon {
-    constructor(startCell, drawType) {
+    constructor(startCell, options = {}) {
         this.start = startCell;
         this.end = startCell.clone();
-        this.drawType = drawType;
-        this.refreshGlyphs();
+        this.options = options;
     }
 
     get glyphs() {
         return this._glyphs;
     }
-    get topLeft() {
-        return new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
-    }
-    get bottomRight() {
-        return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
-    }
-    get numRows() {
-        return this.bottomRight.row - this.topLeft.row + 1;
-    }
-    get numCols() {
-        return this.bottomRight.col - this.topLeft.col + 1;
+
+    get origin() {
+        return this._origin;
     }
 
-    refreshGlyphs() {
+    recalculate() {
         this._glyphs = {
-            chars: create2dArray(this.numRows, this.numCols),
-            colors: create2dArray(this.numRows, this.numCols)
+            chars: [[]],
+            colors: [[]]
         }
+
+        this._origin = this.start;
     }
 }

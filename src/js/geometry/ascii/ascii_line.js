@@ -301,14 +301,10 @@ function isHorizontalSlope(slope) {
  * to approximate an actual straight line out of many characters
  */
 export default class AsciiLine extends AsciiPolygon {
-    get origin() {
-        return this._origin;
-    }
-
-    refreshGlyphs(colorIndex) {
+    recalculate() {
         // Short-circuit if line is only one single character long
         if (this.start.equals(this.end)) {
-            this._glyphs = { chars: [['-']], colors: [[colorIndex]] }
+            this._glyphs = { chars: [['-']], colors: [[this.options.colorIndex]] }
             this._origin = this.start;
             return;
         }
@@ -321,7 +317,7 @@ export default class AsciiLine extends AsciiPolygon {
         // See _convertObjToArray function for info on why we initially store _glyphs as an object
         this._glyphs = { chars: {}, colors: {} };
         lineTemplate.followLinePath(lineLength, (glyphR, glyphC, char) => {
-            this._setGlyph(glyphR, glyphC, char, colorIndex);
+            this._setGlyph(glyphR, glyphC, char, this.options.colorIndex);
         })
         this._glyphs.chars = this._convertObjToArray(this._glyphs.chars);
         this._glyphs.colors = this._convertObjToArray(this._glyphs.colors);
@@ -330,7 +326,7 @@ export default class AsciiLine extends AsciiPolygon {
     }
 
     _setGlyph(row, col, char, color) {
-        this._glyphs.chars[row] ||= {}; // Drawing can go out of the boundaries initially set by super.refreshGlyphs()
+        this._glyphs.chars[row] ||= {};
         this._glyphs.chars[row][col] = char;
         this._glyphs.colors[row] ||= {};
         this._glyphs.colors[row][col] = color;

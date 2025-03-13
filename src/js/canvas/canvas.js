@@ -325,6 +325,31 @@ export default class CanvasControl {
         return new Cell(row, col);
     }
 
+    /**
+     * Returns an {x, y} coordinate of a given point relative to the top-left corner of the cell.
+     * @param x The x value of the target point
+     * @param y The y value of the target point
+     * @param {Boolean} asPercentage If true, the returned x/y coordinates will be a percentage of the cell width/height,
+     *   respectively. E.g. if the point was in the center of the cell, the returned value would be { x: 0.5, y: 0.5 }.
+     * @returns {{x: number, y: number}}
+     */
+    cellPixelAtExternalXY(x, y, asPercentage = true) {
+        const point = this.pointAtExternalXY(x, y);
+
+        const rowY = Math.floor(point.y / fontHeight) * fontHeight;
+        const colX = Math.floor(point.x / fontWidth) * fontWidth;
+
+        let relativeX = point.x - colX;
+        let relativeY = point.y - rowY;
+
+        if (asPercentage) {
+            relativeX /= fontWidth;
+            relativeY /= fontHeight;
+        }
+
+        return { x: relativeX, y: relativeY };
+    }
+
     // Getting the "cursor" positioning is slightly different than just getting the corresponding cell; we round the x
     // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
     // click on the right half of a character, it will round up to the next character

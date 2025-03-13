@@ -18,6 +18,7 @@ import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {strings} from "../config/strings.js";
 import AsciiRect from "../geometry/ascii/ascii_rect.js";
 import AsciiLine from "../geometry/ascii/ascii_line.js";
+import AsciiFreehand from "../geometry/ascii/ascii_freehand.js";
 import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
@@ -114,10 +115,13 @@ export function setupMouseEvents(canvasControl) {
                 drawCharShape();
                 break;
             case 'draw-rect':
-                startDrawing(AsciiRect, state.config('drawRect').type);
+                startDrawing(AsciiRect, { drawType: state.config('drawRect').type });
                 break;
             case 'draw-line':
-                startDrawing(AsciiLine, state.config('drawLine').type);
+                startDrawing(AsciiLine, { drawType: state.config('drawLine').type });
+                break;
+            case 'draw-freehand':
+                startDrawing(AsciiFreehand, { canvas: canvasControl }, [mouseEvent]);
                 break;
             case 'eraser':
                 erase();
@@ -164,23 +168,31 @@ export function setupMouseEvents(canvasControl) {
         // when a new cell is reached, not on every pixel change)
         const isNewCell = !prevCell || !prevCell.equals(cell);
         prevCell = cell;
-        if (!isNewCell) return;
 
         switch(tool) {
             case 'draw-freeform':
+                if (!isNewCell) return;
                 drawCharShape();
                 break;
             case 'draw-rect':
             case 'draw-line':
+                if (!isNewCell) return;
                 updateDrawing();
                 break;
+            case 'draw-freehand':
+                // Do not return early if we're still on the same cell; we need pixel accuracy
+                updateDrawing([mouseEvent]);
+                break;
             case 'eraser':
+                if (!isNewCell) return;
                 erase();
                 break;
             case 'paint-brush':
+                if (!isNewCell) return;
                 paintBrush();
                 break;
             case 'move-all':
+                if (!isNewCell) return;
                 updateMoveAll(cell, isNewCell);
                 break;
             default:
@@ -200,6 +212,7 @@ export function setupMouseEvents(canvasControl) {
                 break;
             case 'draw-rect':
             case 'draw-line':
+            case 'draw-freehand':
                 finishDrawing();
                 break;
             case 'move-all':
@@ -441,19 +454,20 @@ function setupDrawLineSubMenu() {
 
 export let drawingContent = null;
 
-function startDrawing(klass, type) {
-    drawingContent = new klass(hoveredCell, type);
-    triggerRefresh('chars');
+function startDrawing(klass, options = {}, recalculateArgs = []) {
+    options = $.extend({ colorIndex: state.primaryColorIndex() }, options);
+    drawingContent = new klass(hoveredCell, options);
+    updateDrawing(recalculateArgs);
 }
 
-function updateDrawing() {
-    if (!drawingContent) { return; }
+function updateDrawing(recalculateArgs = []) {
+    if (!drawingContent) return;
+    if (!hoveredCell) return;
 
-    if (hoveredCell && !hoveredCell.equals(drawingContent.end)) {
-        drawingContent.end = hoveredCell;
-        drawingContent.refreshGlyphs(state.primaryColorIndex());
-        triggerRefresh('chars');
-    }
+    drawingContent.end = hoveredCell;
+    drawingContent.recalculate(...recalculateArgs);
+
+    triggerRefresh('chars');
 }
 
 function finishDrawing() {

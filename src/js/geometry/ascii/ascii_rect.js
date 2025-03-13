@@ -1,4 +1,6 @@
 import AsciiPolygon from "./ascii_polygon.js";
+import Cell from "../cell.js";
+import {create2dArray} from "../../utils/arrays.js";
 
 /**
  * Characters used to draw the different types of ascii rectangles. A rectangle is made up of 4 corners (TOP_LEFT,
@@ -46,21 +48,23 @@ const DRAW_RECT_CHARS = {
  * line char on top/bottom, rounded corners, etc.)
  */
 export default class AsciiRect extends AsciiPolygon {
-    get origin() {
-        return this.topLeft;
-    }
+    recalculate() {
+        const numRows = Math.abs(this.start.row - this.end.row) + 1
+        const numCols = Math.abs(this.start.col - this.end.col) + 1
 
-    refreshGlyphs(colorIndex) {
-        super.refreshGlyphs();
+        this._glyphs = {
+            chars: create2dArray(numRows, numCols),
+            colors: create2dArray(numRows, numCols)
+        }
 
-        const charSheet = DRAW_RECT_CHARS[this.drawType];
+        const charSheet = DRAW_RECT_CHARS[this.options.drawType];
         if (charSheet === undefined) {
-            console.error("Invalid char sheet for: ", this.drawType)
+            console.error("Invalid char sheet for: ", this.options.drawType)
             return;
         }
 
-        const lastRow = this.numRows - 1;
-        const lastCol = this.numCols - 1;
+        const lastRow = numRows - 1
+        const lastCol = numCols - 1
 
         // draw 4 lines and 4 corners
         for (let row = 0; row <= lastRow; row++) {
@@ -83,9 +87,12 @@ export default class AsciiRect extends AsciiPolygon {
 
                 if (char) {
                     this._glyphs.chars[row][col] = char;
-                    this._glyphs.colors[row][col] = colorIndex;
+                    this._glyphs.colors[row][col] = this.options.colorIndex;
                 }
             }
         }
+
+        // Set origin to top-left cell
+        this._origin = new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col))
     }
 }
