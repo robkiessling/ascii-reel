@@ -21,8 +21,7 @@ export let polygons = [];
 export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
 export let isMoving = false; // Only true when mouse is down and polygon is being moved
 export let movableContent = null; // Selected glyph content IF there is any (it will be surrounded by dashed outline)
-export let cursorCell = null;
-export let cursorCellOrigin; // Where to move from on return key
+export let cursorCell = null; // Cell that the cursor is in
 
 export function init() {
     actions.registerAction('selection.select-all', () => selectAll());
@@ -230,7 +229,7 @@ export function getSelectedCells() {
 
 /**
  * Returns all Cells adjacent to (and sharing the same color as) the targeted Cell
-  */
+ */
 export function getConnectedCells(cell, options) {
     if (!cell.isInBounds()) { return []; }
 
@@ -430,6 +429,7 @@ export function updateMovableContent(char, color) {
 
 
 // -------------------------------------------------------------------------------- Cursor
+let cursorCellOrigin; // Where to move from on return key
 
 export function toggleCursor() {
     cursorCell ? hideCursor() : moveCursorToStart();
@@ -509,7 +509,7 @@ export function moveCursorInDirection(direction, updateOrigin = true, amount = 1
             matchPolygonToCursor();
         }
         else {
-            // For selection tools, the cursor traverse through the domain of the selection (wrapping when it reaches the end of a row)
+            // For selection tools, the cursor traverses through the domain of the selection (wrapping when it reaches the end of a row)
 
             // TODO This case is hardcoded to step 1 space, but so far it does not need to support anything more
             if (amount !== 1) {

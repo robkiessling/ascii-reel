@@ -5,7 +5,7 @@ import * as palette from "../components/palette.js";
 import * as editor from "../components/editor.js";
 import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "../canvas/font.js";
-import {resetState, saveState} from "./localstorage.js";
+import {resetState, saveState} from "./local_storage.js";
 import ArrayRange, {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {DEFAULT_COLOR} from "../components/palette.js";
 import Cell from "../geometry/cell.js";

@@ -1,4 +1,4 @@
-import {readGlobalSetting, saveGlobalSetting} from "../state/localstorage.js";
+import {readGlobalSetting, saveGlobalSetting} from "../state/local_storage.js";
 import {triggerRefresh} from "../index.js";
 import {recalculateBGColors} from "../canvas/background.js";
 

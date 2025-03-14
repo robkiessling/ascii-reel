@@ -17,7 +17,7 @@ import { init as initUnicode, refresh as refreshUnicode } from "./components/uni
 import * as canvasStack from './components/canvas_stack.js';
 import * as selection from './canvas/selection.js';
 import * as state from "./state/state.js";
-import * as localstorage from "./state/localstorage.js";
+import * as localstorage from "./state/local_storage.js";
 import * as frames from "./components/frames.js";
 import * as layers from "./components/layers.js";
 import { init as initTheme } from "./config/theme.js"

@@ -43,7 +43,7 @@ class FreeformChar {
      * If the line drawn through the cell is less than a specified amount, we delete the freeform char. This is
      * essential so that diagonal lines are limited to just being 1 char wide as they are drawn:
      *
-     * As a diagonal line is drawn, it is highly unlikely that it passes exactly through the corner of each cell.
+     * As a diagonal line is drawn, it is highly unlikely that the mouse passes exactly through the corner of each cell.
      * It is much more common to pass through sections of multiple cells as it makes its path. This function allows
      * us to just keep the cell that the majority of the line passed through.
      */
@@ -98,15 +98,17 @@ class FreeformChar {
  *        CDE
  *           FG
  *
- * Where A is the first cell and G is the last cell. This line approximation is divided into 3 separate groups. In this
- * case, the groups are rows, but if the line had been more vertical the groups could be columns).
+ * Where A is the first cell and G is the last cell. This line approximation is divided into 3 separate groups (group
+ * AB, group CDE, and group FG). In this case, the groups are rows, but if the line had a more vertical slope the groups
+ * could be columns.
  *
  * A line is drawn through each group from one corner to the next:
  * - For the AB group, the line would start from the top-left of A and end at the bottom-right of B
  * - For the CDE group, the line would start from the top-left of C and end at the bottom-right of E
- * Groups may have slightly different slopes: in this example AB has a higher slope since its run is shorter than CDE.
+ * - For the FG group, the line would start from the top-left of F and end at the bottom-right of G
+ * Groups may have slightly different slopes: in this example CDE has a smaller slope since its run is longer than AB/FG.
  *
- * These lines that are drawn through each group are used to calculate the startPixel/endPixel of each cell within the
+ * The lines that are drawn through each group are used to calculate the startPixel/endPixel of each cell within the
  * group (startPixel is the pixel where the line enters the cell, endPixel is the pixel where the line leaves the cell).
  */
 class FreeformInterpolator {
@@ -119,7 +121,7 @@ class FreeformInterpolator {
         this.groupBy = Math.abs(this.lineRise) > Math.abs(this.lineRun) ? 'col' : 'row';
 
         // Keep track of the direction the line is being drawn (a line drawn from bottom-left to top-right will have the
-        // same slope as a line drawn from top-right to bottom-left, but they are treated differently in some areas).
+        // same slope as a line drawn from top-right to bottom-left, but they need to be treated differently in some cases).
         this.leftToRight = toCell.col >= fromCell.col;
         this.topToBottom = toCell.row >= fromCell.row;
     }
@@ -137,8 +139,9 @@ class FreeformInterpolator {
             const groupSlope = this._calcGroupSlope(group);
 
             group.forEach((cell, indexWithinGroup) => {
-                // The first and last cells of the line count towards each group's size, but we do not want to actually
-                // replace the chars at these endpoints
+                // We skip the first and last cells of the line. We included them in the interpolation because we want
+                // them to count towards each group's size (and thus its rise/run), but we do not replace the chars at
+                // these endpoints.
                 if (indexWithinLine > 0 && indexWithinLine < interpolatedCells.length - 1) {
                     const { startPixel, endPixel } = this._calcCellPixels(groupSlope, indexWithinGroup);
                     callback(cell, startPixel, endPixel);
@@ -151,7 +154,8 @@ class FreeformInterpolator {
 
     /**
      * This is similar to Object.groupBy, but I need the group keys (which are the row or col indexes) to stay in the
-     * same order that they were in the original interpolatedCells array. So I'm grouping by row/col manually:
+     * same order that they were in the original interpolatedCells array. This is important if for example we are
+     * drawing the line from bottom to top.
      */
     _groupInterpolatedCells(interpolatedCells) {
         const groups = [];
@@ -177,8 +181,8 @@ class FreeformInterpolator {
         const lastGroupItem = group.at(-1);
 
         // We add/subtract 1 (depending on direction) because we want to calculate the slope to the far CORNER of the
-        // lastGroupItem's cell (not its origin). However, if the overall lineRise is zero, we skip this (we are not
-        // going from corner to corner if it is a strictly horizontal line).
+        // lastGroupItem's cell (may not be its origin). However, if the line is perfectly vertical or horizontal, we
+        // skip this step since we are not going from corner to corner.
         let groupRise = lastGroupItem.row - firstGroupItem.row;
         if (this.lineRise !== 0) groupRise += this.topToBottom ? 1 : -1;
 
@@ -255,7 +259,8 @@ export default class AsciiFreeform extends AsciiPolygon {
     }
 
     _newFreeformChar(cellPixel) {
-        // If the last FreeformChar should be pruned, delete it (see FreeformChar.shouldPrune() for more details)
+        // If the last FreeformChar should be pruned, delete it (see FreeformChar.shouldPrune() for more details).
+        // Never prune the char if it's the only one in our _freeformChars array.
         if (this._freeformChars.length > 1 && this.lastFreeformChar.shouldPrune()) {
             this._freeformChars.pop();
         }
@@ -287,8 +292,8 @@ export default class AsciiFreeform extends AsciiPolygon {
         })
     }
 
-    // Converts the array of FreeformChars (whose cells are using absolute positions for row/col) into a 2d array of
-    // glyphs for easy rendering.
+    // Converts the array of FreeformChars (whose cells are using absolute positions for row/col) into a minimized
+    // 2d array of glyphs (located at a given origin) for easy rendering.
     _populateGlyphs() {
         let minRow, minCol, maxRow, maxCol;
         this._iterateFreeformChars((freeformChar, absoluteR, absoluteC) => {
