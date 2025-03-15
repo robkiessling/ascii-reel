@@ -94,10 +94,7 @@ export function setupMouseEvents(canvasControl) {
         canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.config('tool')])
     }
 
-    canvasControl.$canvas.on('mousedown', evt => {
-        if (evt.which !== 1) return; // Only apply to left-click
-        _emitEvent('editor:mousedown', evt);
-    });
+    canvasControl.$canvas.on('mousedown', evt => _emitEvent('editor:mousedown', evt));
     canvasControl.$canvas.on('mousemove', evt => _emitEvent('editor:mousemove', evt));
     $(document).on('mouseup', evt => _emitEvent('editor:mouseup', evt));
     canvasControl.$canvas.on('dblclick', evt => _emitEvent('editor:dblclick', evt));
@@ -109,6 +106,7 @@ export function setupMouseEvents(canvasControl) {
 
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
         if (colorPickerOpen) return;
+        if (mouseEvent.which !== 1) return; // Only apply to left-click
 
         switch(tool) {
             case 'draw-freeform-char':
@@ -170,7 +168,8 @@ export function setupMouseEvents(canvasControl) {
 
         $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
 
-        if (mouseEvent.which !== 1) return; // only care about left-click
+        if (mouseEvent.which !== 1) return; // Only apply to left-click
+        if (mouseEvent.buttons === 0) return; // Catch firefox mousemove bug where mouseEvent.which is 1 when no buttons pressed
 
         // Keep track of whether the mousemove has reached a new cell (helps with performance, so we can just redraw
         // when a new cell is reached, not on every pixel change)
@@ -210,6 +209,7 @@ export function setupMouseEvents(canvasControl) {
 
     canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvent, cell, tool) => {
         if (colorPickerOpen) return;
+        if (mouseEvent.which !== 1) return; // Only apply to left-click
 
         switch(tool) {
             case 'draw-freeform-char':

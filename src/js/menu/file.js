@@ -1,4 +1,3 @@
-import { saveAs } from 'file-saver';
 import dedent from "dedent-js";
 import Color from "@sphinxxxx/color-conversion";
 
@@ -11,84 +10,79 @@ import {confirmDialog, createDialog} from "../utils/dialogs.js";
 import exampleExportImg from "../../images/example-export.png";
 import {importJSZip, importAnimated_GIF} from "../utils/lazy_loaders.js";
 import SimpleBar from "simplebar";
-
-const FILE_EXTENSION = 'asciireel';
-
+import { supported as isFileSystemAPISupported } from 'browser-fs-access';
+import {
+    hasActiveFile,
+    openFile,
+    FILE_EXTENSION,
+    saveFile,
+    saveToActiveFile,
+    exportFile
+} from "../state/file_system.js";
 
 export function init() {
-    setupNewFile();
-    setupUpload();
-    setupSaveDialog();
-    setupExportDialog();
+    setupNew();
+    setupOpen();
+    setupSave();
+    setupExport();
 }
 
-
-
-// --------------------------------------------------------------- New File
-
-function setupNewFile() {
-    actions.registerAction('file.new-file', () => {
+function setupNew() {
+    actions.registerAction('file.new', () => {
         // TODO ask for dimensions, etc.
         confirmDialog('Create new animation?', 'Any unsaved changes will be lost.', () => state.newState());
     });
 }
 
-// --------------------------------------------------------------- Uploading
+function setupOpen() {
+    actions.registerAction('file.open', () => {
+        // Defer so main menu has time to close
+        defer(() => {
+            openFile()
+                .then(data => data ? state.load(data) : null) // data can be undefined if user cancels the dialog
+                .catch(error => alert(`Failed to open file: ${error.message}`))
+        });
+    });
+}
 
-function setupUpload() {
-    const $uploadInput = $('#upload-file');
-    $uploadInput.attr('accept', `.${FILE_EXTENSION}`);
+/**
+ * Saving the file to disk works differently based on whether the browser supports the File System API.
+ *
+ * If File System API is supported:
+ * - An OS dialog will open allowing the user to name the file and save it to a location of their choosing.
+ * - We will receive a handler after saving so that the save-active functionality works (allowing us to directly update
+ *   the file on their OS instead of having to re-download it each time).
+ *
+ * If File System API is not supported:
+ * - We have to show our manually-created #save-file-dialog so that the user can name the file.
+ * - Once they click 'OK' after naming the file, it will be downloaded directly to their /Downloads folder.
+ */
+function setupSave() {
+    // This dialog is only used for browsers that do not support File System API (so we can name their downloaded file)
+    const $saveFileDialog = $('#save-file-dialog');
+    createDialog($saveFileDialog, () => {
+        state.config('name', $saveFileDialog.find('.name').val())
 
-    $uploadInput.off('change').on('change', function(evt) {
-        const file = evt.target.files[0];
-        $uploadInput.val(null); // null out <input> so if the user uploads same file it gets refreshed
+        saveFile()
+            .then(() => $saveFileDialog.dialog('close'))
+            .catch(error => alert(`Failed to save file: ${error.message}`));
+    });
 
-        if (file) {
-            const reader = new FileReader();
-
-            reader.addEventListener("load", function() {
-                try {
-                    state.load(JSON.parse(reader.result));
-                }
-                catch (exception) {
-                    console.error(exception.message, exception.stack);
-                    alert(exception.message + '\n\nView browser console for full stack trace.');
-                }
-            }, false);
-
-            reader.readAsText(file);
+    actions.registerAction('file.save-as', () => {
+        if (isFileSystemAPISupported) {
+            saveFile().catch(error => alert(`Failed to save file: ${error.message}`))
+        } else {
+            $saveFileDialog.find('.name').val(state.getName());
+            $saveFileDialog.find('.extension').html(`.${FILE_EXTENSION}`);
+            $saveFileDialog.dialog('open');
         }
     });
 
-    actions.registerAction('file.open-file', () => {
-        // Defer so main menu has time to close
-        defer(() => $uploadInput.trigger('click'))
-    });
+    actions.registerAction('file.save-active', {
+        enabled: () => hasActiveFile(),
+        callback: () => saveToActiveFile().catch(error => alert(`Failed to save file: ${error.message}`))
+    })
 }
-
-
-// --------------------------------------------------------------- Saving
-let $saveFileDialog;
-
-function setupSaveDialog() {
-    $saveFileDialog = $('#save-file-dialog');
-
-    createDialog($saveFileDialog, () => {
-        state.config('name', $saveFileDialog.find('.name').val());
-        const blob = new Blob([JSON.stringify(state.getState())], {type: "text/plain;charset=utf-8"});
-        saveAs(blob, `${state.config('name')}.${FILE_EXTENSION}`)
-        $saveFileDialog.dialog('close');
-    });
-
-    actions.registerAction('file.save-file', () => openSaveDialog());
-}
-
-function openSaveDialog() {
-    $saveFileDialog.find('.name').val(state.config('name'));
-    $saveFileDialog.find('.extension').html(`.${FILE_EXTENSION}`);
-    $saveFileDialog.dialog('open');
-}
-
 
 
 
@@ -128,7 +122,7 @@ let $exportCanvasContainer, exportCanvas;
 let firstTimeOpeningExport = true;
 let exportTextSimpleBar;
 
-function setupExportDialog() {
+function setupExport() {
     $exportFileDialog = $('#export-file-dialog');
     $exportFormat = $exportFileDialog.find('#export-file-format');
     $exportOptions = $exportFileDialog.find('#export-options');
@@ -137,7 +131,7 @@ function setupExportDialog() {
     exportCanvas = new CanvasControl($('#export-canvas'), {});
 
     createDialog($exportFileDialog, () => {
-        exportFile(() => {
+        doExport(() => {
             saveExportSettings();
             $exportFileDialog.dialog('close');
         });
@@ -188,7 +182,7 @@ function setupExportDialog() {
         $exportOptions.find('[name="width"]').val(width);
     });
 
-    actions.registerAction('file.export-file', () => openExportDialog());
+    actions.registerAction('file.export', () => openExportDialog());
 
     exportTextSimpleBar = new SimpleBar($('#example-text').get(0), {
         autoHide: false,
@@ -280,7 +274,7 @@ export function resetExportDimensions() {
     $exportOptions.find(`[name="width"]`).val('');
 }
 
-function exportFile(onSuccess) {
+function doExport(onSuccess) {
     const { isValid, options } = validateExportOptions();
 
     if (!isValid) return;
@@ -538,7 +532,7 @@ function exportJson(options = {}) {
 
     const jsonString = JSON.stringify(jsonData);
     const blob = new Blob([jsonString], { type: "application/json" });
-    saveAs(blob, `${state.config('name')}.json`);
+    exportFile(blob, 'json', 'application/json').catch(error => alert(`Failed to export file: ${error.message}`))
 }
 
 
@@ -561,15 +555,15 @@ function exportTxt(options = {}) {
                 state.frames().forEach((frame, index) => {
                     zip.file(`${index}.txt`, _frameToTxt(frame));
                 });
-                zip.generateAsync({type:"blob"}).then(function(content) {
-                    saveAs(content, `${state.config('name')}.zip`);
+                zip.generateAsync({type:"blob"}).then(function(blob) {
+                    exportFile(blob, 'zip', 'application/zip').catch(error => alert(`Failed to export file: ${error.message}`))
                 });
             });
             break;
         case 'current':
             txt = _frameToTxt(state.currentFrame());
-            blob = new Blob([txt], {type: "text/plain;charset=utf-8"});
-            saveAs(blob, `${state.config('name')}.txt`);
+            blob = new Blob([txt], {type: "text/plain"});
+            exportFile(blob, 'txt', 'text/plain').catch(error => alert(`Failed to export file: ${error.message}`))
             break;
         case 'spritesheet':
             txt = '';
@@ -577,8 +571,8 @@ function exportTxt(options = {}) {
                 txt += buildFrameSeparator(options, index, '\n');
                 txt += _frameToTxt(frame);
             });
-            blob = new Blob([txt], {type: "text/plain;charset=utf-8"});
-            saveAs(blob, `${state.config('name')}.txt`);
+            blob = new Blob([txt], {type: "text/plain"});
+            exportFile(blob, 'txt', 'text/plain').catch(error => alert(`Failed to export file: ${error.message}`))
             break;
         default:
             console.error(`Invalid options.frames: ${options.frames}`);
@@ -649,15 +643,15 @@ function exportRtf(options) {
                 state.frames().forEach((frame, index) => {
                     zip.file(`${index}.rtf`, _buildRtfFile(_frameToRtf(frame)));
                 });
-                zip.generateAsync({type:"blob"}).then(function(content) {
-                    saveAs(content, `${state.config('name')}.zip`);
+                zip.generateAsync({type:"blob"}).then(function(blob) {
+                    exportFile(blob, 'zip', 'application/zip').catch(error => alert(`Failed to export file: ${error.message}`))
                 });
             });
             break;
         case 'current':
             rtf = _buildRtfFile(_frameToRtf(state.currentFrame()));
-            blob = new Blob([rtf], {type: "text/plain;charset=utf-8"});
-            saveAs(blob, `${state.config('name')}.rtf`);
+            blob = new Blob([rtf], {type: "application/rtf"});
+            exportFile(blob, 'rtf', 'application/rtf').catch(error => alert(`Failed to export file: ${error.message}`))
             break;
         case 'spritesheet':
             rtf = '';
@@ -666,8 +660,8 @@ function exportRtf(options) {
                 rtf += _frameToRtf(frame);
             });
             rtf = _buildRtfFile(rtf);
-            blob = new Blob([rtf], {type: "text/plain;charset=utf-8"});
-            saveAs(blob, `${state.config('name')}.rtf`);
+            blob = new Blob([rtf], {type: "application/rtf"});
+            exportFile(blob, 'rtf', 'application/rtf').catch(error => alert(`Failed to export file: ${error.message}`))
             break;
         default:
             console.error(`Invalid options.frames: ${options.frames}`);
@@ -715,9 +709,9 @@ function exportHtml(options) {
     const fontStyles = `font-family: ${state.fontFamily()};font-size: ${options.fontSize}px;`;
 
     const body = `<pre id="sprite" style="width:${width}px;${background};${fontStyles}"></pre>`;
-    const html = createHTMLFile(state.config('name'), script, body);
-    const blob = new Blob([html], {type: "text/plain;charset=utf-8"});
-    saveAs(blob, `${state.config('name')}.html`);
+    const html = createHTMLFile(state.getName(), script, body);
+    const blob = new Blob([html], {type: "text/html"});
+    exportFile(blob, 'html', 'text/html').catch(error => alert(`Failed to export file: ${error.message}`))
 }
 
 /**
@@ -757,8 +751,9 @@ function exportGif(options) {
 
         gif.getBlobGIF(function (blob) {
             // $('#export-debug').show().attr('src', URL.createObjectURL(blob)) // For testing
-            // window.open(URL.createObjectURL(blob)); // New window
-            saveAs(blob, `${state.config('name')}.gif`); // Save to downloads
+            // window.open(URL.createObjectURL(blob)); // For testing (opens in new window)
+
+            exportFile(blob, 'gif', 'image/gif').catch(error => alert(`Failed to export file: ${error.message}`))
 
             gif.destroy();
         })
@@ -806,8 +801,8 @@ function exportPng(options) {
                     }
                     else {
                         // Finished adding all frames; save the zip file
-                        zip.generateAsync({type:"blob"}).then(function(content) {
-                            saveAs(content, `${state.config('name')}.zip`);
+                        zip.generateAsync({type:"blob"}).then(function(blob) {
+                            exportFile(blob, 'zip', 'application/zip').catch(error => alert(`Failed to export file: ${error.message}`))
                             complete();
                         });
                     }
@@ -817,7 +812,7 @@ function exportPng(options) {
             break;
         case 'current':
             _frameToPng(state.currentFrame(), blob => {
-                saveAs(blob, `${state.config('name')}.png`);
+                exportFile(blob, 'png', 'image/png').catch(error => alert(`Failed to export file: ${error.message}`))
                 complete();
             });
             break;
@@ -877,7 +872,7 @@ function exportWebm(options) {
         }).appendTo($body);
 
         const $a = $('<a/>', {
-            download: `${state.config('name')}.webm`,
+            download: `${state.getName()}.webm`,
             href: $video.attr('src')
         }).appendTo($body);
 

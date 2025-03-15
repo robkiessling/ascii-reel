@@ -10,13 +10,14 @@ import ArrayRange, {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {DEFAULT_COLOR} from "../components/palette.js";
 import Cell from "../geometry/cell.js";
 import {moveCursorTo} from "../canvas/selection.js";
-import { saveAs } from 'file-saver';
 import {mod} from "../utils/numbers.js";
+import {getFormattedDateTime} from "../utils/strings.js";
+import {saveCorruptedState} from "./file_system.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it
 // in the CONFIG_KEYS_FOR_HISTORY constant below
 const CONFIG_DEFAULTS = {
-    name: 'New Sprite',
+    name: '',
     dimensions: [20, 10],
     font: 'monospace',
     background: false,
@@ -54,8 +55,9 @@ const CONFIG_DEFAULTS = {
     cursorPosition: {},
 }
 
-// By default, config keys are not saved to the history. That way, when the user presses 'undo', settings like their
-// current tool don't revert. However, some config settings need to be able to be undone; those are listed here:
+// By default, config keys are not saved to the history because most config settings should not be altered when the
+// user does undo/redo. However, some config settings need to be able to be undone; those are whitelisted here:
+// TODO Maybe split config into config/tools or something
 const CONFIG_KEYS_FOR_HISTORY = new Set([
     'font', 'dimensions', 'background', 'frameIndex', 'layerIndex', 'frameRangeSelection', 'cursorPosition'
 ])
@@ -200,6 +202,10 @@ export function numCols() {
 export function config(key, newValue) {
     if (newValue !== undefined) { state.config[key] = newValue; }
     return state.config && state.config[key];
+}
+
+export function getName() {
+    return config('name') || `Untitled-${getFormattedDateTime()}`
 }
 
 
@@ -872,6 +878,7 @@ export function pushStateToHistory(options = {}) {
 
 // We only want to save a subset of the config state to history: certain things like what tool is selected, or whether
 // the grid is showing, should not be part of the "undo" sequence.
+// TODO do a shallow clone (using spread syntax) and just override some values while cloning?
 function buildHistorySnapshot(options) {
     const historyState = $.extend(true, {}, state);
 
@@ -971,8 +978,7 @@ function onLoadError(attemptedData) {
     $loadError.show();
 
     $loadError.find('.download').off('click').on('click', e => {
-        const blob = new Blob([JSON.stringify(attemptedData)], { type: "application/json" });
-        saveAs(blob, `ascii-reel-corrupted.json`);
+        saveCorruptedState(attemptedData).catch(error => alert(`Failed to download corrupted data: ${error.message}`));
     });
 
     $loadError.find('.reset').off('click').on('click', e => {

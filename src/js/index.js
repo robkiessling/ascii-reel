@@ -56,7 +56,6 @@ defer(() => {
     if (successfulLoad) {
         refreshShortcuts();
         localstorage.setupAutoSave();
-        if (state.config('tool') === 'text-editor') selection.moveCursorToStart();
     }
 })
 

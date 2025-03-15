@@ -1,9 +1,10 @@
 
 export const strings = {
-    'file.new-file.name': 'New File',
-    'file.open-file.name': 'Open File',
-    'file.save-file.name': 'Save File',
-    'file.export-file.name': 'Export To...',
+    'file.new.name': 'New File',
+    'file.open.name': 'Open File',
+    'file.save-as.name': 'Save to...',
+    'file.save-active.name': 'Save to Current File',
+    'file.export.name': 'Export to...',
 
     'clipboard.cut.name': 'Cut',
     'clipboard.copy.name': 'Copy',

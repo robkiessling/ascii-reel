@@ -49,10 +49,10 @@
   "dependencies": {
     "@sphinxxxx/color-conversion": "^2.2.2",
     "bresenham": "^0.0.4",
+    "browser-fs-access": "^0.35.0",
     "core-js": "^3.40.0",
     "dedent-js": "^1.0.1",
     "express": "^4.21.2",
-    "file-saver": "^2.0.5",
     "gif-transparency": "2.0.0",
     "jquery": "^3.7.1",
     "jquery-ui": "^1.14.1",

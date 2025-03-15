@@ -49,7 +49,7 @@ export function readState() {
 export function saveState() {
     if (!isValid()) {
         // There was a problem loading the state during initialization; do not persist this state to localstorage
-        console.warn("Could not save state to localstorage");
+        // console.warn("Could not save state to localstorage");
         return;
     }
 

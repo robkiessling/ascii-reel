@@ -246,6 +246,8 @@ export function setupMouseEvents(canvasControl) {
     let moveStep, hasMoved;
 
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
+        if (mouseEvent.which !== 1) return; // Only apply to left-click
+
         switch(tool) {
             case 'selection-rect':
             case 'selection-line':
