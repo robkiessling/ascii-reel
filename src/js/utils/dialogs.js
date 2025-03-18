@@ -41,6 +41,7 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
         draggable: false,
         resizable: false,
         modal: true,
+        minWidth: 400,
         open: () => {
             $('.ui-widget-overlay').on('click', () => {
                 $dialog.dialog('close');

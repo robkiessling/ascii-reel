@@ -6,11 +6,11 @@
 
 .tippy-box {
   border: 1px solid #000;
-  background: var(--color-surface);
+  background: var(--color-tooltip-bg);
   color: var(--color-font);
 
   .tippy-arrow {
-    color: var(--color-surface)
+    color: var(--color-tooltip-bg)
   }
 
   .title {
@@ -133,16 +133,19 @@
 }
 
 .ui-dialog {
-  background: var(--color-surface);
+  background: var(--color-dialog-bg);
 
   &.ui-widget-content {
     border: 2px solid var(--color-background-border);
+    padding: 1.5rem 2.5rem;
   }
 
   .ui-widget-header {
     background: none;
     color: var(--color-font);
     margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    padding: 0.5rem 0;
 
     border: none;
     border-bottom: 1px solid var(--color-surface-hover);
@@ -153,6 +156,7 @@
   }
   .ui-dialog-content {
     color: var(--color-font);
+    padding: 0.5rem 0;
 
     > label, > div {
       display: block;
@@ -162,7 +166,7 @@
   .ui-dialog-buttonpane {
     background: none;
     padding: 0;
-    border-top: 1px solid var(--color-surface-hover);
+    border-top: none;
 
     button {
       margin: 0.5rem 0.3rem 0.5rem 0.2rem;
@@ -173,7 +177,7 @@
 }
 
 .ui-widget-overlay {
-  background: var(--color-dialog-bg);
+  background: var(--color-dialog-overlay-bg);
   opacity: 0.75;
 }
 

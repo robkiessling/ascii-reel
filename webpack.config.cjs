@@ -40,7 +40,7 @@ module.exports = (env, argv) => {
             new HtmlWebpackPlugin({
                 hash: true,
                 template: path.resolve(__dirname, 'src', 'index.html'),
-                favicon: path.resolve(__dirname, 'public/favicon.png')
+                favicon: path.resolve(__dirname, 'public/logo-32x32.png')
             }),
 
             new webpack.ProvidePlugin({

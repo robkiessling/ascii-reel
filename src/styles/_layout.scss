@@ -18,7 +18,7 @@ body {
 
 #header-content {
   height: $header-height;
-  border-bottom: $header-border-size solid var(--color-deep);
+  border-bottom: $header-border-size solid var(--color-main-menu-hover);
   display: flex;
   justify-content: space-between;
   align-items: center;

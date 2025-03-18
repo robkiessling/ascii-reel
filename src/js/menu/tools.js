@@ -181,8 +181,8 @@ function setupBackgroundDialog() {
     }, 'Save', {
         minWidth: 400,
         maxWidth: 400,
-        minHeight: 450,
-        maxHeight: 450
+        minHeight: 475,
+        maxHeight: 475
     });
 
     const $colorPickerContainer = $backgroundDialog.find('.color-picker-container');

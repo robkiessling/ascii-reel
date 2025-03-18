@@ -138,8 +138,8 @@ function setupExport() {
     }, 'Export', {
         minWidth: 700,
         maxWidth: 700,
-        minHeight: 550,
-        maxHeight: 550
+        minHeight: 600,
+        maxHeight: 600
     });
 
     $exportFormat.on('change', evt => {
@@ -867,7 +867,7 @@ function exportWebm(options) {
         const $video = $('<video/>', {
             width: options.width / window.devicePixelRatio,
             height: options.height / window.devicePixelRatio,
-            src: URL.createObjectURL(blob),
+            src: URL.createObjectURL(blob), // todo need to revokeObjectURL to prevent memory leak
             controls: true
         }).appendTo($body);
 

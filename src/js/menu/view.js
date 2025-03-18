@@ -63,8 +63,8 @@ function setupGridDialog() {
     }, 'Save', {
         minWidth: 300,
         maxWidth: 300,
-        minHeight: 300,
-        maxHeight: 300
+        minHeight: 350,
+        maxHeight: 350
     });
 
     actions.registerAction('view.grid-settings',  () => openGridDialog());

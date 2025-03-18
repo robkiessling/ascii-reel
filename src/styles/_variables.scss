@@ -4,60 +4,137 @@
 
 // The following colors are the same regardless of dark-mode / light-mode
 :root {
-  --color-primary: #9933FF;
+  --color-primary: #7755FF;
+
+  --color-font-white: #f6f8fa;
+  --color-font-black: #000000;
 
   --color-button-confirm-bg: #3273F6;
-  --color-button-confirm-font: #fff;
-  --color-dialog-bg: #424649;
+  --color-button-confirm-font: var(--color-font-white);
+  --color-dialog-overlay-bg: #424649;
   --color-warning: #f48225;
   --color-error: #f42525;
   --color-selection: #1E90FF;
-  --color-main-menu-bg: var(--color-background-border);
 }
 
-// Colors: Dark Mode (default)
+/* DARK MODE (Default) - https://colorffy.com/dark-theme-generator?colors=7755FF-010409 */
 :root {
-  --color-deep: #000000;
-  --color-background: #202124;
-  --color-background-border: #282C2F;
-  --color-surface: #323639;
-  --color-surface-hover: #424649;
-  --color-contrast: #868889;
+  /** Dark theme surface colors */
+  --clr-surface-a0: #010409;
+  --clr-surface-a10: #1e2022;
+  --clr-surface-a20: #363739;
+  --clr-surface-a30: #4f5052;
+  --clr-surface-a40: #696b6c;
+  --clr-surface-a50: #858688;
 
-  --color-font: white;
-  --color-font-muted: #868889;
+  /** Dark theme tonal surface colors */
+  --clr-surface-tonal-a0: #141120;
+  --clr-surface-tonal-a10: #292735;
+  --clr-surface-tonal-a20: #403e4b;
+  --clr-surface-tonal-a30: #585662;
+  --clr-surface-tonal-a40: #72707a;
+  --clr-surface-tonal-a50: #8c8b93;
+}
+
+/* LIGHT MODE - https://colorffy.com/light-theme-generator?colors=7755FF-FFFFFF */
+[data-theme='light'] {
+  /** Light theme surface colors */
+  //--clr-surface-a0: #ffffff;
+  //--clr-surface-a05: #f7f7f7; // Added this intermediate step myself
+  //--clr-surface-a10: #f0f0f0;
+  //--clr-surface-a20: #e1e1e1;
+  //--clr-surface-a30: #d3d3d3;
+  //--clr-surface-a40: #c5c5c5;
+  //--clr-surface-a50: #b6b6b6;
+
+  /** Light theme surface colors -- modified to be a little bit darker */
+  --clr-surface-a0: #ffffff;
+  --clr-surface-a05: #f1f1f1; // Added this intermediate step myself
+  --clr-surface-a10: #e8e8e8;
+  --clr-surface-a20: #d9d9d9;
+  --clr-surface-a30: #bdbdbd;
+  --clr-surface-a40: #a9a9a9;
+  --clr-surface-a50: #909090;
+
+  /** Light theme tonal surface colors */
+  //--clr-surface-tonal-a0: #f4edff;
+  //--clr-surface-tonal-a10: #e6e0f0;
+  //--clr-surface-tonal-a20: #d9d4e1;
+  //--clr-surface-tonal-a30: #ccc7d3;
+  //--clr-surface-tonal-a40: #bfbbc5;
+  //--clr-surface-tonal-a50: #b2afb6;
+
+  /** Light theme tonal surface colors -- modified to maintain original hue better */
+  --clr-surface-tonal-a0: hsl(252 100% 96%);
+  --clr-surface-tonal-a10: hsl(252 100% 92%);
+  --clr-surface-tonal-a20: hsl(252 100% 88%);
+  --clr-surface-tonal-a30: hsl(252 100% 86%);
+  --clr-surface-tonal-a40: hsl(252 100% 84%);
+  --clr-surface-tonal-a50: hsl(252 100% 82%);
+}
+
+
+/* Dark Mode: Mapping Colorffy variables to my CSS variables */
+:root {
+  --color-background: var(--clr-surface-a0);
+  --color-background-border: var(--clr-surface-a10);
+  --color-surface: var(--clr-surface-a10);
+  --color-surface-hover: var(--clr-surface-a20);
+  //--color-surface: var(--clr-surface-tonal-a10);
+  //--color-surface-hover: var(--clr-surface-tonal-a20);
+
+  --color-contrast: var(--clr-surface-a50);
+
+  --color-main-menu-bg: var(--clr-surface-tonal-a10);
+  --color-main-menu-hover: var(--clr-surface-tonal-a20);
+  //--color-main-menu-bg: var(--clr-surface-a10);
+  //--color-main-menu-hover: var(--clr-surface-a20);
+  --color-canvas-bg: var(--clr-surface-a10);
+  --color-tooltip-bg: var(--clr-surface-a20);
+  --color-dialog-bg: var(--clr-surface-a10);
+
+  --color-font: var(--color-font-white);
+  --color-font-muted: #949697;
   --color-font-heavy-muted: #555;
   --color-font-inverted: black;
+  --color-font-header: #b0b2b3;
   --color-font-title: color-mix(in srgb, var(--color-primary) 70%, white);
 
-  --color-layer-bg: var(--color-surface);
-  --color-canvas-bg: #a3a3a3;
   --color-button-bg: #D6D6D7;
   --color-button-bg-hover: #d9d9d9;
-  --color-button-font: #000;
+  --color-button-font: var(--color-font-black);
 }
 
-// Colors: Light Mode
+/* Light Mode: Mapping Colorffy variables to my CSS variables */
 [data-theme='light'] {
-  --color-deep: #e6e6ec;
-  --color-background: #ffffff;
-  --color-background-border: #f0f2f4;
-  --color-surface: #e6e6ec;
-  --color-surface-hover: #d9d8e6;
-  --color-contrast: #c9c8d6;
+  --color-background: var(--clr-surface-a0);
+  --color-background-border: var(--clr-surface-a10);
+  --color-surface: var(--clr-surface-a10);
+  --color-surface-hover: var(--clr-surface-a20);
+  //--color-surface: var(--clr-surface-tonal-a10);
+  //--color-surface-hover: var(--clr-surface-tonal-a20);
 
-  --color-font: #000000;
-  --color-font-muted: #868889;
+  --color-contrast: var(--clr-surface-a50);
+
+  --color-main-menu-bg: var(--clr-surface-tonal-a0);
+  --color-main-menu-hover: var(--clr-surface-tonal-a10);
+  --color-canvas-bg: var(--clr-surface-a05);
+  //--color-canvas-bg: var(--clr-surface-a10);
+  --color-tooltip-bg: var(--clr-surface-a05);
+  --color-dialog-bg: var(--clr-surface-a0);
+
+  --color-font: var(--color-font-black);
+  --color-font-muted: #959595;
   --color-font-heavy-muted: #bbb;
   --color-font-inverted: white;
+  --color-font-header: #595a5a;
   --color-font-title: var(--color-primary);
 
-  --color-layer-bg: var(--color-background-border);
-  --color-canvas-bg: #f6f8fa;
   --color-button-bg: #f6f8fa;
   --color-button-bg-hover: #f0f2f4;
-  --color-button-font: #000;
+  --color-button-font: var(--color-font-black);
 }
+
 
 /**
   Matching font to the user's OS using GitHub's approach:
@@ -69,7 +146,8 @@ $font-monospace: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Liberation Mon
 $font-size-base: 14px;
 
 $header-height: 38px;
-$header-border-size: 3px;
+$header-border-size: 1px;
+$header-padding: 7px;
 $main-spacing: 0.5rem;
 $button-size: 30px;
 $button-spacing: 3px;

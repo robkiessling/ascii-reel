@@ -45,12 +45,12 @@
       justify-content: center;
       align-items: center;
       background: var(--color-contrast);
+      color: var(--color-font-white);
     }
 
     &.selected {
       border-color: var(--color-primary);
       .frame-index {
-        color: var(--color-font-inverted);
         background: var(--color-primary);
       }
     }
