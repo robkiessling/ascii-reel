@@ -5,6 +5,9 @@ export const strings = {
     'file.save-as.name': 'Save to...',
     'file.save-active.name': 'Save to Current File',
     'file.export.name': 'Export to...',
+    'file.save-warning': 'Opening a new file will replace your existing content.\n' +
+        'Click this save button if you want to back up your drawing first.',
+    'file.save-warning-cleared': 'Your current file has been saved. Proceed to opening a new file.',
 
     'clipboard.cut.name': 'Cut',
     'clipboard.copy.name': 'Copy',

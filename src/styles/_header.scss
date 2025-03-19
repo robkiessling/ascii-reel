@@ -8,6 +8,13 @@
     }
   }
 
+  .left-side {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 0.5rem;
+  }
+
   .center-title {
     position: absolute;
     left: 50%;
@@ -24,12 +31,26 @@
 
   .right-side-buttons {
     margin-right: 0.5rem;
+  }
 
-    button, .button {
-      &:hover {
-        background: var(--color-main-menu-hover);
-      }
+  button, .button {
+    &:hover {
+      background: var(--color-main-menu-hover);
     }
+  }
+}
+
+#header-content .logo {
+  padding: 0 0.5rem;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+  color: var(--color-primary);
+
+  img {
+    height: 24px;
   }
 }
 

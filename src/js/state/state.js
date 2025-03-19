@@ -13,12 +13,13 @@ import {moveCursorTo} from "../canvas/selection.js";
 import {mod} from "../utils/numbers.js";
 import {getFormattedDateTime} from "../utils/strings.js";
 import {saveCorruptedState} from "./file_system.js";
+import {recalculateBGColors} from "../canvas/background.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it
 // in the CONFIG_KEYS_FOR_HISTORY constant below
-const CONFIG_DEFAULTS = {
+export const CONFIG_DEFAULTS = {
     name: '',
-    dimensions: [20, 10],
+    dimensions: [20, 10], // [numCols, numRows]
     font: 'monospace',
     background: false,
     fps: 6,
@@ -39,7 +40,7 @@ const CONFIG_DEFAULTS = {
     minimizedComponents: {
         layers: true
     },
-    tool: 'text-editor',
+    tool: 'draw-freeform-ascii',
     primaryColor: DEFAULT_COLOR,
     brush: {
         shape: 'square',
@@ -98,12 +99,12 @@ export function init() {
 let state = {};
 let sequences = {};
 
-export function newState() {
-    return load({
+export function newState(overrides) {
+    return load($.extend(true, {
         layers: [{ id: 1, name: 'Layer 1' }],
         frames: [{ id: 1 }],
         cels: { '1,1': {} }
-    });
+    }, overrides));
 }
 
 /**
@@ -136,6 +137,7 @@ export function load(data) {
         vacuumColorTable();
 
         calculateFontRatio();
+        recalculateBGColors();
         triggerResize(true);
         pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
         saveState();
@@ -208,6 +210,12 @@ export function getName() {
     return config('name') || `Untitled-${getFormattedDateTime()}`
 }
 
+// TODO would be better if this was smarter - what I really want is a way to detect if there are changes that require saving
+export function hasCharContent() {
+    return Object.values(state.cels).some(cel => {
+        return cel.chars.some(row => row.some(char => char !== '' && char !== ' '));
+    })
+}
 
 
 // -------------------------------------------------------------------------------- Layers

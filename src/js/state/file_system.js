@@ -15,7 +15,7 @@ export function hasActiveFile() {
 /**
  * Prompts the user to select an .asciireel file to open. If File System API is supported by the browser, this will also
  * store the file handle so we can continuously update the file later (see saveFile).
- * @returns {Promise<data>} data is the parsed json to be loaded into the state. data will be undefined if the user
+ * @returns {Promise<object|boolean>} data is the parsed json to be loaded into the state. data will be false if the user
  *   cancels the dialog (this will not throw an error).
  */
 export async function openFile() {
@@ -40,7 +40,7 @@ export async function openFile() {
 
         return json;
     } catch(error) {
-        handleDialogError(error)
+        return handleDialogError(error)
     }
 }
 
@@ -52,7 +52,8 @@ export async function openFile() {
  *   instead of downloading a new file. Requires browser support for the File System API. Handles are retrieved from
  *   previous calls to saveFile or openFile. Handles cannot be persisted across sessions; the user will have to choose
  *   a file from a dialog at least once per session.
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} True if file was successfully saved, false if not. E.g. if user closes the dialog without
+ *   choosing a save destination, the Promise is fulfilled (no error) but its return value is false.
  */
 export async function saveFile(handle) {
     try {
@@ -77,20 +78,22 @@ export async function saveFile(handle) {
         // Update the state's name based on what the user entered into the dialog. Only applicable if the browser
         // has File System API support.
         if (fileHandle) state.config('name', fileNameWithoutExtension(fileHandle.name, FILE_EXTENSION));
+
+        return true;
     } catch (error) {
-        handleDialogError(error)
+        return handleDialogError(error)
     }
 }
 
 /**
  * Directly updates a file on the user's OS. Requires a handle to have been previously set up (e.g. by opening or
  * saving the file)
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>}
  */
 export async function saveToActiveFile() {
     if (!fileHandle) throw new Error(`No handle found for ${FILE_EXTENSION} file`);
 
-    await saveFile(fileHandle);
+    return await saveFile(fileHandle);
 }
 
 
@@ -118,15 +121,17 @@ export async function exportFile(blob, extension, mimeType, handle) {
             },
             handle
         )
+
+        return true;
     } catch (error) {
-        handleDialogError(error)
+        return handleDialogError(error)
     }
 }
 
 export async function exportToActiveFile(blob, extension, mimeType) {
     if (!exportHandle) throw new Error(`No handle found for export file`);
 
-    await exportFile(blob, extension, mimeType, exportHandle);
+    return await exportFile(blob, extension, mimeType, exportHandle);
 }
 
 
@@ -149,8 +154,10 @@ export async function saveCorruptedState(corruptedData) {
                 excludeAcceptAllOption: true
             }
         )
+
+        return true;
     } catch (error) {
-        handleDialogError(error)
+        return handleDialogError(error)
     }
 }
 
@@ -159,7 +166,9 @@ export async function saveCorruptedState(corruptedData) {
 
 function handleDialogError(error) {
     if (error.name === "AbortError") {
-        // User canceled the dialog; do not consider this an error
+        // User canceled the dialog; this is not considered an error (so Promise is still fulfilled) but we return
+        // false to indicate the dialog was canceled
+        return false;
     } else {
         // An actual error occurred, re-raise it
         console.error(error.message, error.stack);

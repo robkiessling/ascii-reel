@@ -158,8 +158,11 @@
     color: var(--color-font);
     padding: 0.5rem 0;
 
-    > label, > div {
+    > label {
       display: block;
+      margin-bottom: 1rem;
+    }
+    > div {
       margin-bottom: 1rem;
     }
   }
@@ -170,8 +173,9 @@
 
     button {
       margin: 0.5rem 0.3rem 0.5rem 0.2rem;
-      padding: 0.25rem 0.5rem;
+      padding: 0.5rem 1rem;
       min-width: 5rem;
+      width: auto;
     }
   }
 }

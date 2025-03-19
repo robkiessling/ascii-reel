@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>ASCII Reel</title>
+    <title>Ascii Reel</title>
     <style>
         /* Critical CSS -- do not show page until DOMContentLoaded to avoid flash of unstyled content */
         body { opacity: 0; }
@@ -12,55 +12,61 @@
 
 <body>
     <div id="header-content">
-        <ul id="main-menu" class="horizontal-menu no-select">
-            <li>
-                <span>File</span>
-                <ul>
-                    <li class="action-item" data-action="file.new"></li>
-                    <li class="action-item" data-action="file.open"></li>
-                    <li class="action-item" data-action="file.save-active"></li>
-                    <li class="action-item" data-action="file.save-as"></li>
-                    <li class="action-item" data-action="file.export"></li>
-                </ul>
-            </li>
-            <li>
-                <span>Edit</span>
-                <ul>
-                    <li class="action-item" data-action="state.undo"></li>
-                    <li class="action-item" data-action="state.redo"></li>
-                    <li class="break"></li>
-                    <li class="action-item" data-action="clipboard.cut"></li>
-                    <li class="action-item" data-action="clipboard.copy"></li>
-                    <li class="action-item" data-action="clipboard.paste"></li>
-                    <li class="action-item" data-action="clipboard.paste-in-selection"></li>
-                    <li class="break"></li>
-                    <li class="action-item" data-action="selection.select-all"></li>
-                </ul>
-            </li>
-            <li>
-                <span>View</span>
-                <ul>
-                    <li class="action-item" data-action="view.toggle-grid"></li>
-                    <li class="action-item" data-action="view.grid-settings"></li>
-                    <li class="action-item" data-action="view.toggle-whitespace"></li>
-                    <li class="break"></li>
-                    <li class="action-item" data-action="view.zoom-in"></li>
-                    <li class="action-item" data-action="view.zoom-out"></li>
-                    <li class="action-item" data-action="view.zoom-fit"></li>
-                </ul>
-            </li>
-            <li>
-                <span>Tools</span>
-                <ul>
-                    <li class="action-item" data-action="settings.open-font-dialog"></li>
-                    <li class="action-item" data-action="settings.open-background-dialog"></li>
-                    <li class="action-item" data-action="settings.open-resize-dialog"></li>
-                    <li class="break"></li>
-                    <li class="action-item" data-action="preferences"></li>
-                    <li class="action-item" data-action="keyboard-shortcuts"></li>
-                </ul>
-            </li>
-        </ul>
+        <div class="left-side">
+            <div class="logo no-select">
+                <img src="logo-192x192.png" alt="">
+                Ascii Reel
+            </div>
+            <ul id="main-menu" class="horizontal-menu no-select">
+                <li>
+                    <span>File</span>
+                    <ul>
+                        <li class="action-item" data-action="file.new"></li>
+                        <li class="action-item" data-action="file.open"></li>
+                        <li class="action-item" data-action="file.save-active"></li>
+                        <li class="action-item" data-action="file.save-as"></li>
+                        <li class="action-item" data-action="file.export"></li>
+                    </ul>
+                </li>
+                <li>
+                    <span>Edit</span>
+                    <ul>
+                        <li class="action-item" data-action="state.undo"></li>
+                        <li class="action-item" data-action="state.redo"></li>
+                        <li class="break"></li>
+                        <li class="action-item" data-action="clipboard.cut"></li>
+                        <li class="action-item" data-action="clipboard.copy"></li>
+                        <li class="action-item" data-action="clipboard.paste"></li>
+                        <li class="action-item" data-action="clipboard.paste-in-selection"></li>
+                        <li class="break"></li>
+                        <li class="action-item" data-action="selection.select-all"></li>
+                    </ul>
+                </li>
+                <li>
+                    <span>View</span>
+                    <ul>
+                        <li class="action-item" data-action="view.toggle-grid"></li>
+                        <li class="action-item" data-action="view.grid-settings"></li>
+                        <li class="action-item" data-action="view.toggle-whitespace"></li>
+                        <li class="break"></li>
+                        <li class="action-item" data-action="view.zoom-in"></li>
+                        <li class="action-item" data-action="view.zoom-out"></li>
+                        <li class="action-item" data-action="view.zoom-fit"></li>
+                    </ul>
+                </li>
+                <li>
+                    <span>Tools</span>
+                    <ul>
+                        <li class="action-item" data-action="settings.open-font-dialog"></li>
+                        <li class="action-item" data-action="settings.open-background-dialog"></li>
+                        <li class="action-item" data-action="settings.open-resize-dialog"></li>
+                        <li class="break"></li>
+                        <li class="action-item" data-action="preferences"></li>
+                        <li class="action-item" data-action="keyboard-shortcuts"></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
         <div class="center-title"></div>
         <div class="right-side-buttons">
             <button id="theme-button"><span class="ri ri-fw"></span></button>
@@ -154,7 +160,7 @@
                     <div class="spacer"></div>
                     <div class="editing-tool-row">
                         <div class="editing-tool-column">
-                            <div class="color-picker" id="current-color"></div>
+                            <div class="color-well" id="current-color"></div>
                         </div>
                     </div>
 
@@ -479,52 +485,25 @@
         <div id="font-examples"></div>
     </div>
 
-    <div id="resize-dialog" title="Resize Canvas" class="dialog-form">
-        <label>
-            <input type="checkbox" name="aspect-ratio" checked="checked"> Maintain aspect ratio
-        </label>
-        <label>
-            Width:
-            <input type="text" name="columns"> columns
-        </label>
-        <label>
-            Height:
-            <input type="text" name="rows"> rows
-        </label>
+    <div id="new-file-dialog" title="New File" class="dialog-form">
+        <div class="unsaved-warning-area"></div>
+        <div class="mb-2">
+            <b>Dimensions:</b>
+            <div class="dimensions-area mt-1 ml-1"></div>
+        </div>
         <div>
-            Anchor:
-            <div class="anchor-options">
-                <div>
-                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="left"></div>
-                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="middle"></div>
-                    <div class="anchor-option" data-row-anchor="top" data-col-anchor="right"></div>
-                </div>
-                <div>
-                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="left"></div>
-                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="middle"></div>
-                    <div class="anchor-option" data-row-anchor="middle" data-col-anchor="right"></div>
-                </div>
-                <div>
-                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="left"></div>
-                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="middle"></div>
-                    <div class="anchor-option" data-row-anchor="bottom" data-col-anchor="right"></div>
-                </div>
-            </div>
+            <b>Background:</b>
+            <div class="background-area ml-1"></div>
         </div>
     </div>
 
-    <div id="background-dialog" title="Background" class="dialog-form">
-        <label>
-            <input type="radio" name="background-type" value="transparent"> Transparent
-        </label>
-        <label>
-            <input type="radio" name="background-type" value="colored"> Colored
-        </label>
-
-        <div class="color-picker-container">
-            <div class="color-picker"></div>
-        </div>
+    <div id="open-file-dialog" title="Open File" class="dialog-form">
+        <div class="unsaved-warning-area"></div>
     </div>
+
+    <div id="resize-dialog" title="Resize Canvas" class="dialog-form"></div>
+
+    <div id="background-dialog" title="Background Settings" class="dialog-form"></div>
 
     <div id="grid-dialog" title="Grid Settings" class="dialog-form">
         <div id="major-grid-settings">

@@ -6,7 +6,7 @@ import * as actions from "../io/actions.js";
 import { setIntervalUsingRAF, defer } from "../utils/utilities.js";
 import CanvasControl from "../canvas/canvas.js";
 import {fontRatio} from "../canvas/font.js";
-import {confirmDialog, createDialog} from "../utils/dialogs.js";
+import {createDialog} from "../utils/dialogs.js";
 import exampleExportImg from "../../images/example-export.png";
 import {importJSZip, importAnimated_GIF} from "../utils/lazy_loaders.js";
 import SimpleBar from "simplebar";
@@ -19,6 +19,10 @@ import {
     saveToActiveFile,
     exportFile
 } from "../state/file_system.js";
+import DimensionsPicker from "../components/ui/dimensions_picker.js";
+import BackgroundPicker from "../components/ui/background_picker.js";
+import UnsavedWarning from "../components/ui/unsaved_warning.js";
+import {defaultContrastColor} from "../components/palette.js";
 
 export function init() {
     setupNew();
@@ -28,22 +32,75 @@ export function init() {
 }
 
 function setupNew() {
+    const $newFileDialog = $('#new-file-dialog');
+
+    createDialog($newFileDialog, () => {
+        if (dimensionsPicker.validate()) {
+            const dim = dimensionsPicker.value;
+
+            state.newState({
+                config: {
+                    dimensions: [dim.numCols, dim.numRows],
+                    background: backgroundPicker.value,
+                    primaryColor: defaultContrastColor(backgroundPicker.value)
+                }
+            })
+
+            $newFileDialog.dialog('close');
+        }
+    }, 'Create', {
+        minWidth: 520
+    });
+
+    const dimensionsPicker = new DimensionsPicker($newFileDialog.find('.dimensions-area'));
+    const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-area'));
+    const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'))
+
     actions.registerAction('file.new', () => {
-        // TODO ask for dimensions, etc.
-        confirmDialog('Create new animation?', 'Any unsaved changes will be lost.', () => state.newState());
+        unsavedWarning.toggle(state.hasCharContent());
+        dimensionsPicker.value = {
+            numRows: state.CONFIG_DEFAULTS.dimensions[1],
+            numCols: state.CONFIG_DEFAULTS.dimensions[0]
+        }
+        backgroundPicker.value = false; // Transparent
+        $newFileDialog.dialog('open');
     });
 }
 
+
 function setupOpen() {
+    const $openFileDialog = $('#open-file-dialog');
+
+    createDialog($openFileDialog, () => {
+        $openFileDialog.dialog('close');
+        openFilePicker();
+    }, 'Open File', {
+        minWidth: 520
+    });
+
+    const unsavedWarning = new UnsavedWarning($openFileDialog.find('.unsaved-warning-area'), {
+        successStringId: 'file.save-warning-cleared' // show a message since otherwise the dialog is completely blank
+    })
+
     actions.registerAction('file.open', () => {
-        // Defer so main menu has time to close
-        defer(() => {
-            openFile()
-                .then(data => data ? state.load(data) : null) // data can be undefined if user cancels the dialog
-                .catch(error => alert(`Failed to open file: ${error.message}`))
-        });
+        if (state.hasCharContent()) {
+            unsavedWarning.toggle(true);
+            $openFileDialog.dialog('open');
+        } else {
+            openFilePicker()
+        }
     });
 }
+
+function openFilePicker() {
+    // Defer so main menu has time to close
+    defer(() => {
+        openFile()
+            .then(data => data ? state.load(data) : null) // data can be undefined if user cancels the dialog
+            .catch(error => alert(`Failed to open file: ${error.message}`))
+    });
+}
+
 
 /**
  * Saving the file to disk works differently based on whether the browser supports the File System API.

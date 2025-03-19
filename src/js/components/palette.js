@@ -11,8 +11,11 @@ import Color from "@sphinxxxx/color-conversion";
 import {strings} from "../config/strings.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 
-export const DEFAULT_PALETTE = ['rgba(0,0,0,1)', 'rgba(255,255,255,1)'];
-export const DEFAULT_COLOR = 'rgba(0,0,0,1)';
+const BLACK = 'rgba(0,0,0,1)';
+const WHITE = 'rgba(255,255,255,1)';
+
+export const DEFAULT_PALETTE = [BLACK, WHITE];
+export const DEFAULT_COLOR = BLACK;
 
 // Note: these values get used to look up strings->description value for tooltip. If this is changed need to update strings.
 export const SORT_BY = {
@@ -177,4 +180,14 @@ function sortByHue(a, b) {
 
 function isGreyColor(hslaColor) {
     return hslaColor.h === 0 && hslaColor.s === 0;
+}
+
+
+// Returns the best default color that contrasts a given background color
+export function defaultContrastColor(forBackground) {
+    if (!forBackground) return BLACK;
+
+    const backgroundColor = new Color(forBackground);
+    let [h, s, l, a] = backgroundColor.hsla;
+    return l < 0.5 ? WHITE : BLACK;
 }

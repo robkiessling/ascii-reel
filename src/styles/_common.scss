@@ -41,6 +41,17 @@
 .warning {
   color: var(--color-warning);
 }
+
+.warning-popup {
+  border: 1px solid var(--color-warning);
+  border-radius: 4px;
+  padding: 1rem;
+
+  .warning {
+    font-size: 1.5rem;
+  }
+}
+
 .error {
   color: var(--color-error);
 }
@@ -77,9 +88,24 @@ hr {
   outline: none;
 }
 
+@for $i from 0 through 5 {
+  .mt-#{$i} {
+    margin-top: #{$i}rem !important;
+  }
+  .mr-#{$i} {
+    margin-right: #{$i}rem !important;
+  }
+  .mb-#{$i} {
+    margin-bottom: #{$i}rem !important;
+  }
+  .ml-#{$i} {
+    margin-left: #{$i}rem !important;
+  }
+}
+
 @for $i from 0 through 20 {
   .w-#{$i} {
-    width: #{$i}rem;
+    width: #{$i}rem !important;
   }
 }
 
@@ -87,4 +113,9 @@ hr {
   .rotate#{$angle} {
     transform: rotate(#{$angle}deg);
   }
+}
+
+// Makes a flex item as small as possible
+.flex-shrink {
+  flex: 0 1 auto;
 }
