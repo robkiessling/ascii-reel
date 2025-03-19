@@ -10,6 +10,7 @@ import { init as initMainMenu } from "./menu/main.js";
 import { init as initFileMenu } from "./menu/file.js";
 import { init as initToolsMenu } from "./menu/tools.js";
 import { init as initViewMenu } from "./menu/view.js";
+import { init as initThemeMenu } from "./menu/theme.js";
 import { init as initKeyboard } from "./io/keyboard.js";
 import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./components/palette.js";
 import * as preview from "./components/preview.js";
@@ -20,18 +21,17 @@ import * as state from "./state/state.js";
 import * as localstorage from "./state/local_storage.js";
 import * as frames from "./components/frames.js";
 import * as layers from "./components/layers.js";
-import { init as initTheme } from "./config/theme.js"
 import {debounce, defer} from "./utils/utilities.js";
 import {refreshShortcuts} from "./io/actions.js";
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
-initTheme();
 initClipboard();
 initEditor();
 initMainMenu();
 initFileMenu();
 initToolsMenu();
 initViewMenu();
+initThemeMenu();
 initKeyboard();
 initPalette();
 initUnicode();

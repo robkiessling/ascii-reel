@@ -8,9 +8,9 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1741858538559") format("woff2"),
-    url("remixicon/remixicon.woff?t=1741858538559") format("woff"),
-    url('remixicon/remixicon.ttf?t=1741858538559') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
+    src: url("remixicon/remixicon.woff2?t=1742344325349") format("woff2"),
+    url("remixicon/remixicon.woff?t=1742344325349") format("woff"),
+    url('remixicon/remixicon.ttf?t=1742344325349') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
     font-display: swap;
 }
 
@@ -72,7 +72,6 @@
 .ri-settings-5-line:before { content: "\f0ea"; }
 .ri-information-line:before { content: "\ee59"; }
 .ri-focus-3-line:before { content: "\ed4c"; }
-.ri-computer-line:before { content: "\ebca"; }
 .ri-moon-line:before { content: "\ef75"; }
 .ri-sun-line:before { content: "\f1bf"; }
 .ri-github-fill:before { content: "\edca"; }
@@ -81,5 +80,7 @@
 .ri-sidebar-unfold-line:before { content: "\f45e"; }
 .ri-sidebar-fold-line:before { content: "\f45c"; }
 .ri-hand:before { content: "\f445"; }
-.ri-quill-pen-ai-line:before { content: "\f597"; }
 .ri-circle-line:before { content: "\f3c2"; }
+.ri-menu-line:before { content: "\ef3e"; }
+.ri-contrast-line:before { content: "\ebda"; }
+.ri-save-3-line:before { content: "\f0b1"; }

@@ -1,13 +1,6 @@
 @use 'variables' as *;
 
 #header-content {
-  #main-menu {
-    .shortcut {
-      color: var(--color-font-muted);
-      margin-left: 1rem;
-    }
-  }
-
   .left-side {
     display: flex;
     justify-content: center;
@@ -29,14 +22,25 @@
     letter-spacing: 1px;
   }
 
-  .right-side-buttons {
+  .right-side {
     margin-right: 0.5rem;
+    display: flex;
+    align-items: center;
   }
 
   button, .button {
     &:hover {
       background: var(--color-main-menu-hover);
     }
+  }
+
+  .shortcut {
+    color: var(--color-font-muted);
+    margin-left: 1rem;
+  }
+
+  .current-theme {
+    font-size: 1.25rem;
   }
 }
 
@@ -89,6 +93,7 @@
       position: absolute;
       top: calc($header-height + 2px);
       left: 0;
+
       border-radius: $header-padding;
       border: 1px solid var(--color-main-menu-hover);
       overflow: hidden;
@@ -107,6 +112,7 @@
         white-space: nowrap;
         display: flex;
         justify-content: space-between;
+        align-items: center;
 
         &.disabled {
           pointer-events: none;
@@ -121,11 +127,19 @@
         &.break {
           pointer-events: none;
           cursor: default;
-          border-bottom: 1px solid var(--color-contrast);
+          border-bottom: 1px solid var(--color-main-menu-hover);
           padding: 0;
           margin: 0.5rem 0;
         }
       }
     }
   }
+
+  &.right-aligned {
+    > li > ul {
+      left: auto;
+      right: 0;
+    }
+  }
+
 }

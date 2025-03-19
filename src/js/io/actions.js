@@ -11,6 +11,12 @@ let actions;
 // If value is an array, that means the action has multiple shortcuts. The first element is displayed as the abbr.
 let cmdKey = isMacOS() ? 'metaKey' : 'ctrlKey';
 let actionIdToShortcut = {
+    'file.open': { char: 'o', modifiers: [cmdKey] },
+    'file.export': { char: 'e', modifiers: [cmdKey, 'shiftKey'] },
+
+    // Note: file.save is not shown in toolbar anywhere, it actually ends up calling either file.saveTo or file.saveAs
+    'file.save': { char: 's', modifiers: [cmdKey] },
+
     'clipboard.cut': { char: 'x', modifiers: [cmdKey] },
     'clipboard.copy': { char: 'c', modifiers: [cmdKey] },
     'clipboard.paste': { char: 'v', modifiers: [cmdKey] },
@@ -46,6 +52,7 @@ let shortcutToActionId = {}; // populated by refreshShortcuts()
  *     description: string/fn   (optional) Text to display in tooltips. Default: strings[<id>.description]
  *     enabled: boolean/fn      (optional) Whether the action is allowed to be called. Default: true
  *     shortcutAbbr: string/fn  (optional) Hardcoded shortcut abbreviation (not common; most abbr will come from preferences)
+ *     icon: string             (optional) Icon class to show next to action (currently only applies to menu actions)
  *
  *     Alternatively, if `data` is just a function, it will be used as the callback
  *

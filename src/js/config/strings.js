@@ -6,8 +6,8 @@ export const strings = {
     'file.save-active.name': 'Save to Current File',
     'file.export.name': 'Export to...',
     'file.save-warning': 'Opening a new file will replace your existing content.\n' +
-        'Click this save button if you want to back up your drawing first.',
-    'file.save-warning-cleared': 'Your current file has been saved. Proceed to opening a new file.',
+        'Click \'Save\' if you want to back up your drawing first.',
+    'file.save-warning-cleared': 'Your current file has been saved. You may proceed to opening a new file.',
 
     'clipboard.cut.name': 'Cut',
     'clipboard.copy.name': 'Copy',
@@ -31,6 +31,10 @@ export const strings = {
     'settings.open-font-dialog.name': 'Font Settings',
     'settings.open-resize-dialog.name': 'Resize Canvas',
     'settings.open-background-dialog.name': 'Background Settings',
+
+    'theme.system.name': 'System Default',
+    'theme.light.name': 'Light',
+    'theme.dark.name': 'Dark',
 
     'editor.tools.text-editor.name': 'Text Editor',
     'editor.tools.text-editor.description': 'Functions similarly to a standard text editor.\n\n' +

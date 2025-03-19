@@ -16,8 +16,8 @@ export function debounce(callback, delay = 500) {
 }
 
 // Defers execution to the next event loop cycle, allowing the browser to process pending tasks, update the DOM, etc.
-export function defer(callback) {
-    window.setTimeout(callback, 1);
+export function defer(callback, delay = 1) {
+    window.setTimeout(callback, delay);
 }
 
 /**

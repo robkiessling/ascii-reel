@@ -23,6 +23,8 @@ import DimensionsPicker from "../components/ui/dimensions_picker.js";
 import BackgroundPicker from "../components/ui/background_picker.js";
 import UnsavedWarning from "../components/ui/unsaved_warning.js";
 import {defaultContrastColor} from "../components/palette.js";
+import {modifierAbbr} from "../utils/os.js";
+import Toast from "../components/ui/toast.js";
 
 export function init() {
     setupNew();
@@ -54,7 +56,9 @@ function setupNew() {
 
     const dimensionsPicker = new DimensionsPicker($newFileDialog.find('.dimensions-area'));
     const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-area'));
-    const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'))
+    const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'), {
+        showCloseButton: true
+    })
 
     actions.registerAction('file.new', () => {
         unsavedWarning.toggle(state.hasCharContent());
@@ -68,11 +72,11 @@ function setupNew() {
 }
 
 
-function setupOpen() {
-    const $openFileDialog = $('#open-file-dialog');
+// We show a short 'Open File' dialog purely to warn the user if their existing content will be overridden.
+const $openFileDialog = $('#open-file-dialog');
 
+function setupOpen() {
     createDialog($openFileDialog, () => {
-        $openFileDialog.dialog('close');
         openFilePicker();
     }, 'Open File', {
         minWidth: 520
@@ -93,10 +97,14 @@ function setupOpen() {
 }
 
 function openFilePicker() {
-    // Defer so main menu has time to close
-    defer(() => {
+    defer(() => { // Defer so main menu has time to close
         openFile()
-            .then(data => data ? state.load(data) : null) // data can be undefined if user cancels the dialog
+            .then(data => {
+                if (data) { // data can be undefined if user cancels the dialog
+                    $openFileDialog.dialog('close');
+                    state.load(data);
+                }
+            })
             .catch(error => alert(`Failed to open file: ${error.message}`))
     });
 }
@@ -125,7 +133,7 @@ function setupSave() {
             .catch(error => alert(`Failed to save file: ${error.message}`));
     });
 
-    actions.registerAction('file.save-as', () => {
+    function saveAs() {
         if (isFileSystemAPISupported) {
             saveFile().catch(error => alert(`Failed to save file: ${error.message}`))
         } else {
@@ -133,12 +141,34 @@ function setupSave() {
             $saveFileDialog.find('.extension').html(`.${FILE_EXTENSION}`);
             $saveFileDialog.dialog('open');
         }
-    });
+    }
+
+    function saveActive() {
+        saveToActiveFile()
+            .then(saved => {
+                if (saved) {
+                    new Toast({
+                        key: 'save-active-file',
+                        textCenter: true,
+                        duration: 5000,
+                        text: `Saved to "${state.config('name')}.${FILE_EXTENSION}"`
+                    });
+                }
+            })
+            .catch(error => alert(`Failed to save file: ${error.message}`));
+    }
+
+    actions.registerAction('file.save-as', () => saveAs());
 
     actions.registerAction('file.save-active', {
         enabled: () => hasActiveFile(),
-        callback: () => saveToActiveFile().catch(error => alert(`Failed to save file: ${error.message}`))
+        callback: () => saveActive(),
+        shortcutAbbr: `${modifierAbbr('metaKey')}S` // Show shortcut here, but cmd-S really goes to file.save
     })
+
+    // The following action is NOT shown in the toolbar anywhere, but it is what cmd-S links to. That way
+    // cmd-S always goes to one of our saves (saveAs/saveActive) instead of default browser save.
+    actions.registerAction('file.save', () => hasActiveFile() ? saveActive() : saveAs());
 }
 
 

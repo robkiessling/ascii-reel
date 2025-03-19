@@ -23,9 +23,9 @@
   }
 }
 
-#background-dialog, #new-file-dialog, .background-area {
-  // Showing overflow so color picker does not get constrained by dialog boundaries
-  // Dialog dimensions must be set so that normal content does not overflow, otherwise it will look bad
+#background-dialog, #new-file-dialog, .background-area, #open-file-dialog {
+  // Showing overflow so color picker / warning corner does not get constrained by dialog boundaries.
+  // Dialog dimensions must be set so that normal content does not overflow, otherwise it will look bad.
   overflow: visible;
 
   > label {
@@ -41,9 +41,36 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 
-  button:hover {
-    background-color: var(--color-dialog-hover);
+  .save {
+    width: auto;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    gap: 4px;
+
+    &:hover {
+      background-color: var(--color-dialog-hover);
+    }
+  }
+
+  .close {
+    position: absolute;
+    border: 1px solid var(--color-warning);
+    border-radius: 100px;
+    background: var(--color-dialog-bg);
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: -1rem;
+    right: -1rem;
+    .ri {
+      font-size: 1rem;
+    }
   }
 }
 

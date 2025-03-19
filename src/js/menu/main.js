@@ -1,21 +1,55 @@
 import * as actions from "../io/actions.js";
 
-
-let $mainMenu, mainMenu;
+let leftMenu, rightMenu;
 
 export function init() {
-    $mainMenu = $('#main-menu');
-    mainMenu = createHorizontalMenu($mainMenu, $li => refresh());
+    leftMenu = new HorizontalMenu($('#left-menu'), {
+        onOpen: () => rightMenu.close()
+    });
+    rightMenu = new HorizontalMenu($('#right-menu'), {
+        onOpen: () => leftMenu.close(),
+        rightAligned: true
+    });
 }
 
 export function refresh() {
-    if (mainMenu.isShowing()) {
-        $mainMenu.find('.action-item').each((index, item) => {
+    leftMenu.rebuildActions();
+    rightMenu.rebuildActions();
+}
+
+class HorizontalMenu {
+    static idSequence = 0;
+
+    constructor($menu, options = {}) {
+        this.id = ++HorizontalMenu.idSequence;
+
+        this.$menu = $menu;
+        this.options = options;
+
+        this._init();
+    }
+
+    close() {
+        this.isOpen = false;
+        this.$currentLi = null;
+        this._refresh();
+    }
+
+    rebuildActions() {
+        if (!this.isOpen) return;
+
+        this.$menu.find('.action-item').each((index, item) => {
             const $item = $(item);
             const action = actions.getActionInfo($item.data('action'));
 
             if (action) {
-                let html = `<span>${action.name}</span>`;
+                let html = '';
+                if (action.icon) {
+                    html += `<span><span class="ri ri-fw ${action.icon}"></span> ${action.name}</span>`;
+                }
+                else {
+                    html += `<span>${action.name}</span>`;
+                }
                 if (action.shortcutAbbr) {
                     html += `<span class="shortcut">${action.shortcutAbbr}</span>`;
                 }
@@ -29,55 +63,67 @@ export function refresh() {
             }
         });
     }
-}
 
-function createHorizontalMenu($menu, onOpen) {
-    let isShowing = false;
-    let $li = null;
-    updateMenu();
+    _init() {
+        this.isOpen = false;
+        this.$currentLi = null;
 
-    $menu.children('li').off('click').on('click', evt => {
-        evt.stopPropagation();
-        $li = $(evt.currentTarget);
-        isShowing = !isShowing;
-        updateMenu();
-    });
+        this.$menu.toggleClass('right-aligned', !!this.options.rightAligned);
 
-    $menu.children('li').off('mouseenter').on('mouseenter', evt => {
-        $li = $(evt.currentTarget);
-        updateMenu();
-    });
+        this.$menu.children('li').off('click').on('click', evt => {
+            evt.stopPropagation();
+            this.$currentLi = $(evt.currentTarget);
+            this.isOpen = !this.isOpen;
 
-    $menu.children('li').off('mouseleave').on('mouseleave', evt => {
-        if (!isShowing) {
-            $li = null;
-        }
-        updateMenu();
-    });
+            if (this.isOpen) {
+                // Always rebuild actions when menu is opened
+                this.rebuildActions();
 
-    function updateMenu() {
-        $menu.find('li').removeClass('hovered visible');
-        $(document).off('click.menu');
+                if (this.options.onOpen) this.options.onOpen();
+            }
 
-        if ($li) {
-            $li.addClass('hovered');
+            this._refresh();
+        });
 
-            if (isShowing) {
-                $li.addClass('visible');
-                $(document).on('click.menu', evt => {
-                    isShowing = false;
-                    $li = null;
-                    updateMenu();
-                });
-                if (onOpen) { onOpen($li); }
-                // todo keybind 'esc' to close menu
+        this.$menu.children('li').off('mouseenter').on('mouseenter', evt => {
+            this.$currentLi = $(evt.currentTarget);
+            this._refresh();
+        });
+
+        this.$menu.children('li').off('mouseleave').on('mouseleave', evt => {
+            if (!this.isOpen) this.$currentLi = null;
+            this._refresh();
+        });
+
+        this._refresh();
+    }
+
+    _refresh() {
+        this.$menu.find('li').removeClass('hovered visible');
+        this._toggleDocumentListener(false);
+
+        if (this.$currentLi) {
+            this.$currentLi.addClass('hovered');
+
+            if (this.isOpen) {
+                this._toggleDocumentListener(true);
+                this.$currentLi.addClass('visible');
             }
         }
     }
 
-    // Return a small API we can use
-    return {
-        isShowing: () => isShowing,
-        close: () => { isShowing = false; $li = null; updateMenu(); }
+    _toggleDocumentListener(enable) {
+        const namespace = `menu-${this.id}`
+
+        if (enable) {
+            $(document).on(`click.${namespace}`, () => {
+                this.isOpen = false;
+                this.$currentLi = null;
+                this._refresh();
+            });
+        }
+        else {
+            $(document).off(`click.${namespace}`);
+        }
     }
 }

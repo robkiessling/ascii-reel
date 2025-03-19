@@ -8,7 +8,7 @@
 
 import {getState, isValid, replaceState} from "./state.js";
 import {triggerRefresh} from "../index.js";
-import {refresh as refreshTheme} from "../config/theme.js"
+import {refresh as refreshTheme} from "../menu/theme.js"
 
 
 

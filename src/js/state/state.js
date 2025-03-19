@@ -19,6 +19,7 @@ import {recalculateBGColors} from "../canvas/background.js";
 // in the CONFIG_KEYS_FOR_HISTORY constant below
 export const CONFIG_DEFAULTS = {
     name: '',
+    createdAt: undefined,
     dimensions: [20, 10], // [numCols, numRows]
     font: 'monospace',
     background: false,
@@ -124,6 +125,8 @@ export function load(data) {
             colorTable: data.colorTable ? [...data.colorTable] : []
         };
 
+        if (!state.config.createdAt) state.config.createdAt = new Date().toISOString();
+
         // This is done after building the state object above because normalizeCel depends on state.config.dimensions
         state.cels = Object.fromEntries(
             Object.entries(data.cels || {}).map(([k, v]) => [k, normalizeCel(v)])
@@ -207,7 +210,11 @@ export function config(key, newValue) {
 }
 
 export function getName() {
-    return config('name') || `Untitled-${getFormattedDateTime()}`
+    if (config('name')) return config('name');
+
+    let createdAt = new Date(config('createdAt'));
+    if (isNaN(createdAt.getTime())) createdAt = new Date();
+    return `Untitled-${getFormattedDateTime(createdAt)}`
 }
 
 // TODO would be better if this was smarter - what I really want is a way to detect if there are changes that require saving

@@ -188,27 +188,28 @@
 .ui-button {
   background: var(--color-button-bg);
   color: var(--color-button-font);
-  border-color: var(--color-background-border);
+  border-color: var(--color-button-font);
 
   &:focus {
     background: var(--color-button-bg);
-    border-color: var(--color-background-border);
+    border-color: var(--color-button-font);
     color: var(--color-button-font);
   }
 
   &:hover {
-    //background: color-mix(in srgb, var(--color-button-bg) 95%, black); // todo check lightmode
     background: var(--color-button-bg-hover);
-    border-color: var(--color-background-border);
+    border-color: var(--color-button-font);
     color: var(--color-button-font);
   }
 
   &.call-out {
     color: var(--color-button-confirm-font);
     background: var(--color-button-confirm-bg);
+    border: 1px solid var(--color-button-confirm-bg);
 
     &:hover {
       background: color-mix(in srgb, var(--color-button-confirm-bg) 90%, black);
+      border: 1px solid var(--color-button-confirm-bg);
     }
   }
 

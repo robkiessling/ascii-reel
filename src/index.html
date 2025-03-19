@@ -17,12 +17,13 @@
                 <img src="logo-192x192.png" alt="">
                 Ascii Reel
             </div>
-            <ul id="main-menu" class="horizontal-menu no-select">
+            <ul id="left-menu" class="horizontal-menu no-select">
                 <li>
                     <span>File</span>
                     <ul>
                         <li class="action-item" data-action="file.new"></li>
                         <li class="action-item" data-action="file.open"></li>
+                        <li class="break"></li>
                         <li class="action-item" data-action="file.save-active"></li>
                         <li class="action-item" data-action="file.save-as"></li>
                         <li class="action-item" data-action="file.export"></li>
@@ -68,8 +69,18 @@
             </ul>
         </div>
         <div class="center-title"></div>
-        <div class="right-side-buttons">
-            <button id="theme-button"><span class="ri ri-fw"></span></button>
+        <div class="right-side">
+            <ul id="right-menu" class="horizontal-menu no-select">
+                <li>
+                    <span class="current-theme"></span>
+                    <ul>
+                        <li class="action-item" data-action="theme.system"></li>
+                        <li class="action-item" data-action="theme.light"></li>
+                        <li class="action-item" data-action="theme.dark"></li>
+                    </ul>
+                </li>
+            </ul>
+
             <a class="button" href="https://github.com/robkiessling/ascii-reel" target="_blank">
                 <span class="ri ri-fw ri-github-fill"></span>
             </a>
@@ -361,6 +372,8 @@
             </div>
         </div>
     </div>
+
+    <div id="toasts"></div>
 
     <div id="confirm-dialog"><p></p></div>
 
