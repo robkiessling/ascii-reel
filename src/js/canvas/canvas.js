@@ -25,8 +25,12 @@ const CURSOR_WIDTH = 0.5;
 const DASH_OUTLINE_LENGTH = 5;
 const DASH_OUTLINE_FPS = 60;
 
-const ZOOM_BOUNDARIES = [0.25, 30];
-const ZOOM_MARGIN = 1.25;
+// Static threshold value limiting how far you can zoom in
+const ZOOM_IN_THRESHOLD_VALUE = 30;
+
+// Threshold value limiting how far you can zoom out (actual value depends on length of largest axis)
+// E.g. ratio of 1.25 means show 125% more than the largest axis
+const ZOOM_OUT_THRESHOLD_RATIO = 1.25;
 
 /**
  * Handles all the setup around a <canvas> element, drawing to the canvas, and zooming/translating the canvas view.
@@ -39,8 +43,14 @@ export default class CanvasControl {
         this.config = config;
     }
 
-    // TODO Currently it will always zoom all the way out after a resize event, due to _buildBoundaries
-    resize() {
+    /**
+     * Resizes the canvas control according to its container boundaries.
+     * @param {boolean} resetZoom If true, will zoom all the way out. If false, will maintain the zoom/pan from before
+     *   the resize (provided there is previous zoom/pan data).
+     */
+    resize(resetZoom = false) {
+        let previousTransform = this.context.getTransform();
+
         // Reset any width/height attributes that may have been set previously
         this.canvas.removeAttribute('width');
         this.canvas.removeAttribute('height');
@@ -53,18 +63,28 @@ export default class CanvasControl {
         this.canvas.height = this.outerHeight * ratio;
         this.canvas.style.width = this.outerWidth + "px";
         this.canvas.style.height = this.outerHeight + "px";
-        this.context.scale(ratio, ratio);
 
-        // Store the base transformation (after fixing PPI). Deltas have to be calculated according to
-        // this originalTransform (not the identity matrix)
-        this.originalTransform = this.context.getTransform();
+        if (resetZoom || !this.initialized) {
+            // Final part of fixing canvas PPI
+            this.context.scale(ratio, ratio);
+
+            // Store the base transformation (after fixing PPI). Deltas have to be calculated according to
+            // this originalTransform (not the identity matrix)
+            this.originalTransform = this.context.getTransform();
+
+            this._buildZoomPanBoundaries(true);
+        }
+        else {
+            // Maintain transform from before
+            this.context.setTransform(previousTransform);
+            this._buildZoomPanBoundaries(false);
+            this._applyPanBoundaries();
+        }
 
         // Set up font
         this.context.font = `${fontHeight}px ${fontFamily()}`;
         this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
-
-        this._buildBoundaries();
 
         this.initialized = true;
     }
@@ -82,7 +102,7 @@ export default class CanvasControl {
         if (this._cursorInterval) { this._cursorInterval.stop(); }
 
         // Clear entire canvas
-        this.usingFullArea((fullArea) => {
+        this._usingFullArea((fullArea) => {
             this.context.clearRect(...fullArea.xywh);
         });
     }
@@ -266,7 +286,7 @@ export default class CanvasControl {
     _fillCheckerboard() {
         // First, draw a checkerboard over full area (checkerboard does not change depending on zoom; this way we have
         // a static number of checkers and performance is consistent).
-        this.usingFullArea(fullArea => drawCheckerboard(this.context, fullArea));
+        this._usingFullArea(fullArea => drawCheckerboard(this.context, fullArea));
 
         // Clear the 4 edges between the drawable area and the full area
         const drawableArea = CellArea.drawableArea();
@@ -285,13 +305,30 @@ export default class CanvasControl {
     }
     
     
-    // -------------------------------------------------------------- Zoom/View related methods
+    // -------------------------------------------------------------- Zoom/Pan related methods
 
-    // Builds the zoom boundaries and zooms out all the way
-    _buildBoundaries() {
-        this._minZoom = this._zoomLevelForFit() / ZOOM_MARGIN;
-        this.zoomTo(this._minZoom); // Have to zoom to minimum so we can record what the boundaries are
-        this._boundaries = this.currentViewRect();
+    /**
+     * Calculates the zoom/pan boundaries.  
+     * @param {boolean} zoomOutToMax If true, canvas will be zoomed all the way out. If false, canvas's current zoom
+     *   will be maintained. This option is to increase performance: we have to zoom all the way out anyway to calculate
+     *   the boundaries, so if that is the desired zoom state we have an option to leave it zoomed out. 
+     */
+    _buildZoomPanBoundaries(zoomOutToMax) {
+        this._zoomOutThreshold = this._zoomLevelForFit() / ZOOM_OUT_THRESHOLD_RATIO;
+        this._zoomInThreshold = ZOOM_IN_THRESHOLD_VALUE;
+
+        // We need to calculate the zoom boundaries by zooming out all the way and snapshotting the view rect.
+        // If param zoomOutToMax is false, we don't want the zoom changes to persist so we do it in a temporary context.
+        if (zoomOutToMax) {
+            this.zoomOutToMax();
+            this._panBoundaries = this.currentViewRect();
+        }
+        else {
+            this._inTemporaryContext(() => {
+                this.zoomOutToMax();
+                this._panBoundaries = this.currentViewRect();
+            })
+        }
     }
 
     // Returns a Rect of the current view window
@@ -301,15 +338,31 @@ export default class CanvasControl {
         return new Rect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
     }
 
-    // This method allows you to perform operations on the full area of the canvas
-    usingFullArea(callback) {
-        // Temporarily transform to original context -> make a Rect with canvas boundaries -> transform back afterwards
+    /**
+     * Performs a callback that affects the entire canvas (entire <canvas> element; includes those margins that appear
+     * when zoomed all the way out)
+     * @param {function(Rect)} callback Callback is passed the full area Rect as its parameter
+     */
+    _usingFullArea(callback) {
+        this._inTemporaryContext(() => {
+            // Temporarily transform to original context -> make a Rect with <canvas> boundaries -> transform back
+            this.context.setTransform(this.originalTransform);
+            callback(new Rect(0, 0, this.outerWidth, this.outerHeight));
+        })
+    }
+
+    // Performs a callback in a temporary context; any transformations will be undone after callback is finished.
+    _inTemporaryContext(callback) {
         const currentTransform = this.context.getTransform();
-        this.context.setTransform(this.originalTransform);
-        callback(new Rect(0, 0, this.outerWidth, this.outerHeight));
+        callback();
         this.context.setTransform(currentTransform);
     }
 
+    /**
+     * Returns the transformed coordinates of an external XY coordinate. "External" means the unmodified x y coordinates
+     * of your mouse over the canvas. E.g. hovering over the top left of the canvas would be an external x y of 0 0.
+     * The returned value is the transformed x y coordinate, accounting for zoom, pan, etc.
+     */
     pointAtExternalXY(x, y) {
         const absTransform = this._absoluteTransform();
         return {
@@ -360,6 +413,7 @@ export default class CanvasControl {
         return new Cell(row, col);
     }
 
+    // Zooms to a particular zoom level centered around the midpoint of the canvas
     zoomTo(level) {
         // Reset scale
         this.context.setTransform(this.originalTransform);
@@ -376,8 +430,15 @@ export default class CanvasControl {
         this.context.scale(level, level);
     }
 
+    // Zooms out just far enough so that the entire canvas is visible. If the canvas dimensions do not result in a
+    // perfect square the smaller dimension will have visible margins.
     zoomToFit() {
         this.zoomTo(this._zoomLevelForFit());
+    }
+
+    // Zooms out as far as possible. Both dimensions will have visible margins (assuming ZOOM_OUT_THRESHOLD_RATIO > 1)
+    zoomOutToMax() {
+        this.zoomTo(this._zoomOutThreshold);
     }
 
     /**
@@ -389,21 +450,19 @@ export default class CanvasControl {
         const currentZoom = this._currentZoom();
         let newZoom = currentZoom * delta;
 
-        if (newZoom < ZOOM_BOUNDARIES[0]) { newZoom = ZOOM_BOUNDARIES[0]; delta = newZoom / currentZoom; }
-        if (newZoom > ZOOM_BOUNDARIES[1]) { newZoom = ZOOM_BOUNDARIES[1]; delta = newZoom / currentZoom; }
-        if (newZoom < this._minZoom) { newZoom = this._minZoom; delta = newZoom / currentZoom; }
+        if (newZoom < this._zoomOutThreshold) { newZoom = this._zoomOutThreshold; delta = newZoom / currentZoom; }
+        if (newZoom > this._zoomInThreshold) { newZoom = this._zoomInThreshold; delta = newZoom / currentZoom; }
         if (roundForComparison(newZoom) === roundForComparison(currentZoom)) return;
 
-        if (!target) {
-            target = this.pointAtExternalXY(this.outerWidth / 2, this.outerHeight / 2)
-        }
+        // If no target use canvas center
+        if (!target) target = this.pointAtExternalXY(this.outerWidth / 2, this.outerHeight / 2);
 
         // Zoom to the mouse target, using a process described here: https://stackoverflow.com/a/5526721
         this.context.translate(target.x, target.y)
         this.context.scale(delta, delta);
         this.context.translate(-target.x, -target.y)
 
-        this._applyBoundaries();
+        this._applyPanBoundaries();
     }
 
     // Moves zoom window to be centered around target
@@ -418,12 +477,12 @@ export default class CanvasControl {
         )
         this.context.scale(currentZoom, currentZoom);
 
-        this._applyBoundaries();
+        this._applyPanBoundaries();
     }
 
     translateAmount(x, y) {
         this.context.translate(x, y);
-        this._applyBoundaries();
+        this._applyPanBoundaries();
     }
 
     _currentZoom() {
@@ -442,30 +501,30 @@ export default class CanvasControl {
     }
 
     // Lock zoom-out to a set of boundaries
-    _applyBoundaries() {
-        if (this._boundaries) {
+    _applyPanBoundaries() {
+        if (this._panBoundaries) {
             const topLeft = this.pointAtExternalXY(0, 0);
             const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
 
-            if (topLeft.x < this._boundaries.x) {
-                this.context.translate(topLeft.x - this._boundaries.x, 0);
+            if (topLeft.x < this._panBoundaries.x) {
+                this.context.translate(topLeft.x - this._panBoundaries.x, 0);
             }
-            if (topLeft.y < this._boundaries.y) {
-                this.context.translate(0, topLeft.y - this._boundaries.y);
+            if (topLeft.y < this._panBoundaries.y) {
+                this.context.translate(0, topLeft.y - this._panBoundaries.y);
             }
-            const farRightBoundary = this._boundaries.x + this._boundaries.width;
+            const farRightBoundary = this._panBoundaries.x + this._panBoundaries.width;
             if (bottomRight.x > farRightBoundary) {
                 this.context.translate(bottomRight.x - farRightBoundary, 0);
             }
-            const forBottomBoundary = this._boundaries.y + this._boundaries.height;
+            const forBottomBoundary = this._panBoundaries.y + this._panBoundaries.height;
             if (bottomRight.y > forBottomBoundary) {
                 this.context.translate(0, bottomRight.y - forBottomBoundary);
             }
         }
     }
 
-    // When you call getTransform(), it contains values relative to our originalTransform (which could be a scale of 2).
-    // If you want the absolute transform, have to divide by the starting point (originalTransform)
+    // When you call getTransform(), it contains values relative to our originalTransform (which is not necessarily 1,
+    // e.g. on a Mac retina screen it is 2). If you want the absolute transform, have to divide by the originalTransform
     _absoluteTransform() {
         const current = this.context.getTransform();
         current.a /= this.originalTransform.a;

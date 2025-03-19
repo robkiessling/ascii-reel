@@ -59,7 +59,7 @@ function setupFontDialog() {
         state.config('font', $fontSelect.val());
 
         calculateFontRatio();
-        triggerResize(true);
+        triggerResize({ clearSelection: true, resetZoom: true });
         pushStateToHistory({ requiresResize: true, requiresCalculateFontRatio: true });
 
         $fontDialog.dialog('close');

@@ -44,11 +44,11 @@ export function getCurrentViewRect() {
     return selectionCanvas.currentViewRect()
 }
 
-export function resize() {
-    charCanvas.resize();
-    selectionBorderCanvas.resize();
-    hoveredCellCanvas.resize();
-    selectionCanvas.resize();
+export function resize(resetZoom) {
+    charCanvas.resize(resetZoom);
+    selectionBorderCanvas.resize(resetZoom);
+    hoveredCellCanvas.resize(resetZoom);
+    selectionCanvas.resize(resetZoom);
 }
 
 export function redrawCharCanvas() {

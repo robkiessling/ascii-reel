@@ -141,7 +141,7 @@ export function load(data) {
 
         calculateFontRatio();
         recalculateBGColors();
-        triggerResize(true);
+        triggerResize({ clearSelection: true, resetZoom: true });
         pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
         saveState();
         
@@ -824,7 +824,7 @@ export function resize(newDimensions, rowOffset, colOffset) {
 
     state.config.dimensions = newDimensions;
 
-    triggerResize(true);
+    triggerResize({ clearSelection: true, resetZoom: true });
     pushStateToHistory({ requiresResize: true });
 }
 
@@ -935,7 +935,7 @@ function loadStateFromHistory(newIndex, oldIndex) {
     }
 
     if (newState.options.requiresResize || oldState.options.requiresResize) {
-        triggerResize(true);
+        triggerResize({ clearSelection: true, resetZoom: true });
     }
     else {
         triggerRefresh();

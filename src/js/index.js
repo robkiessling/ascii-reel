@@ -66,17 +66,17 @@ defer(() => {
 /**
  * Resizes the components that depend on window size. Then triggers a full refresh.
  */
-export function triggerResize(clearSelection = false) {
+export function triggerResize(options = {}) {
     if (!state.isValid()) return;
 
-    if (clearSelection) selection.clear(false); // The clear doesn't need to trigger a refresh; it will be done later
+    if (options.clearSelection) selection.clear(false);
 
-    // Refresh frames controller first, since its configuration can affect canvas boundaries
+    // Refresh frames controller first, since its configuration (align left/bottom) can affect canvas boundaries
     frames.refresh();
 
-    canvasStack.resize();
-    preview.resize();
-    // Note: frames canvases will be resized during triggerRefresh() since they all have to be rebuilt
+    canvasStack.resize(options.resetZoom);
+    preview.resize(); // Don't need to resetZoom since it will zoomToFit anyway
+    // Frame canvases don't need to be resized here since triggerRefresh() will rebuild them all anyway
 
     triggerRefresh();
 }
