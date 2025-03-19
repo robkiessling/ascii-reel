@@ -20,7 +20,7 @@ import {recalculateBGColors} from "../canvas/background.js";
 export const CONFIG_DEFAULTS = {
     name: '',
     createdAt: undefined,
-    dimensions: [20, 10], // [numCols, numRows]
+    dimensions: [30, 15], // [numCols, numRows]
     font: 'monospace',
     background: false,
     fps: 6,

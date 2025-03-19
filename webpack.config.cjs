@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
+const CopyPlugin = require("copy-webpack-plugin");
 
 /**
  * Using mini-css-extract-plugin instead of style-loader for production builds (removes FOUC)
@@ -13,7 +14,37 @@ module.exports = (env, argv) => {
     console.log("Running in mode:", mode);
 
     const prodMode = mode === "production";
-    const analyzeBundle = env['analyze-bundle'] === 'true'
+    const analyzeBundle = env['analyze-bundle'] === 'true';
+
+    const plugins = [
+        new HtmlWebpackPlugin({
+            hash: true,
+            template: path.resolve(__dirname, 'src', 'index.html')
+        }),
+
+        new webpack.ProvidePlugin({
+            $: "jquery",
+            jQuery: "jquery"
+        }),
+
+        new CopyPlugin({
+            patterns: [
+                { from: path.resolve(__dirname, 'public'), to: path.resolve(__dirname, 'dist') }
+            ],
+        })
+    ];
+
+    if (analyzeBundle) {
+        plugins.push(
+            new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)({
+                generateStatsFile: true
+            })
+        );
+    }
+
+    if (prodMode) {
+        plugins.push(new MiniCssExtractPlugin());
+    }
 
     return {
         entry: path.resolve(__dirname, 'src', 'js', 'index.js'),
@@ -36,26 +67,7 @@ module.exports = (env, argv) => {
             filename: 'bundle.js',
             clean: true
         },
-        plugins: [
-            new HtmlWebpackPlugin({
-                hash: true,
-                template: path.resolve(__dirname, 'src', 'index.html'),
-                favicon: path.resolve(__dirname, 'public/logo-32x32.png')
-            }),
-
-            new webpack.ProvidePlugin({
-                $: "jquery",
-                jQuery: "jquery"
-            })]
-
-            .concat(analyzeBundle ?
-                [new (require("webpack-bundle-analyzer").BundleAnalyzerPlugin)({
-                    generateStatsFile: true
-                })] :
-                []
-            )
-
-            .concat(prodMode ? [new MiniCssExtractPlugin()] : []),
+        plugins: plugins,
         devServer: {
             static: {
                 // Local filesystem directory where static html files are served
