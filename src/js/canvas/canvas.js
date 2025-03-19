@@ -441,10 +441,17 @@ export default class CanvasControl {
         this.zoomTo(this._zoomOutThreshold);
     }
 
+    canZoomIn() {
+        return roundForComparison(this._currentZoom()) < roundForComparison(this._zoomInThreshold)
+    }
+    canZoomOut() {
+        return roundForComparison(this._currentZoom()) > roundForComparison(this._zoomOutThreshold)
+    }
+
     /**
      * Zooms the canvas in or out focused at a particular target
      * @param delta Float controlling the magnitude of the zoom. A value > 1 will zoom in, a value < 1 will zoom out.
-     * @param target Point to zoom towards. If undefined, will zoom in/out relative to center of canvas.
+     * @param target Point to zoom towards. If undefined, will zoom in/out relative to center of the current view.
      */
     zoomDelta(delta, target) {
         const currentZoom = this._currentZoom();

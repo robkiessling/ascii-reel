@@ -15,7 +15,7 @@ import CanvasControl from "../canvas/canvas.js";
 import * as selection from "../canvas/selection.js";
 import {hoveredCell, iterateHoveredCells, setupMouseEvents as setupHoverMouse} from "../canvas/hover.js";
 import {refreshMouseCoords, refreshSelectionDimensions, setupMouseEvents as setupEditorMouse} from "./editor.js";
-import {addCanvasListeners, setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
+import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
 import * as state from "../state/state.js";
 import {getMajorGridColor, getMinorGridColor} from "../canvas/background.js";
 import {config} from "../state/state.js";
@@ -29,15 +29,25 @@ export function init() {
     selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
     // Bind mouse events to controllers
-    // Note: many controllers attach mouse events to the selectionCanvas since it is
-    // on top, even though they have their own canvases underneath).
+    // Note: many controllers attach mouse events to the selectionCanvas since it is on top, even though they have their
+    // own canvases underneath.
     selection.setupMouseEvents(selectionCanvas);
     setupHoverMouse(selectionCanvas);
     setupEditorMouse(selectionCanvas);
 
     setupScrollZoom(selectionCanvas, true);
     setupMousePan(selectionCanvas, false, () => config('tool') === 'pan' ? [1, 3] : [3])
-    addCanvasListeners([selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas])
+}
+
+export function iterateCanvases(callback) {
+    [selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas].forEach(canvas => callback(canvas));
+}
+
+export function canZoomIn() {
+    return selectionCanvas.canZoomIn();
+}
+export function canZoomOut() {
+    return selectionCanvas.canZoomOut();
 }
 
 export function getCurrentViewRect() {

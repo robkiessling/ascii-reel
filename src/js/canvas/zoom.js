@@ -1,5 +1,6 @@
 import {triggerRefresh} from "../index.js";
 import {isFunction} from "../utils/utilities.js";
+import {iterateCanvases} from "../components/canvas_stack.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 
@@ -17,7 +18,7 @@ export function setupScrollZoom(canvasControl, isTargetted = false) {
 
         const scaledDelta = Math.pow(ZOOM_SCROLL_FACTOR, -deltaY / 100);
         const target = isTargetted ? canvasControl.pointAtExternalXY(evt.offsetX, evt.offsetY) : undefined;
-        updateCanvases(canvasControl => canvasControl.zoomDelta(scaledDelta, target))
+        updateCanvasStack(canvasControl => canvasControl.zoomDelta(scaledDelta, target))
     });
 }
 
@@ -54,26 +55,18 @@ export function setupMousePan(canvasControl, snapToCenter, forMouseButtons = [1,
         const target = canvasControl.pointAtExternalXY(evt.offsetX, evt.offsetY);
 
         if (snapToCenter) {
-            updateCanvases(canvasControl => canvasControl.translateToTarget(target));
+            updateCanvasStack(canvasControl => canvasControl.translateToTarget(target));
         }
         else {
             const deltas = [target.x - originalPoint.x, target.y - originalPoint.y];
-            updateCanvases(canvasControl => canvasControl.translateAmount(...deltas));
+            updateCanvasStack(canvasControl => canvasControl.translateAmount(...deltas));
         }
     });
 
     $(document).off(`mouseup.${jQueryNS}`).on(`mouseup.${jQueryNS}`, () => isPanning = false);
 }
 
-
-let canvasListeners;
-
-export function addCanvasListeners(canvasControls) {
-    canvasListeners = canvasControls;
-}
-
-function updateCanvases(callback) {
-    canvasListeners.forEach(canvasControl => callback(canvasControl));
-
+function updateCanvasStack(callback) {
+    iterateCanvases(callback)
     triggerRefresh('zoom');
 }

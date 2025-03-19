@@ -3,6 +3,7 @@ import {triggerRefresh} from "../index.js";
 import * as actions from "../io/actions.js";
 import {strings} from "../config/strings.js";
 import {createDialog} from "../utils/dialogs.js";
+import {canZoomIn, canZoomOut, iterateCanvases} from "../components/canvas_stack.js";
 
 const GRID_SPACING_LIMITS = [1, 1000];
 
@@ -12,17 +13,21 @@ export function init() {
     setupWhitespaceToggle();
 
     actions.registerAction('view.zoom-in', {
-        callback: () => {},
-        enabled: () => false
+        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomDelta(2)),
+        enabled: () => canZoomIn(),
     });
     actions.registerAction('view.zoom-out', {
-        callback: () => {},
-        enabled: () => false
+        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomDelta(0.5)),
+        enabled: () => canZoomOut(),
     });
     actions.registerAction('view.zoom-fit', {
-        callback: () => {},
-        enabled: () => false
+        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomToFit()),
     });
+}
+
+function updateCanvasStack(callback) {
+    iterateCanvases(callback)
+    triggerRefresh('zoom');
 }
 
 

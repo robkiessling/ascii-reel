@@ -36,7 +36,7 @@ function setupKeydownListener() {
         // A 'Dead' char is received when composition starts (see composition section below)
         if (char === 'Dead' || isComposing) return;
 
-        // Shortcuts
+        // Ascii Reel Shortcuts
         if (e.metaKey || e.ctrlKey || e.altKey) {
             const modifiers = ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'].filter(modifier => e[modifier]);
             if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
@@ -45,10 +45,13 @@ function setupKeydownListener() {
             }
         }
 
-        // If the metaKey/ctrlKey did not reach one of our shortcuts, we return so that normal browser shortcuts work
-        // (e.g. cmd-N for new window). We do not return early for altKey, because sometimes that key can be used to
-        // write/compose special characters.
-        if (e.metaKey || e.ctrlKey) return;
+        // If the metaKey/ctrlKey is down, and it did not reach one of our shortcuts, the user is likely performing
+        // a standard browser shortcut (e.g. cmd-R to reload). Return early (without preventing default) so that the
+        // browser shortcut works as normal. Note: a few browser shortcuts are prevented, see handleBrowserShortcut.
+        if (e.metaKey || e.ctrlKey) {
+            handleBrowserShortcut(e, char);
+            return;
+        }
 
         switch (char) {
             case 'Escape':
@@ -204,6 +207,19 @@ function handleStandardKeyboard(char, e) {
     }
 }
 
+const PREVENT_DEFAULT_BROWSER_SHORTCUTS = new Set([
+    // Preventing normal browser zoom in/out since we use these same keys to zoom in/out of the canvas. Normally our
+    // own shortcut already prevents normal browser behavior, but if the canvas is zoomed all the way in/out our action
+    // will actually be disabled, meaning our shortcut does not prevent default browser behavior.
+    '-', '=', '0'
+])
+
+// A few browser shortcuts are prevented. See PREVENT_DEFAULT_BROWSER_SHORTCUTS for details.
+function handleBrowserShortcut(e, char) {
+    if (PREVENT_DEFAULT_BROWSER_SHORTCUTS.has(char)) {
+        e.preventDefault();
+    }
+}
 
 
 /**
