@@ -36,11 +36,14 @@ const ZOOM_OUT_THRESHOLD_RATIO = 1.25;
  * Handles all the setup around a <canvas> element, drawing to the canvas, and zooming/translating the canvas view.
  */
 export default class CanvasControl {
-    constructor($canvas, config = {}) {
+    constructor($canvas, options = {}) {
         this.$canvas = $canvas;
+        this.options = options;
+
         this.canvas = this.$canvas.get(0);
-        this.context = this.canvas.getContext("2d");
-        this.config = config;
+        this.context = this.canvas.getContext("2d", {
+            willReadFrequently: options.willReadFrequently
+        });
     }
 
     /**
@@ -305,6 +308,22 @@ export default class CanvasControl {
     }
     
     
+    // -------------------------------------------------------------- Helpers
+
+    // Can be used to help debug: only logs lines for one canvas control (use this.log instead of console.log)
+    log(...args) {
+        // ignore all but one canvas:
+        if (this.$canvas.attr('id') !== 'char-canvas') {
+            console.log(...args);
+        }
+
+        // alternative: just ignore frame canvases
+        // if (this.$canvas.attr('id') !== undefined) {
+        //     console.log(this.$canvas.attr('id'), ...args);
+        // }
+    }
+
+
     // -------------------------------------------------------------- Zoom/Pan related methods
 
     /**

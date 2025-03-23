@@ -186,13 +186,13 @@ function setupActionButtons() {
     actions.registerAction('frames.previous-frame', () => {
         let index = state.frameRangeSelection().startIndex;
         index -= 1;
-        if (index < 0) index = 0;
+        if (index < 0) index = state.frames().length - 1;
         selectFrame(index, 'changeFrameSingle');
     })
     actions.registerAction('frames.next-frame', () => {
         let index = state.frameRangeSelection().endIndex;
         index += 1;
-        if (index >= state.frames().length) index = state.frames().length - 1;
+        if (index >= state.frames().length) index = 0;
         selectFrame(index, 'changeFrameSingle');
     })
 

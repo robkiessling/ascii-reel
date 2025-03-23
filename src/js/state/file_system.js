@@ -108,24 +108,18 @@ export function hasActiveExport() {
     return !!exportHandle;
 }
 
-export async function exportFile(blob, extension, mimeType, handle) {
-    try {
-        exportHandle = await fileSave(
-            blob,
-            {
-                fileName: `${state.getName()}.${extension}`,
-                extensions: [`.${extension}`],
-                mimeTypes: [mimeType],
-                id: EXPORT_DIR_ID,
-                excludeAcceptAllOption: true
-            },
-            handle
-        )
-
-        return true;
-    } catch (error) {
-        return handleDialogError(error)
-    }
+export async function exportFile(blobOrPromiseBlob, extension, mimeType, handle) {
+    exportHandle = await fileSave(
+        blobOrPromiseBlob,
+        {
+            fileName: `${state.getName()}.${extension}`,
+            extensions: [`.${extension}`],
+            mimeTypes: [mimeType],
+            id: EXPORT_DIR_ID,
+            excludeAcceptAllOption: true
+        },
+        handle
+    )
 }
 
 export async function exportToActiveFile(blob, extension, mimeType) {
@@ -164,8 +158,12 @@ export async function saveCorruptedState(corruptedData) {
 
 // -------------------------------------------------------------------------------- Helpers
 
+export function isPickerCanceledError(error) {
+    return error.name === "AbortError";
+}
+
 function handleDialogError(error) {
-    if (error.name === "AbortError") {
+    if (isPickerCanceledError(error)) {
         // User canceled the dialog; this is not considered an error (so Promise is still fulfilled) but we return
         // false to indicate the dialog was canceled
         return false;

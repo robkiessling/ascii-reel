@@ -15,18 +15,18 @@ const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
 const POPUP_RESIZE_DEBOUNCE_LENGTH = 200;
 
-let canvasControl;
-let previewInterval, previewIndex;
 let $container, $fpsValue, $fpsSlider;
+let previewCanvas;
+let previewInterval, previewIndex;
 let tooltips;
 let popup, popupCanvas;
 
 export function init() {
     $container = $('#preview-controller');
-    canvasControl = new CanvasControl($('#preview-canvas'), {});
+    previewCanvas = new CanvasControl($('#preview-canvas'), {});
 
-    setupScrollZoom(canvasControl, false);
-    setupMousePan(canvasControl, true)
+    setupScrollZoom(previewCanvas, false);
+    setupMousePan(previewCanvas, true)
 
     $fpsValue = $('#preview-fps-value');
 
@@ -45,16 +45,16 @@ export function init() {
 export function resize() {
     refreshComponentVisibility($container, 'preview');
 
-    canvasControl.resize();
-    canvasControl.zoomToFit();
+    previewCanvas.resize();
+    previewCanvas.zoomToFit();
 }
 
 // Just redraw the current preview frame (e.g. if chars got updated)
 export function redraw() {
-    canvasControl.clear();
-    canvasControl.drawBackground(state.config('background'));
-    canvasControl.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
-    canvasControl.drawWindow(getCurrentViewRect());
+    previewCanvas.clear();
+    previewCanvas.drawBackground(state.config('background'));
+    previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
+    previewCanvas.drawWindow(getCurrentViewRect());
 
     if (popup && !popup.closed && popupCanvas) {
         popupCanvas.clear();
@@ -126,7 +126,7 @@ function openPopup() {
 
     popup.document.head.innerHTML = `
        <style>
-            body { margin: 0; }
+            body { margin: 0; background: ${getDynamicColor('--color-background')}; }
             #canvas { background: ${getDynamicColor('--color-background')}; }
         </style>
     `;
@@ -134,15 +134,13 @@ function openPopup() {
 
     // Set up the CanvasControl in the popup (it will be updated at the same time as the normal preview canvas)
     popupCanvas = new CanvasControl($(popup.document.getElementById("canvas")), {});
-    popupCanvas.resize();
-    popupCanvas.zoomToFit();
 
     // Popup window resize handler (debounced)
     let resizeTimeoutId;
     popup.addEventListener('resize', () => {
         clearTimeout(resizeTimeoutId);
         resizeTimeoutId = setTimeout(() => {
-            popupCanvas.resize();
+            popupCanvas.resize(true);
             popupCanvas.zoomToFit();
         }, POPUP_RESIZE_DEBOUNCE_LENGTH);
     })
