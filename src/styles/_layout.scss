@@ -35,9 +35,10 @@ body {
 
 #frames-and-canvas {
   flex: 1; // Fill remaining width
-  margin: $main-spacing;
+  min-width: 0; // This combined with flex:1 makes the div not use more space than available https://stackoverflow.com/a/76670135
 
   display: flex;
+  margin: $main-spacing;
 
   &.frames-on-bottom {
     flex-direction: column;

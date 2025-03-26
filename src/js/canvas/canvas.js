@@ -81,6 +81,7 @@ export default class CanvasControl {
             // Maintain transform from before
             this.context.setTransform(previousTransform);
             this._buildZoomPanBoundaries(false);
+            this._applyZoomBoundaries();
             this._applyPanBoundaries();
         }
 
@@ -313,7 +314,7 @@ export default class CanvasControl {
     // Can be used to help debug: only logs lines for one canvas control (use this.log instead of console.log)
     log(...args) {
         // ignore all but one canvas:
-        if (this.$canvas.attr('id') !== 'char-canvas') {
+        if (this.$canvas.attr('id') === 'char-canvas') {
             console.log(...args);
         }
 
@@ -491,6 +492,11 @@ export default class CanvasControl {
         this._applyPanBoundaries();
     }
 
+    // Ensures current zoom level is within boundaries
+    _applyZoomBoundaries() {
+        this.zoomDelta(1);
+    }
+
     // Moves zoom window to be centered around target
     translateToTarget(target) {
         const currentZoom = this._currentZoom();
@@ -532,20 +538,13 @@ export default class CanvasControl {
             const topLeft = this.pointAtExternalXY(0, 0);
             const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
 
-            if (topLeft.x < this._panBoundaries.x) {
-                this.context.translate(topLeft.x - this._panBoundaries.x, 0);
-            }
-            if (topLeft.y < this._panBoundaries.y) {
-                this.context.translate(0, topLeft.y - this._panBoundaries.y);
-            }
-            const farRightBoundary = this._panBoundaries.x + this._panBoundaries.width;
-            if (bottomRight.x > farRightBoundary) {
-                this.context.translate(bottomRight.x - farRightBoundary, 0);
-            }
-            const forBottomBoundary = this._panBoundaries.y + this._panBoundaries.height;
-            if (bottomRight.y > forBottomBoundary) {
-                this.context.translate(0, bottomRight.y - forBottomBoundary);
-            }
+            const rightBoundary = this._panBoundaries.x + this._panBoundaries.width;
+            const bottomBoundary = this._panBoundaries.y + this._panBoundaries.height;
+
+            if (topLeft.x < this._panBoundaries.x) this.context.translate(topLeft.x - this._panBoundaries.x, 0);
+            if (topLeft.y < this._panBoundaries.y) this.context.translate(0, topLeft.y - this._panBoundaries.y);
+            if (bottomRight.x > rightBoundary) this.context.translate(bottomRight.x - rightBoundary, 0);
+            if (bottomRight.y > bottomBoundary) this.context.translate(0, bottomRight.y - bottomBoundary);
         }
     }
 
