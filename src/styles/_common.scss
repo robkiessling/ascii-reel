@@ -61,6 +61,19 @@
   user-select: none;
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ri-spin {
+  animation: spin 2s linear infinite;
+}
+
 .draggable {
   cursor: move; /* fallback */
   cursor: grab; /* W3C standards syntax, all modern browser */

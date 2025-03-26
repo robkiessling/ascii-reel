@@ -18,6 +18,11 @@ export default class Toast {
         this.options = $.extend({}, DEFAULT_OPTIONS, options);
         this._init();
     }
+    
+    static instantlyRemoveKey(key) {
+        const toast = visibleToastsByKey[key];
+        if (toast) toast.instantlyRemove();
+    }
 
     _init() {
         if (this.options.key) {
@@ -43,15 +48,22 @@ export default class Toast {
 
     restart(newOptions) {
         this.options = $.extend({}, this.options, newOptions);
-        clearTimeout(this.hideTimeout);
+        clearTimeout(this.fadeTimeout);
         clearTimeout(this.removalTimeout);
         this.$toast.addClass('show');
         this._startRemovalTimer();
     }
+    
+    instantlyRemove() {
+        clearTimeout(this.fadeTimeout);
+        clearTimeout(this.removalTimeout);
+        this.$toast.remove();
+        if (this.options.key) delete visibleToastsByKey[this.options.key];
+    }
 
     _startRemovalTimer() {
         if (this.options.duration) {
-            this.hideTimeout = setTimeout(() => {
+            this.fadeTimeout = setTimeout(() => {
                 // When timer duration ends, start fading
                 this.$toast.removeClass('show');
 

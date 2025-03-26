@@ -12,7 +12,8 @@ let actions;
 let cmdKey = isMacOS() ? 'metaKey' : 'ctrlKey';
 let actionIdToShortcut = {
     'file.open': { char: 'o', modifiers: [cmdKey] },
-    'file.export': { char: 'e', modifiers: [cmdKey, 'shiftKey'] },
+    'file.export-as': { char: 'e', modifiers: [cmdKey, 'shiftKey'] },
+    'file.export-active': { char: 'e', modifiers: [cmdKey] },
 
     // Note: file.save is not shown in toolbar anywhere, it actually ends up calling either file.saveTo or file.saveAs
     'file.save': { char: 's', modifiers: [cmdKey] },
@@ -21,7 +22,7 @@ let actionIdToShortcut = {
     'clipboard.copy': { char: 'c', modifiers: [cmdKey] },
     'clipboard.paste': { char: 'v', modifiers: [cmdKey] },
     'clipboard.paste-in-selection': { char: 'v', modifiers: [cmdKey, 'shiftKey'] },
-    'editor.tools.text-editor': { char: 'e', modifiers: [cmdKey] },
+    // 'editor.tools.text-editor': { char: 'e', modifiers: [cmdKey] },
     'selection.select-all': { char: 'a', modifiers: [cmdKey] },
     'state.undo': { char: 'z', modifiers: [cmdKey] },
     'state.redo': { char: 'z', modifiers: [cmdKey, 'shiftKey'] },

@@ -4,7 +4,8 @@ export const strings = {
     'file.open.name': 'Open File',
     'file.save-as.name': 'Save to...',
     'file.save-active.name': 'Save to Current File',
-    'file.export.name': 'Export to...',
+    'file.export-as.name': 'Export to...',
+    'file.export-active.name': 'Export to Current File',
     'file.save-warning': 'Opening a new file will replace your existing content.\n' +
         'Click \'Save\' if you want to back up your drawing first.',
     'file.save-warning-cleared': 'Your current file has been saved. You may proceed to opening a new file.',

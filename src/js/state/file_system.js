@@ -1,4 +1,4 @@
-import { fileOpen, fileSave } from 'browser-fs-access';
+import {fileOpen, fileSave, supported} from 'browser-fs-access';
 import * as state from "./state.js";
 import {isObject} from "../utils/utilities.js";
 
@@ -108,7 +108,25 @@ export function hasActiveExport() {
     return !!exportHandle;
 }
 
-export async function exportFile(blobOrPromiseBlob, extension, mimeType, handle) {
+/**
+ * Exports Blob content to the user's OS.
+ * @param {Blob|Promise<Blob>} blobOrPromiseBlob The content to export. Note: If generating the Blob is slow (i.e. it
+ *   will be more than ~200ms from when the user clicked 'export'), you must pass a deferred Promise<Blob> to avoid
+ *   a user activation error. See exporter.js#lazyBlobPromise for more info.
+ * @param {String} extension File extension (e.g. "txt")
+ * @param {String} mimeType File MIME type (e.g. "text/plain")
+ * @param {boolean} [exportToActiveFile] If true, will update the most recent exported file (on the user's OS). Requires
+ *   a handle to have been previously set up (e.g. by previously exporting and picking a file). Only used if the browser
+ *   supports the File System API.
+ * @param {function()} [onExportStarted] Callback called once the user has selected where they want to save the file.
+ *   If File System API is not supported or if the export handle is already known this will be instantly called.
+ * @returns {Promise<string|undefined>} Returns the name of the file (will be undefined if File System API not supported)
+ */
+export async function exportFile(blobOrPromiseBlob, extension, mimeType, exportToActiveFile, onExportStarted) {
+    if (exportToActiveFile && !exportHandle) throw new Error(`No handle found for export file`);
+
+    if (onExportStarted && (!supported || exportToActiveFile)) onExportStarted();
+
     exportHandle = await fileSave(
         blobOrPromiseBlob,
         {
@@ -118,14 +136,12 @@ export async function exportFile(blobOrPromiseBlob, extension, mimeType, handle)
             id: EXPORT_DIR_ID,
             excludeAcceptAllOption: true
         },
-        handle
+        exportToActiveFile ? exportHandle : undefined,
+        false,
+        onExportStarted // Will be called if file system API is supported, there is no handle, and user selects a location
     )
-}
 
-export async function exportToActiveFile(blob, extension, mimeType) {
-    if (!exportHandle) throw new Error(`No handle found for export file`);
-
-    return await exportFile(blob, extension, mimeType, exportHandle);
+    return exportHandle && exportHandle.name;
 }
 
 

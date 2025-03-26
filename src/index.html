@@ -28,9 +28,11 @@
                         <li class="action-item" data-action="file.new"></li>
                         <li class="action-item" data-action="file.open"></li>
                         <li class="break"></li>
-                        <li class="action-item" data-action="file.save-active"></li>
                         <li class="action-item" data-action="file.save-as"></li>
-                        <li class="action-item" data-action="file.export"></li>
+                        <li class="action-item" data-action="file.save-active"></li>
+                        <li class="break"></li>
+                        <li class="action-item" data-action="file.export-as"></li>
+                        <li class="action-item" data-action="file.export-active"></li>
                     </ul>
                 </li>
                 <li>
@@ -391,7 +393,7 @@
     <div id="export-file-dialog" title="Export" class="dialog-form">
         <label>
             Format:
-            <select id="export-file-format" class="w-7">
+            <select id="export-file-format" class="w-7" name="format">
                 <option value="json">JSON</option>
                 <option value="gif">GIF</option>
                 <option value="png">PNG</option>
@@ -560,6 +562,13 @@
 
     <span id="font-ratio-tester" style="display: none;">A</span>
     <img id="export-debug" alt="for testing export" hidden>
+
+    <div id="full-screen-loader" style="display: none;">
+        <div>
+            <span class="ri ri-fw ri-spin ri-loader-line"></span>
+            <span class="message"></span>
+        </div>
+    </div>
 
     <div id="mobile-warning">
         <div>

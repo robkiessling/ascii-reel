@@ -47,15 +47,10 @@
 }
 
 #export-canvas-container {
-  display: none;
-
-  &.is-exporting {
-    display: block; // Show so canvas has correct width/height dimensions
-    visibility: hidden;
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
 }
 
 #export-debug {
