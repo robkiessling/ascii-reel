@@ -9,9 +9,7 @@ import {createDialog} from "../utils/dialogs.js";
 import exampleExportImg from "../../images/example-export.png";
 import SimpleBar from "simplebar";
 import { supported as isFileSystemAPISupported } from 'browser-fs-access';
-import {
-    hasActiveFile, openFile, FILE_EXTENSION, saveFile, saveToActiveFile, isPickerCanceledError, hasActiveExport
-} from "../state/file_system.js";
+import * as fileSystem from "../state/file_system.js";
 import {ValidationError} from "../utils/errors.js";
 import {exportAnimation} from "../state/exporter.js";
 import DimensionsPicker from "../components/ui/dimensions_picker.js";
@@ -28,12 +26,16 @@ export function init() {
     setupExport();
 }
 
+// --------------------------------------------------------------------------------- New File
+
 function setupNew() {
     const $newFileDialog = $('#new-file-dialog');
 
     createDialog($newFileDialog, () => {
         if (dimensionsPicker.validate()) {
             const dim = dimensionsPicker.value;
+
+            fileSystem.resetHandles();
 
             state.newState({
                 config: {
@@ -67,6 +69,8 @@ function setupNew() {
 }
 
 
+// --------------------------------------------------------------------------------- Open File
+
 // We show a short 'Open File' dialog purely to warn the user if their existing content will be overridden.
 const $openFileDialog = $('#open-file-dialog');
 
@@ -92,80 +96,89 @@ function setupOpen() {
 }
 
 function openFilePicker() {
-    defer(() => { // Defer so main menu has time to close
-        openFile()
+    // Defer so main menu has time to close
+    defer(() => {
+        fileSystem.openFile()
             .then(data => {
-                if (data) { // data can be undefined if user cancels the dialog
-                    $openFileDialog.dialog('close');
-                    state.load(data);
-                }
+                $openFileDialog.dialog('close');
+                state.load(data);
             })
-            .catch(error => alert(`Failed to open file: ${error.message}`))
+            .catch(err => {
+                if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to open file', err);
+            })
     });
 }
 
 
-/**
- * Saving the file to disk works differently based on whether the browser supports the File System API.
- *
- * If File System API is supported:
- * - An OS dialog will open allowing the user to name the file and save it to a location of their choosing.
- * - We will receive a handler after saving so that the save-active functionality works (allowing us to directly update
- *   the file on their OS instead of having to re-download it each time).
- *
- * If File System API is not supported:
- * - We have to show our manually-created #save-file-dialog so that the user can name the file.
- * - Once they click 'OK' after naming the file, it will be downloaded directly to their /Downloads folder.
- */
+// --------------------------------------------------------------------------------- Save File
+
+// This dialog is only used for browsers that do not support File System API (so we can name their downloaded file)
+const $saveFileDialog = $('#save-file-dialog');
+
 function setupSave() {
-    // This dialog is only used for browsers that do not support File System API (so we can name their downloaded file)
-    const $saveFileDialog = $('#save-file-dialog');
     createDialog($saveFileDialog, () => {
         state.config('name', $saveFileDialog.find('.name').val())
 
-        saveFile()
+        fileSystem.saveFile()
             .then(() => $saveFileDialog.dialog('close'))
-            .catch(error => alert(`Failed to save file: ${error.message}`));
+            .catch(err => {
+                if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to save file', err);
+            });
     });
-
-    function saveAs() {
-        if (isFileSystemAPISupported) {
-            saveFile().catch(error => alert(`Failed to save file: ${error.message}`))
-        } else {
-            $saveFileDialog.find('.name').val(state.getName());
-            $saveFileDialog.find('.extension').html(`.${FILE_EXTENSION}`);
-            $saveFileDialog.dialog('open');
-        }
-    }
-
-    function saveActive() {
-        saveToActiveFile()
-            .then(saved => {
-                if (saved) {
-                    new Toast({
-                        key: 'save-active-file',
-                        textCenter: true,
-                        duration: 5000,
-                        text: `Saved to "${state.config('name')}.${FILE_EXTENSION}"`
-                    });
-                }
-            })
-            .catch(error => alert(`Failed to save file: ${error.message}`));
-    }
 
     actions.registerAction('file.save-as', () => saveAs());
 
     actions.registerAction('file.save-active', {
-        enabled: () => hasActiveFile(),
+        enabled: () => fileSystem.hasActiveFile(),
         callback: () => saveActive(),
         shortcutAbbr: `${modifierAbbr('metaKey')}S` // Show shortcut here, but cmd-S really goes to file.save
     })
 
     // The following action is NOT shown in the toolbar anywhere, but it is what cmd-S links to. That way
     // cmd-S always goes to one of our saves (saveAs/saveActive) instead of default browser save.
-    actions.registerAction('file.save', () => hasActiveFile() ? saveActive() : saveAs());
+    actions.registerAction('file.save', () => fileSystem.hasActiveFile() ? saveActive() : saveAs());
 }
 
+/**
+ * Saving the file to disk works differently based on whether the browser supports the File System API.
+ *
+ * If File System API is supported:
+ * - An OS dialog will open allowing the user to name the file and save it to a location of their choosing.
+ * - We will receive a handler after saving so that the saveActive functionality works (allowing us to directly update
+ *   the file on their OS instead of having to re-download it each time).
+ *
+ * If File System API is not supported:
+ * - We have to show our manually-created $saveFileDialog so that the user can name the file.
+ * - Once they click 'OK' after naming the file, it will be downloaded directly to their /Downloads folder.
+ */
+function saveAs() {
+    if (isFileSystemAPISupported) {
+        fileSystem.saveFile()
+            .catch(err => {
+                if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to save file', err);
+            });
+    } else {
+        $saveFileDialog.find('.name').val(state.getName());
+        $saveFileDialog.find('.extension').html(`.${fileSystem.FILE_EXTENSION}`);
+        $saveFileDialog.dialog('open');
+    }
+}
+
+// Saves the file to the current active handler (directly updates the file on their OS)
+function saveActive() {
+    fileSystem.saveFile(true)
+        .then(() => {
+            new Toast({
+                key: 'save-active-file',
+                textCenter: true,
+                duration: 5000,
+                text: `Saved to "${state.config('name')}.${fileSystem.FILE_EXTENSION}"`
+            });
+        })
+        .catch(err => {
+            if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to save file', err);
+        });
+}
 
 
 // --------------------------------------------------------------- Export
@@ -262,8 +275,8 @@ function setupExport() {
     actions.registerAction('file.export-as', () => openExportDialog());
 
     actions.registerAction('file.export-active', {
-        enabled: () => hasActiveExport(),
-        callback: () => exportToActiveFile()
+        enabled: () => fileSystem.hasActiveExport(),
+        callback: () => exportActive()
     })
 
     exportTextSimpleBar = new SimpleBar($('#example-text').get(0), {
@@ -373,29 +386,33 @@ function exportFromForm() {
         options = validateExportOptions();
     } catch (err) {
         if (err instanceof ValidationError) return; // Form errors will be highlighted in red so user can try again
-        alert(`Failed to parse form: ${err}`); // An unhandled error occurred
+        unhandledError('Failed to parse form', err);
     }
 
-    exportAnimation(options).then(() => {
-        $exportFileDialog.dialog('close');
-    }).catch(err => {
-        if (!isPickerCanceledError(err)) alert(`Failed to export: ${err}`); // An unhandled error occurred
-    })
+    exportAnimation(options)
+        .then(() => {
+            $exportFileDialog.dialog('close');
+        })
+        .catch(err => {
+            if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to export file', err);
+        })
 }
 
-function exportToActiveFile() {
+function exportActive() {
     if (!state.config('lastExportOptions')) throw new Error(`no lastExportOptions found`);
 
-    exportAnimation(state.config('lastExportOptions'), true).then(filename => {
-        new Toast({
-            key: 'export-active-file',
-            textCenter: true,
-            duration: 5000,
-            text: filename ? `Exported to "${filename}"` : 'Export finished.'
-        });
-    }).catch(err => {
-        if (!isPickerCanceledError(err)) alert(`Failed to export: ${err}`); // An unhandled error occurred
-    })
+    exportAnimation(state.config('lastExportOptions'), true)
+        .then(filename => {
+            new Toast({
+                key: 'export-active-file',
+                textCenter: true,
+                duration: 5000,
+                text: filename ? `Exported to "${filename}"` : 'Export finished.'
+            });
+        })
+        .catch(err => {
+            if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to export file', err);
+        })
 }
 
 // TODO Special case: do not allow spritesheet export with png
@@ -561,4 +578,10 @@ function refreshJsonExportPreview(options) {
 
     $exportPreview.find('#example-text pre').html(frameExample);
     exportTextSimpleBar.recalculate();
+}
+
+
+function unhandledError(alertMessage = 'An error occurred', error) {
+    console.error(error);
+    alert(`${alertMessage}: ${error.message}`);
 }

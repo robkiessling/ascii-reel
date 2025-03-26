@@ -15,92 +15,73 @@ export function hasActiveFile() {
 /**
  * Prompts the user to select an .asciireel file to open. If File System API is supported by the browser, this will also
  * store the file handle so we can continuously update the file later (see saveFile).
- * @returns {Promise<object|boolean>} data is the parsed json to be loaded into the state. data will be false if the user
- *   cancels the dialog (this will not throw an error).
+ * @returns {Promise<object>} data is the parsed json to be loaded into the state
  */
 export async function openFile() {
-    try {
-        const file = await fileOpen({
-            description: "AsciiReel File",
-            extensions: [`.${FILE_EXTENSION}`],
-            mimeTypes: [MIME_TYPE],
-            excludeAcceptAllOption: true
-        });
+    const file = await fileOpen({
+        description: "AsciiReel File",
+        extensions: [`.${FILE_EXTENSION}`],
+        mimeTypes: [MIME_TYPE],
+        excludeAcceptAllOption: true
+    });
 
-        fileHandle = file.handle; // Will be undefined if File System API is not supported
+    fileHandle = file.handle; // Will be undefined if File System API is not supported
+    exportHandle = undefined; // Clear any existing export handles since we are looking at a new file now
 
-        const fileText = await file.text();
-        const json = JSON.parse(fileText);
+    const fileText = await file.text();
+    const json = JSON.parse(fileText);
 
-        if (json && isObject(json.config)) {
-            // Always prefer the file's name over the name property stored in the json.
-            // Note: file.name will be defined even if File System API is not supported.
-            json.config.name = fileNameWithoutExtension(file.name, FILE_EXTENSION);
-        }
-
-        return json;
-    } catch(error) {
-        return handleDialogError(error)
+    if (json && isObject(json.config)) {
+        // Always prefer the file's name over the name property stored in the json.
+        // Note: file.name will be defined even if File System API is not supported.
+        json.config.name = fileNameWithoutExtension(file.name, FILE_EXTENSION);
     }
+
+    return json;
 }
 
 /**
  * Saves the current state to disk as an .asciireel file. If the browser has File System API support, it is possible
  * to save updates directly to a file on the user's OS.
  *
- * @param {FileSystemFileHandle} [handle] If provided, will update the file attached to the handle (on the user's OS)
- *   instead of downloading a new file. Requires browser support for the File System API. Handles are retrieved from
- *   previous calls to saveFile or openFile. Handles cannot be persisted across sessions; the user will have to choose
- *   a file from a dialog at least once per session.
- * @returns {Promise<boolean>} True if file was successfully saved, false if not. E.g. if user closes the dialog without
- *   choosing a save destination, the Promise is fulfilled (no error) but its return value is false.
+ * Note: Promise will be rejected if user closes the file picker; use isPickerCanceledError to catch this case.
+ *
+ * @param {boolean} [saveToActiveFile] If true, will update the most recent saved file (on the user's OS). Requires
+ *   a handle to have been previously set up (e.g. by previously opening/saving a file). Only used if the browser
+ *   supports the File System API.
+ * @returns {Promise<string|undefined>} Returns the name of the file (will be undefined if File System API not supported)
  */
-export async function saveFile(handle) {
-    try {
-        const serializedState = JSON.stringify(state.getState());
-        const blob = new Blob([serializedState], {
-            type: MIME_TYPE,
-        });
+export async function saveFile(saveToActiveFile) {
+    if (saveToActiveFile && !fileHandle) throw new Error(`No handle found for saveToActiveFile`);
 
-        fileHandle = await fileSave(
-            blob,
-            {
-                fileName: `${state.getName()}.${FILE_EXTENSION}`,
-                description: 'AsciiReel File',
-                extensions: [`.${FILE_EXTENSION}`],
-                mimeTypes: [MIME_TYPE],
-                id: FILES_DIR_ID,
-                excludeAcceptAllOption: true
-            },
-            handle
-        )
+    const serializedState = JSON.stringify(state.getState());
+    const blob = new Blob([serializedState], {
+        type: MIME_TYPE,
+    });
 
-        // Update the state's name based on what the user entered into the dialog. Only applicable if the browser
-        // has File System API support.
-        if (fileHandle) state.config('name', fileNameWithoutExtension(fileHandle.name, FILE_EXTENSION));
+    fileHandle = await fileSave(
+        blob,
+        {
+            fileName: `${state.getName()}.${FILE_EXTENSION}`,
+            description: 'AsciiReel File',
+            extensions: [`.${FILE_EXTENSION}`],
+            mimeTypes: [MIME_TYPE],
+            id: FILES_DIR_ID,
+            excludeAcceptAllOption: true
+        },
+        saveToActiveFile ? fileHandle : undefined
+    )
 
-        return true;
-    } catch (error) {
-        return handleDialogError(error)
-    }
-}
+    // Update the state's name based on what the user entered into the dialog. Only applicable if the browser
+    // has File System API support.
+    if (fileHandle) state.config('name', fileNameWithoutExtension(fileHandle.name, FILE_EXTENSION));
 
-/**
- * Directly updates a file on the user's OS. Requires a handle to have been previously set up (e.g. by opening or
- * saving the file)
- * @returns {Promise<boolean>}
- */
-export async function saveToActiveFile() {
-    if (!fileHandle) throw new Error(`No handle found for ${FILE_EXTENSION} file`);
-
-    return await saveFile(fileHandle);
+    return fileHandle && fileHandle.name;
 }
 
 
 
 // -------------------------------------------------------------------------------- Export Files
-// See saveFile/saveToActiveFile functions for information on how handles work.
-
 const EXPORT_DIR_ID = "asciireel-exports"
 let exportHandle;
 
@@ -110,6 +91,9 @@ export function hasActiveExport() {
 
 /**
  * Exports Blob content to the user's OS.
+ *
+ * Note: Promise will be rejected if user closes the file picker; use isPickerCanceledError to catch this case.
+ *
  * @param {Blob|Promise<Blob>} blobOrPromiseBlob The content to export. Note: If generating the Blob is slow (i.e. it
  *   will be more than ~200ms from when the user clicked 'export'), you must pass a deferred Promise<Blob> to avoid
  *   a user activation error. See exporter.js#lazyBlobPromise for more info.
@@ -123,7 +107,7 @@ export function hasActiveExport() {
  * @returns {Promise<string|undefined>} Returns the name of the file (will be undefined if File System API not supported)
  */
 export async function exportFile(blobOrPromiseBlob, extension, mimeType, exportToActiveFile, onExportStarted) {
-    if (exportToActiveFile && !exportHandle) throw new Error(`No handle found for export file`);
+    if (exportToActiveFile && !exportHandle) throw new Error(`No handle found for exportToActiveFile`);
 
     if (onExportStarted && (!supported || exportToActiveFile)) onExportStarted();
 
@@ -151,24 +135,20 @@ export async function exportFile(blobOrPromiseBlob, extension, mimeType, exportT
 
 // If the state failed to load some content, this can be used to downloads that corrupted content for troubleshooting.
 export async function saveCorruptedState(corruptedData) {
-    try {
-        const blob = new Blob([JSON.stringify(corruptedData)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(corruptedData)], { type: "application/json" });
 
-        await fileSave(
-            blob,
-            {
-                fileName: `${state.getName()}-corrupted.json`,
-                extensions: [`.json`],
-                mimeTypes: ['application/json'],
-                id: FILES_DIR_ID,
-                excludeAcceptAllOption: true
-            }
-        )
+    const handle = await fileSave(
+        blob,
+        {
+            fileName: `${state.getName()}-corrupted.json`,
+            extensions: [`.json`],
+            mimeTypes: ['application/json'],
+            id: FILES_DIR_ID,
+            excludeAcceptAllOption: true
+        }
+    )
 
-        return true;
-    } catch (error) {
-        return handleDialogError(error)
-    }
+    return handle && handle.name;
 }
 
 
@@ -178,16 +158,9 @@ export function isPickerCanceledError(error) {
     return error.name === "AbortError";
 }
 
-function handleDialogError(error) {
-    if (isPickerCanceledError(error)) {
-        // User canceled the dialog; this is not considered an error (so Promise is still fulfilled) but we return
-        // false to indicate the dialog was canceled
-        return false;
-    } else {
-        // An actual error occurred, re-raise it
-        console.error(error.message, error.stack);
-        throw error;
-    }
+export function resetHandles() {
+    fileHandle = undefined;
+    exportHandle = undefined;
 }
 
 function fileNameWithoutExtension(fileName, extension) {

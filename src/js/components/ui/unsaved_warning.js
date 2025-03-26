@@ -1,5 +1,5 @@
 import {strings} from "../../config/strings.js";
-import {hasActiveFile, saveFile, saveToActiveFile} from "../../state/file_system.js";
+import {hasActiveFile, isPickerCanceledError, saveFile} from "../../state/file_system.js";
 
 const DEFAULT_OPTIONS = {
     showCloseButton: false, // If true, a close button will show in the top-right corner of the warning
@@ -17,16 +17,14 @@ export default class UnsavedWarning {
         );
 
         this.$container.find('.save').on('click', () => {
-            if (hasActiveFile()) {
-                saveToActiveFile()
-                    .then(saved => this.toggle(!saved, saved))
-                    .catch(error => alert(`Failed to save file: ${error.message}`))
-            }
-            else {
-                saveFile()
-                    .then(saved => this.toggle(!saved, saved))
-                    .catch(error => alert(`Failed to save file: ${error.message}`))
-            }
+            saveFile(hasActiveFile())
+                .then(() => this.toggle(false, true))
+                .catch(err => {
+                    if (!isPickerCanceledError(err)) {
+                        console.error(err);
+                        alert(`Failed to save file: ${err.message}`);
+                    }
+                })
         });
 
         this.$container.find('.close').on('click', () => {

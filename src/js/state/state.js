@@ -12,7 +12,7 @@ import Cell from "../geometry/cell.js";
 import {moveCursorTo} from "../canvas/selection.js";
 import {mod} from "../utils/numbers.js";
 import {getFormattedDateTime} from "../utils/strings.js";
-import {saveCorruptedState} from "./file_system.js";
+import {isPickerCanceledError, saveCorruptedState} from "./file_system.js";
 import {recalculateBGColors} from "../canvas/background.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it
@@ -993,7 +993,13 @@ function onLoadError(attemptedData) {
     $loadError.show();
 
     $loadError.find('.download').off('click').on('click', e => {
-        saveCorruptedState(attemptedData).catch(error => alert(`Failed to download corrupted data: ${error.message}`));
+        saveCorruptedState(attemptedData)
+            .catch(err => {
+                if (!isPickerCanceledError(err)) {
+                    console.error(err);
+                    alert(`Failed to download state: ${err.message}`);
+                }
+            })
     });
 
     $loadError.find('.reset').off('click').on('click', e => {
