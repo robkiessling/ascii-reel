@@ -1,3 +1,4 @@
+import {toggleStandard} from "../io/keyboard.js";
 
 let loaderShownAt;
 
@@ -6,6 +7,8 @@ let loaderShownAt;
  * @param {String} [message] The text to display
  */
 export function showFullScreenLoader(message = 'Loading...') {
+    toggleStandard('overlay', true); // Need to disable our app shortcuts while full screen loader is shown
+
     loaderShownAt = Date.now();
     $('#full-screen-loader').show()
         .find('.message').html(message);
@@ -18,9 +21,14 @@ export function showFullScreenLoader(message = 'Loading...') {
  *   will continue to be displayed for 500ms). A minDisplayTime of 0 means the loader is always immediately hidden.
  */
 export function hideFullScreenLoader(minDisplayTime = 500) {
-    if (!loaderShownAt) {
-        // If showFullScreenLoader has not been called, cannot calculate display time
+    function _hide() {
+        toggleStandard('overlay', false);
         $('#full-screen-loader').hide();
+    }
+
+    // Edge case in case hideFullScreenLoader is ever called before showFullScreenLoader
+    if (!loaderShownAt) {
+        _hide();
         return;
     }
 
@@ -28,9 +36,9 @@ export function hideFullScreenLoader(minDisplayTime = 500) {
     const remainingTime = minDisplayTime - elapsedTime;
 
     if (remainingTime > 0) {
-        setTimeout(() => $('#full-screen-loader').hide(), remainingTime);
+        setTimeout(() => _hide(), remainingTime);
     } else {
-        $('#full-screen-loader').hide();
+        _hide();
     }
 
 }

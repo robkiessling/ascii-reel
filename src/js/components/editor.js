@@ -569,7 +569,7 @@ function setupColorPicker() {
         parent: $colorPicker.get(0),
         popup: 'top',
         onOpen: () => {
-            keyboard.toggleStandard(true);
+            keyboard.toggleStandard('color-picker', true);
             colorPickerTooltip.disable();
             $colorPicker.addClass('picker-open');
             colorPickerOpen = true;
@@ -590,7 +590,7 @@ function setupColorPicker() {
             refreshAddToPalette();
         },
         onClose: () => {
-            keyboard.toggleStandard(false);
+            keyboard.toggleStandard('color-picker', false);
             colorPickerTooltip.enable();
             $colorPicker.removeClass('picker-open');
             colorPickerOpen = false;

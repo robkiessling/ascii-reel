@@ -51,7 +51,7 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
                 $dialog.parent().find('.ui-dialog-titlebar').hide();
             }
 
-            keyboard.toggleStandard(true);
+            keyboard.toggleStandard('dialog', true);
 
             $(document).on('keyboard:enter.dialog', () => {
                 const $acceptButton = $dialog.dialog('widget').find('button.call-out');
@@ -61,7 +61,7 @@ export function createDialog($dialog, onAccept, acceptText = 'Save', overrides =
             $dialog.find('.highlight:first').select();
         },
         close: () => {
-            keyboard.toggleStandard(false);
+            keyboard.toggleStandard('dialog', false);
             defer(() => hideAll()); // Hide all tooltips (sometimes tooltips get stifled by dialog popup)
             $(document).off('keyboard:enter.dialog');
         },

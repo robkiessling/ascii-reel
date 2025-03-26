@@ -4,7 +4,6 @@ import * as editor from "../components/editor.js";
 import * as actions from "./actions.js";
 import {triggerRefresh} from "../index.js";
 
-let standardKeyboard = false;
 const $document = $(document);
 
 export function init() {
@@ -12,18 +11,13 @@ export function init() {
     setupCompositionListener();
 }
 
-// When standard keyboard is enabled, the keyboard works as normal (e.g. cmd-v will paste according to browser
-// clipboard). When disabled, the keyboard uses this app's shortcuts (e.g. cmd-v will paste into selection).
-export function toggleStandard(enable) {
-    standardKeyboard = enable;
-}
 
 function setupKeydownListener() {
     $document.keydown(function(e) {
         const char = e.key; // E.g. x X 1 Control Alt Shift Meta Enter [ { \ /
         // console.log(char);
 
-        if (standardKeyboard) {
+        if (useStandardKeyboard()) {
             handleStandardKeyboard(char, e);
             return;
         }
@@ -221,10 +215,46 @@ function handleBrowserShortcut(e, char) {
     }
 }
 
+// ---------------------------------------------------------------------------------- Standard Keyboard
+
+let standardKeyboardLocks = {};
 
 /**
- * ---------------------------------------------------------------------------------- Composition
+ * Toggles the standard browser keyboard:
+ * - If the standard browser keyboard is enabled, the keyboard works as normal. E.g. Pressing a char key will type it
+ *   into an <input> (if focused) as opposed to typing it into the <canvas>. Only browser shortcuts will be enabled.
+ * - If the standard browser keyboard is disabled, our "app" keyboard functionality will be enabled. E.g. Pressing a
+ *   char will type it into the <canvas>. Our app shortcuts will have priority over browser shortcuts (if possible).
  *
+ * The toggle is implemented using a `lockingKey` to support multiple sources calling toggleStandard. The standard
+ * keyboard will be used if ANY sources have toggled it. For example, if:
+ *   1. Source A calls toggleStandard('A', true)    -> standard keyboard is enabled
+ *   2. Source B calls toggleStandard('B', true)    -> standard keyboard is enabled (now with 2 "locks")
+ *   3. Source A calls toggleStandard('A', false)   -> standard keyboard is still enabled ("B" lock is still applied)
+ *   4. Source B calls toggleStandard('B', false)   -> app keyboard is enabled (all locks have been removed)
+ *
+ * @param {String} lockingKey A unique key to assign this toggle to. This allows multiple sources to call toggleStandard
+ *   and the standard keyboard will be used if ANY locks remain.
+ * @param {boolean} useStandard If true, lock will be applied (standard keyboard will be used). If false, lock will be
+ *   removed (app keyboard will be used, assuming this was the final lock).
+ */
+export function toggleStandard(lockingKey, useStandard) {
+    if (useStandard) {
+        standardKeyboardLocks[lockingKey] = true
+    }
+    else {
+        delete standardKeyboardLocks[lockingKey]
+    }
+}
+
+function useStandardKeyboard() {
+    return Object.values(standardKeyboardLocks).some(value => value === true)
+}
+
+
+
+// ---------------------------------------------------------------------------------- Composition
+/**
  * Composition is a way to type special characters by pressing a sequence of keys. For example, on macOS you can
  * press option+e once to create a ´ character (with an underline under it). Then you can press another character
  * such as e, i, or a, to create é, í, or á, respectively.
@@ -245,7 +275,7 @@ function setupCompositionListener() {
     }).appendTo("body");
 
     $document.on("keydown.composition", () => {
-        if (!standardKeyboard) hiddenInput.focus(); // Use hidden input to ensure composition starts
+        if (!useStandardKeyboard()) hiddenInput.focus(); // Use hidden input to ensure composition starts
     });
 
     $document.on('compositionstart', e => {

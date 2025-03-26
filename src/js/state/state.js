@@ -14,6 +14,7 @@ import {mod} from "../utils/numbers.js";
 import {getFormattedDateTime} from "../utils/strings.js";
 import {isPickerCanceledError, saveCorruptedState} from "./file_system.js";
 import {recalculateBGColors} from "../canvas/background.js";
+import {toggleStandard} from "../io/keyboard.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it
 // in the CONFIG_KEYS_FOR_HISTORY constant below
@@ -991,6 +992,7 @@ function onLoadError(attemptedData) {
     $(document).off('mousedown').off('mouseup').off('click');
 
     $loadError.show();
+    toggleStandard('load-error', true);
 
     $loadError.find('.download').off('click').on('click', e => {
         saveCorruptedState(attemptedData)
