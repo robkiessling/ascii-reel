@@ -99,10 +99,7 @@ function openFilePicker() {
     // Defer so main menu has time to close
     defer(() => {
         fileSystem.openFile()
-            .then(data => {
-                $openFileDialog.dialog('close');
-                state.load(data);
-            })
+            .then(() => $openFileDialog.dialog('close'))
             .catch(err => {
                 if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to open file', err);
             })

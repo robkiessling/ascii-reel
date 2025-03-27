@@ -3,10 +3,6 @@ export function isFunction(value) {
     return typeof value === 'function';
 }
 
-export function isObject(val) {
-    return val !== null && typeof val === 'object' && Array.isArray(val) === false;
-}
-
 export function debounce(callback, delay = 500) {
     let timer;
     return function (...args) {

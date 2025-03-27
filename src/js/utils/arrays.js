@@ -24,6 +24,29 @@ export function create2dArray(numRows, numCols, defaultValue) {
 }
 
 /**
+ * Given an array such as [1, 2, 3, 4, 5, 6, 7, 8, 9] and a rowLength such as 3, will return a result:
+ *
+ *      [ [1, 2, 3], [4, 5, 6], [7, 8, 9] ]
+ *
+ * Throws an error if the array cannot be evenly split
+ *
+ * @param arr
+ * @param rowLength
+ * @returns {*[]}
+ */
+export function split1DArrayInto2D(arr, rowLength) {
+    if (arr.length % rowLength !== 0) throw new Error(`1d array of length ${arr.length} cannot be split into rows of length ${rowLength}`);
+
+    const result = [];
+
+    for (let i = 0; i < arr.length; i += rowLength) {
+        result.push(arr.slice(i, i + rowLength));
+    }
+
+    return result;
+}
+
+/**
  * Translates 2d arrays of chars/colors as if they were positioned at a Cell.
  * Note: The callback rows/cols can be out of bounds
  *

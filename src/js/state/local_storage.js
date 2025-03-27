@@ -6,7 +6,7 @@
  * to save more (would require a UI for choosing the desired file, deleting files, etc.)
  */
 
-import {getState, isValid, replaceState} from "./state.js";
+import {stateForLocalStorage, isValid, replaceState} from "./state.js";
 import {triggerRefresh} from "../index.js";
 import {refresh as refreshTheme} from "../menu/theme.js"
 
@@ -53,7 +53,7 @@ export function saveState() {
         return;
     }
 
-    const stateObj = getState();
+    const stateObj = stateForLocalStorage();
     setLocalStorage(STATE_KEY, stateObj, { state: stateObj })
 }
 

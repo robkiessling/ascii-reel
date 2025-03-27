@@ -59,6 +59,7 @@
     "jquery-ui": "^1.14.1",
     "jquery-visible": "^1.2.0",
     "jszip": "^3.10.1",
+    "pako": "^2.1.0",
     "regenerator-runtime": "^0.14.1",
     "simplebar": "^6.3.0",
     "tippy.js": "^6.3.7",

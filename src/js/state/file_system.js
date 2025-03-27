@@ -1,6 +1,5 @@
 import {fileOpen, fileSave, supported} from 'browser-fs-access';
 import * as state from "./state.js";
-import {isObject} from "../utils/utilities.js";
 
 // -------------------------------------------------------------------------------- Editor Files
 export const FILE_EXTENSION = "asciireel"
@@ -13,9 +12,9 @@ export function hasActiveFile() {
 }
 
 /**
- * Prompts the user to select an .asciireel file to open. If File System API is supported by the browser, this will also
- * store the file handle so we can continuously update the file later (see saveFile).
- * @returns {Promise<object>} data is the parsed json to be loaded into the state
+ * Prompts the user to select an .asciireel file to open, then loads that file into the state. If File System API is
+ * supported by the browser, this will also store the file handle so we can continuously update the file later (see saveFile).
+ * @returns {Promise<void>}
  */
 export async function openFile() {
     const file = await fileOpen({
@@ -29,15 +28,9 @@ export async function openFile() {
     exportHandle = undefined; // Clear any existing export handles since we are looking at a new file now
 
     const fileText = await file.text();
-    const json = JSON.parse(fileText);
 
-    if (json && isObject(json.config)) {
-        // Always prefer the file's name over the name property stored in the json.
-        // Note: file.name will be defined even if File System API is not supported.
-        json.config.name = fileNameWithoutExtension(file.name, FILE_EXTENSION);
-    }
-
-    return json;
+    // Note: file.name will be defined even if File System API is not supported.
+    state.loadFromDisk(JSON.parse(fileText), fileNameWithoutExtension(file.name, FILE_EXTENSION));
 }
 
 /**
@@ -54,7 +47,7 @@ export async function openFile() {
 export async function saveFile(saveToActiveFile) {
     if (saveToActiveFile && !fileHandle) throw new Error(`No handle found for saveToActiveFile`);
 
-    const serializedState = JSON.stringify(state.getState());
+    const serializedState = JSON.stringify(state.stateForDiskStorage());
     const blob = new Blob([serializedState], {
         type: MIME_TYPE,
     });
@@ -133,7 +126,7 @@ export async function exportFile(blobOrPromiseBlob, extension, mimeType, exportT
 
 // -------------------------------------------------------------------------------- Corrupted State
 
-// If the state failed to load some content, this can be used to downloads that corrupted content for troubleshooting.
+// If the state failed to load some content, this can be used to download that corrupted content for troubleshooting.
 export async function saveCorruptedState(corruptedData) {
     const blob = new Blob([JSON.stringify(corruptedData)], { type: "application/json" });
 

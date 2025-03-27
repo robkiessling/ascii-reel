@@ -6,7 +6,7 @@ import * as editor from "../components/editor.js";
 import Color from "@sphinxxxx/color-conversion";
 import {calculateFontRatio} from "../canvas/font.js";
 import {resetState, saveState} from "./local_storage.js";
-import ArrayRange, {create2dArray, translateGlyphs} from "../utils/arrays.js";
+import ArrayRange, {create2dArray, split1DArrayInto2D, translateGlyphs} from "../utils/arrays.js";
 import {DEFAULT_COLOR} from "../components/palette.js";
 import Cell from "../geometry/cell.js";
 import {moveCursorTo} from "../canvas/selection.js";
@@ -15,6 +15,8 @@ import {getFormattedDateTime} from "../utils/strings.js";
 import {isPickerCanceledError, saveCorruptedState} from "./file_system.js";
 import {recalculateBGColors} from "../canvas/background.js";
 import {toggleStandard} from "../io/keyboard.js";
+import pako from 'pako';
+import {transformValues} from "../utils/objects.js";
 
 // Note: If you want a CONFIG key to be saved to history (for undo/redo purposes), you need to include it
 // in the CONFIG_KEYS_FOR_HISTORY constant below
@@ -77,9 +79,9 @@ const CELL_DEFAULTS = {
 }
 const CREATE_SEQUENCES_FOR = ['layers', 'frames'];
 
-export const COLOR_FORMAT = 'rgbaString'; // vanilla-picker format we store and use to display
+export const COLOR_FORMAT = 'hex'; // vanilla-picker format we ues to store colors
 
-const MAX_HISTORY = 50; // Max number of states to remember in the history. Increasing this value will use more memory.
+const MAX_HISTORY = 30; // Max number of states to remember in the history. Increasing this value will use more memory.
 
 
 
@@ -96,7 +98,7 @@ export function init() {
 }
 
 
-// -------------------------------------------------------------------------------- Loading / General Config
+// -------------------------------------------------------------------------------- Loading
 
 let state = {};
 let sequences = {};
@@ -105,7 +107,7 @@ export function newState(overrides) {
     return load($.extend(true, {
         layers: [{ id: 1, name: 'Layer 1' }],
         frames: [{ id: 1 }],
-        cels: { '1,1': {} }
+        cels: { [getCelId(1, 1)]: {} }
     }, overrides));
 }
 
@@ -120,20 +122,16 @@ export function load(data) {
         resetHistory();
 
         state = {
-            config: $.extend(true, {}, CONFIG_DEFAULTS, data.config), // todo ensure indices are in bounds
+            config: $.extend(true, {}, CONFIG_DEFAULTS, { createdAt: new Date().toISOString() }, data.config),
             layers: (data.layers || []).map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer)),
             frames: (data.frames || []).map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame)),
             colorTable: data.colorTable ? [...data.colorTable] : []
         };
 
-        if (!state.config.createdAt) state.config.createdAt = new Date().toISOString();
+        // This has to be done after building the state object above because normalizeCel depends on state.config.dimensions
+        state.cels = transformValues(data.cels || {}, (celId, cel) => normalizeCel(cel));
 
-        // This is done after building the state object above because normalizeCel depends on state.config.dimensions
-        state.cels = Object.fromEntries(
-            Object.entries(data.cels || {}).map(([k, v]) => [k, normalizeCel(v)])
-        )
-
-        pruneUnusedState();
+        validateCelState();
         initSequences();
         ensureRequiredState();
 
@@ -155,8 +153,9 @@ export function load(data) {
     }
 }
 
-// Prune any unused frames, layers, and/or cels. This is only needed if the file was manually modified outside of app.
-function pruneUnusedState() {
+// Ensures all the cels referenced by frames/layers exist, and prunes any unused cels.
+// This should only be needed if the file was manually modified outside the app.
+function validateCelState() {
     const usedCelIds = new Set();
     state.frames.forEach(frame => {
         state.layers.forEach(layer => {
@@ -191,12 +190,187 @@ function ensureRequiredState() {
     if (state.frames.length === 0) createFrame(0);
 }
 
-export function getState() {
+
+// -------------------------------------------------------------------------------- Serialization Support
+
+// LocalStorage does not currently need any modifications, it will just stringify the entire state
+export function stateForLocalStorage() {
     return state;
 }
 export function replaceState(newState) {
     state = newState;
 }
+
+const CURRENT_DISK_VERSION = 2;
+
+/**
+ * Compresses the chars & colors arrays of every cel to minimize file size.
+ *
+ * Storing the chars/colors 2d arrays as-is is quite inefficient in JSON (the array is converted to a string, where every
+ * comma and/or quotation mark uses 1 byte). Instead, we use pako to store these 2d arrays as compressed Base64 strings.
+ *
+ * @returns {Object}
+ */
+export function stateForDiskStorage() {
+    const diskState = {
+        version: CURRENT_DISK_VERSION
+    };
+
+    vacuumColorTable();
+    const req16BitColors = state.colorTable.length > 0xFF;
+
+    for (const [stateKey, stateValue] of Object.entries(state)) {
+        switch (stateKey) {
+            case 'cels':
+                diskState[stateKey] = transformValues(stateValue, (celId, cel) => {
+                    return {
+                        chars: encodeChars(cel.chars),
+                        colors: encodeColors(cel.colors, req16BitColors),
+                    }
+                })
+                break;
+            default:
+                diskState[stateKey] = stateValue; // shallow copy
+        }
+    }
+
+    return diskState;
+}
+
+/**
+ * Reads the disk file, converting each cel's compressed chars/colors back into arrays.
+ * 
+ * Also handles migrating older files to the current format, in case the webapp's code has changed since the file was saved.
+ * 
+ * @returns {Object}
+ */
+export function loadFromDisk(diskState, fileName) {
+    const newState = {};
+
+    // State migrations (list will grow longer as more migrations are added):
+    if (diskState.version === 1) migrateToV2(diskState)
+
+    const celRowLength = diskState.config.dimensions[0];
+    const req16BitColors = diskState.colorTable.length > 0xFF;
+
+    for (const [stateKey, stateValue] of Object.entries(diskState)) {
+        switch (stateKey) {
+            case 'cels':
+                newState[stateKey] = transformValues(stateValue, (celId, cel) => {
+                    return {
+                        chars: decodeChars(cel.chars, celRowLength),
+                        colors: decodeColors(cel.colors, celRowLength, req16BitColors),
+                    }
+                })
+                break;
+            default:
+                newState[stateKey] = stateValue; // shallow copy
+        }
+    }
+
+    // Always prefer the file's name over the name property stored in the json.
+    diskState.config.name = fileName;
+
+    return load(newState);
+}
+
+
+function migrateToV2(diskState) {
+    // version 1 stored cel ids as `f-1,l-2`, version 2 stores them as `F-1,L-2`
+    diskState.cels = Object.fromEntries(
+        Object.entries(diskState.cels).map(([k, v]) => {
+            const match = k.match(/f-(\d+),l-(\d+)/)
+            const frameId = parseInt(match[1])
+            const layerId = parseInt(match[2])
+            return [`F-${frameId},L-${layerId}`, v]
+        })
+    )
+}
+
+/**
+ * Encode a 2d chars array into a compressed Base64 string.
+ * @param {Array} chars 2d array of chars. The empty string "" is a valid char.
+ * @returns {string} Base 64 string representing the compressed 2d array
+ */
+function encodeChars(chars) {
+    const flatStr = chars.flat().map(char => char === "" ? "\0" : char).join(''); // convert to flat string
+    const compressed = pako.deflate(flatStr); // convert to compressed Uint8Array
+    return window.btoa(String.fromCharCode(...compressed)); // convert to Base64 string
+
+    // todo does spread operator cap out at 10000 elements? maybe use TextDecoder? https://github.com/nodeca/pako/issues/206#issuecomment-1835315482
+    //      or https://stackoverflow.com/a/66046176/4904996
+}
+
+/**
+ * Decodes a compressed Base64 string into a 2d chars array
+ * @param base64String Base 64 string representing the compressed 2d array (from encodeChars function)
+ * @param {Number} rowLength How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
+ * @returns {Array} 2d array of chars
+ */
+function decodeChars(base64String, rowLength) {
+    const compressed = Uint8Array.from(window.atob(base64String), c => c.charCodeAt(0)); // convert to compressed Uint8Array
+    const flatStr = pako.inflate(compressed, {to: 'string'}) // convert to uncompressed flat string
+    return split1DArrayInto2D(flatStr.split('').map(char => char === "\0" ? "" : char), rowLength) // convert to 2d chars array
+}
+
+/**
+ * Encode a 2d colors array into a compressed Base64 string.
+ * @param {Array} colors 2d array of color integers
+ * @param {Boolean} has16BitNumbers If your colors array contains integers greater than 255 you must set this param
+ *   to be true, otherwise they won't be encoded correctly
+ * @returns {string} Base 64 string representing the compressed 2d array
+ */
+function encodeColors(colors, has16BitNumbers) {
+    let uncompressed;
+    const flatColors = colors.flat();
+
+    // Convert to Uint8Array typed array for compression
+    if (has16BitNumbers) {
+        // pako only supports Uint8Array, so if there are 16-bit numbers we need to split each 16-bit number into 2 bytes
+        uncompressed = new Uint8Array(flatColors.length * 2);
+        for (let i = 0; i < flatColors.length; i++) {
+            uncompressed[i * 2] = (flatColors[i] >> 8) & 0xFF; // Most significant byte
+            uncompressed[i * 2 + 1] = flatColors[i] & 0xFF;    // Least significant byte
+        }
+    }
+    else {
+        uncompressed = new Uint8Array(flatColors)
+    }
+
+    const compressed = pako.deflate(uncompressed); // convert to compressed Uint8Array
+    return btoa(String.fromCharCode(...compressed)); // Convert to Base64 string for json
+}
+
+/**
+ * Decodes a compressed Base64 string into a 2d colors array
+ * @param base64String Base 64 string representing the compressed 2d array (from encodeColors function)
+ * @param {Number} rowLength How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
+ * @param {Boolean} has16BitNumbers If the encoded colors array contains integers greater than 255, you must set this param
+ *   to be true, otherwise they won't be decoded correctly
+ * @returns {Array} 2d array of color integers
+ */
+function decodeColors(base64String, rowLength, has16BitNumbers) {
+    const compressed = Uint8Array.from(atob(base64String), c => c.charCodeAt(0)); // Base64 string -> compressed Uint8Array
+    const uncompressed = pako.inflate(compressed); // convert to uncompressed Uint8Array
+
+    let flatColors;
+    if (has16BitNumbers) {
+        // Convert pairs of two consecutive bytes back into one 16-bit number
+        flatColors = [];
+        for (let i = 0; i < uncompressed.length; i += 2) {
+            flatColors.push((uncompressed[i] << 8) | uncompressed[i + 1]);
+        }
+    }
+    else {
+        flatColors = Array.from(uncompressed); // Convert to array of 8-bit numbers
+    }
+
+    return split1DArrayInto2D(flatColors, rowLength)
+}
+
+
+
+// -------------------------------------------------------------------------------- General Config
 
 export function numRows() {
     return state.config.dimensions[1];
@@ -433,7 +607,7 @@ export function cel(layer, frame) {
 }
 
 function getCelId(layerId, frameId) {
-    return `${layerId},${frameId}`;
+    return `F-${frameId},L-${layerId}`;
 }
 
 
