@@ -9,6 +9,11 @@ export const strings = {
     'file.save-warning': 'Opening a new file will replace your existing content.\n' +
         'Click \'Save\' if you want to back up your drawing first.',
     'file.save-warning-cleared': 'Your current file has been saved. You may proceed to opening a new file.',
+    'file.cannot-rename-active-file.name': 'Cannot rename disk file',
+    'file.cannot-rename-active-file.description': 'This file is linked to your computer and cannot be renamed directly. ' +
+        'To rename it, save a copy with a new name and delete the original file manually.',
+    'file.active-file-info.name': 'Linked to Disk File',
+    'file.active-file-info.description': 'Changes are saved directly to the original file on your computer.',
 
     'clipboard.cut.name': 'Cut',
     'clipboard.copy.name': 'Copy',

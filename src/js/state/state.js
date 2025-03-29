@@ -384,12 +384,19 @@ export function config(key, newValue) {
     return state.config && state.config[key];
 }
 
-export function getName() {
+export function getName(includeDefaultTimestamp = true) {
     if (config('name')) return config('name');
 
-    let createdAt = new Date(config('createdAt'));
-    if (isNaN(createdAt.getTime())) createdAt = new Date();
-    return `Untitled-${getFormattedDateTime(createdAt)}`
+    if (includeDefaultTimestamp) {
+        let name = 'Untitled';
+        let createdAt = new Date(config('createdAt'));
+        if (isNaN(createdAt.getTime())) createdAt = new Date();
+        name += `-${getFormattedDateTime(createdAt)}`;
+        return name;
+    }
+    else {
+        return 'Untitled Animation'
+    }
 }
 
 // TODO would be better if this was smarter - what I really want is a way to detect if there are changes that require saving

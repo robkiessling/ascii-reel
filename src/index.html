@@ -16,7 +16,7 @@
 
 <body>
     <div id="header-content">
-        <div class="left-side">
+        <div class="left-section">
             <div class="logo no-select">
                 <img src="./images/logo-192x192.png" alt="Logo">
                 Ascii Reel
@@ -74,8 +74,12 @@
                 </li>
             </ul>
         </div>
-        <div class="center-title"></div>
-        <div class="right-side">
+        <div class="middle-section">
+            <span id="active-file-icon" class="ri ri-fw ri-hard-drive-3-line" style="display: none;"></span>
+            <span id="file-name" contenteditable="plaintext-only"
+                  spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off"></span>
+        </div>
+        <div class="right-section">
             <ul id="right-menu" class="horizontal-menu no-select">
                 <li>
                     <span class="current-theme"></span>
@@ -383,7 +387,7 @@
 
     <div id="confirm-dialog"><p></p></div>
 
-    <div id="save-file-dialog" title="Save As...">
+    <div id="save-file-dialog" title="Save To...">
         <label>
             File Name<br>
             <input type="text" class="name highlight"><span class="extension"></span>

@@ -6,7 +6,7 @@ import '../styles/app.scss'
 
 import { init as initClipboard } from "./io/clipboard.js"
 import { init as initEditor, refresh as refreshEditor } from "./components/editor.js"
-import { init as initMainMenu } from "./menu/main.js";
+import { init as initMainMenu, refresh as refreshMenu } from "./menu/main.js";
 import { init as initFileMenu } from "./menu/file.js";
 import { init as initToolsMenu } from "./menu/tools.js";
 import { init as initViewMenu } from "./menu/view.js";
@@ -130,6 +130,9 @@ export function triggerRefresh(type = 'full', saveState = false) {
             case 'unicode':
                 refreshUnicode();
                 break;
+            case 'menu':
+                refreshMenu();
+                break;
             case 'full':
                 selection.clearCaches();
                 canvasStack.redrawCharCanvas();
@@ -141,6 +144,7 @@ export function triggerRefresh(type = 'full', saveState = false) {
                 layers.rebuild();
                 refreshPalette();
                 refreshUnicode();
+                refreshMenu();
                 break;
             default:
                 console.warn(`triggerRefresh("${type}") is not a valid type`);

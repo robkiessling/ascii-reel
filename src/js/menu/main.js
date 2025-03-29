@@ -1,6 +1,15 @@
 import * as actions from "../io/actions.js";
+import {config, getName} from "../state/state.js";
+import {toggleStandard} from "../io/keyboard.js";
+import {confirmDialog} from "../utils/dialogs.js";
+import * as fileSystem from "../state/file_system.js";
+import {triggerRefresh} from "../index.js";
+import {strings} from "../config/strings.js";
+import {hasActiveFile} from "../state/file_system.js";
+import tippy from "tippy.js";
 
-let leftMenu, rightMenu;
+let leftMenu, rightMenu
+let $fileName, $activeFileIcon;
 
 export function init() {
     leftMenu = new HorizontalMenu($('#left-menu'), {
@@ -10,12 +19,83 @@ export function init() {
         onOpen: () => leftMenu.close(),
         rightAligned: true
     });
+
+    setupFileName();
+    setupActiveFileIcon();
 }
 
 export function refresh() {
     leftMenu.rebuildActions();
     rightMenu.rebuildActions();
+
+    $fileName.html(getName(false));
+    $activeFileIcon.toggle(hasActiveFile())
 }
+
+function setupActiveFileIcon() {
+    $activeFileIcon = $('#active-file-icon');
+    tippy($activeFileIcon.get(0), {
+        content: `<span class="title">${strings['file.active-file-info.name']}</span><br>` +
+            `<span>${strings['file.active-file-info.description']}</span>`,
+        placement: 'bottom',
+        allowHTML: true,
+    })
+}
+
+function setupFileName() {
+    $fileName = $('#file-name');
+
+    let canceled, origName;
+    $fileName.on('focus', () => {
+        origName = $fileName.text();
+        toggleStandard('file-name', true);
+        canceled = false;
+    });
+
+    $fileName.on('keydown', function (e) {
+        if (e.key === 'Escape') {
+            canceled = true;
+            $fileName.blur();
+        }
+        switch (e.key) {
+            case 'Escape':
+                canceled = true;
+                $fileName.blur();
+                break;
+            case 'Enter':
+                finishEditing();
+        }
+    });
+
+    function finishEditing() {
+        toggleStandard('file-name', false);
+        const newName = $fileName.text();
+        if (newName && newName !== origName && !canceled) config('name', newName);
+        triggerRefresh('menu');
+    }
+
+    $fileName.on('blur', () => finishEditing());
+
+    $fileName.on('mousedown', evt => {
+        if (fileSystem.hasActiveFile()) {
+            evt.preventDefault();
+
+            confirmDialog(strings['file.cannot-rename-active-file.name'], strings['file.cannot-rename-active-file.description'], () => {
+                fileSystem.saveFile()
+                    .then(() => {
+                        triggerRefresh('menu'); // For new file name
+                    })
+                    .catch(err => {
+                        if (!fileSystem.isPickerCanceledError(err)) {
+                            console.error(err);
+                            alert(`Failed to save file: ${err.message}`);
+                        }
+                    });
+            }, 'Save as new file')
+        }
+    })
+}
+
 
 class HorizontalMenu {
     static idSequence = 0;

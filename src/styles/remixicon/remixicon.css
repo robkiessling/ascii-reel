@@ -8,9 +8,9 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1742941252812") format("woff2"),
-    url("remixicon/remixicon.woff?t=1742941252812") format("woff"),
-    url('remixicon/remixicon.ttf?t=1742941252812') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
+    src: url("remixicon/remixicon.woff2?t=1743208786304") format("woff2"),
+    url("remixicon/remixicon.woff?t=1743208786304") format("woff"),
+    url('remixicon/remixicon.ttf?t=1743208786304') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
     font-display: swap;
 }
 
@@ -85,3 +85,4 @@
 .ri-contrast-line:before { content: "\ebda"; }
 .ri-save-3-line:before { content: "\f0b1"; }
 .ri-loader-line:before { content: "\eeca"; }
+.ri-hard-drive-3-line:before { content: "\f395"; }

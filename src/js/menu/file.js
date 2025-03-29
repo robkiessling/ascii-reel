@@ -18,6 +18,7 @@ import UnsavedWarning from "../components/ui/unsaved_warning.js";
 import {defaultContrastColor} from "../components/palette.js";
 import {modifierAbbr} from "../utils/os.js";
 import Toast from "../components/ui/toast.js";
+import {triggerRefresh} from "../index.js";
 
 export function init() {
     setupNew();
@@ -54,7 +55,8 @@ function setupNew() {
     const dimensionsPicker = new DimensionsPicker($newFileDialog.find('.dimensions-area'));
     const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-area'));
     const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'), {
-        showCloseButton: true
+        showCloseButton: true,
+        onSave: () => triggerRefresh('menu') // For new file name
     })
 
     actions.registerAction('file.new', () => {
@@ -82,7 +84,8 @@ function setupOpen() {
     });
 
     const unsavedWarning = new UnsavedWarning($openFileDialog.find('.unsaved-warning-area'), {
-        successStringId: 'file.save-warning-cleared' // show a message since otherwise the dialog is completely blank
+        successStringId: 'file.save-warning-cleared', // show a message since otherwise the dialog is completely blank
+        onSave: () => triggerRefresh('menu') // For new file name
     })
 
     actions.registerAction('file.open', () => {
@@ -117,7 +120,11 @@ function setupSave() {
         state.config('name', $saveFileDialog.find('.name').val())
 
         fileSystem.saveFile()
-            .then(() => $saveFileDialog.dialog('close'))
+            .then(() => {
+                triggerRefresh('menu'); // For new file name
+
+                $saveFileDialog.dialog('close')
+            })
             .catch(err => {
                 if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to save file', err);
             });
@@ -151,6 +158,7 @@ function setupSave() {
 function saveAs() {
     if (isFileSystemAPISupported) {
         fileSystem.saveFile()
+            .then(() => triggerRefresh('menu')) // For new file name
             .catch(err => {
                 if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to save file', err);
             });
@@ -165,6 +173,8 @@ function saveAs() {
 function saveActive() {
     fileSystem.saveFile(true)
         .then(() => {
+            triggerRefresh('menu'); // For new file name
+
             new Toast({
                 key: 'save-active-file',
                 textCenter: true,

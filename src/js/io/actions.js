@@ -1,8 +1,8 @@
 import tippy from "tippy.js";
 import {strings} from "../config/strings.js";
 import {isFunction}from "../utils/utilities.js";
-import {refresh as refreshMenu} from "../menu/main.js"
 import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
+import {triggerRefresh} from "../index.js";
 
 let actions;
 
@@ -129,7 +129,7 @@ export function isActionEnabled(id) {
 export function callAction(id, callbackData) {
     if (isActionEnabled(id)) {
         actions[id].callback(callbackData);
-        refreshMenu();
+        triggerRefresh('menu');
         return true;
     }
 

@@ -4,6 +4,7 @@ import {hasActiveFile, isPickerCanceledError, saveFile} from "../../state/file_s
 const DEFAULT_OPTIONS = {
     showCloseButton: false, // If true, a close button will show in the top-right corner of the warning
     successStringId: '', // string ID for message to show if save is successful
+    onSave: () => {}, // callback if user clicks 'save' button
 }
 
 export default class UnsavedWarning {
@@ -18,7 +19,10 @@ export default class UnsavedWarning {
 
         this.$container.find('.save').on('click', () => {
             saveFile(hasActiveFile())
-                .then(() => this.toggle(false, true))
+                .then(() => {
+                    this.toggle(false, true)
+                    this.options.onSave();
+                })
                 .catch(err => {
                     if (!isPickerCanceledError(err)) {
                         console.error(err);
