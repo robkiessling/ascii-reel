@@ -395,7 +395,7 @@ export function getName(includeDefaultTimestamp = true) {
         return name;
     }
     else {
-        return 'Untitled Animation'
+        return 'Untitled animation'
     }
 }
 
