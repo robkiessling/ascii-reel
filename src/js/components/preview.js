@@ -2,7 +2,7 @@
  * UI component for the canvas preview in the top-right area of the page.
  */
 
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import CanvasControl from "../canvas/canvas.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
@@ -34,7 +34,7 @@ export function init() {
         min: 0,
         max: MAX_FPS,
         slide: (event, ui) => {
-            state.config('fps', ui.value);
+            state.setMetadata('fps', ui.value);
             reset();
         }
     });
@@ -52,13 +52,13 @@ export function resize() {
 // Just redraw the current preview frame (e.g. if chars got updated)
 export function redraw() {
     previewCanvas.clear();
-    previewCanvas.drawBackground(state.config('background'));
+    previewCanvas.drawBackground(state.getConfig('background'));
     previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
     previewCanvas.drawWindow(getCurrentViewRect());
 
     if (popup && !popup.closed && popupCanvas) {
         popupCanvas.clear();
-        popupCanvas.drawBackground(state.config('background'));
+        popupCanvas.drawBackground(state.getConfig('background'));
         popupCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
     }
 }
@@ -67,13 +67,13 @@ export function redraw() {
 export function reset() {
     if (previewInterval) { previewInterval.stop(); }
 
-    $fpsSlider.slider('value', state.config('fps'));
-    $fpsValue.html(`${state.config('fps')} FPS`);
+    $fpsSlider.slider('value', state.getMetadata('fps'));
+    $fpsValue.html(`${state.getMetadata('fps')} FPS`);
 
     previewIndex = state.frameIndex();
     redraw();
 
-    if (state.config('fps') === 0) {
+    if (state.getMetadata('fps') === 0) {
         // Even if FPS is zero, we still redraw the canvas at a slow interval. This is mainly to support the popup.
         previewInterval = setIntervalUsingRAF(() => {
             redraw();
@@ -86,7 +86,7 @@ export function reset() {
                 previewIndex = 0;
             }
             redraw();
-        }, 1000 / state.config('fps'));
+        }, 1000 / state.getMetadata('fps'));
     }
 }
 

@@ -17,8 +17,8 @@ import * as preview from "./components/preview.js";
 import { init as initUnicode, refresh as refreshUnicode } from "./components/unicode.js";
 import * as canvasStack from './components/canvas_stack.js';
 import * as selection from './canvas/selection.js';
-import * as state from "./state/state.js";
-import * as localstorage from "./state/local_storage.js";
+import * as state from "./state/index.js";
+import * as localstorage from "./storage/local_storage.js";
 import * as frames from "./components/frames.js";
 import * as layers from "./components/layers.js";
 import {debounce, defer} from "./utils/utilities.js";
@@ -51,7 +51,7 @@ defer(() => {
     $('body').css('opacity', 1);
 
     const savedState = localstorage.readState();
-    const successfulLoad = savedState ? state.load(savedState) : state.newState();
+    const successfulLoad = savedState ? state.loadFromLocalStorage(savedState) : state.newState();
 
     if (successfulLoad) {
         refreshShortcuts();

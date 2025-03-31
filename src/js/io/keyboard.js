@@ -1,5 +1,5 @@
 import * as selection from "../canvas/selection.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import * as editor from "../components/editor.js";
 import * as actions from "./actions.js";
 import {triggerRefresh} from "../index.js";
@@ -79,7 +79,7 @@ function setupKeydownListener() {
 function handleEscapeKey() {
     state.endHistoryModification();
 
-    if (state.config('tool') === 'text-editor') {
+    if (state.getMetadata('tool') === 'text-editor') {
         selection.clear();
     }
     else {
@@ -145,7 +145,7 @@ function handleArrowKey(e, arrowKey) {
     if (selection.hasTarget()) {
         state.endHistoryModification();
 
-        if (state.config('tool') === 'text-editor') {
+        if (state.getMetadata('tool') === 'text-editor') {
             // text-editor tool has a special arrow key handler
             selection.handleTextEditorArrowKey(direction, e.shiftKey);
         }

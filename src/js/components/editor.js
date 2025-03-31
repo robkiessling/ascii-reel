@@ -6,7 +6,7 @@
  */
 
 import Picker from 'vanilla-picker/csp';
-import * as state from '../state/state.js';
+import * as state from '../state/index.js';
 import * as selection from '../canvas/selection.js';
 import {triggerRefresh} from "../index.js";
 import * as keyboard from "../io/keyboard.js";
@@ -43,10 +43,10 @@ export function init() {
 }
 
 export function refresh() {
-    selectColor(state.config('primaryColor'))
+    selectColor(state.getMetadata('primaryColor'))
 
     $editingTools.find('.editing-tool').removeClass('selected');
-    $editingTools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
+    $editingTools.find(`.editing-tool[data-tool='${state.getMetadata('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
     drawRectSubMenu.refresh();
@@ -69,7 +69,7 @@ export function refreshSelectionDimensions(cellArea) {
 }
 
 export function changeTool(newTool) {
-    state.config('tool', newTool);
+    state.setMetadata('tool', newTool);
     selection.clear();
     refresh();
 }
@@ -91,7 +91,7 @@ export function setupMouseEvents(canvasControl) {
     function _emitEvent(name, mouseEvent) {
         if (!canvasControl.initialized) return;
         const cell = canvasControl.cellAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
-        canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.config('tool')])
+        canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.getMetadata('tool')])
     }
 
     canvasControl.$canvas.on('mousedown', evt => _emitEvent('editor:mousedown', evt));
@@ -120,10 +120,10 @@ export function setupMouseEvents(canvasControl) {
                 });
                 break;
             case 'draw-rect':
-                startDrawing(AsciiRect, { drawType: state.config('drawRect').type });
+                startDrawing(AsciiRect, { drawType: state.getMetadata('drawRect').type });
                 break;
             case 'draw-line':
-                startDrawing(AsciiLine, { drawType: state.config('drawLine').type });
+                startDrawing(AsciiLine, { drawType: state.getMetadata('drawLine').type });
                 break;
             case 'draw-freeform-ascii':
                 startDrawing(AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
@@ -317,7 +317,7 @@ function refreshSelectionTools() {
     $selectionTools.toggle(selection.hasSelection());
 
     // Hide typewriter when using text-editor tool
-    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggle(state.config('tool') !== 'text-editor');
+    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggle(state.getMetadata('tool') !== 'text-editor');
 
     $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
     $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggleClass('active', !!selection.cursorCell);
@@ -352,7 +352,7 @@ function setupBrushSubMenu() {
     brushSubMenu = new ToolSubMenu({
         $menu: $('#brush-shapes'),
         configKey: 'brush',
-        visible: () => BRUSH_TOOLS.includes(state.config('tool')),
+        visible: () => BRUSH_TOOLS.includes(state.getMetadata('tool')),
         tooltipContent: $tool => {
             const shape = $tool.data('shape');
             const size = $tool.data('size');
@@ -442,7 +442,7 @@ export function setFreeformChar(char) {
 }
 
 export function shouldUpdateFreeformChar() {
-    // return state.config('tool') === 'draw-freeform-char' || state.config('tool') === 'fill-char';
+    // return state.getMetadata('tool') === 'draw-freeform-char' || state.getMetadata('tool') === 'fill-char';
 
     // Currently we are always updating the freeform char, even if a freeform tool is not selected
     return true;
@@ -455,7 +455,7 @@ function setupDrawRectSubMenu() {
     drawRectSubMenu = new ToolSubMenu({
         $menu: $('#draw-rect-types'),
         configKey: 'drawRect',
-        visible: () => state.config('tool') === 'draw-rect',
+        visible: () => state.getMetadata('tool') === 'draw-rect',
         tooltipContent: $tool => {
             const type = $tool.data('type');
             const name = strings[`editor.draw-rect-types.${type}.name`];
@@ -596,8 +596,8 @@ function setupColorPicker() {
             colorPickerOpen = false;
         },
         onChange: (color) => {
-            state.config('primaryColor', color[state.COLOR_FORMAT]);
-            $colorPicker.css('background', state.config('primaryColor'));
+            state.setMetadata('primaryColor', color[state.COLOR_FORMAT]);
+            $colorPicker.css('background', state.getMetadata('primaryColor'));
 
             refreshAddToPalette();
             triggerRefresh('paletteSelection');
@@ -605,7 +605,7 @@ function setupColorPicker() {
     });
 
     $colorPicker.on('click', '.add-to-palette', () => {
-        state.addColor(state.config('primaryColor'));
+        state.addColor(state.getMetadata('primaryColor'));
 
         refreshAddToPalette();
         triggerRefresh('palette', true);
@@ -617,10 +617,10 @@ function refreshAddToPalette() {
 
     $addToPalette.empty();
 
-    if (state.isNewColor(state.config('primaryColor'))) {
+    if (state.isNewColor(state.getMetadata('primaryColor'))) {
         $addToPalette.addClass('add-to-palette');
 
-        const [h, s, l, a] = new Color(state.config('primaryColor')).hsla; // Break colorStr into hsla components
+        const [h, s, l, a] = new Color(state.getMetadata('primaryColor')).hsla; // Break colorStr into hsla components
 
         $('<span>', {
             css: { color: l <= 0.5 ? 'white' : 'black' },
@@ -676,11 +676,11 @@ class ToolSubMenu {
     }
 
     get state() {
-        return state.config(this.options.configKey);
+        return state.getMetadata(this.options.configKey);
     }
 
     set state(newState) {
-        state.config(this.options.configKey, newState);
+        state.setMetadata(this.options.configKey, newState);
     }
 
     setup() {

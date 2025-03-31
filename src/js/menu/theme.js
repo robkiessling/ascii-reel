@@ -2,7 +2,7 @@ import {registerAction} from "../io/actions.js";
 import {currentTheme, THEMES} from "../config/theme.js";
 import {recalculateBGColors} from "../canvas/background.js";
 import {triggerRefresh} from "../index.js";
-import {saveGlobalSetting} from "../state/local_storage.js";
+import {saveGlobalSetting} from "../storage/local_storage.js";
 
 export function init() {
     registerThemeAction('theme.system', 'system');

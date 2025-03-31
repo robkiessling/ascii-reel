@@ -1,4 +1,4 @@
-import * as state from "../../state/state.js";
+import * as state from "../../state/index.js";
 import Cell from "../cell.js";
 import SelectionPolygon from "./selection_polygon.js";
 

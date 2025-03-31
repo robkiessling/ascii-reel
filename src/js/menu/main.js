@@ -1,11 +1,11 @@
 import * as actions from "../io/actions.js";
-import {config, getName} from "../state/state.js";
+import {getName, setMetadata} from "../state/index.js";
 import {toggleStandard} from "../io/keyboard.js";
 import {confirmDialog} from "../utils/dialogs.js";
-import * as fileSystem from "../state/file_system.js";
+import * as fileSystem from "../storage/file_system.js";
 import {triggerRefresh} from "../index.js";
 import {strings} from "../config/strings.js";
-import {hasActiveFile} from "../state/file_system.js";
+import {hasActiveFile} from "../storage/file_system.js";
 import tippy from "tippy.js";
 
 let leftMenu, rightMenu
@@ -70,7 +70,7 @@ function setupFileName() {
     function finishEditing() {
         toggleStandard('file-name', false);
         const newName = $fileName.text();
-        if (newName && newName !== origName && !canceled) config('name', newName);
+        if (newName && newName !== origName && !canceled) setMetadata('name', newName);
         triggerRefresh('menu');
     }
 

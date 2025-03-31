@@ -1,10 +1,9 @@
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 
 import {resetExportDimensions} from "./file.js";
 import {triggerRefresh, triggerResize} from "../index.js";
 import {calculateFontRatio} from "../canvas/font.js";
-import {pushStateToHistory} from "../state/state.js";
 import {AVAILABLE_FONTS} from "../config/fonts.js";
 import {createDialog} from "../utils/dialogs.js";
 import {recalculateBGColors} from "../canvas/background.js";
@@ -56,11 +55,11 @@ function setupFontDialog() {
     })
 
     createDialog($fontDialog, () => {
-        state.config('font', $fontSelect.val());
+        state.setConfig('font', $fontSelect.val());
 
         calculateFontRatio();
         triggerResize({ clearSelection: true, resetZoom: true });
-        pushStateToHistory({ requiresResize: true, requiresCalculateFontRatio: true });
+        state.pushStateToHistory({ requiresResize: true, requiresCalculateFontRatio: true });
 
         $fontDialog.dialog('close');
     }, 'Save', {
@@ -74,7 +73,7 @@ function setupFontDialog() {
 }
 
 function openFontDialog() {
-    $fontSelect.val(state.config('font'));
+    $fontSelect.val(state.getConfig('font'));
     $fontDialog.dialog('open');
 }
 
@@ -121,7 +120,7 @@ function setupBackgroundDialog() {
     const $backgroundDialog = $('#background-dialog');
 
     createDialog($backgroundDialog, () => {
-        state.config('background', backgroundPicker.value);
+        state.setConfig('background', backgroundPicker.value);
         recalculateBGColors();
         triggerRefresh('full', true);
         $backgroundDialog.dialog('close');
@@ -130,7 +129,7 @@ function setupBackgroundDialog() {
     const backgroundPicker = new BackgroundPicker($backgroundDialog);
 
     actions.registerAction('settings.open-background-dialog', () => {
-        backgroundPicker.value = state.config('background');
+        backgroundPicker.value = state.getConfig('background');
         $backgroundDialog.dialog('open');
     });
 }

@@ -1,5 +1,5 @@
 import {strings} from "../../config/strings.js";
-import {hasActiveFile, isPickerCanceledError, saveFile} from "../../state/file_system.js";
+import {hasActiveFile, isPickerCanceledError, saveFile} from "../../storage/file_system.js";
 
 const DEFAULT_OPTIONS = {
     showCloseButton: false, // If true, a close button will show in the top-right corner of the warning

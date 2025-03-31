@@ -3,7 +3,7 @@
  */
 
 import SimpleBar from "simplebar";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import {triggerRefresh, triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";
 import CanvasControl from "../canvas/canvas.js";
@@ -157,7 +157,7 @@ function setupActionButtons() {
     });
 
     actions.registerAction('frames.toggle-onion', () => {
-        state.config('onion', !state.config('onion'));
+        state.setMetadata('onion', !state.getMetadata('onion'));
         refreshOnion(); // have to refresh this manually since just refreshing chars
         triggerRefresh('chars');
     });
@@ -173,13 +173,13 @@ function setupActionButtons() {
 
     actions.registerAction('frames.align-left', () => {
         toggleComponent('frames', false);
-        state.config('frameOrientation', 'left');
+        state.setMetadata('frameOrientation', 'left');
         triggerResize();
     });
 
     actions.registerAction('frames.align-bottom', () => {
         toggleComponent('frames', false);
-        state.config('frameOrientation', 'bottom');
+        state.setMetadata('frameOrientation', 'bottom');
         triggerResize();
     });
 
@@ -205,7 +205,7 @@ function setupActionButtons() {
 }
 
 function refreshAlignment() {
-    const orientation = state.config('frameOrientation');
+    const orientation = state.getMetadata('frameOrientation');
 
     // Minimized frames component:
     refreshComponentVisibility($container, 'frames');
@@ -241,7 +241,7 @@ function refreshAlignment() {
 }
 
 function refreshOnion() {
-    $container.find('.toggle-onion').find('.ri').toggleClass('active', state.config('onion'));
+    $container.find('.toggle-onion').find('.ri').toggleClass('active', state.getMetadata('onion'));
 }
 
 function selectFrame(index, saveState) {
@@ -276,7 +276,7 @@ class FrameComponent {
 
     redrawGlyphs() {
         this._canvasController.clear();
-        this._canvasController.drawBackground(state.config('background'));
+        this._canvasController.drawBackground(state.getConfig('background'));
         this._canvasController.drawGlyphs(state.layeredGlyphs(this._frame));
     }
 }

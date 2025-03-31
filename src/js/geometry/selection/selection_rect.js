@@ -1,5 +1,5 @@
 import Cell from "../cell.js";
-import * as state from "../../state/state.js";
+import * as state from "../../state/index.js";
 import CellArea from "../cell_area.js";
 import SelectionPolygon from "./selection_polygon.js";
 

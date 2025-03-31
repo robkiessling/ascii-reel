@@ -3,7 +3,7 @@ import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
 
 import * as selection from "../canvas/selection.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import {triggerRefresh} from "../index.js";
 import * as editor from "../components/editor.js";
 import * as actions from "./actions.js";

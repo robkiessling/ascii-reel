@@ -3,7 +3,7 @@
  */
 
 import SimpleBar from "simplebar";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import {triggerRefresh} from "../index.js";
 import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
@@ -117,7 +117,7 @@ function setupActionButtons() {
     });
 
     actions.registerAction('layers.toggle-visibility-lock', () => {
-        state.config('lockLayerVisibility', !state.config('lockLayerVisibility'));
+        state.setMetadata('lockLayerVisibility', !state.getMetadata('lockLayerVisibility'));
         triggerRefresh();
     });
 
@@ -134,7 +134,7 @@ function refreshVisibilities() {
     if (layerComponents) {
         layerComponents.forEach(layerComponent => layerComponent.refresh());
 
-        const locked = state.config('lockLayerVisibility');
+        const locked = state.getMetadata('lockLayerVisibility');
         $container.find('.toggle-visibility-lock').find('.ri')
             .toggleClass('ri-lock-line', locked)
             .toggleClass('ri-lock-unlock-line', !locked);
@@ -172,8 +172,7 @@ function saveLayer() {
 
     $editDialog.dialog("close");
 
-    state.pushStateToHistory();
-    triggerRefresh();
+    triggerRefresh('full', true); // todo maybe just refresh layers?
 }
 
 // Layers are sorted backwards in the DOM
@@ -210,7 +209,7 @@ class LayerComponent {
 
     refresh() {
         this._$container.find('.toggle-visibility')
-            .toggleClass('invisible', state.config('lockLayerVisibility'))
+            .toggleClass('invisible', state.getMetadata('lockLayerVisibility'))
             .find('.ri')
             .toggleClass('ri-eye-line', this._layer.visible)
             .toggleClass('ri-eye-off-line', !this._layer.visible);

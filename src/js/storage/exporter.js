@@ -1,5 +1,5 @@
 import Color from "@sphinxxxx/color-conversion";
-import * as state from "./state.js";
+import * as state from "../state/index.js";
 import {exportFile} from "./file_system.js";
 import {importAnimated_GIF, importJSZip} from "../utils/lazy_loaders.js";
 import {fontRatio} from "../canvas/font.js";
@@ -47,7 +47,7 @@ export async function exportAnimation(options, exportToActiveFile) {
             throw new Error(`Invalid export format format ${options.format}`);
     }
 
-    state.config('lastExportOptions', options);
+    state.setMetadata('lastExportOptions', options);
 
     return filename;
 }
@@ -75,8 +75,8 @@ async function exportJson(options = {}, exportToActiveFile) {
         const jsonData = {
             width: state.numCols(),
             height: state.numRows(),
-            fps: state.config('fps'),
-            background: state.config('background') ? encodeColor(state.config('background')) : null,
+            fps: state.getMetadata('fps'),
+            background: state.getConfig('background') ? encodeColor(state.getConfig('background')) : null,
             frames: []
         }
 
@@ -225,14 +225,14 @@ function buildRtfFile(content, options) {
     }
 
     // Value fmodern tells the OS to use a monospace font in case the given font is not found
-    const fontTable = `{\\fonttbl {\\f0\\fmodern ${state.config('font')};}}`;
+    const fontTable = `{\\fonttbl {\\f0\\fmodern ${state.getConfig('font')};}}`;
 
     const rtfColors = [
         // First color (black) reserved for frameSeparators
         _encodeRtfColor('rgba(0,0,0,1)'),
 
         // Second color reserved for background
-        _encodeRtfColor(state.config('background') ? state.config('background') : 'rgba(0,0,0,1)'),
+        _encodeRtfColor(state.getConfig('background') ? state.getConfig('background') : 'rgba(0,0,0,1)'),
 
         // Then merge in all colors used in the drawing
         ...state.colorTable().map(colorStr => _encodeRtfColor(colorStr))
@@ -248,7 +248,7 @@ function buildRtfFile(content, options) {
 
 function frameToRtf(frame, options) {
     // char background: use index 1 of color table. Note: chshdng / chcbpat is for MS Word compatibility
-    const charBg = options.background && state.config('background') ? `\\chshdng0\\chcbpat${1}\\cb${1}` : '';
+    const charBg = options.background && state.getConfig('background') ? `\\chshdng0\\chcbpat${1}\\cb${1}` : '';
 
     return exportableFrameString(frame, '\\line ', line => {
         // The first replace handles special RTF chars: { } \
@@ -306,7 +306,7 @@ async function exportHtml(options, exportToActiveFile) {
         `;
 
         const width = state.numCols() * options.fontSize * fontRatio;
-        const background = options.background && state.config('background') ? `background: ${state.config('background')};` : '';
+        const background = options.background && state.getConfig('background') ? `background: ${state.getConfig('background')};` : '';
         const fontStyles = `font-family: ${state.fontFamily()};font-size: ${options.fontSize}px;`;
 
         const body = `<pre id="sprite" style="width:${width}px;${background};${fontStyles}"></pre>`;
@@ -602,7 +602,7 @@ function setupExportCanvas(options) {
 
 function renderExportFrame(frame, options) {
     exportCanvas.clear();
-    if (options.background && state.config('background')) exportCanvas.drawBackground(state.config('background'));
+    if (options.background && state.getConfig('background')) exportCanvas.drawBackground(state.getConfig('background'));
     exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
 }
 

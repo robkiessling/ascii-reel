@@ -1,5 +1,5 @@
 import {triggerRefresh} from "../index.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import * as editor from "../components/editor.js";
 import * as actions from "../io/actions.js";
 import {shouldModifyAction} from "../io/actions.js";
@@ -12,7 +12,6 @@ import SelectionLasso from "../geometry/selection/selection_lasso.js";
 import SelectionText from "../geometry/selection/selection_text.js";
 import {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
-import {modifyHistory, pushStateToHistory} from "../state/state.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -56,7 +55,7 @@ export function empty() {
 // Select entire canvas
 export function selectAll() {
     // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
-    if (!['text-editor', 'selection-rect'].includes(state.config('tool'))) {
+    if (!['text-editor', 'selection-rect'].includes(state.getMetadata('tool'))) {
         editor.changeTool('selection-rect');
     }
 
@@ -89,15 +88,17 @@ export function setSelectionToSingleChar(char, color, moveCursor = true) {
         state.setCurrentCelGlyph(cursorCell.row, cursorCell.col, char, color);
         if (moveCursor) moveCursorInDirection('right', false);
     }
-    else {
+    else if (hasSelection()) {
         // update entire selection
         getSelectedCells().forEach(cell => {
             state.setCurrentCelGlyph(cell.row, cell.col, char, color);
         });
     }
+    else {
+        return; // No modifications were made: do not trigger refresh
+    }
 
     triggerRefresh('chars', 'producesText');
-
 }
 
 
@@ -441,20 +442,21 @@ export function moveCursorTo(cell, updateOrigin = true) {
     if (movableContent) { finishMovingContent(); } // Cannot move content and show cursor at the same time
 
     cursorCell = cell;
-    state.config('cursorPosition', cell.serialize());
+    state.setConfig('cursorPosition', cell.serialize());
 
     if (updateOrigin) {
         cursorCellOrigin = cell;
 
         // Update the current history slice so that if you undo to the slice, the cursor will be at the most recent position
-        modifyHistory(history => history.state.config.cursorPosition = cell.serialize())
+        // TODO This knows too much about history state obj
+        state.modifyHistory(history => history.state.config.cursorPosition = cell.serialize())
     }
 
     triggerRefresh('cursorCell');
 }
 
 export function moveCursorToStart() {
-    if (state.config('tool') === 'text-editor') {
+    if (state.getMetadata('tool') === 'text-editor') {
         // Move cursor to top-left cell of entire canvas. This only really happens during page init.
         moveCursorTo(new Cell(0, 0));
         matchPolygonToCursor();
@@ -471,7 +473,7 @@ export function moveCursorToStart() {
 // This is similar to how Excel moves your cell when using the tab/return keys.
 export function moveCursorCarriageReturn() {
     if (cursorCell) {
-        if (state.config('tool') === 'text-editor') {
+        if (state.getMetadata('tool') === 'text-editor') {
             let col = cursorCellOrigin.col,
                 row = cursorCell.row + 1;
 
@@ -490,7 +492,7 @@ export function moveCursorCarriageReturn() {
 
 export function moveCursorInDirection(direction, updateOrigin = true, amount = 1) {
     if (cursorCell) {
-        if (state.config('tool') === 'text-editor') {
+        if (state.getMetadata('tool') === 'text-editor') {
             let col = cursorCell.col, row = cursorCell.row;
 
             if (direction === 'left') {
@@ -544,7 +546,7 @@ export function moveCursorInDirection(direction, updateOrigin = true, amount = 1
 
 export function hideCursor() {
     cursorCell = null;
-    state.config('cursorPosition', {});
+    state.setConfig('cursorPosition', {});
 
     triggerRefresh('cursorCell');
 }

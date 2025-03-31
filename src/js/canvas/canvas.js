@@ -1,5 +1,5 @@
 import {setIntervalUsingRAF} from "../utils/utilities.js";
-import {colorStr, numCols, numRows, fontFamily} from "../state/state.js";
+import {colorStr, numCols, numRows, fontFamily} from "../state/index.js";
 import {fontHeight, fontWidth} from "./font.js";
 import Rect from "../geometry/rect.js";
 import Cell from "../geometry/cell.js";

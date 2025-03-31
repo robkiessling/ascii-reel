@@ -4,7 +4,7 @@
 
 import SimpleBar from "simplebar";
 import * as actions from "../io/actions.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import * as editor from "./editor.js";
 import {copyChar} from "../io/clipboard.js";
 import * as selection from "../canvas/selection.js";
@@ -28,7 +28,7 @@ export function init() {
 
         copyChar(char);
         selection.setSelectionToSingleChar(char, state.primaryColorIndex());
-        if (state.config('tool') === 'draw-freeform-char') editor.setFreeformChar(char);
+        if (state.getMetadata('tool') === 'draw-freeform-char') editor.setFreeformChar(char);
     });
 
     setupActionButtons();

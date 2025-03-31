@@ -1,5 +1,5 @@
 import {fileOpen, fileSave, supported} from 'browser-fs-access';
-import * as state from "./state.js";
+import * as state from "../state/index.js";
 
 // -------------------------------------------------------------------------------- Editor Files
 export const FILE_EXTENSION = "asciireel"
@@ -67,7 +67,7 @@ export async function saveFile(saveToActiveFile) {
 
     // Update the state's name based on what the user entered into the dialog. Only applicable if the browser
     // has File System API support.
-    if (fileHandle) state.config('name', fileNameWithoutExtension(fileHandle.name, FILE_EXTENSION));
+    if (fileHandle) state.setMetadata('name', fileNameWithoutExtension(fileHandle.name, FILE_EXTENSION));
 
     return fileHandle && fileHandle.name;
 }

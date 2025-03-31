@@ -1,4 +1,4 @@
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import {triggerRefresh} from "../index.js";
 import * as actions from "../io/actions.js";
 import {strings} from "../config/strings.js";
@@ -36,11 +36,11 @@ let $gridDialog, minorGridSettings, majorGridSettings;
 
 function setupGridToggle() {
     actions.registerAction('view.toggle-grid', {
-        name: () => state.config('grid').show ? strings['view.hide-grid.name'] : strings['view.show-grid.name'],
+        name: () => state.getMetadata('grid').show ? strings['view.hide-grid.name'] : strings['view.show-grid.name'],
         callback: () => {
-            let grid = $.extend({}, state.config('grid'));
+            let grid = $.extend({}, state.getMetadata('grid'));
             grid.show = !grid.show;
-            state.config('grid', grid);
+            state.setMetadata('grid', grid);
             triggerRefresh('chars');
         }
     });
@@ -55,9 +55,9 @@ function setupGridDialog() {
     createDialog($gridDialog, () => {
         if (!majorGridSettings.checkValidity() || !minorGridSettings.checkValidity()) return;
 
-        state.config('grid', $.extend(
+        state.setMetadata('grid', $.extend(
             {},
-            state.config('grid'),
+            state.getMetadata('grid'),
             { show: true },
             majorGridSettings.toState(),
             minorGridSettings.toState(),
@@ -100,8 +100,8 @@ class GridSettings {
     }
 
     loadFromState() {
-        this.$enabled.prop('checked', state.config('grid')[this.enabledKey]);
-        this.$spacing.val(state.config('grid')[this.spacingKey]);
+        this.$enabled.prop('checked', state.getMetadata('grid')[this.enabledKey]);
+        this.$spacing.val(state.getMetadata('grid')[this.spacingKey]);
         this._refresh();
     }
 
@@ -143,9 +143,9 @@ class GridSettings {
 
 function setupWhitespaceToggle() {
     actions.registerAction('view.toggle-whitespace', {
-        name: () => state.config('whitespace') ? strings['view.hide-whitespace.name'] : strings['view.show-whitespace.name'],
+        name: () => state.getMetadata('whitespace') ? strings['view.hide-whitespace.name'] : strings['view.show-whitespace.name'],
         callback: () => {
-            state.config('whitespace', !state.config('whitespace'));
+            state.setMetadata('whitespace', !state.getMetadata('whitespace'));
             triggerRefresh('chars');
         }
     });

@@ -1,7 +1,7 @@
 import Rect from "./rect.js";
 import {fontHeight, fontWidth} from "../canvas/font.js";
 import bresenham from "bresenham";
-import {charInBounds} from "../state/state.js";
+import {charInBounds} from "../state/index.js";
 
 /**
  * A Cell is a particular row/column pair of the drawable area. It is useful so we can deal with rows/columns instead

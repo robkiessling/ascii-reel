@@ -1,5 +1,5 @@
 import {triggerRefresh} from "../index.js";
-import * as state from '../state/state.js';
+import * as state from '../state/index.js';
 import {BRUSH_TOOLS} from "../components/editor.js";
 import Cell from "../geometry/cell.js";
 
@@ -27,13 +27,13 @@ export function setupMouseEvents(canvasControl) {
 
 export function iterateHoveredCells(callback) {
     // If not using a brush tool, only include hoveredCell (the cell the mouse is over)
-    if (!BRUSH_TOOLS.includes(state.config('tool'))) {
+    if (!BRUSH_TOOLS.includes(state.getMetadata('tool'))) {
         callback(hoveredCell);
         return;
     }
 
     // If using a brush tool, other nearby cells will be iterated through depending on the chosen shape/size
-    let { shape, size } = state.config('brush');
+    let { shape, size } = state.getMetadata('brush');
 
     switch(shape) {
         case 'square':

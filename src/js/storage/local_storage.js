@@ -6,7 +6,7 @@
  * to save more (would require a UI for choosing the desired file, deleting files, etc.)
  */
 
-import {stateForLocalStorage, isValid, replaceState} from "./state.js";
+import {stateForLocalStorage, isValid, replaceState} from "../state/index.js";
 import {triggerRefresh} from "../index.js";
 import {refresh as refreshTheme} from "../menu/theme.js"
 

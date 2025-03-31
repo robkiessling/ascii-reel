@@ -1,6 +1,5 @@
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import Color from "@sphinxxxx/color-conversion";
-import {COLOR_FORMAT} from "../state/state.js";
 import {roundForComparison} from "../utils/numbers.js";
 import {currentTheme, THEMES} from "../config/theme.js";
 
@@ -34,7 +33,7 @@ export function getHoverColor() {
 }
 
 export function recalculateBGColors() {
-    const background = state.config('background');
+    const background = state.getConfig('background');
     const backgroundColor = new Color(background ? background : checkerboardA());
     let [h, s, l, a] = backgroundColor.hsla;
 
@@ -46,7 +45,7 @@ export function recalculateBGColors() {
         majorGridColor = colorFromHslaArray([h, s, l + MAJOR_GRID_LIGHTNESS_DELTA, 1]);
     }
     else {
-        hoverColor = colorFromHslaArray([h, s, l - HOVER_LIGHTNESS_DELTA, 1])[COLOR_FORMAT];
+        hoverColor = colorFromHslaArray([h, s, l - HOVER_LIGHTNESS_DELTA, 1])[state.COLOR_FORMAT];
 
         // minor grid is a little darker, major grid is a lot darker
         minorGridColor = colorFromHslaArray([h, s, l - MINOR_GRID_LIGHTNESS_DELTA, 1]);
@@ -56,7 +55,7 @@ export function recalculateBGColors() {
 
 function colorFromHslaArray(hsla) {
     const [h, s, l, a] = hsla;
-    return new Color(`hsla(${h * 360},${s * 100}%,${l * 100}%,1)`)[COLOR_FORMAT]
+    return new Color(`hsla(${h * 360},${s * 100}%,${l * 100}%,1)`)[state.COLOR_FORMAT]
 }
 
 

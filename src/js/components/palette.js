@@ -4,7 +4,7 @@
 
 import SimpleBar from "simplebar";
 import {triggerRefresh} from "../index.js";
-import * as state from '../state/state.js';
+import * as state from '../state/index.js';
 import * as editor from './editor.js';
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
@@ -114,7 +114,7 @@ export function refresh() {
 
 export function refreshSelection() {
     $colorList.find('.color.selected').removeClass('selected');
-    $colorList.find(`.color[data-color="${state.config('primaryColor')}"]`).addClass('selected');
+    $colorList.find(`.color[data-color="${state.getMetadata('primaryColor')}"]`).addClass('selected');
 
     $actions.each((i, element) => {
         const $element = $(element);

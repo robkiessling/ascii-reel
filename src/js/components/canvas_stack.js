@@ -16,9 +16,9 @@ import * as selection from "../canvas/selection.js";
 import {hoveredCell, iterateHoveredCells, setupMouseEvents as setupHoverMouse} from "../canvas/hover.js";
 import {refreshMouseCoords, refreshSelectionDimensions, setupMouseEvents as setupEditorMouse} from "./editor.js";
 import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../canvas/background.js";
-import {config} from "../state/state.js";
+import * as editor from "./editor.js";
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
 
@@ -36,7 +36,7 @@ export function init() {
     setupEditorMouse(selectionCanvas);
 
     setupScrollZoom(selectionCanvas, true);
-    setupMousePan(selectionCanvas, false, () => config('tool') === 'pan' ? [1, 3] : [3])
+    setupMousePan(selectionCanvas, false, () => state.getMetadata('tool') === 'pan' ? [1, 3] : [3])
 }
 
 export function iterateCanvases(callback) {
@@ -63,23 +63,32 @@ export function resize(resetZoom) {
 
 export function redrawCharCanvas() {
     charCanvas.clear();
-    charCanvas.drawBackground(state.config('background'));
+    charCanvas.drawBackground(state.getConfig('background'));
 
     const glyphs = state.layeredGlyphs(state.currentFrame(), {
         showMovingContent: true,
+        movableContent: {
+            glyphs: selection.movableContent,
+            origin: selection.movableContent ? selection.getSelectedCellArea().topLeft : null
+        },
         showDrawingContent: true,
-        showOffsetContent: true
+        drawingContent: editor.drawingContent,
+        showOffsetContent: true,
+        offset: {
+            amount: editor.moveAllOffset,
+            modifiers: editor.moveAllModifiers
+        }
     });
 
-    charCanvas.drawGlyphs(glyphs, { showWhitespace: state.config('whitespace') });
+    charCanvas.drawGlyphs(glyphs, { showWhitespace: state.getMetadata('whitespace') });
 
-    const grid = state.config('grid');
+    const grid = state.getMetadata('grid');
     if (grid.show) {
         if (grid.minorGridEnabled) charCanvas.drawGrid(1, grid.minorGridSpacing, getMinorGridColor());
         if (grid.majorGridEnabled) charCanvas.drawGrid(1, grid.majorGridSpacing, getMajorGridColor());
     }
 
-    if (state.config('onion')) {
+    if (state.getMetadata('onion')) {
         charCanvas.drawOnion(state.layeredGlyphs(state.previousFrame()));
     }
 }
@@ -115,7 +124,7 @@ export function drawHoveredCell() {
     hoveredCellCanvas.clear();
 
     if (hoveredCell && !selection.isDrawing && !selection.isMoving) {
-        if (!HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.config('tool'))) {
+        if (!HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.getMetadata('tool'))) {
             iterateHoveredCells(cell => {
                 if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
             })
