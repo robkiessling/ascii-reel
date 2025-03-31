@@ -89,6 +89,7 @@ function setupResizeDialog() {
         if (dimensionsPicker.validate()) {
             const dim = dimensionsPicker.value;
             state.resize([dim.numCols, dim.numRows], dim.anchor.row, dim.anchor.col);
+            triggerResize({ clearSelection: true, resetZoom: true });
 
             resetExportDimensions();
             $resizeDialog.dialog('close');

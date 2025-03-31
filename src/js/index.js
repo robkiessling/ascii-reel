@@ -54,6 +54,7 @@ defer(() => {
     const successfulLoad = savedState ? state.loadFromLocalStorage(savedState) : state.newState();
 
     if (successfulLoad) {
+        triggerResize({ clearSelection: true, resetZoom: true });
         refreshShortcuts();
         localstorage.setupAutoSave();
     }

@@ -8,7 +8,7 @@
 import Picker from 'vanilla-picker/csp';
 import * as state from '../state/index.js';
 import * as selection from '../canvas/selection.js';
-import {triggerRefresh} from "../index.js";
+import {triggerRefresh, triggerResize} from "../index.js";
 import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
@@ -341,6 +341,7 @@ function paintSelection() {
 function resizeToSelection() {
     const area = selection.getSelectedCellArea().bindToDrawableArea();
     state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
+    triggerResize({ clearSelection: true, resetZoom: true });
 }
 
 

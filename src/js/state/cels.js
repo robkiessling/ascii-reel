@@ -7,7 +7,6 @@ import {create2dArray, split1DArrayInto2D, translateGlyphs} from "../utils/array
 import {mod} from "../utils/numbers.js";
 import {DEFAULT_COLOR} from "../components/palette.js";
 import {getMetadata} from "./metadata.js";
-import {triggerResize} from "../index.js";
 import pako from "pako";
 import {pushStateToHistory} from "./history.js";
 
@@ -47,7 +46,7 @@ export function createCel(layer, frame, data = {}) {
 }
 
 export function deleteCel(celId) {
-    delete state.cels(celId)
+    delete state.cels[celId]
 }
 
 function normalizeCel(cel) {
@@ -476,7 +475,6 @@ export function resize(newDimensions, rowOffset, colOffset) {
 
     setConfig('dimensions', newDimensions);
 
-    triggerResize({ clearSelection: true, resetZoom: true });
     pushStateToHistory({ requiresResize: true });
 }
 

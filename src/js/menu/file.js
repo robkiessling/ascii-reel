@@ -18,7 +18,7 @@ import UnsavedWarning from "../components/ui/unsaved_warning.js";
 import {defaultContrastColor} from "../components/palette.js";
 import {modifierAbbr} from "../utils/os.js";
 import Toast from "../components/ui/toast.js";
-import {triggerRefresh} from "../index.js";
+import {triggerRefresh, triggerResize} from "../index.js";
 import {DEFAULT_CONFIG} from "../state/index.js";
 
 export function init() {
@@ -48,6 +48,7 @@ function setupNew() {
                     primaryColor: defaultContrastColor(backgroundPicker.value)
                 }
             })
+            triggerResize({ clearSelection: true, resetZoom: true });
 
             $newFileDialog.dialog('close');
         }
@@ -105,7 +106,10 @@ function openFilePicker() {
     // Defer so main menu has time to close
     defer(() => {
         fileSystem.openFile()
-            .then(() => $openFileDialog.dialog('close'))
+            .then(() => {
+                triggerResize({ clearSelection: true, resetZoom: true });
+                $openFileDialog.dialog('close')
+            })
             .catch(err => {
                 if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to open file', err);
             })

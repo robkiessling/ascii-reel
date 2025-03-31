@@ -8,7 +8,6 @@ import * as palette from './palette.js';
 
 import {calculateFontRatio} from "../canvas/font.js";
 import {recalculateBGColors} from "../canvas/background.js";
-import {triggerResize} from "../index.js";
 import {resetState, saveState} from "../storage/local_storage.js";
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
@@ -54,7 +53,7 @@ export function newState(overrides) {
     }, overrides));
 }
 
-export function load(data) {
+function load(data) {
     try {
         history.reset();
 
@@ -72,7 +71,6 @@ export function load(data) {
         cels.vacuumColorTable();
         calculateFontRatio();
         recalculateBGColors();
-        triggerResize({ clearSelection: true, resetZoom: true });
         history.pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
         saveState();
 
