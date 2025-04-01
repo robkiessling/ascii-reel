@@ -134,6 +134,8 @@ function openPopup() {
 
     // Set up the CanvasControl in the popup (it will be updated at the same time as the normal preview canvas)
     popupCanvas = new CanvasControl($(popup.document.getElementById("canvas")), {});
+    popupCanvas.resize(true);
+    popupCanvas.zoomToFit();
 
     // Popup window resize handler (debounced)
     let resizeTimeoutId;

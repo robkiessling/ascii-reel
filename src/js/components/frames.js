@@ -83,7 +83,8 @@ function setupList() {
 
         if (evt.shiftKey) {
             state.extendFrameRangeSelection(newIndex);
-            triggerRefresh('full', 'changeFrameMulti');
+            triggerRefresh('full');
+            state.pushHistory({ modifiable: 'changeFrameMulti' });
         }
         else {
             selectFrame(newIndex, 'changeFrameSingle');
@@ -119,8 +120,7 @@ function setupSortable() {
             state.reorderFrames(draggedRange, newIndex);
             selectFrameRange(
                 draggedRange.clone().translateTo(newIndex),
-                newIndex + draggedRange.offset(draggedIndex),
-                true
+                newIndex + draggedRange.offset(draggedIndex)
             )
         },
         stop: (event, ui) => {
@@ -134,7 +134,7 @@ function setupActionButtons() {
     actions.registerAction('frames.new-frame', () => {
         const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
         state.createFrame(frameIndex, {});
-        selectFrame(frameIndex, true);
+        selectFrame(frameIndex);
     });
 
     actions.registerAction('frames.duplicate-frame', () => {
@@ -143,15 +143,14 @@ function setupActionButtons() {
 
         selectFrameRange(
             currentRange.clone().translate(currentRange.length),
-            state.frameIndex() + currentRange.length,
-            true
+            state.frameIndex() + currentRange.length
         )
     });
 
     actions.registerAction('frames.delete-frame', {
         callback: () => {
             state.deleteFrames(state.frameRangeSelection());
-            selectFrame(Math.min(state.frameIndex(), state.frames().length - 1), true);
+            selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
         },
         enabled: () => state.frames() && state.frames().length > 1
     });
@@ -244,16 +243,18 @@ function refreshOnion() {
     $container.find('.toggle-onion').find('.ri').toggleClass('active', state.getMetadata('onion'));
 }
 
-function selectFrame(index, saveState) {
+function selectFrame(index, historyModifiable) {
     state.frameRangeSelection(null); // Clear out any range selection
     state.frameIndex(index);
-    triggerRefresh('full', saveState);
+    triggerRefresh('full');
+    state.pushHistory({ modifiable: historyModifiable });
 }
 
-function selectFrameRange(newRange, newFrameIndex, saveState) {
+function selectFrameRange(newRange, newFrameIndex) {
     state.frameRangeSelection(newRange);
     state.frameIndex(newFrameIndex);
-    triggerRefresh('full', saveState);
+    triggerRefresh('full');
+    state.pushHistory();
 }
 
 class FrameComponent {

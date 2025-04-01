@@ -172,7 +172,8 @@ function saveLayer() {
 
     $editDialog.dialog("close");
 
-    triggerRefresh('full', true); // todo maybe just refresh layers?
+    triggerRefresh('full'); // todo maybe just refresh layers?
+    state.pushHistory();
 }
 
 // Layers are sorted backwards in the DOM
@@ -182,7 +183,8 @@ function layerIndexFromDOM(index) {
 
 function selectLayer(index) {
     state.layerIndex(index);
-    triggerRefresh('full', true);
+    triggerRefresh('full');
+    state.pushHistory()
 }
 
 

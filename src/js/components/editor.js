@@ -218,7 +218,8 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-freeform-char':
             case 'eraser':
             case 'paint-brush':
-                triggerRefresh('chars', true);
+                triggerRefresh('chars');
+                state.pushHistory();
                 break;
             case 'draw-rect':
             case 'draw-line':
@@ -337,14 +338,15 @@ function paintSelection() {
         state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
     });
 
-    triggerRefresh('chars', true);
+    triggerRefresh('chars');
+    state.pushHistory();
 }
 
 function resizeToSelection() {
     const area = selection.getSelectedCellArea().bindToDrawableArea();
     state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
-    state.pushStateToHistory({ requiresResize: true });
     triggerResize({ clearSelection: true, resetZoom: true });
+    state.pushHistory({ requiresResize: true });
 }
 
 
@@ -385,7 +387,8 @@ function fillConnectedCells(cell, char, colorIndex, options) {
         state.setCurrentCelGlyph(cell.row, cell.col, char, colorIndex);
     })
 
-    triggerRefresh('chars', true);
+    triggerRefresh('chars');
+    state.pushHistory();
 }
 
 function paintBrush() {
@@ -410,7 +413,8 @@ function colorSwap(cell, options) {
     })
 
     // Need full refresh if multiple frames in sidebar need updating
-    triggerRefresh(options.allFrames ? 'full' : 'chars', true);
+    triggerRefresh(options.allFrames ? 'full' : 'chars');
+    state.pushHistory();
 }
 
 function eyedropper(cell, options) {
@@ -420,7 +424,8 @@ function eyedropper(cell, options) {
 
     if (options.addToPalette) {
         state.addColor(colorStr);
-        triggerRefresh('palette', true);
+        triggerRefresh('palette');
+        state.pushHistory();
     }
 }
 
@@ -509,7 +514,8 @@ function finishDrawing() {
     });
 
     drawingContent = null;
-    triggerRefresh('full', true);
+    triggerRefresh('full');
+    state.pushHistory();
 }
 
 
@@ -546,7 +552,8 @@ function finishMoveAll() {
 
         moveAllOffset = null;
         moveAllOrigin = null;
-        triggerRefresh('full', true);
+        triggerRefresh('full');
+        state.pushHistory();
     }
 }
 
@@ -609,7 +616,8 @@ function setupColorPicker() {
         state.addColor(state.getMetadata('primaryColor'));
 
         refreshAddToPalette();
-        triggerRefresh('palette', true);
+        triggerRefresh('palette');
+        state.pushHistory();
     })
 }
 

@@ -22,7 +22,7 @@ export function reset() {
     historyIndex = undefined;
 }
 
-export function hasChanges() {
+export function hasHistory() {
     return history.length > 1;
 }
 
@@ -40,18 +40,16 @@ export function setupActions() {
 
 /**
  * Adds the current state of the app as a new slice of the history.
- * @param options.modifiable (optional String) If a string is given, further calls to pushStateToHistory with the same
- *                           modifiable string will update the current history slice instead of adding a new slice.
- *                           This is used for things like typing, where we don't want each new character to be a new slice.
- *                           Once the modifiable string changes / is undefined (or endHistoryModification is called) that
- *                           history slice will not be updated anymore; a new slice will be made on the next push.
- * @param options.requiresResize (optional Boolean) If true, undoing/redoing to this state will force the canvas to be
- *                               resized.
- * @param options.requiresCalculateFontRatio (optional Boolean) If true, undoing/redoing to this state will force the
- *                               canvas fontRatio to be recalculated (only needed if font is changed)
+ * @param {Object} options - Configuration options
+ * @param {string} [options.modifiable] - If provided, further calls to pushHistory with the same `modifiable` string
+ *   will update the latest history slice instead of adding a new slice. This is used for things like typing, where
+ *   we don't want each new character to be a new slice.
+ * @param {boolean} [options.requiresResize] - If true, undoing/redoing to this slice will force the canvas to be resized.
+ * @param {boolean} [options.requiresCalculateFontRatio] - If true, undoing/redoing to this slice will force the canvas
+ *   fontRatio to be recalculated. Only needed if font is changed.
  */
-export function pushStateToHistory(options = {}) {
-    // console.log('pushStateToHistory', historyIndex, options);
+export function pushHistory(options = {}) {
+    // console.log('pushHistory', historyIndex, options);
 
     // Remove anything in the future (all "redo" states are removed)
     if (historyIndex !== undefined) {
@@ -152,7 +150,7 @@ function redo() {
     }
 }
 
-// Ends further modifications to the current history slice. See pushStateToHistory for more info.
+// Ends further modifications to the current history slice. See pushHistory for more info.
 export function endHistoryModification() {
     if (history.length) {
         history[historyIndex].options.modifiable = undefined;

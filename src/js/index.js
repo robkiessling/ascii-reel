@@ -51,9 +51,9 @@ defer(() => {
     $('body').css('opacity', 1);
 
     const savedState = localstorage.readState();
-    const successfulLoad = savedState ? state.loadFromLocalStorage(savedState) : state.loadBlankState();
+    savedState ? state.loadFromLocalStorage(savedState) : state.loadBlankState();
 
-    if (successfulLoad) {
+    if (state.isValid()) {
         triggerResize({ clearSelection: true, resetZoom: true });
         refreshShortcuts();
         localstorage.setupAutoSave();
@@ -61,11 +61,11 @@ defer(() => {
 })
 
 
-
-
-
 /**
- * Resizes the components that depend on window size. Then triggers a full refresh.
+ * Resizes the components that depend on window size, then triggers a full refresh.
+ * @param {Object} options - Resize options
+ * @param {boolean} [options.clearSelection] - If true, the selection will be cleared
+ * @param {boolean} [options.resetZoom] - If true, the canvas will be zoomed all the way out
  */
 export function triggerResize(options = {}) {
     if (!state.isValid()) return;
@@ -75,6 +75,7 @@ export function triggerResize(options = {}) {
     // Refresh frames controller first, since its configuration (align left/bottom) can affect canvas boundaries
     frames.refresh();
 
+    // Resize all CanvasControls:
     canvasStack.resize(options.resetZoom);
     preview.resize(); // Don't need to resetZoom since it will zoomToFit anyway
     // Frame canvases don't need to be resized here since triggerRefresh() will rebuild them all anyway
@@ -85,13 +86,10 @@ export function triggerResize(options = {}) {
 /**
  * Triggers a refresh that cascades through the different components of the app.
  *
- * @param type Can be a single string value, or an Array of string values. This narrows down the refresh scope to just
- *             refresh a subset of components.
- * @param saveState If true, state will be stored in history (for undo/redo purposes)
- *                  If a string, state will be stored in history with the string used as the 'modifiable' key (see
- *                  pushStateToHistory for more information)
+ * @param {string|Array<string>} type Can be a single string value, or an Array of string values. This narrows down the
+ *   refresh scope to just refresh a subset of components.
  */
-export function triggerRefresh(type = 'full', saveState = false) {
+export function triggerRefresh(type = 'full') {
     if (!state.isValid()) return;
 
     if (!Array.isArray(type)) type = [type];
@@ -151,8 +149,4 @@ export function triggerRefresh(type = 'full', saveState = false) {
                 console.warn(`triggerRefresh("${type}") is not a valid type`);
         }
     });
-
-    if (saveState) {
-        state.pushStateToHistory(saveState === true ? undefined : { modifiable: saveState });
-    }
 }

@@ -6,7 +6,7 @@ import * as timeline from './timeline/index.js';
 
 import {calculateFontRatio} from "../canvas/font.js";
 import {recalculateBGColors} from "../canvas/background.js";
-import {resetState, saveState} from "../storage/local_storage.js";
+import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "../storage/local_storage.js";
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 
@@ -31,7 +31,7 @@ export {
     sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy, COLOR_FORMAT,
 } from './palette.js'
 export {
-    hasChanges, pushStateToHistory, endHistoryModification, modifyHistory
+    hasHistory, pushHistory, endHistoryModification, modifyHistory
 } from './history.js'
 
 
@@ -44,12 +44,9 @@ export function loadBlankState(overrides) {
         load($.extend(true, {
             timeline: timeline.newBlankState()
         }, overrides));
-
-        return true;
     } catch (error) {
         console.error("Failed to load blank state:", error);
         onLoadError({});
-        return false;
     }
 }
 
@@ -65,8 +62,8 @@ function load(data) {
     timeline.vacuumColorTable();
     calculateFontRatio();
     recalculateBGColors();
-    history.pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
-    saveState();
+    history.pushHistory(); // Note: Does not need requiresResize:true since there is no previous history state
+    saveToLocalStorage();
 }
 
 export function replaceState(newState) {
@@ -92,12 +89,9 @@ export function loadFromLocalStorage(localStorageState) {
         migrateState(localStorageState, 'localStorage');
 
         load(localStorageState);
-
-        return true;
     } catch (error) {
         console.error("Failed to load from local storage:", error);
         onLoadError(originalState);
-        return false;
     }
 }
 
@@ -123,8 +117,6 @@ export function stateForDiskStorage() {
  * Reads the disk file, converting each cel's compressed chars/colors back into arrays.
  *
  * Also handles migrating older files to the current format, in case the webapp's code has changed since the file was saved.
- *
- * @returns {Object}
  */
 export function loadFromDisk(diskState, fileName) {
     const originalState = structuredClone(diskState);
@@ -140,11 +132,9 @@ export function loadFromDisk(diskState, fileName) {
         diskState.metadata.name = fileName;
 
         load(diskState);
-        return true;
     } catch (error) {
         console.error("Failed to load file from disk:", error);
         onLoadError(originalState);
-        return false;
     }
 }
 
@@ -254,7 +244,7 @@ function onLoadError(attemptedData) {
     });
 
     $loadError.find('.reset').off('click').on('click', e => {
-        resetState();
+        resetLocalStorage();
         location.reload();
     });
 }

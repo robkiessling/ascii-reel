@@ -106,7 +106,7 @@ function handleEnterKey(e) {
     else {
         // Push a state to the history where the cursor is at the end of the current line -- that way when
         // you undo, the first undo just jumps back to the previous line with cursor at end.
-        if (selection.cursorCell) state.pushStateToHistory();
+        if (selection.cursorCell) state.pushHistory();
 
         if (e.shiftKey) {
             // If shift key is pressed, we move in opposite direction
@@ -136,7 +136,8 @@ function handleBackspaceKey(char) {
         editor.setFreeformChar('');
     }
 
-    triggerRefresh('chars', 'backspace');
+    triggerRefresh('chars');
+    state.pushHistory({ modifiable: 'backspace' });
 }
 
 function handleArrowKey(e, arrowKey) {

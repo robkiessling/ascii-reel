@@ -98,7 +98,8 @@ export function setSelectionToSingleChar(char, color, moveCursor = true) {
         return; // No modifications were made: do not trigger refresh
     }
 
-    triggerRefresh('chars', 'producesText');
+    triggerRefresh('chars');
+    state.pushHistory({ modifiable: 'producesText' })
 }
 
 
@@ -410,7 +411,8 @@ export function finishMovingContent() {
     });
 
     movableContent = null;
-    triggerRefresh('full', true);
+    triggerRefresh('full');
+    state.pushHistory();
 }
 
 export function updateMovableContent(char, color) {
@@ -754,7 +756,8 @@ function flip(horizontally, vertically, mirrorChars) {
         if (horizontally) { polygon.flipHorizontally(flipCol); }
     });
 
-    triggerRefresh(['chars', 'selection'], true);
+    triggerRefresh(['chars', 'selection']);
+    state.pushHistory();
 }
 
 // -------------------------------------------------------------------------------- Cloning
@@ -766,7 +769,8 @@ export function cloneToAllFrames() {
         })
     });
 
-    triggerRefresh('full', true);
+    triggerRefresh('full');
+    state.pushHistory();
 }
 
 

@@ -59,7 +59,7 @@ function setupFontDialog() {
 
         calculateFontRatio();
         triggerResize({ clearSelection: true, resetZoom: true });
-        state.pushStateToHistory({ requiresResize: true, requiresCalculateFontRatio: true });
+        state.pushHistory({ requiresResize: true, requiresCalculateFontRatio: true });
 
         $fontDialog.dialog('close');
     }, 'Save', {
@@ -89,8 +89,8 @@ function setupResizeDialog() {
         if (dimensionsPicker.validate()) {
             const dim = dimensionsPicker.value;
             state.resize([dim.numCols, dim.numRows], dim.anchor.row, dim.anchor.col);
-            state.pushStateToHistory({ requiresResize: true });
             triggerResize({ clearSelection: true, resetZoom: true });
+            state.pushHistory({ requiresResize: true });
 
             resetExportDimensions();
             $resizeDialog.dialog('close');
@@ -124,7 +124,8 @@ function setupBackgroundDialog() {
     createDialog($backgroundDialog, () => {
         state.setConfig('background', backgroundPicker.value);
         recalculateBGColors();
-        triggerRefresh('full', true);
+        triggerRefresh('full');
+        state.pushHistory();
         $backgroundDialog.dialog('close');
     }, 'Save');
 

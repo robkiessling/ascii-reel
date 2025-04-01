@@ -61,7 +61,7 @@ function setupActionButtons() {
             let sortIndex = Object.values(SORT_BY).indexOf(state.getPaletteSortBy());
             sortIndex = (sortIndex + 1) % Object.values(SORT_BY).length;
             state.changePaletteSortBy(Object.values(SORT_BY)[sortIndex]);
-            triggerRefresh('palette', false);
+            triggerRefresh('palette');
         }
     });
     actions.registerAction('palette.delete-color', {
@@ -70,7 +70,8 @@ function setupActionButtons() {
         },
         callback: () => {
             state.deleteColor($colorList.find('.selected').data('color'));
-            triggerRefresh('palette', true);
+            triggerRefresh('palette');
+            state.pushHistory();
         }
     });
     actions.registerAction('palette.open-settings', () => {
