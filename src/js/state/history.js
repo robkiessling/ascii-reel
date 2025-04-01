@@ -4,10 +4,8 @@ import Cell from "../geometry/cell.js";
 import {moveCursorTo} from "../canvas/selection.js";
 import {calculateFontRatio} from "../canvas/font.js";
 import {triggerRefresh, triggerResize} from "../index.js";
-import {getState as getCelsState, replaceState as replaceCelsState} from "./cels.js";
 import {getState as getConfigState, replaceState as replaceConfigState} from "./config.js";
-import {getState as getFramesState, replaceState as replaceFramesState} from "./frames.js";
-import {getState as getLayersState, replaceState as replaceLayersState} from "./layers.js";
+import {getState as getTimelineState, replaceState as replaceTimelineState} from "./timeline/index.js";
 import {getState as getPaletteState, replaceState as replacePaletteState} from "./palette.js";
 import {getMetadata} from "./metadata.js";
 
@@ -87,10 +85,8 @@ function buildHistorySnapshot(options) {
     const historyState = $.extend(
         true,
         {},
-        { cels: getCelsState() },
         { config: getConfigState() },
-        { frames: getFramesState() },
-        { layers: getLayersState() },
+        { timeline: getTimelineState() },
         { palette: getPaletteState() },
         // intentionally not storing metadata to history
     );
@@ -104,10 +100,8 @@ function buildHistorySnapshot(options) {
 // We are deep merging the config into our current state config, and replacing everything else.
 // That way certain settings (e.g. what tool is selected) is inherited from the current state
 function loadHistorySnapshot(snapshot) {
-    replaceCelsState($.extend(true, {}, snapshot.state.cels));
     replaceConfigState($.extend(true, {}, snapshot.state.config));
-    replaceFramesState($.extend(true, {}, snapshot.state.frames));
-    replaceLayersState($.extend(true, {}, snapshot.state.layers));
+    replaceTimelineState($.extend(true, {}, snapshot.state.timeline));
     replacePaletteState($.extend(true, {}, snapshot.state.palette));
     // intentionally not loading metadata from history
 }

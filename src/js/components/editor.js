@@ -341,6 +341,7 @@ function paintSelection() {
 function resizeToSelection() {
     const area = selection.getSelectedCellArea().bindToDrawableArea();
     state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
+    state.pushStateToHistory({ requiresResize: true });
     triggerResize({ clearSelection: true, resetZoom: true });
 }
 

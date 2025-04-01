@@ -1,5 +1,3 @@
-import {frames} from "./frames.js";
-import {celIdsForLayer, createCel, deleteCel} from "./cels.js";
 
 const DEFAULT_STATE = {
     layers: [],
@@ -36,6 +34,10 @@ export function layers() {
     return state.layers;
 }
 
+export function layerAt(index) {
+    return state.layers[index];
+}
+
 export function layerIndex(newIndex) {
     if (newIndex !== undefined) state.currentIndex = newIndex;
     return state.currentIndex;
@@ -53,13 +55,10 @@ export function createLayer(index, data) {
 
     state.layers.splice(index, 0, layer);
 
-    // create blank cels for all frames
-    frames().forEach(frame => createCel(layer, frame));
+    return layer;
 }
 
 export function deleteLayer(index) {
-    const layer = state.layers[index];
-    celIdsForLayer(layer).forEach(celId => deleteCel(celId));
     state.layers.splice(index, 1);
 }
 
@@ -73,12 +72,4 @@ export function reorderLayer(oldIndex, newIndex) {
 
 export function toggleLayerVisibility(layer) {
     layer.visible = !layer.visible;
-}
-
-// Ensure at least 1 layer
-export function validate() {
-    if (state.layers.length === 0) {
-        console.warn(`No layers found; creating new layer`)
-        createLayer(0)
-    }
 }

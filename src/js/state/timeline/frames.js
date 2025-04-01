@@ -1,6 +1,4 @@
-import ArrayRange from "../utils/arrays.js";
-import {layers} from "./layers.js";
-import {cel, celIdsForFrame, createCel, deleteCel} from "./cels.js";
+import ArrayRange from "../../utils/arrays.js";
 
 const DEFAULT_STATE = {
     frames: [],
@@ -33,6 +31,10 @@ export function getState() {
 
 export function frames() {
     return state.frames;
+}
+
+export function frameAt(index) {
+    return state.frames[index];
 }
 
 export function frameIndex(newIndex) {
@@ -72,41 +74,27 @@ export function createFrame(index, data) {
 
     state.frames.splice(index, 0, frame);
 
-    // create blank cels for all layers
-    layers().forEach(layer => createCel(layer, frame));
+    return frame;
 }
 
 export function duplicateFrames(range) {
-    const newFrames = [];
+    const mappings = [];
     range.iterate(frameIndex => {
         const originalFrame = state.frames[frameIndex];
-        const newFrame = $.extend({}, originalFrame, {
+        const dupFrame = $.extend({}, originalFrame, {
             id: ++idSequence
         });
-        newFrames.push(newFrame);
-        layers().forEach(layer => {
-            const originalCel = cel(layer, originalFrame);
-            createCel(layer, newFrame, originalCel);
-        });
+        mappings.push({ originalFrame, dupFrame })
     });
-    state.frames.splice(range.startIndex, 0, ...newFrames);
+    state.frames.splice(range.startIndex, 0, ...mappings.map(mapping => mapping.dupFrame));
+
+    return mappings;
 }
 
 export function deleteFrames(range) {
-    range.iterate(frameIndex => {
-        celIdsForFrame(state.frames[frameIndex]).forEach(celId => deleteCel(celId));
-    });
     state.frames.splice(range.startIndex, range.length);
 }
 
 export function reorderFrames(oldRange, newIndex) {
     state.frames.splice(newIndex, 0, ...state.frames.splice(oldRange.startIndex, oldRange.length));
-}
-
-// Ensure at least 1 frame
-export function validate() {
-    if (state.frames.length === 0) {
-        console.warn(`No frames found; creating new frame`)
-        createFrame(0)
-    }
 }

@@ -1,14 +1,11 @@
 
-import {transformValues} from "../utils/objects.js";
-import {numCols, numRows, setConfig} from "./config.js";
-import {currentLayer, layerIndex, layers} from "./layers.js";
-import {currentFrame, frames, previousFrame} from "./frames.js";
-import {create2dArray, split1DArrayInto2D, translateGlyphs} from "../utils/arrays.js";
-import {mod} from "../utils/numbers.js";
-import {DEFAULT_COLOR} from "../components/palette.js";
-import {getMetadata} from "./metadata.js";
+import {isObject, transformValues} from "../../utils/objects.js";
+import {numCols, numRows, setConfig} from "../config.js";
+import {create2dArray, split1DArrayInto2D} from "../../utils/arrays.js";
+import {mod} from "../../utils/numbers.js";
+import {DEFAULT_COLOR} from "../../components/palette.js";
+import {getMetadata} from "../metadata.js";
 import pako from "pako";
-import {pushStateToHistory} from "./history.js";
 
 // -------------------------------------------------------------------------------- Cels
 // The term "cel" is short for "celluloid" https://en.wikipedia.org/wiki/Cel
@@ -85,97 +82,41 @@ function normalizeCel(cel) {
     return normalizedCel;
 }
 
-// Ensures all the cels referenced by frames/layers exist, and prunes any unused cels.
-// This should only be needed if the file was manually modified outside the app.
-export function validate() {
-    const usedCelIds = new Set();
-    frames().forEach(frame => {
-        layers().forEach(layer => {
-            const celId = getCelId(layer.id, frame.id);
-            if (!cel(layer, frame)) {
-                console.warn(`No cel found for (${celId}) -- inserting blank cel`)
-                createCel(layer, frame);
-            }
-            usedCelIds.add(celId)
-        })
-    })
-    for (const [celId, cel] of Object.entries(state.cels)) {
-        if (!usedCelIds.has(celId)) {
-            console.warn(`Cel (${celId}) is unused in frames/layers -- deleting cel`)
-            delete state.cels[celId];
-        }
+/**
+ * Returns the cel for either a celId or a layer & frame combination.
+ * @param {string|object} celIdOrLayer Can be a celId string or a Layer object. If it is a celId string, simply returns
+ *   the cel for that given id. If it is a Layer object, must also provide a Frame object as second parameter. The cel
+ *   for that given layer & frame is returned.
+ * @param {object} [frame] Frame object (only applicable if celIdOrLayer was a Layer object)
+ * @returns {object}
+ */
+export function cel(celIdOrLayer, frame) {
+    if (arguments.length === 1 && typeof celIdOrLayer === 'string') {
+        return state.cels[celIdOrLayer];
     }
-}
-
-
-export function currentCel() {
-    return cel(currentLayer(), currentFrame());
-}
-
-export function previousCel() {
-    return cel(currentLayer(), previousFrame());
-}
-
-export function cel(layer, frame) {
-    return state.cels[getCelId(layer.id, frame.id)];
+    else if (arguments.length === 2 && isObject(celIdOrLayer) && isObject(frame)) {
+        return state.cels[getCelId(celIdOrLayer.id, frame.id)];
+    }
+    else {
+        throw new Error(`Invalid cel() call, arguments: ${arguments}`)
+    }
 }
 
 export function getCelId(layerId, frameId) {
     return `F-${frameId},L-${layerId}`;
 }
 
+export function iterateAllCelIds(callback) {
+    for (const celId of Object.keys(state.cels)) {
+        callback(celId);
+    }
+}
 
 export function iterateAllCels(callback) {
     for (const cel of Object.values(state.cels)) {
         callback(cel);
     }
 }
-
-export function celIdsForLayer(layer) {
-    return frames().map(frame => getCelId(layer.id, frame.id));
-}
-
-export function iterateCelsForCurrentLayer(callback) {
-    celIdsForLayer(currentLayer()).forEach(celId => {
-        callback(state.cels[celId]);
-    });
-}
-
-export function celIdsForFrame(frame) {
-    return layers().map(layer => getCelId(layer.id, frame.id));
-}
-
-export function iterateCelsForCurrentFrame(callback) {
-    celIdsForFrame(currentFrame()).forEach(celId => {
-        callback(state.cels[celId]);
-    });
-}
-
-/**
- * Iterates through cels. Which cels are iterated over depends on the allLayers and allFrames params.
- * @param {Boolean} allLayers If true, will include cels across all layers. If false, just includes cels for current layer.
- * @param {Boolean} allFrames If true, will include cels across all frames. If false, just includes cels for current frame.
- * @param {function(cel)} celCallback Callback called for each cel being iterated over
- */
-export function iterateCels(allLayers, allFrames, celCallback) {
-    if (allLayers && allFrames) {
-        // Apply to all cels
-        iterateAllCels(celCallback);
-    }
-    else if (!allLayers && allFrames) {
-        // Apply to all frames of a single layer
-        iterateCelsForCurrentLayer(celCallback);
-    }
-    else if (allLayers && !allFrames) {
-        // Apply to all layers (of a single frame)
-        iterateCelsForCurrentFrame(celCallback);
-    }
-    else {
-        // Apply to current cel
-        celCallback(currentCel());
-    }
-}
-
 
 export function iterateCellsForCel(cel, callback) {
     let row, col, rowLength = numRows(), colLength = numCols();
@@ -190,16 +131,6 @@ export function iterateCellsForCel(cel, callback) {
 // -------------------------------------------------------------------------------- Glyphs
 // In this app, "glyph" is the term I'm using for the combination of a char and a color
 
-// This function returns the glyph as a 2d array: [char, color]
-export function getCurrentCelGlyph(row, col) {
-    return charInBounds(row, col) ? [currentCel().chars[row][col], currentCel().colors[row][col]] : [];
-}
-
-// If the char or color parameter is undefined, that parameter will not be overridden
-export function setCurrentCelGlyph(row, col, char, color) {
-    setCelGlyph(currentCel(), row, col, char, color);
-}
-
 export function setCelGlyph(cel, row, col, char, color) {
     if (charInBounds(row, col)) {
         if (char !== undefined) { cel.chars[row][col] = char; }
@@ -211,77 +142,6 @@ export function charInBounds(row, col) {
     return row >= 0 && row < numRows() && col >= 0 && col < numCols();
 }
 
-// Aggregates all visible layers for a frame
-export function layeredGlyphs(frame, options = {}) {
-    let chars = create2dArray(numRows(), numCols(), '');
-    let colors = create2dArray(numRows(), numCols(), 0);
-
-    let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
-
-    for (l = 0; l < layers().length; l++) {
-        layer = layers()[l];
-        isCurrentLayer = l === layerIndex();
-
-        if (options.showAllLayers || (getMetadata('lockLayerVisibility') ? isCurrentLayer : layer.visible)) {
-            celChars = cel(layer, frame).chars;
-            celColors = cel(layer, frame).colors;
-            const offset = options.showOffsetContent && options.offset.amount;
-
-            for (celR = 0; celR < celChars.length; celR++) {
-                for (celC = 0; celC < celChars[celR].length; celC++) {
-                    if (celChars[celR][celC] === '') continue;
-
-                    r = celR;
-                    c = celC;
-
-                    if (offset && (options.offset.modifiers.allLayers || isCurrentLayer)) {
-                        ({ r, c } = getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap));
-                        if (!charInBounds(r, c)) continue;
-                    }
-
-                    chars[r][c] = celChars[celR][celC];
-                    colors[r][c] = celColors[celR][celC];
-                }
-            }
-        }
-
-        // If there is movableContent, show it on top of the rest of the layer
-        if (options.movableContent && options.movableContent.glyphs && isCurrentLayer) {
-            translateGlyphs(options.movableContent.glyphs, options.movableContent.origin, (r, c, char, color) => {
-                if (char !== undefined && charInBounds(r, c)) {
-                    chars[r][c] = char;
-                    colors[r][c] = color;
-                }
-            });
-        }
-
-        // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
-        if (options.drawingContent && isCurrentLayer) {
-            translateGlyphs(options.drawingContent.glyphs, options.drawingContent.origin, (r, c, char, color) => {
-                if (char !== undefined && charInBounds(r, c)) {
-                    chars[r][c] = char;
-                    colors[r][c] = color;
-                }
-            });
-        }
-
-        if (options.convertEmptyStrToSpace) {
-            for (r = 0; r < chars.length; r++) {
-                for (c = 0; c < chars[r].length; c++) {
-                    if (chars[r][c] === '') {
-                        chars[r][c] = ' ';
-                        // colors[r][c] will be left at default (0)
-                    }
-                }
-            }
-        }
-    }
-
-    return {
-        chars: chars,
-        colors: colors
-    };
-}
 
 /**
  * Shifts all the contents (chars/colors) of a cel.
@@ -310,7 +170,7 @@ export function translateCel(cel, rowOffset, colOffset, wrap = false) {
     cel.colors = colors;
 }
 
-function getOffsetPosition(r, c, rowOffset, colOffset, wrap) {
+export function getOffsetPosition(r, c, rowOffset, colOffset, wrap) {
     r += rowOffset;
     c += colOffset;
 
@@ -452,7 +312,7 @@ export function resize(newDimensions, rowOffset, colOffset) {
             break;
     }
 
-    Object.values(state.cels).forEach(cel => {
+    iterateAllCels(cel => {
         let resizedChars = [];
         let resizedColors = [];
 
@@ -474,8 +334,6 @@ export function resize(newDimensions, rowOffset, colOffset) {
     });
 
     setConfig('dimensions', newDimensions);
-
-    pushStateToHistory({ requiresResize: true });
 }
 
 

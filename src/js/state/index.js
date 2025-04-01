@@ -1,10 +1,8 @@
-import * as cels from './cels.js';
 import * as config from './config.js';
-import * as frames from './frames.js';
 import * as history from './history.js';
-import * as layers from './layers.js';
 import * as metadata from './metadata.js';
 import * as palette from './palette.js';
+import * as timeline from './timeline/index.js';
 
 import {calculateFontRatio} from "../canvas/font.js";
 import {recalculateBGColors} from "../canvas/background.js";
@@ -15,20 +13,20 @@ import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.
 export { numRows, numCols, setConfig, getConfig, fontFamily, DEFAULT_STATE as DEFAULT_CONFIG } from './config.js'
 export { getName, isMinimized, setMetadata, getMetadata } from './metadata.js'
 export {
-    hasCharContent, currentCel, previousCel, cel,
-    iterateAllCels, iterateCelsForCurrentLayer, iterateCelsForCurrentFrame, iterateCels, iterateCellsForCel,
+    // layers
+    layers, layerIndex, currentLayer, createLayer, deleteLayer, updateLayer,
+    reorderLayer, toggleLayerVisibility,
+
+    // frames
+    frames, frameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame, previousFrame, createFrame,
+    duplicateFrames, deleteFrames, reorderFrames,
+
+    // cels
+    hasCharContent, iterateCelsForCurrentLayer, iterateCels, iterateCellsForCel,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph, charInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize
-} from './cels.js'
-export {
-    layers as layers, layerIndex, currentLayer, createLayer, deleteLayer, updateLayer,
-    reorderLayer, toggleLayerVisibility
-} from './layers.js'
-export {
-    frames as frames, frameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame, previousFrame, createFrame,
-    duplicateFrames, deleteFrames, reorderFrames
-} from './frames.js'
+} from './timeline/index.js'
 export {
     sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy, COLOR_FORMAT,
 } from './palette.js'
@@ -43,13 +41,7 @@ export function init() {
 
 export function newState(overrides) {
     return load($.extend(true, {
-        // TODO A warning shows up when starting new file
-        // layers: {
-        //     layers: [{ id: 1, name: 'Layer X' }]
-        // },
-        // frames: {
-        //     frames: [{ id: 1 }]
-        // },
+        timeline: timeline.newBlankState()
     }, overrides));
 }
 
@@ -58,17 +50,12 @@ function load(data) {
         history.reset();
 
         config.load(data.config);
-        layers.load(data.layers);
-        frames.load(data.frames);
-        cels.load(data.cels); // must come after config load, since it depends on dimensions
+        timeline.load(data.timeline);
         palette.load(data.palette);
         metadata.load(data.metadata);
 
-        cels.validate();
-        layers.validate();
-        frames.validate();
-
-        cels.vacuumColorTable();
+        timeline.validate();
+        timeline.vacuumColorTable();
         calculateFontRatio();
         recalculateBGColors();
         history.pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
@@ -87,10 +74,8 @@ function load(data) {
 
 export function stateForLocalStorage() {
     return {
-        cels: cels.getState(),
         config: config.getState(),
-        frames: frames.getState(),
-        layers: layers.getState(),
+        timeline: timeline.getState(),
         palette: palette.getState(),
         metadata: metadata.getState(),
     }
@@ -101,17 +86,15 @@ export function loadFromLocalStorage(lsState) {
 }
 
 export function replaceState(newState) {
-    cels.replaceState(newState.cels);
     config.replaceState(newState.config);
-    frames.replaceState(newState.frames);
-    layers.replaceState(newState.layers);
+    timeline.replaceState(newState.timeline);
     palette.replaceState(newState.palette);
     metadata.replaceState(newState.metadata);
 }
 
 // --------------------------------------------------------------------------------
 
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 
 /**
  * Compresses the chars & colors arrays of every cel to minimize file size.
@@ -127,9 +110,7 @@ export function stateForDiskStorage() {
         config: config.getState(),
         metadata: metadata.getState(),
         palette: palette.getState(),
-        frames: frames.getState(),
-        layers: layers.getState(),
-        cels: cels.encodeState()
+        timeline: timeline.encodeState()
     }
 }
 
@@ -144,9 +125,10 @@ export function loadFromDisk(diskState, fileName) {
     // State migrations (list will grow longer as more migrations are added):
     if (!diskState.version || diskState.version === 1) migrateToV2(diskState)
     if (diskState.version === 2) migrateToV3(diskState);
+    if (diskState.version === 3) migrateToV4(diskState);
 
-    // Decode cels
-    diskState.cels = cels.decodeState(diskState.cels, diskState?.config?.dimensions?.[0])
+    // Decode timeline
+    diskState.timeline = timeline.decodeState(diskState.timeline, diskState?.config?.dimensions?.[0])
 
     // Always prefer the file's name over the name property stored in the json.
     if (!diskState.metadata) diskState.metadata = {};
@@ -194,6 +176,20 @@ function migrateToV3(diskState) {
     })
 
     diskState.version = 3;
+}
+
+function migrateToV4(diskState) {
+    diskState.timeline = {
+        layers: diskState.layers,
+        frames: diskState.frames,
+        cels: diskState.cels
+    }
+
+    delete diskState.layers;
+    delete diskState.frames;
+    delete diskState.cels;
+
+    diskState.version = 4;
 }
 
 
