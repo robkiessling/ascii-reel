@@ -39,50 +39,34 @@ export function init() {
     history.setupActions();
 }
 
-export function newState(overrides) {
-    return load($.extend(true, {
-        timeline: timeline.newBlankState()
-    }, overrides));
-}
-
-function load(data) {
+export function loadBlankState(overrides) {
     try {
-        history.reset();
-
-        config.load(data.config);
-        timeline.load(data.timeline);
-        palette.load(data.palette);
-        metadata.load(data.metadata);
-
-        timeline.validate();
-        timeline.vacuumColorTable();
-        calculateFontRatio();
-        recalculateBGColors();
-        history.pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
-        saveState();
+        load($.extend(true, {
+            timeline: timeline.newBlankState()
+        }, overrides));
 
         return true;
     } catch (error) {
-        console.error("Failed to load state:", error);
-        onLoadError(data);
+        console.error("Failed to load blank state:", error);
+        onLoadError({});
         return false;
     }
 }
 
+function load(data) {
+    history.reset();
 
-// --------------------------------------------------------------------------------
+    config.load(data.config);
+    timeline.load(data.timeline);
+    palette.load(data.palette);
+    metadata.load(data.metadata);
 
-export function stateForLocalStorage() {
-    return {
-        config: config.getState(),
-        timeline: timeline.getState(),
-        palette: palette.getState(),
-        metadata: metadata.getState(),
-    }
-}
-export function loadFromLocalStorage(lsState) {
-    // todo migrations
-    return load(lsState);
+    timeline.validate();
+    timeline.vacuumColorTable();
+    calculateFontRatio();
+    recalculateBGColors();
+    history.pushStateToHistory(); // Note: Does not need requiresResize:true since there is no previous history state
+    saveState();
 }
 
 export function replaceState(newState) {
@@ -92,9 +76,30 @@ export function replaceState(newState) {
     metadata.replaceState(newState.metadata);
 }
 
-// --------------------------------------------------------------------------------
+export function stateForLocalStorage() {
+    return {
+        version: CURRENT_VERSION,
+        config: config.getState(),
+        timeline: timeline.getState(),
+        palette: palette.getState(),
+        metadata: metadata.getState(),
+    }
+}
+export function loadFromLocalStorage(localStorageState) {
+    const originalState = structuredClone(localStorageState);
 
-const CURRENT_VERSION = 4;
+    try {
+        migrateState(localStorageState, 'localStorage');
+
+        load(localStorageState);
+
+        return true;
+    } catch (error) {
+        console.error("Failed to load from local storage:", error);
+        onLoadError(originalState);
+        return false;
+    }
+}
 
 /**
  * Compresses the chars & colors arrays of every cel to minimize file size.
@@ -122,21 +127,48 @@ export function stateForDiskStorage() {
  * @returns {Object}
  */
 export function loadFromDisk(diskState, fileName) {
-    // State migrations (list will grow longer as more migrations are added):
-    if (!diskState.version || diskState.version === 1) migrateToV2(diskState)
-    if (diskState.version === 2) migrateToV3(diskState);
-    if (diskState.version === 3) migrateToV4(diskState);
+    const originalState = structuredClone(diskState);
 
-    // Decode timeline
-    diskState.timeline = timeline.decodeState(diskState.timeline, diskState?.config?.dimensions?.[0])
+    try {
+        migrateState(diskState, 'disk');
 
-    // Always prefer the file's name over the name property stored in the json.
-    if (!diskState.metadata) diskState.metadata = {};
-    diskState.metadata.name = fileName;
+        // Decode timeline
+        diskState.timeline = timeline.decodeState(diskState.timeline, diskState?.config?.dimensions?.[0])
 
-    return load(diskState);
+        // Always prefer the file's name over the name property stored in the json.
+        if (!diskState.metadata) diskState.metadata = {};
+        diskState.metadata.name = fileName;
+
+        load(diskState);
+        return true;
+    } catch (error) {
+        console.error("Failed to load file from disk:", error);
+        onLoadError(originalState);
+        return false;
+    }
 }
 
+
+
+// --------------------------------------------------------------------------------
+
+// When making breaking state changes, increment this version and provide migrations so that files loaded from local
+// storage or disk still work.
+const CURRENT_VERSION = 4;
+
+/**
+ * Migrates a state object to the latest version. A state object might be out-of-date if it was saved from an earlier
+ * version of the app.
+ * @param {object} state The state object to migrate
+ * @param {string} source Whether the state was saved to 'disk' or 'localStorage' (might be useful if a migration
+ *   only affects one or the other).
+ */
+function migrateState(state, source) {
+    // State migrations (list will grow longer as more migrations are added):
+    if (!state.version || state.version === 1) migrateToV2(state)
+    if (state.version === 2) migrateToV3(state);
+    if (state.version === 3) migrateToV4(state);
+}
 
 function migrateToV2(diskState) {
     // version 1 stored cel ids as `f-1,l-2`, version 2 stores them as `F-1,L-2`
@@ -200,6 +232,9 @@ const $loadError = $('#load-error');
 let valid = true;
 
 function onLoadError(attemptedData) {
+    console.log('attemptedData:');
+    console.log(attemptedData);
+
     valid = false;
 
     // Remove all document event listeners since the document is dead

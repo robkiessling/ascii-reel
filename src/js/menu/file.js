@@ -39,7 +39,7 @@ function setupNew() {
 
             fileSystem.resetHandles();
 
-            state.newState({
+            state.loadBlankState({
                 config: {
                     dimensions: [dim.numCols, dim.numRows],
                     background: backgroundPicker.value,

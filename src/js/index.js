@@ -51,7 +51,7 @@ defer(() => {
     $('body').css('opacity', 1);
 
     const savedState = localstorage.readState();
-    const successfulLoad = savedState ? state.loadFromLocalStorage(savedState) : state.newState();
+    const successfulLoad = savedState ? state.loadFromLocalStorage(savedState) : state.loadBlankState();
 
     if (successfulLoad) {
         triggerResize({ clearSelection: true, resetZoom: true });
