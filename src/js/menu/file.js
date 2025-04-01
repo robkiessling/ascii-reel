@@ -43,8 +43,6 @@ function setupNew() {
                 config: {
                     dimensions: [dim.numCols, dim.numRows],
                     background: backgroundPicker.value,
-                },
-                metadata: {
                     primaryColor: defaultContrastColor(backgroundPicker.value)
                 }
             })
@@ -124,7 +122,7 @@ const $saveFileDialog = $('#save-file-dialog');
 
 function setupSave() {
     createDialog($saveFileDialog, () => {
-        state.setMetadata('name', $saveFileDialog.find('.name').val())
+        state.setConfig('name', $saveFileDialog.find('.name').val())
 
         fileSystem.saveFile()
             .then(() => {
@@ -186,7 +184,7 @@ function saveActive() {
                 key: 'save-active-file',
                 textCenter: true,
                 duration: 5000,
-                text: `Saved to "${state.getMetadata('name')}.${fileSystem.FILE_EXTENSION}"`
+                text: `Saved to "${state.getConfig('name')}.${fileSystem.FILE_EXTENSION}"`
             });
         })
         .catch(err => {
@@ -337,15 +335,15 @@ function toggleExportPreview(format) {
 function openExportDialog() {
     $exportFileDialog.dialog('open');
 
-    $exportOptions.find(`[name="fps"]`).val(state.getMetadata('fps'));
+    $exportOptions.find(`[name="fps"]`).val(state.getConfig('fps'));
 
     // If it's the first time opening the export dialog, set its values according to the last saved export settings
-    if (firstTimeOpeningExport && state.getMetadata('lastExportOptions')) {
+    if (firstTimeOpeningExport && state.getConfig('lastExportOptions')) {
         // TODO format should be part of the options
-        $exportFormat.val(state.getMetadata('lastExportOptions').format);
+        $exportFormat.val(state.getConfig('lastExportOptions').format);
         if (!$exportFormat.val()) $exportFormat.val($exportFormat.find('option:first').val()); // Failsafe
 
-        for (const [key, value] of Object.entries(state.getMetadata('lastExportOptions'))) {
+        for (const [key, value] of Object.entries(state.getConfig('lastExportOptions'))) {
             const $input = $exportOptions.find(`[name="${key}"]`);
             $input.is(':checkbox') ? $input.prop('checked', !!value) : $input.val(value);
         }
@@ -413,9 +411,9 @@ function exportFromForm() {
 }
 
 function exportActive() {
-    if (!state.getMetadata('lastExportOptions')) throw new Error(`no lastExportOptions found`);
+    if (!state.getConfig('lastExportOptions')) throw new Error(`no lastExportOptions found`);
 
-    exportAnimation(state.getMetadata('lastExportOptions'), true)
+    exportAnimation(state.getConfig('lastExportOptions'), true)
         .then(filename => {
             new Toast({
                 key: 'export-active-file',

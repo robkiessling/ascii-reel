@@ -43,10 +43,10 @@ export function init() {
 }
 
 export function refresh() {
-    selectColor(state.getMetadata('primaryColor'))
+    selectColor(state.getConfig('primaryColor'))
 
     $editingTools.find('.editing-tool').removeClass('selected');
-    $editingTools.find(`.editing-tool[data-tool='${state.getMetadata('tool')}']`).addClass('selected');
+    $editingTools.find(`.editing-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
     drawRectSubMenu.refresh();
@@ -69,7 +69,7 @@ export function refreshSelectionDimensions(cellArea) {
 }
 
 export function changeTool(newTool) {
-    state.setMetadata('tool', newTool);
+    state.setConfig('tool', newTool);
     selection.clear();
     refresh();
 }
@@ -91,7 +91,7 @@ export function setupMouseEvents(canvasControl) {
     function _emitEvent(name, mouseEvent) {
         if (!canvasControl.initialized) return;
         const cell = canvasControl.cellAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
-        canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.getMetadata('tool')])
+        canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.getConfig('tool')])
     }
 
     canvasControl.$canvas.on('mousedown', evt => _emitEvent('editor:mousedown', evt));
@@ -120,10 +120,10 @@ export function setupMouseEvents(canvasControl) {
                 paintBrush();
                 break;
             case 'draw-rect':
-                startDrawing(AsciiRect, { drawType: state.getMetadata('drawRect').type });
+                startDrawing(AsciiRect, { drawType: state.getConfig('drawRect').type });
                 break;
             case 'draw-line':
-                startDrawing(AsciiLine, { drawType: state.getMetadata('drawLine').type });
+                startDrawing(AsciiLine, { drawType: state.getConfig('drawLine').type });
                 break;
             case 'draw-freeform-ascii':
                 startDrawing(AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
@@ -165,10 +165,9 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
-        if (!editorMousedown) return;
-
         $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
 
+        if (!editorMousedown) return;
         if (mouseEvent.which !== 1) return; // Only apply to left-click
         if (mouseEvent.buttons === 0) return; // Catch firefox mousemove bug where mouseEvent.which is 1 when no buttons pressed
 
@@ -320,7 +319,7 @@ function refreshSelectionTools() {
     $selectionTools.toggle(selection.hasSelection());
 
     // Hide typewriter when using text-editor tool
-    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggle(state.getMetadata('tool') !== 'text-editor');
+    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggle(state.getConfig('tool') !== 'text-editor');
 
     $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
     $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggleClass('active', !!selection.cursorCell);
@@ -358,7 +357,7 @@ function setupBrushSubMenu() {
     brushSubMenu = new ToolSubMenu({
         $menu: $('#brush-shapes'),
         configKey: 'brush',
-        visible: () => BRUSH_TOOLS.includes(state.getMetadata('tool')),
+        visible: () => BRUSH_TOOLS.includes(state.getConfig('tool')),
         tooltipContent: $tool => {
             const shape = $tool.data('shape');
             const size = $tool.data('size');
@@ -451,7 +450,7 @@ export function setFreeformChar(char) {
 }
 
 export function shouldUpdateFreeformChar() {
-    // return state.getMetadata('tool') === 'draw-freeform-char' || state.getMetadata('tool') === 'fill-char';
+    // return state.getConfig('tool') === 'draw-freeform-char' || state.getConfig('tool') === 'fill-char';
 
     // Currently we are always updating the freeform char, even if a freeform tool is not selected
     return true;
@@ -464,7 +463,7 @@ function setupDrawRectSubMenu() {
     drawRectSubMenu = new ToolSubMenu({
         $menu: $('#draw-rect-types'),
         configKey: 'drawRect',
-        visible: () => state.getMetadata('tool') === 'draw-rect',
+        visible: () => state.getConfig('tool') === 'draw-rect',
         tooltipContent: $tool => {
             const type = $tool.data('type');
             const name = strings[`editor.draw-rect-types.${type}.name`];
@@ -604,8 +603,8 @@ function setupColorPicker() {
             $colorPicker.removeClass('picker-open');
         },
         onChange: (color) => {
-            state.setMetadata('primaryColor', color[state.COLOR_FORMAT]);
-            $colorPicker.css('background', state.getMetadata('primaryColor'));
+            state.setConfig('primaryColor', color[state.COLOR_FORMAT]);
+            $colorPicker.css('background', state.getConfig('primaryColor'));
 
             refreshAddToPalette();
             triggerRefresh('paletteSelection');
@@ -613,7 +612,7 @@ function setupColorPicker() {
     });
 
     $colorPicker.on('click', '.add-to-palette', () => {
-        state.addColor(state.getMetadata('primaryColor'));
+        state.addColor(state.getConfig('primaryColor'));
 
         refreshAddToPalette();
         triggerRefresh('palette');
@@ -626,10 +625,10 @@ function refreshAddToPalette() {
 
     $addToPalette.empty();
 
-    if (state.isNewColor(state.getMetadata('primaryColor'))) {
+    if (state.isNewColor(state.getConfig('primaryColor'))) {
         $addToPalette.addClass('add-to-palette');
 
-        const [h, s, l, a] = new Color(state.getMetadata('primaryColor')).hsla; // Break colorStr into hsla components
+        const [h, s, l, a] = new Color(state.getConfig('primaryColor')).hsla; // Break colorStr into hsla components
 
         $('<span>', {
             css: { color: l <= 0.5 ? 'white' : 'black' },
@@ -685,11 +684,11 @@ class ToolSubMenu {
     }
 
     get state() {
-        return state.getMetadata(this.options.configKey);
+        return state.getConfig(this.options.configKey);
     }
 
     set state(newState) {
-        state.setMetadata(this.options.configKey, newState);
+        state.setConfig(this.options.configKey, newState);
     }
 
     setup() {

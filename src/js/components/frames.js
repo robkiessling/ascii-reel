@@ -156,7 +156,7 @@ function setupActionButtons() {
     });
 
     actions.registerAction('frames.toggle-onion', () => {
-        state.setMetadata('onion', !state.getMetadata('onion'));
+        state.setConfig('onion', !state.getConfig('onion'));
         refreshOnion(); // have to refresh this manually since just refreshing chars
         triggerRefresh('chars');
     });
@@ -172,13 +172,13 @@ function setupActionButtons() {
 
     actions.registerAction('frames.align-left', () => {
         toggleComponent('frames', false);
-        state.setMetadata('frameOrientation', 'left');
+        state.setConfig('frameOrientation', 'left');
         triggerResize();
     });
 
     actions.registerAction('frames.align-bottom', () => {
         toggleComponent('frames', false);
-        state.setMetadata('frameOrientation', 'bottom');
+        state.setConfig('frameOrientation', 'bottom');
         triggerResize();
     });
 
@@ -204,7 +204,7 @@ function setupActionButtons() {
 }
 
 function refreshAlignment() {
-    const orientation = state.getMetadata('frameOrientation');
+    const orientation = state.getConfig('frameOrientation');
 
     // Minimized frames component:
     refreshComponentVisibility($container, 'frames');
@@ -240,7 +240,7 @@ function refreshAlignment() {
 }
 
 function refreshOnion() {
-    $container.find('.toggle-onion').find('.ri').toggleClass('active', state.getMetadata('onion'));
+    $container.find('.toggle-onion').find('.ri').toggleClass('active', state.getConfig('onion'));
 }
 
 function selectFrame(index, historyModifiable) {

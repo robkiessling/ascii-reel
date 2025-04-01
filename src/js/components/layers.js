@@ -117,7 +117,7 @@ function setupActionButtons() {
     });
 
     actions.registerAction('layers.toggle-visibility-lock', () => {
-        state.setMetadata('lockLayerVisibility', !state.getMetadata('lockLayerVisibility'));
+        state.setConfig('lockLayerVisibility', !state.getConfig('lockLayerVisibility'));
         triggerRefresh();
     });
 
@@ -134,7 +134,7 @@ function refreshVisibilities() {
     if (layerComponents) {
         layerComponents.forEach(layerComponent => layerComponent.refresh());
 
-        const locked = state.getMetadata('lockLayerVisibility');
+        const locked = state.getConfig('lockLayerVisibility');
         $container.find('.toggle-visibility-lock').find('.ri')
             .toggleClass('ri-lock-line', locked)
             .toggleClass('ri-lock-unlock-line', !locked);
@@ -211,7 +211,7 @@ class LayerComponent {
 
     refresh() {
         this._$container.find('.toggle-visibility')
-            .toggleClass('invisible', state.getMetadata('lockLayerVisibility'))
+            .toggleClass('invisible', state.getConfig('lockLayerVisibility'))
             .find('.ri')
             .toggleClass('ri-eye-line', this._layer.visible)
             .toggleClass('ri-eye-off-line', !this._layer.visible);

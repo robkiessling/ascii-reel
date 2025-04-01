@@ -34,7 +34,7 @@ export function init() {
         min: 0,
         max: MAX_FPS,
         slide: (event, ui) => {
-            state.setMetadata('fps', ui.value);
+            state.setConfig('fps', ui.value);
             reset();
         }
     });
@@ -67,13 +67,13 @@ export function redraw() {
 export function reset() {
     if (previewInterval) { previewInterval.stop(); }
 
-    $fpsSlider.slider('value', state.getMetadata('fps'));
-    $fpsValue.html(`${state.getMetadata('fps')} FPS`);
+    $fpsSlider.slider('value', state.getConfig('fps'));
+    $fpsValue.html(`${state.getConfig('fps')} FPS`);
 
     previewIndex = state.frameIndex();
     redraw();
 
-    if (state.getMetadata('fps') === 0) {
+    if (state.getConfig('fps') === 0) {
         // Even if FPS is zero, we still redraw the canvas at a slow interval. This is mainly to support the popup.
         previewInterval = setIntervalUsingRAF(() => {
             redraw();
@@ -86,7 +86,7 @@ export function reset() {
                 previewIndex = 0;
             }
             redraw();
-        }, 1000 / state.getMetadata('fps'));
+        }, 1000 / state.getConfig('fps'));
     }
 }
 

@@ -36,7 +36,7 @@ export function init() {
     setupEditorMouse(selectionCanvas);
 
     setupScrollZoom(selectionCanvas, true);
-    setupMousePan(selectionCanvas, false, () => state.getMetadata('tool') === 'pan' ? [1, 3] : [3])
+    setupMousePan(selectionCanvas, false, () => state.getConfig('tool') === 'pan' ? [1, 3] : [3])
 }
 
 export function iterateCanvases(callback) {
@@ -80,15 +80,15 @@ export function redrawCharCanvas() {
         }
     });
 
-    charCanvas.drawGlyphs(glyphs, { showWhitespace: state.getMetadata('whitespace') });
+    charCanvas.drawGlyphs(glyphs, { showWhitespace: state.getConfig('whitespace') });
 
-    const grid = state.getMetadata('grid');
+    const grid = state.getConfig('grid');
     if (grid.show) {
         if (grid.minorGridEnabled) charCanvas.drawGrid(1, grid.minorGridSpacing, getMinorGridColor());
         if (grid.majorGridEnabled) charCanvas.drawGrid(1, grid.majorGridSpacing, getMajorGridColor());
     }
 
-    if (state.getMetadata('onion')) {
+    if (state.getConfig('onion')) {
         charCanvas.drawOnion(state.layeredGlyphs(state.previousFrame()));
     }
 }
@@ -124,7 +124,7 @@ export function drawHoveredCell() {
     hoveredCellCanvas.clear();
 
     if (hoveredCell && !selection.isDrawing && !selection.isMoving) {
-        if (!HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.getMetadata('tool'))) {
+        if (!HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.getConfig('tool'))) {
             iterateHoveredCells(cell => {
                 if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
             })

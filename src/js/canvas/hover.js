@@ -27,13 +27,13 @@ export function setupMouseEvents(canvasControl) {
 
 export function iterateHoveredCells(callback) {
     // If not using a brush tool, only include hoveredCell (the cell the mouse is over)
-    if (!BRUSH_TOOLS.includes(state.getMetadata('tool'))) {
+    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) {
         callback(hoveredCell);
         return;
     }
 
     // If using a brush tool, other nearby cells will be iterated through depending on the chosen shape/size
-    let { shape, size } = state.getMetadata('brush');
+    let { shape, size } = state.getConfig('brush');
 
     switch(shape) {
         case 'square':

@@ -67,7 +67,7 @@ export async function saveFile(saveToActiveFile) {
 
     // Update the state's name based on what the user entered into the dialog. Only applicable if the browser
     // has File System API support.
-    if (fileHandle) state.setMetadata('name', fileNameWithoutExtension(fileHandle.name, FILE_EXTENSION));
+    if (fileHandle) state.setConfig('name', fileNameWithoutExtension(fileHandle.name, FILE_EXTENSION));
 
     return fileHandle && fileHandle.name;
 }

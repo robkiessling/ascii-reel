@@ -55,7 +55,7 @@ export function empty() {
 // Select entire canvas
 export function selectAll() {
     // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
-    if (!['text-editor', 'selection-rect'].includes(state.getMetadata('tool'))) {
+    if (!['text-editor', 'selection-rect'].includes(state.getConfig('tool'))) {
         editor.changeTool('selection-rect');
     }
 
@@ -458,7 +458,7 @@ export function moveCursorTo(cell, updateOrigin = true) {
 }
 
 export function moveCursorToStart() {
-    if (state.getMetadata('tool') === 'text-editor') {
+    if (state.getConfig('tool') === 'text-editor') {
         // Move cursor to top-left cell of entire canvas. This only really happens during page init.
         moveCursorTo(new Cell(0, 0));
         matchPolygonToCursor();
@@ -475,7 +475,7 @@ export function moveCursorToStart() {
 // This is similar to how Excel moves your cell when using the tab/return keys.
 export function moveCursorCarriageReturn() {
     if (cursorCell) {
-        if (state.getMetadata('tool') === 'text-editor') {
+        if (state.getConfig('tool') === 'text-editor') {
             let col = cursorCellOrigin.col,
                 row = cursorCell.row + 1;
 
@@ -494,7 +494,7 @@ export function moveCursorCarriageReturn() {
 
 export function moveCursorInDirection(direction, updateOrigin = true, amount = 1) {
     if (cursorCell) {
-        if (state.getMetadata('tool') === 'text-editor') {
+        if (state.getConfig('tool') === 'text-editor') {
             let col = cursorCell.col, row = cursorCell.row;
 
             if (direction === 'left') {

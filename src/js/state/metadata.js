@@ -46,20 +46,20 @@ export function getState() {
     return state;
 }
 
-export function setMetadata(key, newValue) {
+export function setConfig(key, newValue) {
     state[key] = newValue;
 }
 
-export function getMetadata(key) {
+export function getConfig(key) {
     return state[key];
 }
 
 export function getName(includeDefaultTimestamp = true) {
-    if (getMetadata('name')) return getMetadata('name');
+    if (getConfig('name')) return getConfig('name');
 
     if (includeDefaultTimestamp) {
         let name = 'Untitled';
-        let createdAt = new Date(getMetadata('createdAt'));
+        let createdAt = new Date(getConfig('createdAt'));
         if (isNaN(createdAt.getTime())) createdAt = new Date();
         name += `-${getFormattedDateTime(createdAt)}`;
         return name;
@@ -70,5 +70,5 @@ export function getName(includeDefaultTimestamp = true) {
 }
 
 export function isMinimized(componentKey) {
-    return !!(getMetadata('minimizedComponents') || {})[componentKey];
+    return !!(getConfig('minimizedComponents') || {})[componentKey];
 }

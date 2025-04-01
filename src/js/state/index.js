@@ -1,6 +1,5 @@
 import * as config from './config.js';
 import * as history from './history.js';
-import * as metadata from './metadata.js';
 import * as palette from './palette.js';
 import * as timeline from './timeline/index.js';
 
@@ -10,8 +9,10 @@ import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 
-export { numRows, numCols, setConfig, getConfig, fontFamily, DEFAULT_STATE as DEFAULT_CONFIG } from './config.js'
-export { getName, isMinimized, setMetadata, getMetadata } from './metadata.js'
+export {
+    numRows, numCols, setConfig, getConfig, fontFamily, getName, isMinimized,
+    DEFAULT_STATE as DEFAULT_CONFIG
+} from './config.js'
 export {
     // layers
     layers, layerIndex, currentLayer, createLayer, deleteLayer, updateLayer,
@@ -56,7 +57,6 @@ function load(data) {
     config.load(data.config);
     timeline.load(data.timeline);
     palette.load(data.palette);
-    metadata.load(data.metadata);
 
     timeline.validate();
     timeline.vacuumColorTable();
@@ -70,7 +70,6 @@ export function replaceState(newState) {
     config.replaceState(newState.config);
     timeline.replaceState(newState.timeline);
     palette.replaceState(newState.palette);
-    metadata.replaceState(newState.metadata);
 }
 
 export function stateForLocalStorage() {
@@ -79,7 +78,6 @@ export function stateForLocalStorage() {
         config: config.getState(),
         timeline: timeline.getState(),
         palette: palette.getState(),
-        metadata: metadata.getState(),
     }
 }
 export function loadFromLocalStorage(localStorageState) {
@@ -107,7 +105,6 @@ export function stateForDiskStorage() {
     return {
         version: CURRENT_VERSION,
         config: config.getState(),
-        metadata: metadata.getState(),
         palette: palette.getState(),
         timeline: timeline.encodeState()
     }
@@ -128,8 +125,8 @@ export function loadFromDisk(diskState, fileName) {
         diskState.timeline = timeline.decodeState(diskState.timeline, diskState?.config?.dimensions?.[0])
 
         // Always prefer the file's name over the name property stored in the json.
-        if (!diskState.metadata) diskState.metadata = {};
-        diskState.metadata.name = fileName;
+        if (!diskState.config) diskState.config = {};
+        diskState.config.name = fileName;
 
         load(diskState);
     } catch (error) {
@@ -144,7 +141,7 @@ export function loadFromDisk(diskState, fileName) {
 
 // When making breaking state changes, increment this version and provide migrations so that files loaded from local
 // storage or disk still work.
-const CURRENT_VERSION = 4;
+const CURRENT_VERSION = 5;
 
 /**
  * Migrates a state object to the latest version. A state object might be out-of-date if it was saved from an earlier
@@ -158,12 +155,13 @@ function migrateState(state, source) {
     if (!state.version || state.version === 1) migrateToV2(state)
     if (state.version === 2) migrateToV3(state);
     if (state.version === 3) migrateToV4(state);
+    if (state.version === 4) migrateToV5(state);
 }
 
-function migrateToV2(diskState) {
+function migrateToV2(state) {
     // version 1 stored cel ids as `f-1,l-2`, version 2 stores them as `F-1,L-2`
-    diskState.cels = Object.fromEntries(
-        Object.entries(diskState.cels).map(([k, v]) => {
+    state.cels = Object.fromEntries(
+        Object.entries(state.cels).map(([k, v]) => {
             const match = k.match(/f-(\d+),l-(\d+)/)
             const frameId = parseInt(match[1])
             const layerId = parseInt(match[2])
@@ -171,49 +169,58 @@ function migrateToV2(diskState) {
         })
     )
 
-    diskState.version = 2;
+    state.version = 2;
 }
 
-function migrateToV3(diskState) {
-    diskState.cels = {
-        cels: diskState.cels,
-        colorTable: diskState.colorTable
+function migrateToV3(state) {
+    state.cels = {
+        cels: state.cels,
+        colorTable: state.colorTable
     }
 
-    delete diskState.colorTable;
-    diskState.frames = { frames: diskState.frames };
-    diskState.layers = { layers: diskState.layers };
+    delete state.colorTable;
+    state.frames = { frames: state.frames };
+    state.layers = { layers: state.layers };
 
-    diskState.metadata = {};
+    state.metadata = {};
     const deleteKeys = ['frameIndex', 'frameRangeSelection', 'layerIndex'];
     const keepAsConfigKeys = ['background', 'font', 'cursorPosition', 'dimensions'];
-    Object.keys(diskState.config).forEach(key => {
+    Object.keys(state.config).forEach(key => {
         if (deleteKeys.includes(key)) {
-            delete diskState.config[key];
+            delete state.config[key];
         }
         else if (!keepAsConfigKeys.includes(key)) {
-            diskState.metadata[key] = diskState.config[key];
-            delete diskState.config[key];
+            state.metadata[key] = state.config[key];
+            delete state.config[key];
         }
     })
 
-    diskState.version = 3;
+    state.version = 3;
 }
 
-function migrateToV4(diskState) {
-    diskState.timeline = {
-        layers: diskState.layers,
-        frames: diskState.frames,
-        cels: diskState.cels
+function migrateToV4(state) {
+    state.timeline = {
+        layers: state.layers,
+        frames: state.frames,
+        cels: state.cels
     }
 
-    delete diskState.layers;
-    delete diskState.frames;
-    delete diskState.cels;
+    delete state.layers;
+    delete state.frames;
+    delete state.cels;
 
-    diskState.version = 4;
+    state.version = 4;
 }
 
+function migrateToV5(state) {
+    Object.keys(state.metadata).forEach(key => {
+        state.config[key] = state.metadata[key];
+    })
+
+    delete state.metadata;
+
+    state.version = 5;
+}
 
 
 

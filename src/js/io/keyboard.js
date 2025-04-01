@@ -79,7 +79,7 @@ function setupKeydownListener() {
 function handleEscapeKey() {
     state.endHistoryModification();
 
-    if (state.getMetadata('tool') === 'text-editor') {
+    if (state.getConfig('tool') === 'text-editor') {
         selection.clear();
     }
     else {
@@ -146,7 +146,7 @@ function handleArrowKey(e, arrowKey) {
     if (selection.hasTarget()) {
         state.endHistoryModification();
 
-        if (state.getMetadata('tool') === 'text-editor') {
+        if (state.getConfig('tool') === 'text-editor') {
             // text-editor tool has a special arrow key handler
             selection.handleTextEditorArrowKey(direction, e.shiftKey);
         }

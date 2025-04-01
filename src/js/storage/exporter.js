@@ -47,7 +47,7 @@ export async function exportAnimation(options, exportToActiveFile) {
             throw new Error(`Invalid export format format ${options.format}`);
     }
 
-    state.setMetadata('lastExportOptions', options);
+    state.setConfig('lastExportOptions', options);
 
     return filename;
 }
@@ -75,7 +75,7 @@ async function exportJson(options = {}, exportToActiveFile) {
         const jsonData = {
             width: state.numCols(),
             height: state.numRows(),
-            fps: state.getMetadata('fps'),
+            fps: state.getConfig('fps'),
             background: state.getConfig('background') ? encodeColor(state.getConfig('background')) : null,
             frames: []
         }

@@ -1,13 +1,11 @@
 import * as actions from "../io/actions.js";
-import {getConfig} from "./config.js";
 import Cell from "../geometry/cell.js";
 import {moveCursorTo} from "../canvas/selection.js";
 import {calculateFontRatio} from "../canvas/font.js";
 import {triggerRefresh, triggerResize} from "../index.js";
-import {getState as getConfigState, replaceState as replaceConfigState} from "./config.js";
+import {getConfig, getStateForHistory as getConfigState, updateStateFromHistory as updateConfigState} from "./config.js";
 import {getState as getTimelineState, replaceState as replaceTimelineState} from "./timeline/index.js";
 import {getState as getPaletteState, replaceState as replacePaletteState} from "./palette.js";
-import {getMetadata} from "./metadata.js";
 
 
 // -------------------------------------------------------------------------------- History (undo / redo)
@@ -86,7 +84,6 @@ function buildHistorySnapshot(options) {
         { config: getConfigState() },
         { timeline: getTimelineState() },
         { palette: getPaletteState() },
-        // intentionally not storing metadata to history
     );
 
     return {
@@ -98,10 +95,9 @@ function buildHistorySnapshot(options) {
 // We are deep merging the config into our current state config, and replacing everything else.
 // That way certain settings (e.g. what tool is selected) is inherited from the current state
 function loadHistorySnapshot(snapshot) {
-    replaceConfigState($.extend(true, {}, snapshot.state.config));
+    updateConfigState($.extend(true, {}, snapshot.state.config));
     replaceTimelineState($.extend(true, {}, snapshot.state.timeline));
     replacePaletteState($.extend(true, {}, snapshot.state.palette));
-    // intentionally not loading metadata from history
 }
 
 function loadStateFromHistory(newIndex, oldIndex) {
@@ -111,7 +107,7 @@ function loadStateFromHistory(newIndex, oldIndex) {
     loadHistorySnapshot(newState);
 
     const cursorCell = Cell.deserialize(getConfig('cursorPosition'));
-    if (getMetadata('tool') === 'text-editor' && cursorCell) {
+    if (getConfig('tool') === 'text-editor' && cursorCell) {
         moveCursorTo(cursorCell, false)
     }
 

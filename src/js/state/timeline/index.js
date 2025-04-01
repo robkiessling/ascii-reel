@@ -9,8 +9,7 @@ import * as cels from './cels.js';
 import * as frames from './frames.js';
 import * as layers from './layers.js';
 import {create2dArray, translateGlyphs} from "../../utils/arrays.js";
-import {numCols, numRows} from "../config.js";
-import {getMetadata} from "../metadata.js";
+import {numCols, numRows, getConfig} from "../config.js";
 
 
 export function load(data = {}) {
@@ -220,7 +219,7 @@ export function layeredGlyphs(frame, options = {}) {
         layer = layers.layerAt(l);
         isCurrentLayer = l === layers.layerIndex();
 
-        if (options.showAllLayers || (getMetadata('lockLayerVisibility') ? isCurrentLayer : layer.visible)) {
+        if (options.showAllLayers || (getConfig('lockLayerVisibility') ? isCurrentLayer : layer.visible)) {
             celChars = cels.cel(layer, frame).chars;
             celColors = cels.cel(layer, frame).colors;
             const offset = options.showOffsetContent && options.offset.amount;

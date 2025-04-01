@@ -36,11 +36,11 @@ let $gridDialog, minorGridSettings, majorGridSettings;
 
 function setupGridToggle() {
     actions.registerAction('view.toggle-grid', {
-        name: () => state.getMetadata('grid').show ? strings['view.hide-grid.name'] : strings['view.show-grid.name'],
+        name: () => state.getConfig('grid').show ? strings['view.hide-grid.name'] : strings['view.show-grid.name'],
         callback: () => {
-            let grid = $.extend({}, state.getMetadata('grid'));
+            let grid = $.extend({}, state.getConfig('grid'));
             grid.show = !grid.show;
-            state.setMetadata('grid', grid);
+            state.setConfig('grid', grid);
             triggerRefresh('chars');
         }
     });
@@ -55,9 +55,9 @@ function setupGridDialog() {
     createDialog($gridDialog, () => {
         if (!majorGridSettings.checkValidity() || !minorGridSettings.checkValidity()) return;
 
-        state.setMetadata('grid', $.extend(
+        state.setConfig('grid', $.extend(
             {},
-            state.getMetadata('grid'),
+            state.getConfig('grid'),
             { show: true },
             majorGridSettings.toState(),
             minorGridSettings.toState(),
@@ -100,8 +100,8 @@ class GridSettings {
     }
 
     loadFromState() {
-        this.$enabled.prop('checked', state.getMetadata('grid')[this.enabledKey]);
-        this.$spacing.val(state.getMetadata('grid')[this.spacingKey]);
+        this.$enabled.prop('checked', state.getConfig('grid')[this.enabledKey]);
+        this.$spacing.val(state.getConfig('grid')[this.spacingKey]);
         this._refresh();
     }
 
@@ -143,9 +143,9 @@ class GridSettings {
 
 function setupWhitespaceToggle() {
     actions.registerAction('view.toggle-whitespace', {
-        name: () => state.getMetadata('whitespace') ? strings['view.hide-whitespace.name'] : strings['view.show-whitespace.name'],
+        name: () => state.getConfig('whitespace') ? strings['view.hide-whitespace.name'] : strings['view.show-whitespace.name'],
         callback: () => {
-            state.setMetadata('whitespace', !state.getMetadata('whitespace'));
+            state.setConfig('whitespace', !state.getConfig('whitespace'));
             triggerRefresh('chars');
         }
     });

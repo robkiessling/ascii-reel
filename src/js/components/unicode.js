@@ -28,7 +28,7 @@ export function init() {
 
         copyChar(char);
         selection.setSelectionToSingleChar(char, state.primaryColorIndex());
-        if (state.getMetadata('tool') === 'draw-freeform-char') editor.setFreeformChar(char);
+        if (state.getConfig('tool') === 'draw-freeform-char') editor.setFreeformChar(char);
     });
 
     setupActionButtons();

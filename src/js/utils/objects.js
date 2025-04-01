@@ -15,3 +15,16 @@ export function transformValues(obj, transformer) {
         Object.entries(obj).map(([k, v]) => [k, transformer(k, v)])
     )
 }
+
+export function pick(object, keys) {
+    const result = {};
+    if (object === null) return result;
+
+    for (const key of keys) {
+        if (key in object) {
+            result[key] = object[key];
+        }
+    }
+
+    return result;
+}
