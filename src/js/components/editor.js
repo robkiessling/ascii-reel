@@ -103,21 +103,21 @@ export function setupMouseEvents(canvasControl) {
 
     /*  ---------------------  Event Listeners  ---------------------  */
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
+    let editorMousedown = false; // Used to keep track of whether the mousedown started in the editor canvas
 
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
-        if (colorPickerOpen) return;
         if (mouseEvent.which !== 1) return; // Only apply to left-click
+        editorMousedown = true;
 
         switch(tool) {
             case 'draw-freeform-char':
                 drawFreeformChar();
                 break;
-            case 'fill-char':
-                fillConnectedCells(cell, freeformChar, state.primaryColorIndex(), {
-                    diagonal: shouldModifyAction('editor.tools.fill-char.diagonal', mouseEvent),
-                    charblind: false,
-                    colorblind: shouldModifyAction('editor.tools.fill-char.colorblind', mouseEvent)
-                });
+            case 'eraser':
+                erase();
+                break;
+            case 'paint-brush':
+                paintBrush();
                 break;
             case 'draw-rect':
                 startDrawing(AsciiRect, { drawType: state.getMetadata('drawRect').type });
@@ -128,11 +128,12 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-freeform-ascii':
                 startDrawing(AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
                 break;
-            case 'eraser':
-                erase();
-                break;
-            case 'paint-brush':
-                paintBrush();
+            case 'fill-char':
+                fillConnectedCells(cell, freeformChar, state.primaryColorIndex(), {
+                    diagonal: shouldModifyAction('editor.tools.fill-char.diagonal', mouseEvent),
+                    charblind: false,
+                    colorblind: shouldModifyAction('editor.tools.fill-char.colorblind', mouseEvent)
+                });
                 break;
             case 'fill-color':
                 fillConnectedCells(cell, undefined, state.primaryColorIndex(), {
@@ -164,7 +165,7 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
-        if (colorPickerOpen) return;
+        if (!editorMousedown) return;
 
         $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
 
@@ -181,6 +182,14 @@ export function setupMouseEvents(canvasControl) {
                 if (!isNewCell) return;
                 drawFreeformChar();
                 break;
+            case 'eraser':
+                if (!isNewCell) return;
+                erase();
+                break;
+            case 'paint-brush':
+                if (!isNewCell) return;
+                paintBrush();
+                break;
             case 'draw-rect':
             case 'draw-line':
                 if (!isNewCell) return;
@@ -189,14 +198,6 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-freeform-ascii':
                 // Do not return early if we're still on the same cell; we need pixel accuracy
                 updateDrawing([mouseEvent]);
-                break;
-            case 'eraser':
-                if (!isNewCell) return;
-                erase();
-                break;
-            case 'paint-brush':
-                if (!isNewCell) return;
-                paintBrush();
                 break;
             case 'move-all':
                 if (!isNewCell) return;
@@ -208,15 +209,16 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvent, cell, tool) => {
-        if (colorPickerOpen) return;
         if (mouseEvent.which !== 1) return; // Only apply to left-click
+        if (!editorMousedown) return;
+
+        editorMousedown = false;
 
         switch(tool) {
             case 'draw-freeform-char':
             case 'eraser':
             case 'paint-brush':
-                // These handlers save a 'modifiable' state during mousemove, so end modifications on mouseup
-                state.endHistoryModification();
+                triggerRefresh('chars', true);
                 break;
             case 'draw-rect':
             case 'draw-line':
@@ -367,13 +369,13 @@ function drawFreeformChar() {
     const primaryColorIndex = state.primaryColorIndex();
     iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
 
-    triggerRefresh('chars', 'drawFreeformChar');
+    triggerRefresh('chars');
 }
 
 function erase() {
     iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
 
-    triggerRefresh('chars', 'erase');
+    triggerRefresh('chars');
 }
 
 function fillConnectedCells(cell, char, colorIndex, options) {
@@ -390,7 +392,7 @@ function paintBrush() {
     const primaryColorIndex = state.primaryColorIndex();
     iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
 
-    triggerRefresh('chars', 'paintBrush');
+    triggerRefresh('chars');
 }
 
 function colorSwap(cell, options) {
@@ -551,7 +553,6 @@ function finishMoveAll() {
 // -------------------------------------------------------------------------------- Color Picker
 
 let colorPicker, colorPickerTooltip, $addToPalette, addToPaletteTooltip;
-let colorPickerOpen = false;
 
 export function selectColor(colorStr) {
     colorPicker.setColor(colorStr, false);
@@ -574,7 +575,6 @@ function setupColorPicker() {
             keyboard.toggleStandard('color-picker', true);
             colorPickerTooltip.disable();
             $colorPicker.addClass('picker-open');
-            colorPickerOpen = true;
 
             if (!$addToPalette) {
                 $addToPalette = $colorPicker.find('.picker_sample');
@@ -595,7 +595,6 @@ function setupColorPicker() {
             keyboard.toggleStandard('color-picker', false);
             colorPickerTooltip.enable();
             $colorPicker.removeClass('picker-open');
-            colorPickerOpen = false;
         },
         onChange: (color) => {
             state.setMetadata('primaryColor', color[state.COLOR_FORMAT]);
