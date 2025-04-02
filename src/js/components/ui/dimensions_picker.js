@@ -1,4 +1,4 @@
-import {CONFIG_DEFAULTS} from "../../state/state.js";
+import {DEFAULT_CONFIG} from "../../state/index.js";
 
 const DEFAULT_OPTIONS = {
     anchorTool: false
@@ -148,8 +148,8 @@ export default class DimensionsPicker {
     _fixInvalidData() {
         const currentValue = this.value;
 
-        if (isNaN(currentValue.numRows) || currentValue.numRows <= 0) this.$rows.val(CONFIG_DEFAULTS.dimensions[1]);
-        if (isNaN(currentValue.numCols) || currentValue.numCols <= 0) this.$columns.val(CONFIG_DEFAULTS.dimensions[0]);
+        if (isNaN(currentValue.numRows) || currentValue.numRows <= 0) this.$rows.val(DEFAULT_CONFIG.dimensions[1]);
+        if (isNaN(currentValue.numCols) || currentValue.numCols <= 0) this.$columns.val(DEFAULT_CONFIG.dimensions[0]);
     }
 
     _hideErrors() {

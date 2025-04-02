@@ -1,8 +1,8 @@
 import * as selection from "../canvas/selection.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import * as editor from "../components/editor.js";
 import * as actions from "./actions.js";
-import {triggerRefresh} from "../index.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 const $document = $(document);
 
@@ -79,7 +79,7 @@ function setupKeydownListener() {
 function handleEscapeKey() {
     state.endHistoryModification();
 
-    if (state.config('tool') === 'text-editor') {
+    if (state.getConfig('tool') === 'text-editor') {
         selection.clear();
     }
     else {
@@ -106,7 +106,7 @@ function handleEnterKey(e) {
     else {
         // Push a state to the history where the cursor is at the end of the current line -- that way when
         // you undo, the first undo just jumps back to the previous line with cursor at end.
-        if (selection.cursorCell) state.pushStateToHistory();
+        if (selection.cursorCell) state.pushHistory();
 
         if (e.shiftKey) {
             // If shift key is pressed, we move in opposite direction
@@ -136,7 +136,8 @@ function handleBackspaceKey(char) {
         editor.setFreeformChar('');
     }
 
-    triggerRefresh('chars', 'backspace');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory({ modifiable: 'backspace' });
 }
 
 function handleArrowKey(e, arrowKey) {
@@ -145,7 +146,7 @@ function handleArrowKey(e, arrowKey) {
     if (selection.hasTarget()) {
         state.endHistoryModification();
 
-        if (state.config('tool') === 'text-editor') {
+        if (state.getConfig('tool') === 'text-editor') {
             // text-editor tool has a special arrow key handler
             selection.handleTextEditorArrowKey(direction, e.shiftKey);
         }

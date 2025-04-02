@@ -2,7 +2,7 @@
  * UI component for the canvas preview in the top-right area of the page.
  */
 
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import CanvasControl from "../canvas/canvas.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
@@ -10,6 +10,7 @@ import {getCurrentViewRect} from "./canvas_stack.js";
 import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
 import {getDynamicColor} from "../config/colors.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
@@ -34,12 +35,13 @@ export function init() {
         min: 0,
         max: MAX_FPS,
         slide: (event, ui) => {
-            state.config('fps', ui.value);
+            state.setConfig('fps', ui.value);
             reset();
         }
     });
 
     setupActionButtons();
+    setupEventBus();
 }
 
 export function resize() {
@@ -50,30 +52,30 @@ export function resize() {
 }
 
 // Just redraw the current preview frame (e.g. if chars got updated)
-export function redraw() {
+function redraw() {
     previewCanvas.clear();
-    previewCanvas.drawBackground(state.config('background'));
+    previewCanvas.drawBackground(state.getConfig('background'));
     previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
     previewCanvas.drawWindow(getCurrentViewRect());
 
     if (popup && !popup.closed && popupCanvas) {
         popupCanvas.clear();
-        popupCanvas.drawBackground(state.config('background'));
+        popupCanvas.drawBackground(state.getConfig('background'));
         popupCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
     }
 }
 
 // Reset the preview interval (e.g. if fps changes, if a frame got deleted, etc.)
-export function reset() {
+function reset() {
     if (previewInterval) { previewInterval.stop(); }
 
-    $fpsSlider.slider('value', state.config('fps'));
-    $fpsValue.html(`${state.config('fps')} FPS`);
+    $fpsSlider.slider('value', state.getConfig('fps'));
+    $fpsValue.html(`${state.getConfig('fps')} FPS`);
 
     previewIndex = state.frameIndex();
     redraw();
 
-    if (state.config('fps') === 0) {
+    if (state.getConfig('fps') === 0) {
         // Even if FPS is zero, we still redraw the canvas at a slow interval. This is mainly to support the popup.
         previewInterval = setIntervalUsingRAF(() => {
             redraw();
@@ -86,7 +88,7 @@ export function reset() {
                 previewIndex = 0;
             }
             redraw();
-        }, 1000 / state.config('fps'));
+        }, 1000 / state.getConfig('fps'));
     }
 }
 
@@ -107,6 +109,18 @@ function setupActionButtons() {
         element => $(element).data('action'),
         { placement: 'top' }
     )
+}
+
+function setupEventBus() {
+    eventBus.on(
+        [
+            EVENTS.REFRESH.CURRENT_FRAME,
+            EVENTS.CANVAS.ZOOM_DELTA, EVENTS.CANVAS.ZOOM_TO_FIT, EVENTS.CANVAS.PAN_DELTA, EVENTS.CANVAS.PAN_TO_TARGET
+        ],
+        () => redraw()
+    )
+
+    eventBus.on([EVENTS.REFRESH.ALL], () => reset())
 }
 
 
@@ -134,6 +148,8 @@ function openPopup() {
 
     // Set up the CanvasControl in the popup (it will be updated at the same time as the normal preview canvas)
     popupCanvas = new CanvasControl($(popup.document.getElementById("canvas")), {});
+    popupCanvas.resize(true);
+    popupCanvas.zoomToFit();
 
     // Popup window resize handler (debounced)
     let resizeTimeoutId;

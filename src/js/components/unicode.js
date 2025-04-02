@@ -4,11 +4,12 @@
 
 import SimpleBar from "simplebar";
 import * as actions from "../io/actions.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import * as editor from "./editor.js";
 import {copyChar} from "../io/clipboard.js";
 import * as selection from "../canvas/selection.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let $container, $charList, $actions, tooltips;
 
@@ -28,10 +29,11 @@ export function init() {
 
         copyChar(char);
         selection.setSelectionToSingleChar(char, state.primaryColorIndex());
-        if (state.config('tool') === 'draw-freeform-char') editor.setFreeformChar(char);
+        if (state.getConfig('tool') === 'draw-freeform-char') editor.setFreeformChar(char);
     });
 
     setupActionButtons();
+    setupEventBus();
 }
 
 function setupActionButtons() {
@@ -51,6 +53,10 @@ function setupActionButtons() {
     );
 }
 
+function setupEventBus() {
+    eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
+}
+
 // Currently hardcoding the list of available unicode shortcuts.
 // This is currently structured into rows 8 chars long because that's how many fit on a row with our current styling.
 // TODO Maybe keep track of any additional unicode chars the user has pasted into the canvas and add them?
@@ -64,7 +70,7 @@ const UNICODE_CHARS = [
     '¬', '¤',  '±', '‗', '¶', '§'
 ]
 
-export function refresh() {
+function refresh() {
     refreshComponentVisibility($container, 'unicode');
 
     $charList.empty();

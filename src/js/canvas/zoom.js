@@ -1,11 +1,10 @@
-import {triggerRefresh} from "../index.js";
 import {isFunction} from "../utils/utilities.js";
-import {iterateCanvases} from "../components/canvas_stack.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 
 /**
- * Adds mouse event handlers to a canvasControl so scrolling the mouse wheel zooms the view
+ * Adds mouse event handlers to a canvasControl so scrolling the mouse wheel emits zoom events
  * @param canvasControl The canvas controller to apply mouse event handlers to
  * @param isTargetted If true, zooms in/out at mouse cursor. If false, zooms in/out at canvas center
  */
@@ -18,12 +17,13 @@ export function setupScrollZoom(canvasControl, isTargetted = false) {
 
         const scaledDelta = Math.pow(ZOOM_SCROLL_FACTOR, -deltaY / 100);
         const target = isTargetted ? canvasControl.pointAtExternalXY(evt.offsetX, evt.offsetY) : undefined;
-        updateCanvasStack(canvasControl => canvasControl.zoomDelta(scaledDelta, target))
+
+        eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: scaledDelta, target: target })
     });
 }
 
 /**
- * Adds mouse event handlers to a canvasControl so clicking-and-dragging pans the view
+ * Adds mouse event handlers to a canvasControl so clicking-and-dragging emits pan events
  * @param canvasControl The canvas controller to apply mouse event handlers to
  * @param snapToCenter If true, canvas view will snap so that its center is at mouse
  * @param {Array|Function} forMouseButtons Which mouse buttons (left/right/middle) should trigger panning. If param is
@@ -55,18 +55,14 @@ export function setupMousePan(canvasControl, snapToCenter, forMouseButtons = [1,
         const target = canvasControl.pointAtExternalXY(evt.offsetX, evt.offsetY);
 
         if (snapToCenter) {
-            updateCanvasStack(canvasControl => canvasControl.translateToTarget(target));
+            eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target })
         }
         else {
-            const deltas = [target.x - originalPoint.x, target.y - originalPoint.y];
-            updateCanvasStack(canvasControl => canvasControl.translateAmount(...deltas));
+            eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
+                delta: { x: target.x - originalPoint.x, y: target.y - originalPoint.y }
+            })
         }
     });
 
     $(document).off(`mouseup.${jQueryNS}`).on(`mouseup.${jQueryNS}`, () => isPanning = false);
-}
-
-function updateCanvasStack(callback) {
-    iterateCanvases(callback)
-    triggerRefresh('zoom');
 }

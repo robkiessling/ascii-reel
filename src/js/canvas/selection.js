@@ -1,5 +1,4 @@
-import {triggerRefresh} from "../index.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import * as editor from "../components/editor.js";
 import * as actions from "../io/actions.js";
 import {shouldModifyAction} from "../io/actions.js";
@@ -12,7 +11,7 @@ import SelectionLasso from "../geometry/selection/selection_lasso.js";
 import SelectionText from "../geometry/selection/selection_text.js";
 import {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
-import {modifyHistory, pushStateToHistory} from "../state/state.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -25,6 +24,8 @@ export let cursorCell = null; // Cell that the cursor is in
 
 export function init() {
     actions.registerAction('selection.select-all', () => selectAll());
+
+    setupEventBus();
 
     clearCaches();
 }
@@ -43,7 +44,7 @@ export function clear(refresh = true) {
     if (movableContent) { finishMovingContent(); }
     if (cursorCell) { hideCursor(); }
     polygons = [];
-    if (refresh) triggerRefresh('selection');
+    if (refresh) eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
 // Empties the selection's contents. Does not clear the selection.
@@ -56,7 +57,7 @@ export function empty() {
 // Select entire canvas
 export function selectAll() {
     // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
-    if (!['text-editor', 'selection-rect'].includes(state.config('tool'))) {
+    if (!['text-editor', 'selection-rect'].includes(state.getConfig('tool'))) {
         editor.changeTool('selection-rect');
     }
 
@@ -65,7 +66,7 @@ export function selectAll() {
     }
 
     polygons = [SelectionRect.drawableArea()];
-    triggerRefresh('selection');
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
 // Returns true if the given Cell is part of the selection
@@ -89,15 +90,18 @@ export function setSelectionToSingleChar(char, color, moveCursor = true) {
         state.setCurrentCelGlyph(cursorCell.row, cursorCell.col, char, color);
         if (moveCursor) moveCursorInDirection('right', false);
     }
-    else {
+    else if (hasSelection()) {
         // update entire selection
         getSelectedCells().forEach(cell => {
             state.setCurrentCelGlyph(cell.row, cell.col, char, color);
         });
     }
+    else {
+        return; // No modifications were made: do not trigger refresh
+    }
 
-    triggerRefresh('chars', 'producesText');
-
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory({ modifiable: 'producesText' })
 }
 
 
@@ -242,6 +246,12 @@ export function getConnectedCells(cell, options) {
 
 // -------------------------------------------------------------------------------- Events
 
+function setupEventBus() {
+    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED], () => {
+        clearCaches()
+    }, 1) // Higher than default priority because this must happen before other callbacks
+}
+
 export function setupMouseEvents(canvasControl) {
     let moveStep, hasMoved;
 
@@ -272,7 +282,7 @@ export function setupMouseEvents(canvasControl) {
                 return;
             }
 
-            triggerRefresh('selection');
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
             return;
         }
 
@@ -320,7 +330,7 @@ export function setupMouseEvents(canvasControl) {
                     break;
             }
 
-            triggerRefresh('selection');
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
         }
     });
 
@@ -331,12 +341,12 @@ export function setupMouseEvents(canvasControl) {
             if (tool === 'text-editor') {
                 cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
                 lastPolygon().end = cell;
-                triggerRefresh('selection');
+                eventBus.emit(EVENTS.SELECTION.CHANGED);
                 hasSelection() ? hideCursor() : moveCursorTo(cell);
             }
             else {
                 lastPolygon().end = cell;
-                triggerRefresh('selection');
+                eventBus.emit(EVENTS.SELECTION.CHANGED);
             }
         }
         else if (isMoving) {
@@ -354,7 +364,7 @@ export function setupMouseEvents(canvasControl) {
         if (isDrawing) {
             lastPolygon().complete();
             isDrawing = false;
-            triggerRefresh('selection');
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
         }
         else if (isMoving) {
             // For text-editor, if you click somewhere in the selected area (and we're not trying to move the underlying
@@ -365,10 +375,9 @@ export function setupMouseEvents(canvasControl) {
             }
 
             isMoving = false;
-            const refresh = ['selection'];
-            if (movableContent) { refresh.push('chars'); }
-            if (cursorCell) { refresh.push('cursorCell'); }
-            triggerRefresh(refresh);
+
+            eventBus.emit(EVENTS.SELECTION.CHANGED)
+            if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
         }
     });
 
@@ -400,7 +409,7 @@ export function startMovingContent() {
     movableContent = getSelectedValues();
 
     empty();
-    triggerRefresh('full');
+    eventBus.emit(EVENTS.REFRESH.ALL);
 }
 
 export function finishMovingContent() {
@@ -409,7 +418,8 @@ export function finishMovingContent() {
     });
 
     movableContent = null;
-    triggerRefresh('full', true);
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    state.pushHistory();
 }
 
 export function updateMovableContent(char, color) {
@@ -441,20 +451,21 @@ export function moveCursorTo(cell, updateOrigin = true) {
     if (movableContent) { finishMovingContent(); } // Cannot move content and show cursor at the same time
 
     cursorCell = cell;
-    state.config('cursorPosition', cell.serialize());
+    state.setConfig('cursorPosition', cell.serialize());
 
     if (updateOrigin) {
         cursorCellOrigin = cell;
 
         // Update the current history slice so that if you undo to the slice, the cursor will be at the most recent position
-        modifyHistory(history => history.state.config.cursorPosition = cell.serialize())
+        // TODO Is there a way to do this using state's setConfig somehow?
+        state.modifyHistory(historySlice => historySlice.config.cursorPosition = cell.serialize())
     }
 
-    triggerRefresh('cursorCell');
+    eventBus.emit(EVENTS.SELECTION.CURSOR_MOVED);
 }
 
 export function moveCursorToStart() {
-    if (state.config('tool') === 'text-editor') {
+    if (state.getConfig('tool') === 'text-editor') {
         // Move cursor to top-left cell of entire canvas. This only really happens during page init.
         moveCursorTo(new Cell(0, 0));
         matchPolygonToCursor();
@@ -471,7 +482,7 @@ export function moveCursorToStart() {
 // This is similar to how Excel moves your cell when using the tab/return keys.
 export function moveCursorCarriageReturn() {
     if (cursorCell) {
-        if (state.config('tool') === 'text-editor') {
+        if (state.getConfig('tool') === 'text-editor') {
             let col = cursorCellOrigin.col,
                 row = cursorCell.row + 1;
 
@@ -490,7 +501,7 @@ export function moveCursorCarriageReturn() {
 
 export function moveCursorInDirection(direction, updateOrigin = true, amount = 1) {
     if (cursorCell) {
-        if (state.config('tool') === 'text-editor') {
+        if (state.getConfig('tool') === 'text-editor') {
             let col = cursorCell.col, row = cursorCell.row;
 
             if (direction === 'left') {
@@ -542,17 +553,24 @@ export function moveCursorInDirection(direction, updateOrigin = true, amount = 1
     }
 }
 
+export function syncTextEditorCursorPos() {
+    if (state.getConfig('tool') !== 'text-editor') return;
+
+    const cursorCell = Cell.deserialize(state.getConfig('cursorPosition'));
+    if (cursorCell) moveCursorTo(cursorCell, false);
+}
+
 export function hideCursor() {
     cursorCell = null;
-    state.config('cursorPosition', {});
+    state.setConfig('cursorPosition', {});
 
-    triggerRefresh('cursorCell');
+    eventBus.emit(EVENTS.SELECTION.CURSOR_MOVED);
 }
 
 // Sets the current polygon to be a SelectionText of size 0 located at the cursor
 function matchPolygonToCursor() {
     polygons = [new SelectionText(cursorCell)];
-    triggerRefresh('selection');
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
 
@@ -562,7 +580,7 @@ function matchPolygonToCursor() {
 
 let caches;
 
-export function clearCaches() {
+function clearCaches() {
     caches = {};
 }
 
@@ -610,10 +628,8 @@ function moveDelta(rowDelta, colDelta) {
         cursorCell.col += colDelta;
     }
 
-    const refresh = ['selection'];
-    if (movableContent) { refresh.push('chars'); }
-    if (cursorCell) { refresh.push('cursorCell'); }
-    triggerRefresh(refresh);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
 }
 
 /**
@@ -658,7 +674,8 @@ export function moveInDirection(direction, amount, moveStart = true, moveEnd = t
         return; // finishMovingContent will trigger a refresh
     }
 
-    triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
 }
 
 /**
@@ -752,7 +769,9 @@ function flip(horizontally, vertically, mirrorChars) {
         if (horizontally) { polygon.flipHorizontally(flipCol); }
     });
 
-    triggerRefresh(['chars', 'selection'], true);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+    state.pushHistory();
 }
 
 // -------------------------------------------------------------------------------- Cloning
@@ -764,7 +783,8 @@ export function cloneToAllFrames() {
         })
     });
 
-    triggerRefresh('full', true);
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    state.pushHistory();
 }
 
 

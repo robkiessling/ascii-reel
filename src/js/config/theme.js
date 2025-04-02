@@ -1,4 +1,4 @@
-import {readGlobalSetting} from "../state/local_storage.js";
+import {readGlobalSetting} from "../storage/local_storage.js";
 
 export const THEMES = {
     system: { name: 'system', remixicon: 'ri-contrast-line' },

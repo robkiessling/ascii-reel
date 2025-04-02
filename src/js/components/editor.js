@@ -6,13 +6,12 @@
  */
 
 import Picker from 'vanilla-picker/csp';
-import * as state from '../state/state.js';
+import * as state from '../state/index.js';
 import * as selection from '../canvas/selection.js';
-import {triggerRefresh} from "../index.js";
 import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
-import {hoveredCell, iterateHoveredCells} from "../canvas/hover.js";
+import {hoveredCell, hoveredCells} from "./canvas_stack.js"
 import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {strings} from "../config/strings.js";
@@ -22,6 +21,7 @@ import AsciiFreeform from "../geometry/ascii/ascii_freeform.js";
 import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -32,7 +32,8 @@ export function init() {
     $canvasContainer = $('#canvas-container');
     $canvasDetails = $('#canvas-details');
     $canvasMessage = $('#canvas-message');
-    
+
+    setupEventBus();
     setupEditingTools();
     setupFreeformChar();
     setupSelectionTools();
@@ -42,11 +43,11 @@ export function init() {
     setupColorPicker();
 }
 
-export function refresh() {
-    selectColor(state.config('primaryColor'))
+function refresh() {
+    selectColor(state.getConfig('primaryColor'))
 
     $editingTools.find('.editing-tool').removeClass('selected');
-    $editingTools.find(`.editing-tool[data-tool='${state.config('tool')}']`).addClass('selected');
+    $editingTools.find(`.editing-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
     drawRectSubMenu.refresh();
@@ -69,7 +70,7 @@ export function refreshSelectionDimensions(cellArea) {
 }
 
 export function changeTool(newTool) {
-    state.config('tool', newTool);
+    state.setConfig('tool', newTool);
     selection.clear();
     refresh();
 }
@@ -86,12 +87,17 @@ export function hideCanvasMessage() {
 
 // -------------------------------------------------------------------------------- Events
 
+function setupEventBus() {
+    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => refresh())
+}
+
+
 export function setupMouseEvents(canvasControl) {
     /*  ---------------------  Emitting Events  ---------------------  */
     function _emitEvent(name, mouseEvent) {
         if (!canvasControl.initialized) return;
         const cell = canvasControl.cellAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
-        canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.config('tool')])
+        canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.getConfig('tool')])
     }
 
     canvasControl.$canvas.on('mousedown', evt => _emitEvent('editor:mousedown', evt));
@@ -103,14 +109,30 @@ export function setupMouseEvents(canvasControl) {
 
     /*  ---------------------  Event Listeners  ---------------------  */
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
+    let editorMousedown = false; // Used to keep track of whether the mousedown started in the editor canvas
 
     canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
-        if (colorPickerOpen) return;
         if (mouseEvent.which !== 1) return; // Only apply to left-click
+        editorMousedown = true;
 
         switch(tool) {
             case 'draw-freeform-char':
                 drawFreeformChar();
+                break;
+            case 'eraser':
+                erase();
+                break;
+            case 'paint-brush':
+                paintBrush();
+                break;
+            case 'draw-rect':
+                startDrawing(AsciiRect, { drawType: state.getConfig('drawRect').type });
+                break;
+            case 'draw-line':
+                startDrawing(AsciiLine, { drawType: state.getConfig('drawLine').type });
+                break;
+            case 'draw-freeform-ascii':
+                startDrawing(AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, freeformChar, state.primaryColorIndex(), {
@@ -118,21 +140,6 @@ export function setupMouseEvents(canvasControl) {
                     charblind: false,
                     colorblind: shouldModifyAction('editor.tools.fill-char.colorblind', mouseEvent)
                 });
-                break;
-            case 'draw-rect':
-                startDrawing(AsciiRect, { drawType: state.config('drawRect').type });
-                break;
-            case 'draw-line':
-                startDrawing(AsciiLine, { drawType: state.config('drawLine').type });
-                break;
-            case 'draw-freeform-ascii':
-                startDrawing(AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
-                break;
-            case 'eraser':
-                erase();
-                break;
-            case 'paint-brush':
-                paintBrush();
                 break;
             case 'fill-color':
                 fillConnectedCells(cell, undefined, state.primaryColorIndex(), {
@@ -164,10 +171,9 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
-        if (colorPickerOpen) return;
-
         $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
 
+        if (!editorMousedown) return;
         if (mouseEvent.which !== 1) return; // Only apply to left-click
         if (mouseEvent.buttons === 0) return; // Catch firefox mousemove bug where mouseEvent.which is 1 when no buttons pressed
 
@@ -181,6 +187,14 @@ export function setupMouseEvents(canvasControl) {
                 if (!isNewCell) return;
                 drawFreeformChar();
                 break;
+            case 'eraser':
+                if (!isNewCell) return;
+                erase();
+                break;
+            case 'paint-brush':
+                if (!isNewCell) return;
+                paintBrush();
+                break;
             case 'draw-rect':
             case 'draw-line':
                 if (!isNewCell) return;
@@ -189,14 +203,6 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-freeform-ascii':
                 // Do not return early if we're still on the same cell; we need pixel accuracy
                 updateDrawing([mouseEvent]);
-                break;
-            case 'eraser':
-                if (!isNewCell) return;
-                erase();
-                break;
-            case 'paint-brush':
-                if (!isNewCell) return;
-                paintBrush();
                 break;
             case 'move-all':
                 if (!isNewCell) return;
@@ -208,15 +214,16 @@ export function setupMouseEvents(canvasControl) {
     });
 
     canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvent, cell, tool) => {
-        if (colorPickerOpen) return;
         if (mouseEvent.which !== 1) return; // Only apply to left-click
+        if (!editorMousedown) return;
+
+        editorMousedown = false;
 
         switch(tool) {
             case 'draw-freeform-char':
             case 'eraser':
             case 'paint-brush':
-                // These handlers save a 'modifiable' state during mousemove, so end modifications on mouseup
-                state.endHistoryModification();
+                state.pushHistory();
                 break;
             case 'draw-rect':
             case 'draw-line':
@@ -317,7 +324,7 @@ function refreshSelectionTools() {
     $selectionTools.toggle(selection.hasSelection());
 
     // Hide typewriter when using text-editor tool
-    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggle(state.config('tool') !== 'text-editor');
+    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggle(state.getConfig('tool') !== 'text-editor');
 
     $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
     $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggleClass('active', !!selection.cursorCell);
@@ -335,12 +342,15 @@ function paintSelection() {
         state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
     });
 
-    triggerRefresh('chars', true);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
 }
 
 function resizeToSelection() {
     const area = selection.getSelectedCellArea().bindToDrawableArea();
     state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
+    eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
+    state.pushHistory({ requiresResize: true });
 }
 
 
@@ -352,7 +362,7 @@ function setupBrushSubMenu() {
     brushSubMenu = new ToolSubMenu({
         $menu: $('#brush-shapes'),
         configKey: 'brush',
-        visible: () => BRUSH_TOOLS.includes(state.config('tool')),
+        visible: () => BRUSH_TOOLS.includes(state.getConfig('tool')),
         tooltipContent: $tool => {
             const shape = $tool.data('shape');
             const size = $tool.data('size');
@@ -363,15 +373,15 @@ function setupBrushSubMenu() {
 
 function drawFreeformChar() {
     const primaryColorIndex = state.primaryColorIndex();
-    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
+    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
 
-    triggerRefresh('chars', 'drawFreeformChar');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function erase() {
-    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
+    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
 
-    triggerRefresh('chars', 'erase');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function fillConnectedCells(cell, char, colorIndex, options) {
@@ -381,14 +391,15 @@ function fillConnectedCells(cell, char, colorIndex, options) {
         state.setCurrentCelGlyph(cell.row, cell.col, char, colorIndex);
     })
 
-    triggerRefresh('chars', true);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
 }
 
 function paintBrush() {
     const primaryColorIndex = state.primaryColorIndex();
-    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
+    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
 
-    triggerRefresh('chars', 'paintBrush');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function colorSwap(cell, options) {
@@ -406,7 +417,8 @@ function colorSwap(cell, options) {
     })
 
     // Need full refresh if multiple frames in sidebar need updating
-    triggerRefresh(options.allFrames ? 'full' : 'chars', true);
+    eventBus.emit(options.allFrames ? EVENTS.REFRESH.ALL : EVENTS.REFRESH.CURRENT_FRAME)
+    state.pushHistory();
 }
 
 function eyedropper(cell, options) {
@@ -416,7 +428,8 @@ function eyedropper(cell, options) {
 
     if (options.addToPalette) {
         state.addColor(colorStr);
-        triggerRefresh('palette', true);
+        eventBus.emit(EVENTS.EDITOR.COLOR_ADDED);
+        state.pushHistory();
     }
 }
 
@@ -442,7 +455,7 @@ export function setFreeformChar(char) {
 }
 
 export function shouldUpdateFreeformChar() {
-    // return state.config('tool') === 'draw-freeform-char' || state.config('tool') === 'fill-char';
+    // return state.getConfig('tool') === 'draw-freeform-char' || state.getConfig('tool') === 'fill-char';
 
     // Currently we are always updating the freeform char, even if a freeform tool is not selected
     return true;
@@ -455,7 +468,7 @@ function setupDrawRectSubMenu() {
     drawRectSubMenu = new ToolSubMenu({
         $menu: $('#draw-rect-types'),
         configKey: 'drawRect',
-        visible: () => state.config('tool') === 'draw-rect',
+        visible: () => state.getConfig('tool') === 'draw-rect',
         tooltipContent: $tool => {
             const type = $tool.data('type');
             const name = strings[`editor.draw-rect-types.${type}.name`];
@@ -483,18 +496,18 @@ export let drawingContent = null;
 
 function startDrawing(klass, options = {}, recalculateArgs = []) {
     options = $.extend({ colorIndex: state.primaryColorIndex() }, options);
-    drawingContent = new klass(hoveredCell, options);
+    drawingContent = new klass(hoveredCell(), options);
     updateDrawing(recalculateArgs);
 }
 
 function updateDrawing(recalculateArgs = []) {
     if (!drawingContent) return;
-    if (!hoveredCell) return;
+    if (!hoveredCell()) return;
 
-    drawingContent.end = hoveredCell;
+    drawingContent.end = hoveredCell();
     drawingContent.recalculate(...recalculateArgs);
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function finishDrawing() {
@@ -505,7 +518,8 @@ function finishDrawing() {
     });
 
     drawingContent = null;
-    triggerRefresh('full', true);
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    state.pushHistory();
 }
 
 
@@ -530,7 +544,7 @@ function startMoveAll(cell, mouseEvent) {
 function updateMoveAll(cell, isNewCell) {
     if (moveAllOrigin && isNewCell) {
         moveAllOffset = [cell.row - moveAllOrigin.row, cell.col - moveAllOrigin.col];
-        triggerRefresh('chars');
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     }
 }
 
@@ -542,14 +556,14 @@ function finishMoveAll() {
 
         moveAllOffset = null;
         moveAllOrigin = null;
-        triggerRefresh('full', true);
+        eventBus.emit(EVENTS.REFRESH.ALL);
+        state.pushHistory();
     }
 }
 
 // -------------------------------------------------------------------------------- Color Picker
 
 let colorPicker, colorPickerTooltip, $addToPalette, addToPaletteTooltip;
-let colorPickerOpen = false;
 
 export function selectColor(colorStr) {
     colorPicker.setColor(colorStr, false);
@@ -572,7 +586,6 @@ function setupColorPicker() {
             keyboard.toggleStandard('color-picker', true);
             colorPickerTooltip.disable();
             $colorPicker.addClass('picker-open');
-            colorPickerOpen = true;
 
             if (!$addToPalette) {
                 $addToPalette = $colorPicker.find('.picker_sample');
@@ -593,22 +606,22 @@ function setupColorPicker() {
             keyboard.toggleStandard('color-picker', false);
             colorPickerTooltip.enable();
             $colorPicker.removeClass('picker-open');
-            colorPickerOpen = false;
         },
         onChange: (color) => {
-            state.config('primaryColor', color[state.COLOR_FORMAT]);
-            $colorPicker.css('background', state.config('primaryColor'));
+            state.setConfig('primaryColor', color[state.COLOR_FORMAT]);
+            $colorPicker.css('background', state.getConfig('primaryColor'));
 
             refreshAddToPalette();
-            triggerRefresh('paletteSelection');
+            eventBus.emit(EVENTS.EDITOR.COLOR_CHANGED);
         },
     });
 
     $colorPicker.on('click', '.add-to-palette', () => {
-        state.addColor(state.config('primaryColor'));
+        state.addColor(state.getConfig('primaryColor'));
 
         refreshAddToPalette();
-        triggerRefresh('palette', true);
+        eventBus.emit(EVENTS.EDITOR.COLOR_ADDED);
+        state.pushHistory();
     })
 }
 
@@ -617,10 +630,10 @@ function refreshAddToPalette() {
 
     $addToPalette.empty();
 
-    if (state.isNewColor(state.config('primaryColor'))) {
+    if (state.isNewColor(state.getConfig('primaryColor'))) {
         $addToPalette.addClass('add-to-palette');
 
-        const [h, s, l, a] = new Color(state.config('primaryColor')).hsla; // Break colorStr into hsla components
+        const [h, s, l, a] = new Color(state.getConfig('primaryColor')).hsla; // Break colorStr into hsla components
 
         $('<span>', {
             css: { color: l <= 0.5 ? 'white' : 'black' },
@@ -676,11 +689,11 @@ class ToolSubMenu {
     }
 
     get state() {
-        return state.config(this.options.configKey);
+        return state.getConfig(this.options.configKey);
     }
 
     set state(newState) {
-        state.config(this.options.configKey, newState);
+        state.setConfig(this.options.configKey, newState);
     }
 
     setup() {

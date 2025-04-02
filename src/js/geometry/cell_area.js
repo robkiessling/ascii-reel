@@ -1,7 +1,7 @@
 import Rect from "./rect.js";
 import {fontHeight, fontWidth} from "../canvas/font.js";
 import Cell from "./cell.js";
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 
 /**
  * A CellArea is a rectangle of Cells between a topLeft Cell and a bottomRight Cell.

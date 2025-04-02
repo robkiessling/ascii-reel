@@ -2,7 +2,7 @@ import tippy from "tippy.js";
 import {strings} from "../config/strings.js";
 import {isFunction}from "../utils/utilities.js";
 import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
-import {triggerRefresh} from "../index.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let actions;
 
@@ -41,7 +41,20 @@ let actionIdToShortcut = {
     'view.zoom-out': { displayChar: '-', char: '-', modifiers: [cmdKey] },
     'view.zoom-fit': { char: '0', modifiers: [cmdKey] },
 };
-let shortcutToActionId = {}; // populated by refreshShortcuts()
+
+let shortcutToActionId = {};
+
+export function init() {
+    shortcutToActionId = {};
+
+    for (let [actionId, shortcutData] of Object.entries(actionIdToShortcut)) {
+        (Array.isArray(shortcutData) ? shortcutData : [shortcutData]).forEach(shortcut => {
+            const shortcutKey = getShortcutKey(shortcut);
+            if (shortcutToActionId[shortcutKey]) console.warn(`There is already a shortcut for: ${shortcutKey}`);
+            shortcutToActionId[shortcutKey] = actionId;
+        })
+    }
+}
 
 
 /**
@@ -76,27 +89,6 @@ export function registerAction(id, data) {
     actions[id] = data;
 }
 
-export function refreshShortcuts() {
-    shortcutToActionId = {};
-
-    for (let [actionId, shortcutData] of Object.entries(actionIdToShortcut)) {
-        if (Array.isArray(shortcutData)) {
-            shortcutData.forEach(shortcut => refreshShortcut(actionId, shortcut))
-        }
-        else {
-            refreshShortcut(actionId, shortcutData);
-        }
-    }
-}
-function refreshShortcut(actionId, shortcut) {
-    const shortcutKey = getShortcutKey(shortcut);
-    if (shortcutToActionId[shortcutKey]) {
-        console.warn(`There is already a shortcut for: ${shortcutKey}`);
-    }
-    shortcutToActionId[shortcutKey] = actionId;
-}
-
-
 export function getActionInfo(id) {
     if (actions[id] === undefined) {
         console.error('No action found for: ', id);
@@ -129,7 +121,7 @@ export function isActionEnabled(id) {
 export function callAction(id, callbackData) {
     if (isActionEnabled(id)) {
         actions[id].callback(callbackData);
-        triggerRefresh('menu');
+        eventBus.emit(EVENTS.ACTIONS.PERFORMED);
         return true;
     }
 

@@ -1,7 +1,7 @@
 import dedent from "dedent-js";
 import Color from "@sphinxxxx/color-conversion";
 
-import * as state from "../state/state.js";
+import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 import {defer} from "../utils/utilities.js";
 import {fontRatio} from "../canvas/font.js";
@@ -9,16 +9,17 @@ import {createDialog} from "../utils/dialogs.js";
 import exampleExportImg from "../../images/example-export.png";
 import SimpleBar from "simplebar";
 import { supported as isFileSystemAPISupported } from 'browser-fs-access';
-import * as fileSystem from "../state/file_system.js";
+import * as fileSystem from "../storage/file_system.js";
 import {ValidationError} from "../utils/errors.js";
-import {exportAnimation} from "../state/exporter.js";
+import {exportAnimation} from "../storage/exporter.js";
 import DimensionsPicker from "../components/ui/dimensions_picker.js";
 import BackgroundPicker from "../components/ui/background_picker.js";
 import UnsavedWarning from "../components/ui/unsaved_warning.js";
 import {defaultContrastColor} from "../components/palette.js";
 import {modifierAbbr} from "../utils/os.js";
 import Toast from "../components/ui/toast.js";
-import {triggerRefresh} from "../index.js";
+import {DEFAULT_CONFIG} from "../state/index.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 export function init() {
     setupNew();
@@ -38,13 +39,14 @@ function setupNew() {
 
             fileSystem.resetHandles();
 
-            state.newState({
+            state.loadBlankState({
                 config: {
                     dimensions: [dim.numCols, dim.numRows],
                     background: backgroundPicker.value,
                     primaryColor: defaultContrastColor(backgroundPicker.value)
                 }
             })
+            eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
 
             $newFileDialog.dialog('close');
         }
@@ -56,14 +58,14 @@ function setupNew() {
     const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-area'));
     const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'), {
         showCloseButton: true,
-        onSave: () => triggerRefresh('menu') // For new file name
+        onSave: () => eventBus.emit(EVENTS.FILE.CHANGED)
     })
 
     actions.registerAction('file.new', () => {
         unsavedWarning.toggle(state.hasCharContent());
         dimensionsPicker.value = {
-            numRows: state.CONFIG_DEFAULTS.dimensions[1],
-            numCols: state.CONFIG_DEFAULTS.dimensions[0]
+            numRows: DEFAULT_CONFIG.dimensions[1],
+            numCols: DEFAULT_CONFIG.dimensions[0]
         }
         backgroundPicker.value = false; // Transparent
         $newFileDialog.dialog('open');
@@ -85,7 +87,7 @@ function setupOpen() {
 
     const unsavedWarning = new UnsavedWarning($openFileDialog.find('.unsaved-warning-area'), {
         successStringId: 'file.save-warning-cleared', // show a message since otherwise the dialog is completely blank
-        onSave: () => triggerRefresh('menu') // For new file name
+        onSave: () => eventBus.emit(EVENTS.FILE.CHANGED)
     })
 
     actions.registerAction('file.open', () => {
@@ -102,7 +104,10 @@ function openFilePicker() {
     // Defer so main menu has time to close
     defer(() => {
         fileSystem.openFile()
-            .then(() => $openFileDialog.dialog('close'))
+            .then(() => {
+                eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
+                $openFileDialog.dialog('close')
+            })
             .catch(err => {
                 if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to open file', err);
             })
@@ -117,11 +122,11 @@ const $saveFileDialog = $('#save-file-dialog');
 
 function setupSave() {
     createDialog($saveFileDialog, () => {
-        state.config('name', $saveFileDialog.find('.name').val())
+        state.setConfig('name', $saveFileDialog.find('.name').val())
 
         fileSystem.saveFile()
             .then(() => {
-                triggerRefresh('menu'); // For new file name
+                eventBus.emit(EVENTS.FILE.CHANGED);
 
                 $saveFileDialog.dialog('close')
             })
@@ -158,7 +163,7 @@ function setupSave() {
 function saveAs() {
     if (isFileSystemAPISupported) {
         fileSystem.saveFile()
-            .then(() => triggerRefresh('menu')) // For new file name
+            .then(() => eventBus.emit(EVENTS.FILE.CHANGED))
             .catch(err => {
                 if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to save file', err);
             });
@@ -173,13 +178,13 @@ function saveAs() {
 function saveActive() {
     fileSystem.saveFile(true)
         .then(() => {
-            triggerRefresh('menu'); // For new file name
+            eventBus.emit(EVENTS.FILE.CHANGED);
 
             new Toast({
                 key: 'save-active-file',
                 textCenter: true,
                 duration: 5000,
-                text: `Saved to "${state.config('name')}.${fileSystem.FILE_EXTENSION}"`
+                text: `Saved to "${state.getConfig('name')}.${fileSystem.FILE_EXTENSION}"`
             });
         })
         .catch(err => {
@@ -249,7 +254,7 @@ function setupExport() {
 
         toggleExportPreview(format);
 
-        if (!state.config('background')) $exportOptions.find(`[name="background"]`).closest('label').hide();
+        if (!state.getConfig('background')) $exportOptions.find(`[name="background"]`).closest('label').hide();
         $('#spritesheet-png-warning').toggle(showPngSpritesheetWarning());
 
         if (EXPORT_OPTIONS[format].includes('frames')) {
@@ -330,15 +335,15 @@ function toggleExportPreview(format) {
 function openExportDialog() {
     $exportFileDialog.dialog('open');
 
-    $exportOptions.find(`[name="fps"]`).val(state.config('fps'));
+    $exportOptions.find(`[name="fps"]`).val(state.getConfig('fps'));
 
     // If it's the first time opening the export dialog, set its values according to the last saved export settings
-    if (firstTimeOpeningExport && state.config('lastExportOptions')) {
+    if (firstTimeOpeningExport && state.getConfig('lastExportOptions')) {
         // TODO format should be part of the options
-        $exportFormat.val(state.config('lastExportOptions').format);
+        $exportFormat.val(state.getConfig('lastExportOptions').format);
         if (!$exportFormat.val()) $exportFormat.val($exportFormat.find('option:first').val()); // Failsafe
 
-        for (const [key, value] of Object.entries(state.config('lastExportOptions'))) {
+        for (const [key, value] of Object.entries(state.getConfig('lastExportOptions'))) {
             const $input = $exportOptions.find(`[name="${key}"]`);
             $input.is(':checkbox') ? $input.prop('checked', !!value) : $input.val(value);
         }
@@ -406,9 +411,9 @@ function exportFromForm() {
 }
 
 function exportActive() {
-    if (!state.config('lastExportOptions')) throw new Error(`no lastExportOptions found`);
+    if (!state.getConfig('lastExportOptions')) throw new Error(`no lastExportOptions found`);
 
-    exportAnimation(state.config('lastExportOptions'), true)
+    exportAnimation(state.getConfig('lastExportOptions'), true)
         .then(filename => {
             new Toast({
                 key: 'export-active-file',

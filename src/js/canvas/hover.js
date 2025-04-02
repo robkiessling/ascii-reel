@@ -1,64 +1,74 @@
-import {triggerRefresh} from "../index.js";
-import * as state from '../state/state.js';
-import {BRUSH_TOOLS} from "../components/editor.js";
 import Cell from "../geometry/cell.js";
 
-// Currently there is only ever one canvasControl hooked up to the hoveredCell; the hoveredCell tracks
-// what cell is being hovered over on that specific canvasControl.
-export let hoveredCell = null;
-
+/**
+ * Sets up mouse hover listeners for the given canvas control. Returns a small API to retrieve the current hovered cell,
+ * attach hover callbacks, and more.
+ *
+ * Not using the events.js eventBus because these events do not need to propagate through the app; only the controller
+ * that calls setupMouseEvents cares about the events.
+ *
+ * @param canvasControl
+ * @returns {Object} A small API for the hover handler:
+ *   - api.cell: the current cell being hovered over (null if not hovering)
+ *   - api.getBrushCells: function to retrieve all hovered cells for a given brush shape/size
+ *   - api.onHover: attaches a callback to be fired when hovering takes place
+ */
 export function setupMouseEvents(canvasControl) {
+    const listeners = [];
+    let api = {
+        cell: null,
+        getBrushCells: (brushShape, brushSize) => getAllHoveredCells(api.cell, brushShape, brushSize),
+        onHover: listener => listeners.push(listener),
+    }
+
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
-        hoveredCell = cell;
-        triggerRefresh('hoveredCell');
+        api.cell = cell;
+        listeners.forEach(listener => listener(api.cell))
     });
 
     canvasControl.$canvas.on('editor:mouseenter', (evt, mouseEvent, cell) => {
-        hoveredCell = cell;
-        triggerRefresh('hoveredCell');
+        api.cell = cell;
+        listeners.forEach(listener => listener(api.cell))
     });
 
     canvasControl.$canvas.on('editor:mouseleave', () => {
-        hoveredCell = null;
-        triggerRefresh('hoveredCell');
+        api.cell = null;
+        listeners.forEach(listener => listener(api.cell))
     });
+
+    return api;
 }
 
+function getAllHoveredCells(primaryCell, brushShape, brushSize) {
+    if (!primaryCell) return [];
 
-export function iterateHoveredCells(callback) {
-    // If not using a brush tool, only include hoveredCell (the cell the mouse is over)
-    if (!BRUSH_TOOLS.includes(state.config('tool'))) {
-        callback(hoveredCell);
-        return;
-    }
-
-    // If using a brush tool, other nearby cells will be iterated through depending on the chosen shape/size
-    let { shape, size } = state.config('brush');
-
-    switch(shape) {
+    switch(brushShape) {
         case 'square':
-            return iterateSquareShape(size, callback);
+            return getHoveredSquare(primaryCell, brushSize);
         case 'circle':
-            return iterateCircleShape(size, callback);
+            return getHoveredCircle(primaryCell, brushSize);
         default:
-            console.error('Unsupported brush shape: ', shape);
+            console.error('Unsupported brush shape: ', brushShape);
     }
 }
 
-// Iterates through cells in a square shape, centered around the hoveredCell
-function iterateSquareShape(size, callback) {
+// Iterates through cells in a square shape, centered around the primaryCell
+function getHoveredSquare(primaryCell, size) {
+    const result = []
     const offset = Math.floor(size / 2);
 
     for (let row = 0; row < size; row++) {
         for (let col = 0; col < size; col++) {
-            callback(new Cell(hoveredCell.row - offset + row, hoveredCell.col - offset + col));
+            result.push(new Cell(primaryCell.row - offset + row, primaryCell.col - offset + col));
         }
     }
+    return result;
 }
 
-// Iterates through cells in a circle shape, centered around the hoveredCell
+// Iterates through cells in a circle shape, centered around the primaryCell
 // On second thought, it's more of a diamond than a circle
-function iterateCircleShape(size, callback) {
+function getHoveredCircle(primaryCell, size) {
+    const result = [];
     let offsets;
 
     switch(size) {
@@ -94,6 +104,7 @@ function iterateCircleShape(size, callback) {
     }
 
     offsets.forEach(offset => {
-        callback(new Cell(hoveredCell.row + offset[0], hoveredCell.col + offset[1]));
+        result.push(new Cell(primaryCell.row + offset[0], primaryCell.col + offset[1]));
     });
+    return result;
 }

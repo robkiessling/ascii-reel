@@ -3,13 +3,13 @@
  */
 
 import SimpleBar from "simplebar";
-import * as state from "../state/state.js";
-import {triggerRefresh, triggerResize} from "../index.js";
+import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 import CanvasControl from "../canvas/canvas.js";
 import ArrayRange from "../utils/arrays.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {strings} from "../config/strings.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let $container, $template, $list;
 let simpleBar, frameComponents, tooltips;
@@ -20,14 +20,15 @@ export function init() {
 
     setupList();
     setupActionButtons();
+    setupEventBus();
 }
 
-export function refresh() {
+export function refresh() { // todo do not export this once resize is implemented as an emitted event
     refreshAlignment();
     refreshOnion();
 }
 
-export function rebuild() {
+function rebuild() {
     const scrollElement = simpleBar.getScrollElement();
     const scrollLeft = scrollElement.scrollLeft;
     const scrollTop = scrollElement.scrollTop;
@@ -61,7 +62,7 @@ export function rebuild() {
     refresh();
 }
 
-export function currentFrameComponent() {
+function currentFrameComponent() {
     return frameComponents[state.frameIndex()];
 }
 
@@ -83,7 +84,8 @@ function setupList() {
 
         if (evt.shiftKey) {
             state.extendFrameRangeSelection(newIndex);
-            triggerRefresh('full', 'changeFrameMulti');
+            eventBus.emit(EVENTS.REFRESH.ALL);
+            state.pushHistory({ modifiable: 'changeFrameMulti' });
         }
         else {
             selectFrame(newIndex, 'changeFrameSingle');
@@ -119,8 +121,7 @@ function setupSortable() {
             state.reorderFrames(draggedRange, newIndex);
             selectFrameRange(
                 draggedRange.clone().translateTo(newIndex),
-                newIndex + draggedRange.offset(draggedIndex),
-                true
+                newIndex + draggedRange.offset(draggedIndex)
             )
         },
         stop: (event, ui) => {
@@ -134,7 +135,7 @@ function setupActionButtons() {
     actions.registerAction('frames.new-frame', () => {
         const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
         state.createFrame(frameIndex, {});
-        selectFrame(frameIndex, true);
+        selectFrame(frameIndex);
     });
 
     actions.registerAction('frames.duplicate-frame', () => {
@@ -143,23 +144,22 @@ function setupActionButtons() {
 
         selectFrameRange(
             currentRange.clone().translate(currentRange.length),
-            state.frameIndex() + currentRange.length,
-            true
+            state.frameIndex() + currentRange.length
         )
     });
 
     actions.registerAction('frames.delete-frame', {
         callback: () => {
             state.deleteFrames(state.frameRangeSelection());
-            selectFrame(Math.min(state.frameIndex(), state.frames().length - 1), true);
+            selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
         },
         enabled: () => state.frames() && state.frames().length > 1
     });
 
     actions.registerAction('frames.toggle-onion', () => {
-        state.config('onion', !state.config('onion'));
+        state.setConfig('onion', !state.getConfig('onion'));
         refreshOnion(); // have to refresh this manually since just refreshing chars
-        triggerRefresh('chars');
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     });
 
     actions.registerAction('frames.toggle-component', {
@@ -167,20 +167,20 @@ function setupActionButtons() {
         description: () => strings[state.isMinimized('frames') ? 'frames.show-component.description' : 'frames.hide-component.description'],
         callback: () => {
             toggleComponent('frames');
-            triggerResize();
+            eventBus.emit(EVENTS.RESIZE.ALL)
         }
     });
 
     actions.registerAction('frames.align-left', () => {
         toggleComponent('frames', false);
-        state.config('frameOrientation', 'left');
-        triggerResize();
+        state.setConfig('frameOrientation', 'left');
+        eventBus.emit(EVENTS.RESIZE.ALL)
     });
 
     actions.registerAction('frames.align-bottom', () => {
         toggleComponent('frames', false);
-        state.config('frameOrientation', 'bottom');
-        triggerResize();
+        state.setConfig('frameOrientation', 'bottom');
+        eventBus.emit(EVENTS.RESIZE.ALL)
     });
 
     actions.registerAction('frames.previous-frame', () => {
@@ -204,8 +204,13 @@ function setupActionButtons() {
     );
 }
 
+function setupEventBus() {
+    eventBus.on(EVENTS.REFRESH.ALL, () => rebuild())
+    eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => currentFrameComponent().redrawGlyphs())
+}
+
 function refreshAlignment() {
-    const orientation = state.config('frameOrientation');
+    const orientation = state.getConfig('frameOrientation');
 
     // Minimized frames component:
     refreshComponentVisibility($container, 'frames');
@@ -241,19 +246,21 @@ function refreshAlignment() {
 }
 
 function refreshOnion() {
-    $container.find('.toggle-onion').find('.ri').toggleClass('active', state.config('onion'));
+    $container.find('.toggle-onion').find('.ri').toggleClass('active', state.getConfig('onion'));
 }
 
-function selectFrame(index, saveState) {
+function selectFrame(index, historyModifiable) {
     state.frameRangeSelection(null); // Clear out any range selection
     state.frameIndex(index);
-    triggerRefresh('full', saveState);
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    state.pushHistory({ modifiable: historyModifiable });
 }
 
-function selectFrameRange(newRange, newFrameIndex, saveState) {
+function selectFrameRange(newRange, newFrameIndex) {
     state.frameRangeSelection(newRange);
     state.frameIndex(newFrameIndex);
-    triggerRefresh('full', saveState);
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    state.pushHistory();
 }
 
 class FrameComponent {
@@ -276,7 +283,7 @@ class FrameComponent {
 
     redrawGlyphs() {
         this._canvasController.clear();
-        this._canvasController.drawBackground(state.config('background'));
+        this._canvasController.drawBackground(state.getConfig('background'));
         this._canvasController.drawGlyphs(state.layeredGlyphs(this._frame));
     }
 }

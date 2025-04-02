@@ -63,6 +63,12 @@
     border-radius: 4px;
     border: 1px solid transparent;
 
+    // Make sure long file names do not overlap with file menu
+    max-width: calc(100vw - 750px); // 750 is determined from the width of the file menu (~350px) multiplied by 2 + some padding
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
     &:hover, &:focus {
       border: 1px dashed var(--color-contrast);
       cursor: text;

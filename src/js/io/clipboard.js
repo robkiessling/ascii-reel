@@ -3,11 +3,10 @@ import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
 
 import * as selection from "../canvas/selection.js";
-import * as state from "../state/state.js";
-import {triggerRefresh} from "../index.js";
-import * as editor from "../components/editor.js";
+import * as state from "../state/index.js";
 import * as actions from "./actions.js";
 import {translateGlyphs} from "../utils/arrays.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let copiedSelection = null;
 let copiedText = null;
@@ -38,7 +37,8 @@ function cut() {
 
     copySelection();
     selection.empty();
-    triggerRefresh('chars', true);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+    state.pushHistory();
 }
 
 function copy() {
@@ -121,7 +121,8 @@ function pasteGlyphs(glyphs, limitToSelection) {
         selection.moveCursorInDirection('right', false, glyphs.chars[0].length);
     }
 
-    triggerRefresh('chars', true);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
 }
 
 function convertGlyphsToText(glyphs) {

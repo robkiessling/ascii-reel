@@ -1,5 +1,5 @@
-import * as state from "../state/state.js";
-import {config} from "../state/state.js";
+import * as state from "../state/index.js";
+import {getConfig, setConfig} from "../state/index.js";
 
 /**
  * Minimizes/maximizes the component according to the current state.
@@ -24,7 +24,7 @@ export function refreshComponentVisibility($container, componentKey) {
  *   undefined, will toggle the component from its current state.
  */
 export function toggleComponent(componentKey, isMinimized) {
-    const minimizedComponents = config('minimizedComponents') || {};
+    const minimizedComponents = getConfig('minimizedComponents') || {};
     minimizedComponents[componentKey] = isMinimized === undefined ? !minimizedComponents[componentKey] : !!isMinimized;
-    config('minimizedComponents', minimizedComponents);
+    setConfig('minimizedComponents', minimizedComponents);
 }

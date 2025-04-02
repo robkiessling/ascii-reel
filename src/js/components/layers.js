@@ -3,13 +3,13 @@
  */
 
 import SimpleBar from "simplebar";
-import * as state from "../state/state.js";
-import {triggerRefresh} from "../index.js";
+import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
 import {createDialog} from "../utils/dialogs.js";
 import {strings} from "../config/strings.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let $container, $template, $list, $editDialog, $editName;
 let simpleBar, layerComponents, tooltips;
@@ -20,14 +20,15 @@ export function init() {
 
     setupList();
     setupActionButtons();
+    setupEventBus();
 }
 
-export function refresh() {
+function refresh() {
     refreshComponentVisibility($container, 'layers');
     refreshVisibilities();
 }
 
-export function rebuild() {
+function rebuild() {
     const scrollElement = simpleBar.getScrollElement();
     const scrollTop = scrollElement.scrollTop;
 
@@ -117,8 +118,8 @@ function setupActionButtons() {
     });
 
     actions.registerAction('layers.toggle-visibility-lock', () => {
-        state.config('lockLayerVisibility', !state.config('lockLayerVisibility'));
-        triggerRefresh();
+        state.setConfig('lockLayerVisibility', !state.getConfig('lockLayerVisibility'));
+        eventBus.emit(EVENTS.REFRESH.ALL);
     });
 
     actions.attachClickHandlers($container);
@@ -130,11 +131,15 @@ function setupActionButtons() {
     );
 }
 
+function setupEventBus() {
+    eventBus.on(EVENTS.REFRESH.ALL, () => rebuild())
+}
+
 function refreshVisibilities() {
     if (layerComponents) {
         layerComponents.forEach(layerComponent => layerComponent.refresh());
 
-        const locked = state.config('lockLayerVisibility');
+        const locked = state.getConfig('lockLayerVisibility');
         $container.find('.toggle-visibility-lock').find('.ri')
             .toggleClass('ri-lock-line', locked)
             .toggleClass('ri-lock-unlock-line', !locked);
@@ -172,8 +177,8 @@ function saveLayer() {
 
     $editDialog.dialog("close");
 
-    state.pushStateToHistory();
-    triggerRefresh();
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    state.pushHistory();
 }
 
 // Layers are sorted backwards in the DOM
@@ -183,7 +188,8 @@ function layerIndexFromDOM(index) {
 
 function selectLayer(index) {
     state.layerIndex(index);
-    triggerRefresh('full', true);
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    state.pushHistory()
 }
 
 
@@ -200,7 +206,7 @@ class LayerComponent {
 
         this._$container.find('.toggle-visibility').off('click').on('click', () => {
             state.toggleLayerVisibility(this._layer);
-            triggerRefresh();
+            eventBus.emit(EVENTS.REFRESH.ALL);
         })
 
         this._layer = layer;
@@ -210,7 +216,7 @@ class LayerComponent {
 
     refresh() {
         this._$container.find('.toggle-visibility')
-            .toggleClass('invisible', state.config('lockLayerVisibility'))
+            .toggleClass('invisible', state.getConfig('lockLayerVisibility'))
             .find('.ri')
             .toggleClass('ri-eye-line', this._layer.visible)
             .toggleClass('ri-eye-off-line', !this._layer.visible);

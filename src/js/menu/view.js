@@ -1,9 +1,9 @@
-import * as state from "../state/state.js";
-import {triggerRefresh} from "../index.js";
+import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 import {strings} from "../config/strings.js";
 import {createDialog} from "../utils/dialogs.js";
-import {canZoomIn, canZoomOut, iterateCanvases} from "../components/canvas_stack.js";
+import {canZoomIn, canZoomOut} from "../components/canvas_stack.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 const GRID_SPACING_LIMITS = [1, 1000];
 
@@ -13,21 +13,16 @@ export function init() {
     setupWhitespaceToggle();
 
     actions.registerAction('view.zoom-in', {
-        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomDelta(2)),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 2 }),
         enabled: () => canZoomIn(),
     });
     actions.registerAction('view.zoom-out', {
-        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomDelta(0.5)),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 0.5 }),
         enabled: () => canZoomOut(),
     });
     actions.registerAction('view.zoom-fit', {
-        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomToFit()),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_TO_FIT, { delta: 0.5 }),
     });
-}
-
-function updateCanvasStack(callback) {
-    iterateCanvases(callback)
-    triggerRefresh('zoom');
 }
 
 
@@ -36,12 +31,12 @@ let $gridDialog, minorGridSettings, majorGridSettings;
 
 function setupGridToggle() {
     actions.registerAction('view.toggle-grid', {
-        name: () => state.config('grid').show ? strings['view.hide-grid.name'] : strings['view.show-grid.name'],
+        name: () => state.getConfig('grid').show ? strings['view.hide-grid.name'] : strings['view.show-grid.name'],
         callback: () => {
-            let grid = $.extend({}, state.config('grid'));
+            let grid = $.extend({}, state.getConfig('grid'));
             grid.show = !grid.show;
-            state.config('grid', grid);
-            triggerRefresh('chars');
+            state.setConfig('grid', grid);
+            eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
         }
     });
 }
@@ -55,15 +50,15 @@ function setupGridDialog() {
     createDialog($gridDialog, () => {
         if (!majorGridSettings.checkValidity() || !minorGridSettings.checkValidity()) return;
 
-        state.config('grid', $.extend(
+        state.setConfig('grid', $.extend(
             {},
-            state.config('grid'),
+            state.getConfig('grid'),
             { show: true },
             majorGridSettings.toState(),
             minorGridSettings.toState(),
         ));
 
-        triggerRefresh('chars');
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
         $gridDialog.dialog('close');
     }, 'Save', {
         minWidth: 300,
@@ -100,8 +95,8 @@ class GridSettings {
     }
 
     loadFromState() {
-        this.$enabled.prop('checked', state.config('grid')[this.enabledKey]);
-        this.$spacing.val(state.config('grid')[this.spacingKey]);
+        this.$enabled.prop('checked', state.getConfig('grid')[this.enabledKey]);
+        this.$spacing.val(state.getConfig('grid')[this.spacingKey]);
         this._refresh();
     }
 
@@ -143,10 +138,10 @@ class GridSettings {
 
 function setupWhitespaceToggle() {
     actions.registerAction('view.toggle-whitespace', {
-        name: () => state.config('whitespace') ? strings['view.hide-whitespace.name'] : strings['view.show-whitespace.name'],
+        name: () => state.getConfig('whitespace') ? strings['view.hide-whitespace.name'] : strings['view.show-whitespace.name'],
         callback: () => {
-            state.config('whitespace', !state.config('whitespace'));
-            triggerRefresh('chars');
+            state.setConfig('whitespace', !state.getConfig('whitespace'));
+            eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
         }
     });
 }
