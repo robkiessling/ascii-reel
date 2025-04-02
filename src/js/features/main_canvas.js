@@ -13,51 +13,46 @@
 
 import CanvasControl from "../components/canvas_control/index.js";
 import * as selection from "./selection.js";
-import { setupMouseEvents as setupSelectionMouse } from "./selection.js";
-import {
-    BRUSH_TOOLS,
-    refreshMouseCoords,
-    refreshSelectionDimensions,
-    setupMouseEvents as setupEditorMouse
-} from "./editor.js";
+import { BRUSH_TOOLS, refreshMouseCoords, refreshSelectionDimensions} from "./editor.js";
 import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
 import * as editor from "./editor.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
+let hoveredCell;
 
 export function init() {
     charCanvas = new CanvasControl($('#char-canvas'), {});
     selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
     hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
 
-    // #selection-canvas is on the top so it gets all the mouse events
+    // selection-canvas is on the top so it handles all the mouse events
     selectionCanvas = new CanvasControl($('#selection-canvas'), {
-        hoverTracking: {
-            onHover: () => drawHoveredCell()
-        },
-        zoomEvents: {
+        emitRawMouseEvents: true,
+        emitZoomEvents: {
             targeted: true
         },
-        panEvents: {
+        emitPanEvents: {
             snapToCenter: false,
             mouseButtons: () => state.getConfig('tool') === 'pan' ? [1, 3] : [3]
-        }
+        },
+        emitHoverEvents: true,
     });
-
-    setupSelectionMouse(selectionCanvas);
-    setupEditorMouse(selectionCanvas);
 
     setupEventBus();
 }
 
+
 function setupEventBus() {
-    eventBus.on(EVENTS.REFRESH.ALL, () => redraw())
+    eventBus.on(EVENTS.REFRESH.ALL, () => redrawAll())
+
     eventBus.on([EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => {
-        drawSelection();
-        drawHoveredCell();
+        redrawSelection();
+        redrawHover(); // since we hide hover mouse coords if there is a selection
     })
+
     eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => redrawCharCanvas())
 
     eventBus.on(EVENTS.CANVAS.ZOOM_DELTA, ({delta, target}) => {
@@ -72,17 +67,26 @@ function setupEventBus() {
     eventBus.on(EVENTS.CANVAS.PAN_DELTA, ({delta}) => {
         iterateCanvases(canvasControl => canvasControl.translateAmount(...delta))
     })
+
+    eventBus.on(EVENTS.CANVAS.HOVERED, ({cell}) => {
+        hoveredCell = cell;
+        redrawHover();
+    })
+    eventBus.on(EVENTS.CANVAS.HOVER_END, () => {
+        hoveredCell = null;
+        redrawHover();
+    })
 }
 
-function redraw() {
+function redrawAll() {
     redrawCharCanvas();
-    drawSelection();
-    drawHoveredCell();
+    redrawSelection();
+    redrawHover();
 }
 
 function iterateCanvases(callback) {
     [selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas].forEach(canvas => callback(canvas));
-    redraw();
+    redrawAll();
 }
 
 export function canZoomIn() {
@@ -90,18 +94,6 @@ export function canZoomIn() {
 }
 export function canZoomOut() {
     return selectionCanvas.canZoomOut();
-}
-
-export function hoveredCell() {
-    return selectionCanvas.hoveredCell();
-}
-
-export function hoveredCells() {
-    const primaryCell = hoveredCell();
-    if (!primaryCell) return [];
-    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return [primaryCell];
-    const { shape, size } = state.getConfig('brush');
-    return selectionCanvas.getBrushCells(shape, size)
 }
 
 export function getCurrentViewRect() {
@@ -147,7 +139,7 @@ function redrawCharCanvas() {
     }
 }
 
-function drawSelection() {
+function redrawSelection() {
     selectionCanvas.clear();
     selectionBorderCanvas.clear();
 
@@ -174,17 +166,21 @@ const HIDE_HOVER_EFFECT_FOR_TOOLS = new Set([
     'move-all'
 ])
 
-function drawHoveredCell() {
+function redrawHover() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell() && !selection.isDrawing && !selection.isMoving) {
-        if (!HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.getConfig('tool'))) {
-            hoveredCells().forEach(cell => {
-                if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
-            })
-        }
+    if (hoveredCell && !selection.isDrawing && !selection.isMoving &&
+        !HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.getConfig('tool'))) {
+
+        const { shape, size } = state.getConfig('brush');
+        const hoveredCells = BRUSH_TOOLS.includes(state.getConfig('tool')) ?
+            getAllHoveredCells(hoveredCell, shape, size) : [hoveredCell];
+
+        hoveredCells.forEach(cell => {
+            if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
+        })
     }
 
     // We don't show mouse coords if we're showing selection dimensions
-    refreshMouseCoords(selection.hasSelection() ? null : hoveredCell());
+    refreshMouseCoords(selection.hasSelection() ? null : hoveredCell);
 }

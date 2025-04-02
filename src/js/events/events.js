@@ -88,10 +88,19 @@ export const EVENTS = {
         CURSOR_MOVED: 'selection:cursor-moved'
     },
     CANVAS: {
-        ZOOM_DELTA: 'canvas:zoom-delta',
+        ZOOM_DELTA: 'canvas:zoom-delta', /* Event data: { delta, target } */
         ZOOM_TO_FIT: 'canvas:zoom-to-fit',
-        PAN_DELTA: 'canvas:pan-delta',
-        PAN_TO_TARGET: 'canvas:pan-to-target',
+        PAN_DELTA: 'canvas:pan-delta', /* Event data: { delta } */
+        PAN_TO_TARGET: 'canvas:pan-to-target', /* Event data: { target } */
+
+        /* Event data: { mouseEvent, cell, tool, canvasControl } */
+        MOUSEDOWN: 'canvas:mousedown',
+        MOUSEMOVE: 'canvas:mousemove',
+        MOUSEUP: 'canvas:mouseup',
+        DBLCLICK: 'canvas:dblclick',
+
+        HOVERED: 'canvas:hovered', /* Event data: { cell } */
+        HOVER_END: 'canvas:hover-end'
     },
     ZOOM: {
         ZOOMED: 'zoom:zoomed'

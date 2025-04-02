@@ -21,7 +21,7 @@ export function init() {
         enabled: () => canZoomOut(),
     });
     actions.registerAction('view.zoom-fit', {
-        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_TO_FIT, { delta: 0.5 }),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_TO_FIT),
     });
 }
 

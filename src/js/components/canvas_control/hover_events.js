@@ -1,45 +1,30 @@
 import Cell from "../../geometry/cell.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
 /**
- * Sets up mouse hover listeners for the given canvas control. Returns a small API to retrieve the current hovered cell,
- * attach hover callbacks, and more.
- *
- * Not using the events.js eventBus because these events do not need to propagate through the app; only the feature
- * that instantiates the CanvasControl cares about the events.
- *
- * @param canvasControl
- * @returns {Object} A small API for the hover handler:
- *   - api.cell: the current cell being hovered over (null if not hovering)
- *   - api.getBrushCells: function to retrieve all hovered cells for a given brush shape/size
- *   - api.onHover: attaches a callback to be fired when hovering takes place
+ * Adds mouse event handlers to a canvasControl so hovering over the canvas emits hover events
+ * @param canvasControl The canvas controller to apply mouse event handlers to
  */
-export function setupHoverTracking(canvasControl) {
-    const listeners = [];
-    let api = {
-        cell: null,
-        getBrushCells: (brushShape, brushSize) => getAllHoveredCells(api.cell, brushShape, brushSize),
-        onHover: listener => listeners.push(listener),
-    }
-
-    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
-        api.cell = cell;
-        listeners.forEach(listener => listener(api.cell))
+export function setupHoverEvents(canvasControl) {
+    canvasControl.$canvas.on('mouseenter', evt => {
+        if (!canvasControl.initialized) return;
+        const cell = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
+        eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
     });
 
-    canvasControl.$canvas.on('editor:mouseenter', (evt, mouseEvent, cell) => {
-        api.cell = cell;
-        listeners.forEach(listener => listener(api.cell))
+    canvasControl.$canvas.on('mousemove', evt => {
+        if (!canvasControl.initialized) return;
+        const cell = canvasControl.cellAtExternalXY(evt.offsetX, evt.offsetY);
+        eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
     });
 
-    canvasControl.$canvas.on('editor:mouseleave', () => {
-        api.cell = null;
-        listeners.forEach(listener => listener(api.cell))
+    canvasControl.$canvas.on('mouseleave', () => {
+        if (!canvasControl.initialized) return;
+        eventBus.emit(EVENTS.CANVAS.HOVER_END)
     });
-
-    return api;
 }
 
-function getAllHoveredCells(primaryCell, brushShape, brushSize) {
+export function getAllHoveredCells(primaryCell, brushShape, brushSize) {
     if (!primaryCell) return [];
 
     switch(brushShape) {

@@ -7,9 +7,10 @@ import CellArea from "../../geometry/cell_area.js";
 import {roundForComparison} from "../../utils/numbers.js";
 import {PRIMARY_COLOR, SELECTION_COLOR} from "../../config/colors.js";
 import {drawCheckerboard, getHoverColor, HOVER_CELL_OPACITY} from "../../config/background.js";
-import {setupHoverTracking} from "./hover_tracking.js";
+import {setupRawMouseEvents} from "./raw_mouse_events.js";
 import {setupZoomEvents} from "./zoom_events.js";
 import {setupPanEvents} from "./pan_events.js";
+import {setupHoverEvents} from "./hover_events.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 4;
@@ -48,9 +49,10 @@ export default class CanvasControl {
             willReadFrequently: options.willReadFrequently
         });
         
-        if (this.options.hoverTracking) this._setupHoverTracking();
-        if (this.options.zoomEvents) this._setupZoomEvents();
-        if (this.options.panEvents) this._setupPanEvents();
+        if (this.options.emitRawMouseEvents) setupRawMouseEvents(this);
+        if (this.options.emitZoomEvents) setupZoomEvents(this, this.options.emitZoomEvents);
+        if (this.options.emitPanEvents) setupPanEvents(this, this.options.emitPanEvents);
+        if (this.options.emitHoverEvents) setupHoverEvents(this);
     }
 
     /**
@@ -313,28 +315,6 @@ export default class CanvasControl {
             topLeft.x, drawableArea.y + drawableArea.height,
             bottomRight.x - topLeft.x, bottomRight.y - (drawableArea.y + drawableArea.height)
         );
-    }
-    
-    
-    // -------------------------------------------------------------- Optional Modules
-
-    _setupHoverTracking() {
-        const hoverApi = setupHoverTracking(this);
-
-        if (this.options.hoverTracking.onHover) {
-            hoverApi.onHover(cell => this.options.hoverTracking.onHover(cell))
-        }
-
-        this.hoveredCell = () => hoverApi.cell;
-        this.getBrushCells = (brushShape, brushSize) => hoverApi.getBrushCells(brushShape, brushSize);
-    }
-
-    _setupZoomEvents() {
-        setupZoomEvents(this, this.options.zoomEvents.targeted);
-    }
-
-    _setupPanEvents() {
-        setupPanEvents(this, this.options.panEvents.snapToCenter, this.options.panEvents.mouseButtons);
     }
 
 

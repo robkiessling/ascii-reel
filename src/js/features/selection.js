@@ -250,12 +250,10 @@ function setupEventBus() {
     eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED], () => {
         clearCaches()
     }, 1) // Higher than default priority because this must happen before other callbacks
-}
 
-export function setupMouseEvents(canvasControl) {
     let moveStep, hasMoved;
 
-    canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, tool, canvasControl }) => {
         if (mouseEvent.which !== 1) return; // Only apply to left-click
 
         switch(tool) {
@@ -334,7 +332,7 @@ export function setupMouseEvents(canvasControl) {
         }
     });
 
-    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, tool, canvasControl }) => {
         // TODO This could be more efficient, could just trigger refreshes if cell is different than last?
 
         if (isDrawing) {
@@ -360,7 +358,7 @@ export function setupMouseEvents(canvasControl) {
         }
     });
 
-    canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvt, cell, tool) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, tool, canvasControl }) => {
         if (isDrawing) {
             lastPolygon().complete();
             isDrawing = false;
@@ -381,7 +379,7 @@ export function setupMouseEvents(canvasControl) {
         }
     });
 
-    canvasControl.$canvas.on('editor:dblclick', (evt, mouseEvent, cell, tool) => {
+    eventBus.on(EVENTS.CANVAS.DBLCLICK, ({ mouseEvent, cell, tool, canvasControl }) => {
         switch(tool) {
             case 'selection-rect':
             case 'selection-line':

@@ -24,10 +24,10 @@ let popup, popupCanvas;
 export function init() {
     $container = $('#preview-controller');
     previewCanvas = new CanvasControl($('#preview-canvas'), {
-        zoomEvents: {
+        emitZoomEvents: {
             targeted: false
         },
-        panEvents: {
+        emitPanEvents: {
             snapToCenter: true
         }
     });

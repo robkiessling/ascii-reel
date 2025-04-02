@@ -11,7 +11,6 @@ import * as selection from './selection.js';
 import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
-import {hoveredCell, hoveredCells} from "./main_canvas.js"
 import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {strings} from "../config/strings.js";
@@ -22,6 +21,7 @@ import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -89,29 +89,11 @@ export function hideCanvasMessage() {
 
 function setupEventBus() {
     eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => refresh())
-}
 
-
-export function setupMouseEvents(canvasControl) {
-    /*  ---------------------  Emitting Events  ---------------------  */
-    function _emitEvent(name, mouseEvent) {
-        if (!canvasControl.initialized) return;
-        const cell = canvasControl.cellAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
-        canvasControl.$canvas.trigger(name, [mouseEvent, cell, state.getConfig('tool')])
-    }
-
-    canvasControl.$canvas.on('mousedown', evt => _emitEvent('editor:mousedown', evt));
-    canvasControl.$canvas.on('mousemove', evt => _emitEvent('editor:mousemove', evt));
-    $(document).on('mouseup', evt => _emitEvent('editor:mouseup', evt));
-    canvasControl.$canvas.on('dblclick', evt => _emitEvent('editor:dblclick', evt));
-    canvasControl.$canvas.on('mouseenter', evt => _emitEvent('editor:mouseenter', evt));
-    canvasControl.$canvas.on('mouseleave', evt => _emitEvent('editor:mouseleave', evt));
-
-    /*  ---------------------  Event Listeners  ---------------------  */
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
     let editorMousedown = false; // Used to keep track of whether the mousedown started in the editor canvas
 
-    canvasControl.$canvas.on('editor:mousedown', (evt, mouseEvent, cell, tool) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, tool, canvasControl }) => {
         if (mouseEvent.which !== 1) return; // Only apply to left-click
         editorMousedown = true;
 
@@ -170,8 +152,8 @@ export function setupMouseEvents(canvasControl) {
         }
     });
 
-    canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
-        $canvasContainer.css('cursor', cursorStyle(evt, mouseEvent, cell, tool));
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, tool, canvasControl }) => {
+        $canvasContainer.css('cursor', cursorStyle(mouseEvent, cell, tool));
 
         if (!editorMousedown) return;
         if (mouseEvent.which !== 1) return; // Only apply to left-click
@@ -213,7 +195,7 @@ export function setupMouseEvents(canvasControl) {
         }
     });
 
-    canvasControl.$canvas.on('editor:mouseup', (evt, mouseEvent, cell, tool) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, tool, canvasControl }) => {
         if (mouseEvent.which !== 1) return; // Only apply to left-click
         if (!editorMousedown) return;
 
@@ -237,6 +219,9 @@ export function setupMouseEvents(canvasControl) {
                 return; // Ignore all other tools
         }
     });
+
+    eventBus.on(EVENTS.CANVAS.HOVERED, ({cell}) => hoveredCell = cell)
+    eventBus.on(EVENTS.CANVAS.HOVER_END, () => hoveredCell = null)
 }
 
 
@@ -357,6 +342,14 @@ function resizeToSelection() {
 // -------------------------------------------------------------------------------- Brushing shapes / painting
 
 export const BRUSH_TOOLS = ['draw-freeform-char', 'eraser', 'paint-brush'];
+let hoveredCell;
+
+function hoveredCells() {
+    if (!hoveredCell) return [];
+    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return [hoveredCell];
+    const { shape, size } = state.getConfig('brush');
+    return getAllHoveredCells(hoveredCell, shape, size)
+}
 
 function setupBrushSubMenu() {
     brushSubMenu = new ToolSubMenu({
@@ -496,15 +489,15 @@ export let drawingContent = null;
 
 function startDrawing(klass, options = {}, recalculateArgs = []) {
     options = $.extend({ colorIndex: state.primaryColorIndex() }, options);
-    drawingContent = new klass(hoveredCell(), options);
+    drawingContent = new klass(hoveredCell, options);
     updateDrawing(recalculateArgs);
 }
 
 function updateDrawing(recalculateArgs = []) {
     if (!drawingContent) return;
-    if (!hoveredCell()) return;
+    if (!hoveredCell) return;
 
-    drawingContent.end = hoveredCell();
+    drawingContent.end = hoveredCell;
     drawingContent.recalculate(...recalculateArgs);
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -652,7 +645,7 @@ function refreshAddToPalette() {
 
 // -------------------------------------------------------------------------------- Misc.
 
-function cursorStyle(evt, mouseEvent, cell, tool) {
+function cursorStyle(mouseEvent, cell, tool) {
     switch (tool) {
         case 'text-editor':
             return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? 'grab' : 'text';
