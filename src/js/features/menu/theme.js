@@ -9,9 +9,10 @@ export function init() {
     registerThemeAction('theme.light', 'light');
     registerThemeAction('theme.dark', 'dark');
 
-    refresh(false);
-
+    setupOSPreference();
     setupEventBus();
+
+    refresh(false); // Initial theme css (no need to redraw canvas, it will be loaded later)
 }
 
 function registerThemeAction(actionName, themeName) {
@@ -24,16 +25,27 @@ function registerThemeAction(actionName, themeName) {
     });
 }
 
+let prefersDarkMode;
+
+function setupOSPreference() {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    // Detect changes if user changes preference on OS
+    mediaQuery.addEventListener('change', e => {
+        prefersDarkMode = e.matches;
+        refresh(true);
+    });
+
+    // Initial preference
+    prefersDarkMode = mediaQuery.matches;
+}
+
 function refresh(redrawCanvas = false) {
     const theme = currentTheme(true);
 
-    let themeName = theme.name;
-    if (themeName === THEMES.system.name) {
-        // Detect OS preference
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        themeName = prefersDark ? THEMES.dark.name : THEMES.light.name
-    }
-    document.documentElement.setAttribute("data-theme", themeName);
+    let resolvedTheme = theme.name;
+    if (resolvedTheme === THEMES.system.name) resolvedTheme = prefersDarkMode ? THEMES.dark.name : THEMES.light.name;
+    document.documentElement.setAttribute("data-theme", resolvedTheme);
 
     $('#right-menu').find('.current-theme')
         .removeClass(Object.values(THEMES).map(theme => theme.remixicon).join(' '))

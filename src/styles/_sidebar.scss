@@ -184,7 +184,7 @@
       margin-right: $palette-icon-spacing;
       margin-bottom: $palette-icon-spacing;
       cursor: pointer;
-      border: 1px solid var(--color-background-border);
+      border: 1px solid var(--color-well-bg);
 
       // Make a small triangle in the top-left corner of the square
       &.selected {
