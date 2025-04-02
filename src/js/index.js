@@ -5,7 +5,7 @@ import 'jquery-visible';
 import '../styles/app.scss'
 
 import { init as initClipboard } from "./io/clipboard.js"
-import { init as initEditor } from "./features/editor.js"
+import { init as initEditor } from "./features/tools.js"
 import { init as initMainMenu } from "./features/menu/main.js";
 import { init as initFileMenu } from "./features/menu/file.js";
 import { init as initToolsMenu } from "./features/menu/tools.js";

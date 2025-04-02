@@ -1,5 +1,5 @@
 import * as state from "../state/index.js";
-import * as editor from "./editor.js";
+import * as editor from "./tools.js";
 import * as actions from "../io/actions.js";
 import {shouldModifyAction} from "../io/actions.js";
 import Cell from "../geometry/cell.js";
@@ -285,7 +285,7 @@ function setupEventBus() {
         }
 
         // If user clicks anywhere on the canvas (without the multiple-select key down) we want to clear everything and start a new polygon
-        if (!shouldModifyAction('editor.tools.selection.multiple', mouseEvent)) {
+        if (!shouldModifyAction('tools.standard.selection.multiple', mouseEvent)) {
             clear();
         }
 
@@ -295,7 +295,7 @@ function setupEventBus() {
             switch(tool) {
                 case 'selection-rect':
                     polygons.push(new SelectionRect(cell, undefined, {
-                        outline: shouldModifyAction('editor.tools.selection-rect.outline', mouseEvent)
+                        outline: shouldModifyAction('tools.standard.selection-rect.outline', mouseEvent)
                     }));
                     break;
                 case 'selection-line':
@@ -306,9 +306,9 @@ function setupEventBus() {
                     break;
                 case 'selection-wand':
                     const wand = new SelectionWand(cell, undefined, {
-                        diagonal: shouldModifyAction('editor.tools.selection-wand.diagonal', mouseEvent),
+                        diagonal: shouldModifyAction('tools.standard.selection-wand.diagonal', mouseEvent),
                         charblind: true,
-                        colorblind: shouldModifyAction('editor.tools.selection-wand.colorblind', mouseEvent)
+                        colorblind: shouldModifyAction('tools.standard.selection-wand.colorblind', mouseEvent)
                     });
                     wand.complete();
                     polygons.push(wand);
@@ -768,7 +768,7 @@ function flip(horizontally, vertically, mirrorChars) {
     });
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
-    if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
     state.pushHistory();
 }
 

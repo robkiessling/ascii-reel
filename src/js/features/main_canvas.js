@@ -13,10 +13,10 @@
 
 import CanvasControl from "../components/canvas_control/index.js";
 import * as selection from "./selection.js";
-import { BRUSH_TOOLS, refreshMouseCoords, refreshSelectionDimensions} from "./editor.js";
+import { BRUSH_TOOLS, refreshMouseCoords, refreshSelectionDimensions} from "./tools.js";
 import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
-import * as editor from "./editor.js";
+import * as editor from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
 

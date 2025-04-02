@@ -1,7 +1,7 @@
 /**
- * This is the UI component for the canvas editing tools:
- * - The editing toolbar on the left of the main canvas (e.g. free draw, draw line, paint brush, etc.)
- * - The "submenu" toolbar that appears on the left when you've made a selection, or to choose a brush size, etc.
+ * This is the UI component for the canvas toolbar:
+ * - The standard toolbar on the left of the main canvas (e.g. free draw, draw line, paint brush, etc.)
+ * - The submenu toolbar that appears on the left when you've made a selection, or to choose a brush size, etc.
  * - The color picker on the left toolbar
  */
 
@@ -25,7 +25,7 @@ import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $editingTools, $selectionTools, drawRectSubMenu, drawLineSubMenu, brushSubMenu,
+let $standardTools, $selectionTools, drawRectSubMenu, drawLineSubMenu, brushSubMenu,
     $canvasContainer, $canvasDetails, $canvasMessage;
 
 export function init() {
@@ -34,8 +34,8 @@ export function init() {
     $canvasMessage = $('#canvas-message');
 
     setupEventBus();
-    setupEditingTools();
-    setupFreeformChar();
+    setupStandardTools();
+    setupPickedChar();
     setupSelectionTools();
     setupDrawRectSubMenu();
     setupDrawLineSubMenu();
@@ -46,8 +46,8 @@ export function init() {
 function refresh() {
     selectColor(state.getConfig('primaryColor'))
 
-    $editingTools.find('.editing-tool').removeClass('selected');
-    $editingTools.find(`.editing-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
+    $standardTools.find('.standard-tool').removeClass('selected');
+    $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
     drawRectSubMenu.refresh();
@@ -117,28 +117,28 @@ function setupEventBus() {
                 startDrawing(AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
                 break;
             case 'fill-char':
-                fillConnectedCells(cell, freeformChar, state.primaryColorIndex(), {
-                    diagonal: shouldModifyAction('editor.tools.fill-char.diagonal', mouseEvent),
+                fillConnectedCells(cell, pickedChar, state.primaryColorIndex(), {
+                    diagonal: shouldModifyAction('tools.standard.fill-char.diagonal', mouseEvent),
                     charblind: false,
-                    colorblind: shouldModifyAction('editor.tools.fill-char.colorblind', mouseEvent)
+                    colorblind: shouldModifyAction('tools.standard.fill-char.colorblind', mouseEvent)
                 });
                 break;
             case 'fill-color':
                 fillConnectedCells(cell, undefined, state.primaryColorIndex(), {
-                    diagonal: shouldModifyAction('editor.tools.fill-color.diagonal', mouseEvent),
+                    diagonal: shouldModifyAction('tools.standard.fill-color.diagonal', mouseEvent),
                     charblind: true,
-                    colorblind: shouldModifyAction('editor.tools.fill-color.colorblind', mouseEvent)
+                    colorblind: shouldModifyAction('tools.standard.fill-color.colorblind', mouseEvent)
                 });
                 break;
             case 'color-swap':
                 colorSwap(cell, {
-                    allLayers: shouldModifyAction('editor.tools.color-swap.all-layers', mouseEvent),
-                    allFrames: shouldModifyAction('editor.tools.color-swap.all-frames', mouseEvent)
+                    allLayers: shouldModifyAction('tools.standard.color-swap.all-layers', mouseEvent),
+                    allFrames: shouldModifyAction('tools.standard.color-swap.all-frames', mouseEvent)
                 })
                 break;
             case 'eyedropper':
                 eyedropper(cell, {
-                    addToPalette: shouldModifyAction('editor.tools.eyedropper.add-to-palette', mouseEvent)
+                    addToPalette: shouldModifyAction('tools.standard.eyedropper.add-to-palette', mouseEvent)
                 });
                 break;
             case 'pan':
@@ -226,12 +226,12 @@ function setupEventBus() {
 
 
 
-// -------------------------------------------------------------------------------- Editing Tools
+// -------------------------------------------------------------------------------- Standard Tools
 
-function setupEditingTools() {
-    $editingTools = $('#editing-tools');
+function setupStandardTools() {
+    $standardTools = $('#standard-tools');
 
-    $editingTools.find('.editing-tool').each(function(i, element) {
+    $standardTools.find('.standard-tool').each(function(i, element) {
         const $element = $(element);
         const tool = $element.data('tool');
         const actionData = { callback: () => changeTool(tool) }
@@ -243,27 +243,27 @@ function setupEditingTools() {
                 break;
         }
 
-        actions.registerAction(actionIdForTool(tool), actionData);
+        actions.registerAction(actionIdForStandardTool(tool), actionData);
     });
 
-    $editingTools.off('click', '.editing-tool').on('click', '.editing-tool', evt => {
+    $standardTools.off('click', '.standard-tool').on('click', '.standard-tool', evt => {
         const $element = $(evt.currentTarget);
-        actions.callAction(actionIdForTool($element.data('tool')));
+        actions.callAction(actionIdForStandardTool($element.data('tool')));
     });
 
-    const $leftTools = $editingTools.find('.editing-tool-column:first-child .editing-tool').toArray();
-    const $rightTools = $editingTools.find('.editing-tool-column:last-child .editing-tool').toArray();
+    const $leftTools = $standardTools.find('.standard-tool-column:first-child .standard-tool').toArray();
+    const $rightTools = $standardTools.find('.standard-tool-column:last-child .standard-tool').toArray();
     const TIP_X_OFFSET = 15; // Move the tip a bit to the right so it's over the canvas
-    setupTooltips($leftTools, element => actionIdForTool($(element).data('tool')), {
-        offset: [0, TIP_X_OFFSET + 43] // 42px for the button to the right ($editing-tool-size), 1px for margin
+    setupTooltips($leftTools, element => actionIdForStandardTool($(element).data('tool')), {
+        offset: [0, TIP_X_OFFSET + 43] // 42px for the button to the right ($standard-tool-size), 1px for margin
     });
-    setupTooltips($rightTools, element => actionIdForTool($(element).data('tool')), {
+    setupTooltips($rightTools, element => actionIdForStandardTool($(element).data('tool')), {
         offset: [0, TIP_X_OFFSET]
     });
 }
 
-function actionIdForTool(tool) {
-    return `editor.tools.${tool}`;
+function actionIdForStandardTool(tool) {
+    return `tools.standard.${tool}`;
 }
 
 
@@ -286,8 +286,8 @@ function setupSelectionTools() {
     
     registerAction('move', () => selection.toggleMovingContent(), false, true, `${modifierAbbr('metaKey')}Click`);
     registerAction('typewriter', () => selection.toggleCursor(), true, false, 'Double Click');
-    registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('editor.selection.flip-v.mirror', e)));
-    registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('editor.selection.flip-h.mirror', e)));
+    registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
+    registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
     registerAction('clone', () => selection.cloneToAllFrames());
     registerAction('fill-color', () => paintSelection());
     registerAction('resize', () => resizeToSelection());
@@ -302,7 +302,7 @@ function setupSelectionTools() {
 }
 
 function actionIdForSelectionTool(tool) {
-    return `editor.selection.${tool}`;
+    return `tools.selection.${tool}`;
 }
 
 function refreshSelectionTools() {
@@ -366,7 +366,7 @@ function setupBrushSubMenu() {
 
 function drawFreeformChar() {
     const primaryColorIndex = state.primaryColorIndex();
-    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
+    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, pickedChar, primaryColorIndex));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -427,30 +427,30 @@ function eyedropper(cell, options) {
 }
 
 
-// -------------------------------------------------------------------------------- Freeform Char
+// -------------------------------------------------------------------------------- Char Picker
 
-let freeformChar, $freeformChar;
+let pickedChar, $pickedChar;
 
-function setupFreeformChar() {
-    $freeformChar = $('.freeform-char');
-    setFreeformChar('A'); // initial value
+function setupPickedChar() {
+    $pickedChar = $('.picked-char');
+    pickChar('A'); // initial value
 }
 
-export function setFreeformChar(char) {
-    freeformChar = char;
+export function pickChar(char) {
+    pickedChar = char;
 
     // Making it possible to visualize characters that don't actually take up space
     let visibleChar = char;
     if (char === ' ') visibleChar = '␣';
     if (char === '') visibleChar = '∅';
 
-    $freeformChar.html(visibleChar);
+    $pickedChar.html(visibleChar);
 }
 
-export function shouldUpdateFreeformChar() {
+export function canPickChar() {
     // return state.getConfig('tool') === 'draw-freeform-char' || state.getConfig('tool') === 'fill-char';
 
-    // Currently we are always updating the freeform char, even if a freeform tool is not selected
+    // Currently we are always updating the picked char, even if a char-related tool is not selected
     return true;
 }
 
@@ -464,8 +464,8 @@ function setupDrawRectSubMenu() {
         visible: () => state.getConfig('tool') === 'draw-rect',
         tooltipContent: $tool => {
             const type = $tool.data('type');
-            const name = strings[`editor.draw-rect-types.${type}.name`];
-            const description = strings[`editor.draw-rect-types.${type}.description`];
+            const name = strings[`tools.draw-rect-types.${type}.name`];
+            const description = strings[`tools.draw-rect-types.${type}.description`];
             return `<span class="title">${name}</span><br><span>${description}</span>`;
         }
     })
@@ -478,8 +478,8 @@ function setupDrawLineSubMenu() {
         visible: () => false, // We currently only have one sub-menu option so no need to show this
         tooltipContent: $tool => {
             const type = $tool.data('type');
-            const name = strings[`editor.draw-line-types.${type}.name`];
-            const description = strings[`editor.draw-line-types.${type}.description`];
+            const name = strings[`tools.draw-line-types.${type}.name`];
+            const description = strings[`tools.draw-line-types.${type}.description`];
             return `<span class="title">${name}</span><br><span>${description}</span>`;
         }
     })
@@ -528,9 +528,9 @@ function startMoveAll(cell, mouseEvent) {
     moveAllOrigin = cell;
 
     moveAllModifiers = {
-        allLayers: shouldModifyAction('editor.tools.move-all.all-layers', mouseEvent),
-        allFrames: shouldModifyAction('editor.tools.move-all.all-frames', mouseEvent),
-        wrap: shouldModifyAction('editor.tools.move-all.wrap', mouseEvent),
+        allLayers: shouldModifyAction('tools.standard.move-all.all-layers', mouseEvent),
+        allFrames: shouldModifyAction('tools.standard.move-all.all-frames', mouseEvent),
+        wrap: shouldModifyAction('tools.standard.move-all.wrap', mouseEvent),
     }
 }
 

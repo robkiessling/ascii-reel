@@ -1,29 +1,29 @@
 @use 'variables' as *;
 
-#editing-tools {
+#standard-tools {
   display: flex;
   flex-direction: column;
   justify-content: center;
   margin-right: 0.5rem;
 
-  .editing-tool-row, .editing-tool-column {
+  .standard-tool-row, .standard-tool-column {
     display: flex;
     justify-content: center;
     gap: 1px;
   }
 
-  .editing-tool-row {
+  .standard-tool-row {
     flex-direction: row;
     margin-bottom: 1px;
   }
 
-  .editing-tool-column {
+  .standard-tool-column {
     flex-direction: column;
   }
 
-  .editing-tool, .color-well {
-    width: $editing-tool-size;
-    height: $editing-tool-size;
+  .standard-tool, .color-well {
+    width: $standard-tool-size;
+    height: $standard-tool-size;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -44,7 +44,7 @@
     }
 
     &[data-tool="draw-freeform-char"], &[data-tool="fill-char"] {
-      > .freeform-char {
+      > .picked-char {
         position: absolute;
         bottom: 1px;
         right: 4px;
@@ -71,7 +71,7 @@
 
 .sub-tool-menu {
   position: absolute;
-  left: calc(#{$editing-tool-size} * 2 + 8px);
+  left: calc(#{$standard-tool-size} * 2 + 8px);
   top: 50%;
   transform: translate(0, -50%);
   margin-left: 6px;

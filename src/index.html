@@ -101,25 +101,25 @@
 
         <div id="frames-and-canvas" class="frames-on-left">
             <div id="tools-and-canvas">
-                <div id="editing-tools">
+                <div id="standard-tools">
 
                     <div class="spacer title">Edit</div>
 
-                    <div class="editing-tool-row">
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="text-editor"><span class="ri ri-fw ri-text"></span></div>
+                    <div class="standard-tool-row">
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="text-editor"><span class="ri ri-fw ri-text"></span></div>
 
-                            <div class="editing-tool" data-tool="draw-freeform-char">
+                            <div class="standard-tool" data-tool="draw-freeform-char">
                                 <span class="ri ri-fw ri-pencil-line"></span>
-                                <span class="freeform-char"></span>
+                                <span class="picked-char"></span>
                             </div>
                         </div>
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="eraser"><span class="ri ri-fw ri-eraser-line"></span></div>
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="eraser"><span class="ri ri-fw ri-eraser-line"></span></div>
 
-                            <div class="editing-tool" data-tool="fill-char">
+                            <div class="standard-tool" data-tool="fill-char">
                                 <span class="ri ri-fw ri-paint-fill"></span>
-                                <span class="freeform-char"></span>
+                                <span class="picked-char"></span>
                             </div>
                         </div>
                     </div>
@@ -127,60 +127,60 @@
                     <div class="spacer"></div>
                     <div class="spacer title">ASCII Draw</div>
 
-                    <div class="editing-tool-row">
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="draw-freeform-ascii"><span class="ri ri-fw ri-quill-pen-line"></span></div>
-                            <div class="editing-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
+                    <div class="standard-tool-row">
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="draw-freeform-ascii"><span class="ri ri-fw ri-quill-pen-line"></span></div>
+                            <div class="standard-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
                         </div>
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
-                            <div class="editing-tool" data-tool="draw-circle"><span class="ri ri-fw ri-circle-line"></span></div>
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="draw-line"><span class="icon-line-solid"></span></div>
+                            <div class="standard-tool" data-tool="draw-circle"><span class="ri ri-fw ri-circle-line"></span></div>
                         </div>
                     </div>
 
                     <div class="spacer"></div>
                     <div class="spacer title">Select</div>
 
-                    <div class="editing-tool-row">
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
-                            <div class="editing-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
+                    <div class="standard-tool-row">
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
+                            <div class="standard-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
                         </div>
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="selection-line"><span class="icon-line-dashed"></span></div>
-                            <div class="editing-tool" data-tool="selection-wand"><span class="ri ri-fw ri-magic-line"></span></div>
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="selection-line"><span class="icon-line-dashed"></span></div>
+                            <div class="standard-tool" data-tool="selection-wand"><span class="ri ri-fw ri-magic-line"></span></div>
                         </div>
                     </div>
 
                     <div class="spacer"></div>
                     <div class="spacer title">Move</div>
 
-                    <div class="editing-tool-row">
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="pan"><span class="ri ri-fw ri-hand"></span></div>
+                    <div class="standard-tool-row">
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="pan"><span class="ri ri-fw ri-hand"></span></div>
                         </div>
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="move-all"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="move-all"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
                         </div>
                     </div>
 
                     <div class="spacer"></div>
                     <div class="spacer title">Color</div>
 
-                    <div class="editing-tool-row">
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="paint-brush"><span class="ri ri-fw ri-brush-line"></span></div>
-                            <div class="editing-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
+                    <div class="standard-tool-row">
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="paint-brush"><span class="ri ri-fw ri-brush-line"></span></div>
+                            <div class="standard-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
                         </div>
-                        <div class="editing-tool-column">
-                            <div class="editing-tool" data-tool="fill-color"><span class="ri ri-fw ri-paint-fill"></span></div>
-                            <div class="editing-tool" data-tool="eyedropper"><span class="ri ri-fw ri-dropper-line"></span></div>
+                        <div class="standard-tool-column">
+                            <div class="standard-tool" data-tool="fill-color"><span class="ri ri-fw ri-paint-fill"></span></div>
+                            <div class="standard-tool" data-tool="eyedropper"><span class="ri ri-fw ri-dropper-line"></span></div>
                         </div>
                     </div>
 
                     <div class="spacer"></div>
-                    <div class="editing-tool-row">
-                        <div class="editing-tool-column">
+                    <div class="standard-tool-row">
+                        <div class="standard-tool-column">
                             <div class="color-well" id="current-color"></div>
                         </div>
                     </div>

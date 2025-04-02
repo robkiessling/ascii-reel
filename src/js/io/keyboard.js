@@ -1,6 +1,6 @@
 import * as selection from "../features/selection.js";
 import * as state from "../state/index.js";
-import * as editor from "../features/editor.js";
+import * as editor from "../features/tools.js";
 import * as actions from "./actions.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
@@ -132,8 +132,8 @@ function handleBackspaceKey(char) {
         selection.empty();
     }
 
-    if (editor.shouldUpdateFreeformChar()) {
-        editor.setFreeformChar('');
+    if (editor.canPickChar()) {
+        editor.pickChar('');
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -188,8 +188,8 @@ function arrowKeyToDirection(arrowKey) {
 }
 
 function handleSingleChar(char, moveCursor = true) {
-    if (editor.shouldUpdateFreeformChar()) {
-        editor.setFreeformChar(char);
+    if (editor.canPickChar()) {
+        editor.pickChar(char);
     }
 
     selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCursor);

@@ -4,7 +4,7 @@
 
 import SimpleBar from "simplebar";
 import * as state from '../state/index.js';
-import * as editor from './editor.js';
+import * as editor from './tools.js';
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import {strings} from "../config/strings.js";
