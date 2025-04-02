@@ -15,7 +15,6 @@ import {exportAnimation} from "../../storage/exporter.js";
 import DimensionsPicker from "../../components/dimensions_picker.js";
 import BackgroundPicker from "../../components/background_picker.js";
 import UnsavedWarning from "../../components/unsaved_warning.js";
-import {defaultContrastColor} from "../palette.js";
 import {modifierAbbr} from "../../utils/os.js";
 import Toast from "../../components/toast.js";
 import {DEFAULT_CONFIG} from "../../state/index.js";
@@ -43,7 +42,7 @@ function setupNew() {
                 config: {
                     dimensions: [dim.numCols, dim.numRows],
                     background: backgroundPicker.value,
-                    primaryColor: defaultContrastColor(backgroundPicker.value)
+                    primaryColor: state.defaultContrastColor(backgroundPicker.value)
                 }
             })
             eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })

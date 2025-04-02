@@ -421,7 +421,7 @@ function eyedropper(cell, options) {
 
     if (options.addToPalette) {
         state.addColor(colorStr);
-        eventBus.emit(EVENTS.EDITOR.COLOR_ADDED);
+        eventBus.emit(EVENTS.TOOLS.COLOR_ADDED);
         state.pushHistory();
     }
 }
@@ -605,7 +605,7 @@ function setupColorPicker() {
             $colorPicker.css('background', state.getConfig('primaryColor'));
 
             refreshAddToPalette();
-            eventBus.emit(EVENTS.EDITOR.COLOR_CHANGED);
+            eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
         },
     });
 
@@ -613,7 +613,7 @@ function setupColorPicker() {
         state.addColor(state.getConfig('primaryColor'));
 
         refreshAddToPalette();
-        eventBus.emit(EVENTS.EDITOR.COLOR_ADDED);
+        eventBus.emit(EVENTS.TOOLS.COLOR_ADDED);
         state.pushHistory();
     })
 }

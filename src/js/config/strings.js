@@ -164,6 +164,7 @@ export const strings = {
     'palette.sort-colors.name.saturation': 'Sorting By: Saturation',
     'palette.sort-colors.name.lightness': 'Sorting By: Lightness',
     'palette.sort-colors.name.alpha': 'Sorting By: Alpha',
+    'palette.sort-colors.description': 'Click to change sorting method.',
     'palette.delete-color.name': 'Delete Color',
     'palette.delete-color.description': 'Removes the selected color from your palette. This does not affect characters already using the color.',
     'palette.open-settings.name': 'Palette Settings',

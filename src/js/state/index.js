@@ -29,7 +29,8 @@ export {
     resize
 } from './timeline/index.js'
 export {
-    sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy, COLOR_FORMAT,
+    sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy, defaultContrastColor,
+    importPalette, COLOR_FORMAT, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
 } from './palette.js'
 export {
     hasHistory, pushHistory, endHistoryModification, modifyHistory

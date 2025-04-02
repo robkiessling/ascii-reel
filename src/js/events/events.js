@@ -102,12 +102,9 @@ export const EVENTS = {
         HOVERED: 'canvas:hovered', /* Event data: { cell } */
         HOVER_END: 'canvas:hover-end'
     },
-    ZOOM: {
-        ZOOMED: 'zoom:zoomed'
-    },
-    EDITOR: {
-        COLOR_ADDED: 'editor:color-added',
-        COLOR_CHANGED: 'editor:color-changed',
+    TOOLS: {
+        COLOR_ADDED: 'tools:color-added',
+        COLOR_CHANGED: 'tools:color-changed',
     },
     ACTIONS: {
         PERFORMED: 'actions:performed'

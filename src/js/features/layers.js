@@ -48,10 +48,6 @@ function rebuild() {
     refresh();
 }
 
-export function currentLayerComponent() {
-    return layerComponents[state.layerIndex()];
-}
-
 function setupList() {
     $list = $container.find('.list');
 

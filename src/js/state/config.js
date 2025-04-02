@@ -1,5 +1,5 @@
 import {getFormattedDateTime} from "../utils/strings.js";
-import {DEFAULT_COLOR} from "../features/palette.js";
+import {DEFAULT_COLOR} from "./palette.js";
 import {pick} from "../utils/objects.js";
 
 export const DEFAULT_STATE = {

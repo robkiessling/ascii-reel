@@ -3,7 +3,7 @@ import {isObject, transformValues} from "../../utils/objects.js";
 import {numCols, numRows, getConfig, setConfig} from "../config.js";
 import {create2dArray, split1DArrayInto2D} from "../../utils/arrays.js";
 import {mod} from "../../utils/numbers.js";
-import {DEFAULT_COLOR} from "../../features/palette.js";
+import {DEFAULT_COLOR} from "../palette.js";
 import pako from "pako";
 
 // -------------------------------------------------------------------------------- Cels

@@ -23,7 +23,7 @@ export function init() {
     setupEventBus();
 }
 
-export function refresh() { // todo do not export this once resize is implemented as an emitted event
+export function refresh() {
     refreshAlignment();
     refreshOnion();
 }
