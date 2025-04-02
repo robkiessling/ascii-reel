@@ -83,7 +83,14 @@ function loadStateFromHistory(newIndex, oldIndex) {
     replaceTimelineState($.extend(true, {}, newState.state.timeline));
     replacePaletteState($.extend(true, {}, newState.state.palette));
 
-    eventBus.emit(EVENTS.HISTORY.CHANGED, newState.options, oldState.options);
+    // When emitting, include any options that were true in either the newState or the oldState:
+    const trueOptions = Object.fromEntries(
+        Array.from(new Set([...Object.keys(newState.options), ...Object.keys(oldState.options)]))
+            .filter(key => newState.options[key] || oldState.options[key])
+            .map(key => [key, true])
+    );
+
+    eventBus.emit(EVENTS.HISTORY.CHANGED, trueOptions);
 }
 
 function canUndo() {

@@ -8,13 +8,16 @@ import { EventEmitter } from 'events';
  * - State changes (e.g. frames, layers, cels)
  * - Transient UI state (e.g. selection changes, zoom level)
  *
- * eventBus.on() is similar to an EventEmitter instance's on(), with some added features:
+ * eventBus.emit() is similar to EventEmitter's emit(), except:
+ *   - Only supports ONE event arg (in addition to the event name). If provided, this is typically an object. For event
+ *     data I've found named object attributes to be more robust than positional parameters.
+ * eventBus.on() is similar to EventEmitter's on(), with some added features:
  *   - The eventName can be an array of strings (or just a single string, as normal)
  *   - There is a 3rd argument for `priority`. Listeners are always executed in priority order (highest to lowest),
  *     regardless of the order they were attached.
  */
 export const eventBus = {
-    emit: (eventName, ...args) => emitter.emit(eventName, ...args),
+    emit: (eventName, data = {}) => emitter.emit(eventName, data), // Intentionally passing just one `data` arg (not `...args`)
     on: (eventNameOrNames, handler, priority = 0) => {
         if (Array.isArray(eventNameOrNames)) {
             eventNameOrNames.forEach(eventName => addListener(eventName, handler, priority))
@@ -71,6 +74,14 @@ export const EVENTS = {
     REFRESH: {
         ALL: 'refresh:all',
         CURRENT_FRAME: 'refresh:current-frame'
+    },
+    RESIZE: {
+        /**
+         * Event data: { clearSelection: boolean, resetZoom: boolean }
+         * - clearSelection: If true, the selection will be cleared
+         * - resetZoom: If true, the canvas will be zoomed all the way out
+         * */
+        ALL: 'resize:all'
     },
     HOVER: {
         HOVERED: 'hover:hovered'

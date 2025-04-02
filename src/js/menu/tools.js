@@ -2,7 +2,6 @@ import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 
 import {resetExportDimensions} from "./file.js";
-import {triggerResize} from "../index.js";
 import {calculateFontRatio} from "../canvas/font.js";
 import {AVAILABLE_FONTS} from "../config/fonts.js";
 import {createDialog} from "../utils/dialogs.js";
@@ -59,7 +58,7 @@ function setupFontDialog() {
         state.setConfig('font', $fontSelect.val());
 
         calculateFontRatio();
-        triggerResize({ clearSelection: true, resetZoom: true });
+        eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
         state.pushHistory({ requiresResize: true, requiresCalculateFontRatio: true });
 
         $fontDialog.dialog('close');
@@ -90,7 +89,7 @@ function setupResizeDialog() {
         if (dimensionsPicker.validate()) {
             const dim = dimensionsPicker.value;
             state.resize([dim.numCols, dim.numRows], dim.anchor.row, dim.anchor.col);
-            triggerResize({ clearSelection: true, resetZoom: true });
+            eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
             state.pushHistory({ requiresResize: true });
 
             resetExportDimensions();

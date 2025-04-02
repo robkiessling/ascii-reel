@@ -4,7 +4,6 @@
 
 import SimpleBar from "simplebar";
 import * as state from "../state/index.js";
-import {triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";
 import CanvasControl from "../canvas/canvas.js";
 import ArrayRange from "../utils/arrays.js";
@@ -168,20 +167,20 @@ function setupActionButtons() {
         description: () => strings[state.isMinimized('frames') ? 'frames.show-component.description' : 'frames.hide-component.description'],
         callback: () => {
             toggleComponent('frames');
-            triggerResize();
+            eventBus.emit(EVENTS.RESIZE.ALL)
         }
     });
 
     actions.registerAction('frames.align-left', () => {
         toggleComponent('frames', false);
         state.setConfig('frameOrientation', 'left');
-        triggerResize();
+        eventBus.emit(EVENTS.RESIZE.ALL)
     });
 
     actions.registerAction('frames.align-bottom', () => {
         toggleComponent('frames', false);
         state.setConfig('frameOrientation', 'bottom');
-        triggerResize();
+        eventBus.emit(EVENTS.RESIZE.ALL)
     });
 
     actions.registerAction('frames.previous-frame', () => {

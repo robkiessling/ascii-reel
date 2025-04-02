@@ -44,7 +44,10 @@ function setupActiveFileIcon() {
 }
 
 function setupEventListeners() {
-    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.MENU.CHANGED, EVENTS.FILE.CHANGED, EVENTS.ACTIONS.PERFORMED], () => refresh())
+    eventBus.on(
+        [EVENTS.REFRESH.ALL, EVENTS.MENU.CHANGED, EVENTS.FILE.CHANGED, EVENTS.ACTIONS.PERFORMED],
+        () => refresh()
+    )
 }
 
 function setupFileName() {
