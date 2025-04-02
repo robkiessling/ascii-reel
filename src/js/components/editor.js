@@ -33,7 +33,7 @@ export function init() {
     $canvasDetails = $('#canvas-details');
     $canvasMessage = $('#canvas-message');
 
-    setupEventListeners();
+    setupEventBus();
     setupEditingTools();
     setupFreeformChar();
     setupSelectionTools();
@@ -87,7 +87,7 @@ export function hideCanvasMessage() {
 
 // -------------------------------------------------------------------------------- Events
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => refresh())
 }
 

@@ -33,7 +33,7 @@ export function init() {
     });
 
     setupActionButtons();
-    setupEventListeners();
+    setupEventBus();
 }
 
 function setupActionButtons() {
@@ -53,7 +53,7 @@ function setupActionButtons() {
     );
 }
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
 }
 

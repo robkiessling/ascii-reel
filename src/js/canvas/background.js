@@ -6,7 +6,7 @@ import {currentTheme, THEMES} from "../config/theme.js";
 
 // ------------------------------------------------------------- Grid / Hover Color Calculations
 /**
- * The color used for grids//over effects changes depending on the canvas background; if the background is light we use
+ * The color used for grids/hover effects changes depending on the canvas background; if the background is light we use
  * a darker shade, if the background is dark we use a lighter shade.
  */
 

@@ -41,7 +41,7 @@ export function init() {
     });
 
     setupActionButtons();
-    setupEventListeners();
+    setupEventBus();
 }
 
 export function resize() {
@@ -111,7 +111,7 @@ function setupActionButtons() {
     )
 }
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on(
         [
             EVENTS.REFRESH.CURRENT_FRAME,

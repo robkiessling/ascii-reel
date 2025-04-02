@@ -45,10 +45,11 @@ export function init() {
     setupMousePan(selectionCanvas, false, () => state.getConfig('tool') === 'pan' ? [1, 3] : [3])
     hoverApi = setupHoverMouse(selectionCanvas);
     hoverApi.onHover(() => drawHoveredCell())
-    setupEventListeners();
+
+    setupEventBus();
 }
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.ALL, () => redraw())
     eventBus.on([EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => {
         drawSelection();

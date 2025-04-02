@@ -22,7 +22,7 @@ export function init() {
 
     setupFileName();
     setupActiveFileIcon();
-    setupEventListeners();
+    setupEventBus();
 }
 
 function refresh() {
@@ -43,7 +43,7 @@ function setupActiveFileIcon() {
     })
 }
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on(
         [EVENTS.REFRESH.ALL, EVENTS.MENU.CHANGED, EVENTS.FILE.CHANGED, EVENTS.ACTIONS.PERFORMED],
         () => refresh()

@@ -20,7 +20,7 @@ export function init() {
 
     setupList();
     setupActionButtons();
-    setupEventListeners();
+    setupEventBus();
 }
 
 function refresh() {
@@ -131,7 +131,7 @@ function setupActionButtons() {
     );
 }
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.ALL, () => rebuild())
 }
 

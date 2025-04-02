@@ -25,7 +25,7 @@ export let cursorCell = null; // Cell that the cursor is in
 export function init() {
     actions.registerAction('selection.select-all', () => selectAll());
 
-    setupEventListeners();
+    setupEventBus();
 
     clearCaches();
 }
@@ -246,7 +246,7 @@ export function getConnectedCells(cell, options) {
 
 // -------------------------------------------------------------------------------- Events
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED], () => {
         clearCaches()
     }, 1) // Higher than default priority because this must happen before other callbacks

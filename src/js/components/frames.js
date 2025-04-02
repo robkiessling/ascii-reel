@@ -20,7 +20,7 @@ export function init() {
 
     setupList();
     setupActionButtons();
-    setupEventListeners();
+    setupEventBus();
 }
 
 export function refresh() { // todo do not export this once resize is implemented as an emitted event
@@ -204,7 +204,7 @@ function setupActionButtons() {
     );
 }
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.ALL, () => rebuild())
     eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => currentFrameComponent().redrawGlyphs())
 }

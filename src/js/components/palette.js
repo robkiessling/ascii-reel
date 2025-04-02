@@ -45,7 +45,7 @@ export function init() {
     });
 
     setupActionButtons();
-    setupEventListeners();
+    setupEventBus();
 }
 
 function setupActionButtons() {
@@ -88,7 +88,7 @@ function setupActionButtons() {
     );
 }
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on(EVENTS.EDITOR.COLOR_CHANGED, () => refreshSelectedColor())
     eventBus.on([EVENTS.EDITOR.COLOR_ADDED, EVENTS.REFRESH.ALL], () => refresh())
 }

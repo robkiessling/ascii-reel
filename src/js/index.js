@@ -45,10 +45,10 @@ initFrames();
 initLayers();
 initSelection();
 
-setupEventListeners();
+setupEventBus();
 defer(() => loadInitialContent());
 
-function setupEventListeners() {
+function setupEventBus() {
     $(window).on('resize', debounce(() => eventBus.emit(EVENTS.RESIZE.ALL)));
     
     // Resize listener: Resizes the components that depend on window size, then triggers a full refresh

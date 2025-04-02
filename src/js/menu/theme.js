@@ -11,7 +11,7 @@ export function init() {
 
     refresh(false);
 
-    setupEventListeners();
+    setupEventBus();
 }
 
 function registerThemeAction(actionName, themeName) {
@@ -46,6 +46,6 @@ function refresh(redrawCanvas = false) {
     }
 }
 
-function setupEventListeners() {
+function setupEventBus() {
     eventBus.on(EVENTS.THEME.CHANGED, () => refresh(true))
 }
