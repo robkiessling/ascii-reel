@@ -1,5 +1,5 @@
 import Color from "@sphinxxxx/color-conversion";
-import * as palette from "../components/palette.js";
+import * as palette from "../features/palette.js";
 
 const DEFAULT_STATE = {
     colors: [],

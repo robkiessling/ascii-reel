@@ -2,8 +2,8 @@ import Color from "@sphinxxxx/color-conversion";
 import * as state from "../state/index.js";
 import {exportFile} from "./file_system.js";
 import {importAnimated_GIF, importJSZip} from "../utils/lazy_loaders.js";
-import {fontRatio} from "../canvas/font.js";
-import CanvasControl from "../canvas/canvas.js";
+import {fontRatio} from "../config/font.js";
+import CanvasControl from "../components/canvas/control.js";
 import {defer, setIntervalUsingRAF} from "../utils/utilities.js";
 import {hideFullScreenLoader, showFullScreenLoader} from "../utils/overlays.js";
 

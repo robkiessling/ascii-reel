@@ -2,7 +2,7 @@
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
 
-import * as selection from "../canvas/selection.js";
+import * as selection from "../features/selection.js";
 import * as state from "../state/index.js";
 import * as actions from "./actions.js";
 import {translateGlyphs} from "../utils/arrays.js";

@@ -1,8 +1,8 @@
-import {registerAction} from "../io/actions.js";
-import {currentTheme, THEMES} from "../config/theme.js";
-import {recalculateBGColors} from "../canvas/background.js";
-import {saveGlobalSetting} from "../storage/local_storage.js";
-import {eventBus, EVENTS} from "../events/events.js";
+import {registerAction} from "../../io/actions.js";
+import {currentTheme, THEMES} from "../../config/theme.js";
+import {recalculateBGColors} from "../../config/background.js";
+import {saveGlobalSetting} from "../../storage/local_storage.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
 export function init() {
     registerThemeAction('theme.system', 'system');

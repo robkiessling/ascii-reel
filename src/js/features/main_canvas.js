@@ -11,19 +11,19 @@
  *   selection polygons that would have been on the selectionCanvas but that needed full opacity.
  */
 
-import CanvasControl from "../canvas/canvas.js";
-import * as selection from "../canvas/selection.js";
-import { setupMouseEvents as setupSelectionMouse } from "../canvas/selection.js";
-import {setupMouseEvents as setupHoverMouse} from "../canvas/hover.js";
+import CanvasControl from "../components/canvas/control.js";
+import * as selection from "./selection.js";
+import { setupMouseEvents as setupSelectionMouse } from "./selection.js";
+import {setupMouseEvents as setupHoverMouse} from "../components/canvas/hover.js";
 import {
     BRUSH_TOOLS,
     refreshMouseCoords,
     refreshSelectionDimensions,
     setupMouseEvents as setupEditorMouse
 } from "./editor.js";
-import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
+import {setupMousePan, setupScrollZoom} from "../components/canvas/zoom.js";
 import * as state from "../state/index.js";
-import {getMajorGridColor, getMinorGridColor} from "../canvas/background.js";
+import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
 import * as editor from "./editor.js";
 import {eventBus, EVENTS} from "../events/events.js";
 

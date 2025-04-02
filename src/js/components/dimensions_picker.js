@@ -1,4 +1,4 @@
-import {DEFAULT_CONFIG} from "../../state/index.js";
+import {DEFAULT_CONFIG} from "../state/index.js";
 
 const DEFAULT_OPTIONS = {
     anchorTool: false

@@ -1,5 +1,5 @@
-import {isFunction} from "../utils/utilities.js";
-import {eventBus, EVENTS} from "../events/events.js";
+import {isFunction} from "../../utils/utilities.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 

@@ -1,14 +1,14 @@
-import * as state from "../state/index.js";
-import * as actions from "../io/actions.js";
+import * as state from "../../state/index.js";
+import * as actions from "../../io/actions.js";
 
 import {resetExportDimensions} from "./file.js";
-import {calculateFontRatio} from "../canvas/font.js";
-import {AVAILABLE_FONTS} from "../config/fonts.js";
-import {createDialog} from "../utils/dialogs.js";
-import {recalculateBGColors} from "../canvas/background.js";
-import BackgroundPicker from "../components/ui/background_picker.js";
-import DimensionsPicker from "../components/ui/dimensions_picker.js";
-import {eventBus, EVENTS} from "../events/events.js";
+import {calculateFontRatio} from "../../config/font.js";
+import {AVAILABLE_FONTS} from "../../config/font.js";
+import {createDialog} from "../../utils/dialogs.js";
+import {recalculateBGColors} from "../../config/background.js";
+import BackgroundPicker from "../../components/background_picker.js";
+import DimensionsPicker from "../../components/dimensions_picker.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
 export function init() {
     setupFontDialog();

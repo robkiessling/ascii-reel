@@ -7,11 +7,11 @@
 
 import Picker from 'vanilla-picker/csp';
 import * as state from '../state/index.js';
-import * as selection from '../canvas/selection.js';
+import * as selection from './selection.js';
 import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
-import {hoveredCell, hoveredCells} from "./canvas_stack.js"
+import {hoveredCell, hoveredCells} from "./main_canvas.js"
 import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {strings} from "../config/strings.js";
@@ -160,7 +160,7 @@ export function setupMouseEvents(canvasControl) {
                 });
                 break;
             case 'pan':
-                // Pan tool is already handled by the setupMousePan() call in canvas_stack.js
+                // Pan tool is already handled by the setupMousePan() call in main_canvas.js
                 break;
             case 'move-all':
                 startMoveAll(cell, mouseEvent);

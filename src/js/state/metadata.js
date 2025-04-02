@@ -1,4 +1,4 @@
-import {DEFAULT_COLOR} from "../components/palette.js";
+import {DEFAULT_COLOR} from "../features/palette.js";
 import {getFormattedDateTime} from "../utils/strings.js";
 
 const DEFAULT_STATE = {

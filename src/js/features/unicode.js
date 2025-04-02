@@ -7,7 +7,7 @@ import * as actions from "../io/actions.js";
 import * as state from "../state/index.js";
 import * as editor from "./editor.js";
 import {copyChar} from "../io/clipboard.js";
-import * as selection from "../canvas/selection.js";
+import * as selection from "./selection.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 

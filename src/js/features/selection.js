@@ -1,5 +1,5 @@
 import * as state from "../state/index.js";
-import * as editor from "../components/editor.js";
+import * as editor from "./editor.js";
 import * as actions from "../io/actions.js";
 import {shouldModifyAction} from "../io/actions.js";
 import Cell from "../geometry/cell.js";

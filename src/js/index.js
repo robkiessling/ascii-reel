@@ -5,25 +5,25 @@ import 'jquery-visible';
 import '../styles/app.scss'
 
 import { init as initClipboard } from "./io/clipboard.js"
-import { init as initEditor } from "./components/editor.js"
-import { init as initMainMenu } from "./menu/main.js";
-import { init as initFileMenu } from "./menu/file.js";
-import { init as initToolsMenu } from "./menu/tools.js";
-import { init as initViewMenu } from "./menu/view.js";
-import { init as initThemeMenu } from "./menu/theme.js";
+import { init as initEditor } from "./features/editor.js"
+import { init as initMainMenu } from "./features/menu/main.js";
+import { init as initFileMenu } from "./features/menu/file.js";
+import { init as initToolsMenu } from "./features/menu/tools.js";
+import { init as initViewMenu } from "./features/menu/view.js";
+import { init as initThemeMenu } from "./features/menu/theme.js";
 import { init as initKeyboard } from "./io/keyboard.js";
 import { init as initActions } from "./io/actions.js";
-import { init as initPalette } from "./components/palette.js";
-import { init as initPreview, resize as resizePreview } from "./components/preview.js";
-import { init as initUnicode } from "./components/unicode.js";
-import { init as initCanvasStack, resize as resizeCanvasStack } from './components/canvas_stack.js';
-import { init as initSelection, clear as performClearSelection, syncTextEditorCursorPos } from './canvas/selection.js';
+import { init as initPalette } from "./features/palette.js";
+import { init as initPreview, resize as resizePreview } from "./features/preview.js";
+import { init as initUnicode } from "./features/unicode.js";
+import { init as initMainCanvas, resize as resizeMainCanvas } from './features/main_canvas.js';
+import { init as initSelection, clear as performClearSelection, syncTextEditorCursorPos } from './features/selection.js';
 import { init as initState, isValid as isStateValid, loadFromLocalStorage, loadBlankState } from "./state/index.js";
-import { init as initFrames, refresh as refreshFrames } from "./components/frames.js";
-import { init as initLayers } from "./components/layers.js";
+import { init as initFrames, refresh as refreshFrames } from "./features/frames.js";
+import { init as initLayers } from "./features/layers.js";
 import {debounce, defer} from "./utils/utilities.js";
 import {eventBus, EVENTS} from './events/events.js'
-import {calculateFontRatio} from "./canvas/font.js";
+import {calculateFontRatio} from "./config/font.js";
 import {setupAutoSave, readState as readLocalStorage} from "./storage/local_storage.js";
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
@@ -40,7 +40,7 @@ initPalette();
 initUnicode();
 initPreview();
 initState();
-initCanvasStack();
+initMainCanvas();
 initFrames();
 initLayers();
 initSelection();
@@ -61,7 +61,7 @@ function setupEventBus() {
         refreshFrames();
 
         // Resize all CanvasControls:
-        resizeCanvasStack(resetZoom);
+        resizeMainCanvas(resetZoom);
         resizePreview(); // Don't care about resetZoom since it will zoomToFit anyway
         // Frame canvases don't need to be resized here since EVENTS.REFRESH.ALL will rebuild them all anyway
 

@@ -1,5 +1,5 @@
 import Picker from "vanilla-picker";
-import {COLOR_FORMAT} from "../../state/index.js";
+import {COLOR_FORMAT} from "../state/index.js";
 
 const DEFAULT_COLORED_BACKGROUND = 'rgba(160,208,230,1)';
 const TRANSPARENT = 'transparent';

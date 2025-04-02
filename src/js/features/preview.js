@@ -3,11 +3,11 @@
  */
 
 import * as state from "../state/index.js";
-import CanvasControl from "../canvas/canvas.js";
+import CanvasControl from "../components/canvas/control.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
-import {getCurrentViewRect} from "./canvas_stack.js";
-import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
+import {getCurrentViewRect} from "./main_canvas.js";
+import {setupMousePan, setupScrollZoom} from "../components/canvas/zoom.js";
 import {getDynamicColor} from "../config/colors.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";

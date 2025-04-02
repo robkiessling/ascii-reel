@@ -1,5 +1,5 @@
 import Rect from "./rect.js";
-import {fontHeight, fontWidth} from "../canvas/font.js";
+import {fontHeight, fontWidth} from "../config/font.js";
 import bresenham from "bresenham";
 import {charInBounds} from "../state/index.js";
 

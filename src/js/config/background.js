@@ -1,7 +1,7 @@
 import * as state from "../state/index.js";
 import Color from "@sphinxxxx/color-conversion";
 import {roundForComparison} from "../utils/numbers.js";
-import {currentTheme, THEMES} from "../config/theme.js";
+import {currentTheme, THEMES} from "./theme.js";
 
 
 // ------------------------------------------------------------- Grid / Hover Color Calculations

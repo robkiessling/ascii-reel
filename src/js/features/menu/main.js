@@ -1,12 +1,12 @@
-import * as actions from "../io/actions.js";
-import {getName, setConfig} from "../state/index.js";
-import {toggleStandard} from "../io/keyboard.js";
-import {confirmDialog} from "../utils/dialogs.js";
-import * as fileSystem from "../storage/file_system.js";
-import {strings} from "../config/strings.js";
-import {hasActiveFile} from "../storage/file_system.js";
+import * as actions from "../../io/actions.js";
+import {getName, setConfig} from "../../state/index.js";
+import {toggleStandard} from "../../io/keyboard.js";
+import {confirmDialog} from "../../utils/dialogs.js";
+import * as fileSystem from "../../storage/file_system.js";
+import {strings} from "../../config/strings.js";
+import {hasActiveFile} from "../../storage/file_system.js";
 import tippy from "tippy.js";
-import {eventBus, EVENTS} from "../events/events.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
 let leftMenu, rightMenu
 let $fileName, $activeFileIcon;

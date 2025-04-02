@@ -1,25 +1,25 @@
 import dedent from "dedent-js";
 import Color from "@sphinxxxx/color-conversion";
 
-import * as state from "../state/index.js";
-import * as actions from "../io/actions.js";
-import {defer} from "../utils/utilities.js";
-import {fontRatio} from "../canvas/font.js";
-import {createDialog} from "../utils/dialogs.js";
-import exampleExportImg from "../../images/example-export.png";
+import * as state from "../../state/index.js";
+import * as actions from "../../io/actions.js";
+import {defer} from "../../utils/utilities.js";
+import {fontRatio} from "../../config/font.js";
+import {createDialog} from "../../utils/dialogs.js";
+import exampleExportImg from "../../../images/example-export.png";
 import SimpleBar from "simplebar";
 import { supported as isFileSystemAPISupported } from 'browser-fs-access';
-import * as fileSystem from "../storage/file_system.js";
-import {ValidationError} from "../utils/errors.js";
-import {exportAnimation} from "../storage/exporter.js";
-import DimensionsPicker from "../components/ui/dimensions_picker.js";
-import BackgroundPicker from "../components/ui/background_picker.js";
-import UnsavedWarning from "../components/ui/unsaved_warning.js";
-import {defaultContrastColor} from "../components/palette.js";
-import {modifierAbbr} from "../utils/os.js";
-import Toast from "../components/ui/toast.js";
-import {DEFAULT_CONFIG} from "../state/index.js";
-import {eventBus, EVENTS} from "../events/events.js";
+import * as fileSystem from "../../storage/file_system.js";
+import {ValidationError} from "../../utils/errors.js";
+import {exportAnimation} from "../../storage/exporter.js";
+import DimensionsPicker from "../../components/dimensions_picker.js";
+import BackgroundPicker from "../../components/background_picker.js";
+import UnsavedWarning from "../../components/unsaved_warning.js";
+import {defaultContrastColor} from "../palette.js";
+import {modifierAbbr} from "../../utils/os.js";
+import Toast from "../../components/toast.js";
+import {DEFAULT_CONFIG} from "../../state/index.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
 export function init() {
     setupNew();

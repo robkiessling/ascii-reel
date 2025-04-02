@@ -3,8 +3,8 @@ import * as history from './history.js';
 import * as palette from './palette.js';
 import * as timeline from './timeline/index.js';
 
-import {calculateFontRatio} from "../canvas/font.js";
-import {recalculateBGColors} from "../canvas/background.js";
+import {calculateFontRatio} from "../config/font.js";
+import {recalculateBGColors} from "../config/background.js";
 import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "../storage/local_storage.js";
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";

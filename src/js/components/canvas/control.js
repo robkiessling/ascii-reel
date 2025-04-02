@@ -1,12 +1,12 @@
-import {setIntervalUsingRAF} from "../utils/utilities.js";
-import {colorStr, numCols, numRows, fontFamily} from "../state/index.js";
-import {fontHeight, fontWidth} from "./font.js";
-import Rect from "../geometry/rect.js";
-import Cell from "../geometry/cell.js";
-import CellArea from "../geometry/cell_area.js";
-import {roundForComparison} from "../utils/numbers.js";
-import {PRIMARY_COLOR, SELECTION_COLOR} from "../config/colors.js";
-import {drawCheckerboard, getHoverColor, HOVER_CELL_OPACITY} from "./background.js";
+import {setIntervalUsingRAF} from "../../utils/utilities.js";
+import {colorStr, numCols, numRows, fontFamily} from "../../state/index.js";
+import {fontHeight, fontWidth} from "../../config/font.js";
+import Rect from "../../geometry/rect.js";
+import Cell from "../../geometry/cell.js";
+import CellArea from "../../geometry/cell_area.js";
+import {roundForComparison} from "../../utils/numbers.js";
+import {PRIMARY_COLOR, SELECTION_COLOR} from "../../config/colors.js";
+import {drawCheckerboard, getHoverColor, HOVER_CELL_OPACITY} from "../../config/background.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 4;

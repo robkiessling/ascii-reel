@@ -1,4 +1,4 @@
-import Cell from "../geometry/cell.js";
+import Cell from "../../geometry/cell.js";
 
 /**
  * Sets up mouse hover listeners for the given canvas control. Returns a small API to retrieve the current hovered cell,

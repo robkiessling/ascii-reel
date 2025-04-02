@@ -1,6 +1,6 @@
-import * as selection from "../canvas/selection.js";
+import * as selection from "../features/selection.js";
 import * as state from "../state/index.js";
-import * as editor from "../components/editor.js";
+import * as editor from "../features/editor.js";
 import * as actions from "./actions.js";
 import {eventBus, EVENTS} from "../events/events.js";
 

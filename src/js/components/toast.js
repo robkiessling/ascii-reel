@@ -1,4 +1,4 @@
-import {defer} from "../../utils/utilities.js";
+import {defer} from "../utils/utilities.js";
 
 const DEFAULT_OPTIONS = {
     key: undefined, // If defined, duplicate Toasts with the same key will just update each other; not make more rows

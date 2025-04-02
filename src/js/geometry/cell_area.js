@@ -1,5 +1,5 @@
 import Rect from "./rect.js";
-import {fontHeight, fontWidth} from "../canvas/font.js";
+import {fontHeight, fontWidth} from "../config/font.js";
 import Cell from "./cell.js";
 import * as state from "../state/index.js";
 
