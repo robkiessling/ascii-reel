@@ -1,7 +1,7 @@
-import {triggerRefresh} from "../index.js";
 import * as state from '../state/index.js';
 import {BRUSH_TOOLS} from "../components/editor.js";
 import Cell from "../geometry/cell.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 // Currently there is only ever one canvasControl hooked up to the hoveredCell; the hoveredCell tracks
 // what cell is being hovered over on that specific canvasControl.
@@ -10,17 +10,17 @@ export let hoveredCell = null;
 export function setupMouseEvents(canvasControl) {
     canvasControl.$canvas.on('editor:mousemove', (evt, mouseEvent, cell, tool) => {
         hoveredCell = cell;
-        triggerRefresh('hoveredCell');
+        eventBus.emit(EVENTS.HOVER.HOVERED);
     });
 
     canvasControl.$canvas.on('editor:mouseenter', (evt, mouseEvent, cell) => {
         hoveredCell = cell;
-        triggerRefresh('hoveredCell');
+        eventBus.emit(EVENTS.HOVER.HOVERED);
     });
 
     canvasControl.$canvas.on('editor:mouseleave', () => {
         hoveredCell = null;
-        triggerRefresh('hoveredCell');
+        eventBus.emit(EVENTS.HOVER.HOVERED);
     });
 }
 

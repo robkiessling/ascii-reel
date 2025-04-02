@@ -2,7 +2,7 @@ import * as selection from "../canvas/selection.js";
 import * as state from "../state/index.js";
 import * as editor from "../components/editor.js";
 import * as actions from "./actions.js";
-import {triggerRefresh} from "../index.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 const $document = $(document);
 
@@ -136,7 +136,7 @@ function handleBackspaceKey(char) {
         editor.setFreeformChar('');
     }
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory({ modifiable: 'backspace' });
 }
 

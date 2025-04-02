@@ -18,8 +18,9 @@ import UnsavedWarning from "../components/ui/unsaved_warning.js";
 import {defaultContrastColor} from "../components/palette.js";
 import {modifierAbbr} from "../utils/os.js";
 import Toast from "../components/ui/toast.js";
-import {triggerRefresh, triggerResize} from "../index.js";
+import {triggerResize} from "../index.js";
 import {DEFAULT_CONFIG} from "../state/index.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 export function init() {
     setupNew();
@@ -58,7 +59,7 @@ function setupNew() {
     const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-area'));
     const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'), {
         showCloseButton: true,
-        onSave: () => triggerRefresh('menu') // For new file name
+        onSave: () => eventBus.emit(EVENTS.FILE.CHANGED)
     })
 
     actions.registerAction('file.new', () => {
@@ -87,7 +88,7 @@ function setupOpen() {
 
     const unsavedWarning = new UnsavedWarning($openFileDialog.find('.unsaved-warning-area'), {
         successStringId: 'file.save-warning-cleared', // show a message since otherwise the dialog is completely blank
-        onSave: () => triggerRefresh('menu') // For new file name
+        onSave: () => eventBus.emit(EVENTS.FILE.CHANGED)
     })
 
     actions.registerAction('file.open', () => {
@@ -126,7 +127,7 @@ function setupSave() {
 
         fileSystem.saveFile()
             .then(() => {
-                triggerRefresh('menu'); // For new file name
+                eventBus.emit(EVENTS.FILE.CHANGED);
 
                 $saveFileDialog.dialog('close')
             })
@@ -163,7 +164,7 @@ function setupSave() {
 function saveAs() {
     if (isFileSystemAPISupported) {
         fileSystem.saveFile()
-            .then(() => triggerRefresh('menu')) // For new file name
+            .then(() => eventBus.emit(EVENTS.FILE.CHANGED))
             .catch(err => {
                 if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to save file', err);
             });
@@ -178,7 +179,7 @@ function saveAs() {
 function saveActive() {
     fileSystem.saveFile(true)
         .then(() => {
-            triggerRefresh('menu'); // For new file name
+            eventBus.emit(EVENTS.FILE.CHANGED);
 
             new Toast({
                 key: 'save-active-file',

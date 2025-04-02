@@ -7,8 +7,7 @@
  */
 
 import {stateForLocalStorage, isValid, replaceState} from "../state/index.js";
-import {triggerRefresh} from "../index.js";
-import {refresh as refreshTheme} from "../menu/theme.js"
+import {eventBus, EVENTS} from "../events/events.js";
 
 
 
@@ -71,7 +70,7 @@ export function setupAutoSave() {
 
 function onAnotherTabStateUpdate(msgData) {
     replaceState(msgData.state);
-    triggerRefresh();
+    eventBus.emit(EVENTS.REFRESH.ALL);
 }
 
 // ------------------------------------------------------------------------- Storing Global Settings
@@ -92,7 +91,7 @@ export function saveGlobalSetting(key, value) {
 function onAnotherTabGlobalSettingsUpdate(msgData) {
     switch(msgData.setting) {
         case 'theme':
-            refreshTheme(true);
+            eventBus.emit(EVENTS.THEME.CHANGED);
             break;
     }
 }

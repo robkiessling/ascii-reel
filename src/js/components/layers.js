@@ -4,12 +4,12 @@
 
 import SimpleBar from "simplebar";
 import * as state from "../state/index.js";
-import {triggerRefresh} from "../index.js";
 import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./editor.js";
 import {createDialog} from "../utils/dialogs.js";
 import {strings} from "../config/strings.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let $container, $template, $list, $editDialog, $editName;
 let simpleBar, layerComponents, tooltips;
@@ -20,14 +20,15 @@ export function init() {
 
     setupList();
     setupActionButtons();
+    setupEventListeners();
 }
 
-export function refresh() {
+function refresh() {
     refreshComponentVisibility($container, 'layers');
     refreshVisibilities();
 }
 
-export function rebuild() {
+function rebuild() {
     const scrollElement = simpleBar.getScrollElement();
     const scrollTop = scrollElement.scrollTop;
 
@@ -118,7 +119,7 @@ function setupActionButtons() {
 
     actions.registerAction('layers.toggle-visibility-lock', () => {
         state.setConfig('lockLayerVisibility', !state.getConfig('lockLayerVisibility'));
-        triggerRefresh();
+        eventBus.emit(EVENTS.REFRESH.ALL);
     });
 
     actions.attachClickHandlers($container);
@@ -128,6 +129,10 @@ function setupActionButtons() {
         element => $(element).data('action'),
         { placement: 'top' }
     );
+}
+
+function setupEventListeners() {
+    eventBus.on(EVENTS.REFRESH.ALL, () => rebuild())
 }
 
 function refreshVisibilities() {
@@ -172,7 +177,7 @@ function saveLayer() {
 
     $editDialog.dialog("close");
 
-    triggerRefresh('full'); // todo maybe just refresh layers?
+    eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
 }
 
@@ -183,7 +188,7 @@ function layerIndexFromDOM(index) {
 
 function selectLayer(index) {
     state.layerIndex(index);
-    triggerRefresh('full');
+    eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory()
 }
 
@@ -201,7 +206,7 @@ class LayerComponent {
 
         this._$container.find('.toggle-visibility').off('click').on('click', () => {
             state.toggleLayerVisibility(this._layer);
-            triggerRefresh();
+            eventBus.emit(EVENTS.REFRESH.ALL);
         })
 
         this._layer = layer;

@@ -3,13 +3,13 @@
  */
 
 import SimpleBar from "simplebar";
-import {triggerRefresh} from "../index.js";
 import * as state from '../state/index.js';
 import * as editor from './editor.js';
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import {strings} from "../config/strings.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 const BLACK = 'rgba(0,0,0,1)';
 const WHITE = 'rgba(255,255,255,1)';
@@ -45,6 +45,7 @@ export function init() {
     });
 
     setupActionButtons();
+    setupEventListeners();
 }
 
 function setupActionButtons() {
@@ -61,7 +62,7 @@ function setupActionButtons() {
             let sortIndex = Object.values(SORT_BY).indexOf(state.getPaletteSortBy());
             sortIndex = (sortIndex + 1) % Object.values(SORT_BY).length;
             state.changePaletteSortBy(Object.values(SORT_BY)[sortIndex]);
-            triggerRefresh('palette');
+            refresh();
         }
     });
     actions.registerAction('palette.delete-color', {
@@ -70,7 +71,7 @@ function setupActionButtons() {
         },
         callback: () => {
             state.deleteColor($colorList.find('.selected').data('color'));
-            triggerRefresh('palette');
+            refresh();
             state.pushHistory();
         }
     });
@@ -87,7 +88,12 @@ function setupActionButtons() {
     );
 }
 
-export function refresh() {
+function setupEventListeners() {
+    eventBus.on(EVENTS.EDITOR.COLOR_CHANGED, () => refreshSelectedColor())
+    eventBus.on([EVENTS.EDITOR.COLOR_ADDED, EVENTS.REFRESH.ALL], () => refresh())
+}
+
+function refresh() {
     refreshComponentVisibility($container, 'palette');
 
     $colorList.empty();
@@ -109,11 +115,11 @@ export function refresh() {
         }).appendTo($colorList);
     }
 
-    refreshSelection();
+    refreshSelectedColor();
     tooltips.refreshContent();
 }
 
-export function refreshSelection() {
+function refreshSelectedColor() {
     $colorList.find('.color.selected').removeClass('selected');
     $colorList.find(`.color[data-color="${state.getConfig('primaryColor')}"]`).addClass('selected');
 

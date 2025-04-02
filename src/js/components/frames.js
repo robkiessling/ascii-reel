@@ -4,12 +4,13 @@
 
 import SimpleBar from "simplebar";
 import * as state from "../state/index.js";
-import {triggerRefresh, triggerResize} from "../index.js";
+import {triggerResize} from "../index.js";
 import * as actions from "../io/actions.js";
 import CanvasControl from "../canvas/canvas.js";
 import ArrayRange from "../utils/arrays.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {strings} from "../config/strings.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let $container, $template, $list;
 let simpleBar, frameComponents, tooltips;
@@ -20,14 +21,15 @@ export function init() {
 
     setupList();
     setupActionButtons();
+    setupEventListeners();
 }
 
-export function refresh() {
+export function refresh() { // todo do not export this once resize is implemented as an emitted event
     refreshAlignment();
     refreshOnion();
 }
 
-export function rebuild() {
+function rebuild() {
     const scrollElement = simpleBar.getScrollElement();
     const scrollLeft = scrollElement.scrollLeft;
     const scrollTop = scrollElement.scrollTop;
@@ -61,7 +63,7 @@ export function rebuild() {
     refresh();
 }
 
-export function currentFrameComponent() {
+function currentFrameComponent() {
     return frameComponents[state.frameIndex()];
 }
 
@@ -83,7 +85,7 @@ function setupList() {
 
         if (evt.shiftKey) {
             state.extendFrameRangeSelection(newIndex);
-            triggerRefresh('full');
+            eventBus.emit(EVENTS.REFRESH.ALL);
             state.pushHistory({ modifiable: 'changeFrameMulti' });
         }
         else {
@@ -158,7 +160,7 @@ function setupActionButtons() {
     actions.registerAction('frames.toggle-onion', () => {
         state.setConfig('onion', !state.getConfig('onion'));
         refreshOnion(); // have to refresh this manually since just refreshing chars
-        triggerRefresh('chars');
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     });
 
     actions.registerAction('frames.toggle-component', {
@@ -201,6 +203,11 @@ function setupActionButtons() {
         $container.find('[data-action]').toArray(),
         element => $(element).data('action')
     );
+}
+
+function setupEventListeners() {
+    eventBus.on(EVENTS.REFRESH.ALL, () => rebuild())
+    eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => currentFrameComponent().redrawGlyphs())
 }
 
 function refreshAlignment() {
@@ -246,14 +253,14 @@ function refreshOnion() {
 function selectFrame(index, historyModifiable) {
     state.frameRangeSelection(null); // Clear out any range selection
     state.frameIndex(index);
-    triggerRefresh('full');
+    eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory({ modifiable: historyModifiable });
 }
 
 function selectFrameRange(newRange, newFrameIndex) {
     state.frameRangeSelection(newRange);
     state.frameIndex(newFrameIndex);
-    triggerRefresh('full');
+    eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
 }
 

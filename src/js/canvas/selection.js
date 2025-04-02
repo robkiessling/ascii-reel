@@ -1,4 +1,3 @@
-import {triggerRefresh} from "../index.js";
 import * as state from "../state/index.js";
 import * as editor from "../components/editor.js";
 import * as actions from "../io/actions.js";
@@ -12,6 +11,7 @@ import SelectionLasso from "../geometry/selection/selection_lasso.js";
 import SelectionText from "../geometry/selection/selection_text.js";
 import {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -24,6 +24,8 @@ export let cursorCell = null; // Cell that the cursor is in
 
 export function init() {
     actions.registerAction('selection.select-all', () => selectAll());
+
+    setupEventListeners();
 
     clearCaches();
 }
@@ -42,7 +44,7 @@ export function clear(refresh = true) {
     if (movableContent) { finishMovingContent(); }
     if (cursorCell) { hideCursor(); }
     polygons = [];
-    if (refresh) triggerRefresh('selection');
+    if (refresh) eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
 // Empties the selection's contents. Does not clear the selection.
@@ -64,7 +66,7 @@ export function selectAll() {
     }
 
     polygons = [SelectionRect.drawableArea()];
-    triggerRefresh('selection');
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
 // Returns true if the given Cell is part of the selection
@@ -98,7 +100,7 @@ export function setSelectionToSingleChar(char, color, moveCursor = true) {
         return; // No modifications were made: do not trigger refresh
     }
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory({ modifiable: 'producesText' })
 }
 
@@ -244,6 +246,12 @@ export function getConnectedCells(cell, options) {
 
 // -------------------------------------------------------------------------------- Events
 
+function setupEventListeners() {
+    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED], () => {
+        clearCaches()
+    }, 1) // Higher than default priority because this must happen before other callbacks
+}
+
 export function setupMouseEvents(canvasControl) {
     let moveStep, hasMoved;
 
@@ -274,7 +282,7 @@ export function setupMouseEvents(canvasControl) {
                 return;
             }
 
-            triggerRefresh('selection');
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
             return;
         }
 
@@ -322,7 +330,7 @@ export function setupMouseEvents(canvasControl) {
                     break;
             }
 
-            triggerRefresh('selection');
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
         }
     });
 
@@ -333,12 +341,12 @@ export function setupMouseEvents(canvasControl) {
             if (tool === 'text-editor') {
                 cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
                 lastPolygon().end = cell;
-                triggerRefresh('selection');
+                eventBus.emit(EVENTS.SELECTION.CHANGED);
                 hasSelection() ? hideCursor() : moveCursorTo(cell);
             }
             else {
                 lastPolygon().end = cell;
-                triggerRefresh('selection');
+                eventBus.emit(EVENTS.SELECTION.CHANGED);
             }
         }
         else if (isMoving) {
@@ -356,7 +364,7 @@ export function setupMouseEvents(canvasControl) {
         if (isDrawing) {
             lastPolygon().complete();
             isDrawing = false;
-            triggerRefresh('selection');
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
         }
         else if (isMoving) {
             // For text-editor, if you click somewhere in the selected area (and we're not trying to move the underlying
@@ -367,10 +375,9 @@ export function setupMouseEvents(canvasControl) {
             }
 
             isMoving = false;
-            const refresh = ['selection'];
-            if (movableContent) { refresh.push('chars'); }
-            if (cursorCell) { refresh.push('cursorCell'); }
-            triggerRefresh(refresh);
+
+            eventBus.emit(EVENTS.SELECTION.CHANGED)
+            if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
         }
     });
 
@@ -402,7 +409,7 @@ export function startMovingContent() {
     movableContent = getSelectedValues();
 
     empty();
-    triggerRefresh('full');
+    eventBus.emit(EVENTS.REFRESH.ALL);
 }
 
 export function finishMovingContent() {
@@ -411,7 +418,7 @@ export function finishMovingContent() {
     });
 
     movableContent = null;
-    triggerRefresh('full');
+    eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
 }
 
@@ -454,7 +461,7 @@ export function moveCursorTo(cell, updateOrigin = true) {
         state.modifyHistory(historySlice => historySlice.config.cursorPosition = cell.serialize())
     }
 
-    triggerRefresh('cursorCell');
+    eventBus.emit(EVENTS.SELECTION.CURSOR_MOVED);
 }
 
 export function moveCursorToStart() {
@@ -557,13 +564,13 @@ export function hideCursor() {
     cursorCell = null;
     state.setConfig('cursorPosition', {});
 
-    triggerRefresh('cursorCell');
+    eventBus.emit(EVENTS.SELECTION.CURSOR_MOVED);
 }
 
 // Sets the current polygon to be a SelectionText of size 0 located at the cursor
 function matchPolygonToCursor() {
     polygons = [new SelectionText(cursorCell)];
-    triggerRefresh('selection');
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
 
@@ -573,7 +580,7 @@ function matchPolygonToCursor() {
 
 let caches;
 
-export function clearCaches() {
+function clearCaches() {
     caches = {};
 }
 
@@ -621,10 +628,8 @@ function moveDelta(rowDelta, colDelta) {
         cursorCell.col += colDelta;
     }
 
-    const refresh = ['selection'];
-    if (movableContent) { refresh.push('chars'); }
-    if (cursorCell) { refresh.push('cursorCell'); }
-    triggerRefresh(refresh);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
 }
 
 /**
@@ -669,7 +674,8 @@ export function moveInDirection(direction, amount, moveStart = true, moveEnd = t
         return; // finishMovingContent will trigger a refresh
     }
 
-    triggerRefresh(movableContent ? ['chars', 'selection'] : 'selection');
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
 }
 
 /**
@@ -763,7 +769,8 @@ function flip(horizontally, vertically, mirrorChars) {
         if (horizontally) { polygon.flipHorizontally(flipCol); }
     });
 
-    triggerRefresh(['chars', 'selection']);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
     state.pushHistory();
 }
 
@@ -776,7 +783,7 @@ export function cloneToAllFrames() {
         })
     });
 
-    triggerRefresh('full');
+    eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
 }
 

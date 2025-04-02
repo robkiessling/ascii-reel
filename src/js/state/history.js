@@ -2,7 +2,7 @@ import * as actions from "../io/actions.js";
 import {getStateForHistory as getConfigState, updateStateFromHistory as updateConfigState} from "./config.js";
 import {getState as getTimelineState, replaceState as replaceTimelineState} from "./timeline/index.js";
 import {getState as getPaletteState, replaceState as replacePaletteState} from "./palette.js";
-import {events} from '../events/events.js'
+import {eventBus, EVENTS} from '../events/events.js'
 
 
 // -------------------------------------------------------------------------------- History (undo / redo)
@@ -83,7 +83,7 @@ function loadStateFromHistory(newIndex, oldIndex) {
     replaceTimelineState($.extend(true, {}, newState.state.timeline));
     replacePaletteState($.extend(true, {}, newState.state.palette));
 
-    events.emit('history:load', newState.options, oldState.options);
+    eventBus.emit(EVENTS.HISTORY.CHANGED, newState.options, oldState.options);
 }
 
 function canUndo() {

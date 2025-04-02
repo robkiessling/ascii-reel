@@ -9,6 +9,7 @@ import * as editor from "./editor.js";
 import {copyChar} from "../io/clipboard.js";
 import * as selection from "../canvas/selection.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let $container, $charList, $actions, tooltips;
 
@@ -32,6 +33,7 @@ export function init() {
     });
 
     setupActionButtons();
+    setupEventListeners();
 }
 
 function setupActionButtons() {
@@ -51,6 +53,10 @@ function setupActionButtons() {
     );
 }
 
+function setupEventListeners() {
+    eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
+}
+
 // Currently hardcoding the list of available unicode shortcuts.
 // This is currently structured into rows 8 chars long because that's how many fit on a row with our current styling.
 // TODO Maybe keep track of any additional unicode chars the user has pasted into the canvas and add them?
@@ -64,7 +70,7 @@ const UNICODE_CHARS = [
     '¬', '¤',  '±', '‗', '¶', '§'
 ]
 
-export function refresh() {
+function refresh() {
     refreshComponentVisibility($container, 'unicode');
 
     $charList.empty();

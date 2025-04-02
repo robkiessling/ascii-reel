@@ -1,6 +1,6 @@
-import {triggerRefresh} from "../index.js";
 import {isFunction} from "../utils/utilities.js";
 import {iterateCanvases} from "../components/canvas_stack.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 const ZOOM_SCROLL_FACTOR = 1.1;
 
@@ -68,5 +68,5 @@ export function setupMousePan(canvasControl, snapToCenter, forMouseButtons = [1,
 
 function updateCanvasStack(callback) {
     iterateCanvases(callback)
-    triggerRefresh('zoom');
+    eventBus.emit(EVENTS.ZOOM.ZOOMED)
 }

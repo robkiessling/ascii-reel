@@ -1,15 +1,17 @@
 import {registerAction} from "../io/actions.js";
 import {currentTheme, THEMES} from "../config/theme.js";
 import {recalculateBGColors} from "../canvas/background.js";
-import {triggerRefresh} from "../index.js";
 import {saveGlobalSetting} from "../storage/local_storage.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 export function init() {
     registerThemeAction('theme.system', 'system');
     registerThemeAction('theme.light', 'light');
     registerThemeAction('theme.dark', 'dark');
 
-    refresh();
+    refresh(false);
+
+    setupEventListeners();
 }
 
 function registerThemeAction(actionName, themeName) {
@@ -22,7 +24,7 @@ function registerThemeAction(actionName, themeName) {
     });
 }
 
-export function refresh(redrawCanvas = false) {
+function refresh(redrawCanvas = false) {
     const theme = currentTheme(true);
 
     let themeName = theme.name;
@@ -40,6 +42,10 @@ export function refresh(redrawCanvas = false) {
     if (redrawCanvas) {
         // checkerboard background may have changed, so refresh canvas & grid
         recalculateBGColors();
-        triggerRefresh();
+        eventBus.emit(EVENTS.REFRESH.ALL);
     }
+}
+
+function setupEventListeners() {
+    eventBus.on(EVENTS.THEME.CHANGED, () => refresh(true))
 }

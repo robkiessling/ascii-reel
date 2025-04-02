@@ -10,6 +10,7 @@ import {getCurrentViewRect} from "./canvas_stack.js";
 import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
 import {getDynamicColor} from "../config/colors.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
@@ -40,6 +41,7 @@ export function init() {
     });
 
     setupActionButtons();
+    setupEventListeners();
 }
 
 export function resize() {
@@ -50,7 +52,7 @@ export function resize() {
 }
 
 // Just redraw the current preview frame (e.g. if chars got updated)
-export function redraw() {
+function redraw() {
     previewCanvas.clear();
     previewCanvas.drawBackground(state.getConfig('background'));
     previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
@@ -64,7 +66,7 @@ export function redraw() {
 }
 
 // Reset the preview interval (e.g. if fps changes, if a frame got deleted, etc.)
-export function reset() {
+function reset() {
     if (previewInterval) { previewInterval.stop(); }
 
     $fpsSlider.slider('value', state.getConfig('fps'));
@@ -107,6 +109,11 @@ function setupActionButtons() {
         element => $(element).data('action'),
         { placement: 'top' }
     )
+}
+
+function setupEventListeners() {
+    eventBus.on([EVENTS.REFRESH.CURRENT_FRAME, EVENTS.ZOOM.ZOOMED], () => redraw())
+    eventBus.on([EVENTS.REFRESH.ALL], () => reset())
 }
 
 

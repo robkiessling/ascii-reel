@@ -3,10 +3,10 @@ import {getName, setConfig} from "../state/index.js";
 import {toggleStandard} from "../io/keyboard.js";
 import {confirmDialog} from "../utils/dialogs.js";
 import * as fileSystem from "../storage/file_system.js";
-import {triggerRefresh} from "../index.js";
 import {strings} from "../config/strings.js";
 import {hasActiveFile} from "../storage/file_system.js";
 import tippy from "tippy.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let leftMenu, rightMenu
 let $fileName, $activeFileIcon;
@@ -22,9 +22,10 @@ export function init() {
 
     setupFileName();
     setupActiveFileIcon();
+    setupEventListeners();
 }
 
-export function refresh() {
+function refresh() {
     leftMenu.rebuildActions();
     rightMenu.rebuildActions();
 
@@ -40,6 +41,10 @@ function setupActiveFileIcon() {
         placement: 'bottom',
         allowHTML: true,
     })
+}
+
+function setupEventListeners() {
+    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.MENU.CHANGED, EVENTS.FILE.CHANGED, EVENTS.ACTIONS.PERFORMED], () => refresh())
 }
 
 function setupFileName() {
@@ -71,7 +76,7 @@ function setupFileName() {
         toggleStandard('file-name', false);
         const newName = $fileName.text();
         if (newName && newName !== origName && !canceled) setConfig('name', newName);
-        triggerRefresh('menu');
+        eventBus.emit(EVENTS.MENU.CHANGED);
     }
 
     $fileName.on('blur', () => finishEditing());
@@ -83,7 +88,7 @@ function setupFileName() {
             confirmDialog(strings['file.cannot-rename-active-file.name'], strings['file.cannot-rename-active-file.description'], () => {
                 fileSystem.saveFile()
                     .then(() => {
-                        triggerRefresh('menu'); // For new file name
+                        eventBus.emit(EVENTS.MENU.CHANGED); // For new file name
                     })
                     .catch(err => {
                         if (!fileSystem.isPickerCanceledError(err)) {

@@ -4,9 +4,9 @@ import "core-js/stable.js";
 
 import * as selection from "../canvas/selection.js";
 import * as state from "../state/index.js";
-import {triggerRefresh} from "../index.js";
 import * as actions from "./actions.js";
 import {translateGlyphs} from "../utils/arrays.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let copiedSelection = null;
 let copiedText = null;
@@ -37,7 +37,7 @@ function cut() {
 
     copySelection();
     selection.empty();
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
     state.pushHistory();
 }
 
@@ -121,7 +121,7 @@ function pasteGlyphs(glyphs, limitToSelection) {
         selection.moveCursorInDirection('right', false, glyphs.chars[0].length);
     }
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory();
 }
 

@@ -19,6 +19,7 @@ import {setupMousePan, setupScrollZoom} from "../canvas/zoom.js";
 import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../canvas/background.js";
 import * as editor from "./editor.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
 
@@ -37,6 +38,21 @@ export function init() {
 
     setupScrollZoom(selectionCanvas, true);
     setupMousePan(selectionCanvas, false, () => state.getConfig('tool') === 'pan' ? [1, 3] : [3])
+    setupEventListeners();
+}
+
+function setupEventListeners() {
+    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.ZOOM.ZOOMED], () => {
+        redrawCharCanvas();
+        drawSelection();
+        drawHoveredCell();
+    })
+    eventBus.on([EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => {
+        drawSelection();
+        drawHoveredCell();
+    })
+    eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => redrawCharCanvas())
+    eventBus.on(EVENTS.HOVER.HOVERED, () => drawHoveredCell())
 }
 
 export function iterateCanvases(callback) {
@@ -61,7 +77,7 @@ export function resize(resetZoom) {
     selectionCanvas.resize(resetZoom);
 }
 
-export function redrawCharCanvas() {
+function redrawCharCanvas() {
     charCanvas.clear();
     charCanvas.drawBackground(state.getConfig('background'));
 
@@ -93,7 +109,7 @@ export function redrawCharCanvas() {
     }
 }
 
-export function drawSelection() {
+function drawSelection() {
     selectionCanvas.clear();
     selectionBorderCanvas.clear();
 
@@ -120,7 +136,7 @@ const HIDE_HOVER_EFFECT_FOR_TOOLS = new Set([
     'move-all'
 ])
 
-export function drawHoveredCell() {
+function drawHoveredCell() {
     hoveredCellCanvas.clear();
 
     if (hoveredCell && !selection.isDrawing && !selection.isMoving) {

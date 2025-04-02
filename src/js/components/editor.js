@@ -8,7 +8,7 @@
 import Picker from 'vanilla-picker/csp';
 import * as state from '../state/index.js';
 import * as selection from '../canvas/selection.js';
-import {triggerRefresh, triggerResize} from "../index.js";
+import {triggerResize} from "../index.js";
 import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
@@ -22,6 +22,7 @@ import AsciiFreeform from "../geometry/ascii/ascii_freeform.js";
 import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -32,7 +33,8 @@ export function init() {
     $canvasContainer = $('#canvas-container');
     $canvasDetails = $('#canvas-details');
     $canvasMessage = $('#canvas-message');
-    
+
+    setupEventListeners();
     setupEditingTools();
     setupFreeformChar();
     setupSelectionTools();
@@ -42,7 +44,7 @@ export function init() {
     setupColorPicker();
 }
 
-export function refresh() {
+function refresh() {
     selectColor(state.getConfig('primaryColor'))
 
     $editingTools.find('.editing-tool').removeClass('selected');
@@ -85,6 +87,11 @@ export function hideCanvasMessage() {
 }
 
 // -------------------------------------------------------------------------------- Events
+
+function setupEventListeners() {
+    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => refresh())
+}
+
 
 export function setupMouseEvents(canvasControl) {
     /*  ---------------------  Emitting Events  ---------------------  */
@@ -336,7 +343,7 @@ function paintSelection() {
         state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
     });
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory();
 }
 
@@ -369,13 +376,13 @@ function drawFreeformChar() {
     const primaryColorIndex = state.primaryColorIndex();
     iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function erase() {
     iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function fillConnectedCells(cell, char, colorIndex, options) {
@@ -385,7 +392,7 @@ function fillConnectedCells(cell, char, colorIndex, options) {
         state.setCurrentCelGlyph(cell.row, cell.col, char, colorIndex);
     })
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory();
 }
 
@@ -393,7 +400,7 @@ function paintBrush() {
     const primaryColorIndex = state.primaryColorIndex();
     iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function colorSwap(cell, options) {
@@ -411,7 +418,7 @@ function colorSwap(cell, options) {
     })
 
     // Need full refresh if multiple frames in sidebar need updating
-    triggerRefresh(options.allFrames ? 'full' : 'chars');
+    eventBus.emit(options.allFrames ? EVENTS.REFRESH.ALL : EVENTS.REFRESH.CURRENT_FRAME)
     state.pushHistory();
 }
 
@@ -422,7 +429,7 @@ function eyedropper(cell, options) {
 
     if (options.addToPalette) {
         state.addColor(colorStr);
-        triggerRefresh('palette');
+        eventBus.emit(EVENTS.EDITOR.COLOR_ADDED);
         state.pushHistory();
     }
 }
@@ -501,7 +508,7 @@ function updateDrawing(recalculateArgs = []) {
     drawingContent.end = hoveredCell;
     drawingContent.recalculate(...recalculateArgs);
 
-    triggerRefresh('chars');
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function finishDrawing() {
@@ -512,7 +519,7 @@ function finishDrawing() {
     });
 
     drawingContent = null;
-    triggerRefresh('full');
+    eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
 }
 
@@ -538,7 +545,7 @@ function startMoveAll(cell, mouseEvent) {
 function updateMoveAll(cell, isNewCell) {
     if (moveAllOrigin && isNewCell) {
         moveAllOffset = [cell.row - moveAllOrigin.row, cell.col - moveAllOrigin.col];
-        triggerRefresh('chars');
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     }
 }
 
@@ -550,7 +557,7 @@ function finishMoveAll() {
 
         moveAllOffset = null;
         moveAllOrigin = null;
-        triggerRefresh('full');
+        eventBus.emit(EVENTS.REFRESH.ALL);
         state.pushHistory();
     }
 }
@@ -606,7 +613,7 @@ function setupColorPicker() {
             $colorPicker.css('background', state.getConfig('primaryColor'));
 
             refreshAddToPalette();
-            triggerRefresh('paletteSelection');
+            eventBus.emit(EVENTS.EDITOR.COLOR_CHANGED);
         },
     });
 
@@ -614,7 +621,7 @@ function setupColorPicker() {
         state.addColor(state.getConfig('primaryColor'));
 
         refreshAddToPalette();
-        triggerRefresh('palette');
+        eventBus.emit(EVENTS.EDITOR.COLOR_ADDED);
         state.pushHistory();
     })
 }
