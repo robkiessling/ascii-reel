@@ -2,7 +2,7 @@ import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 import {strings} from "../config/strings.js";
 import {createDialog} from "../utils/dialogs.js";
-import {canZoomIn, canZoomOut, iterateCanvases} from "../components/canvas_stack.js";
+import {canZoomIn, canZoomOut} from "../components/canvas_stack.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
 const GRID_SPACING_LIMITS = [1, 1000];
@@ -13,21 +13,16 @@ export function init() {
     setupWhitespaceToggle();
 
     actions.registerAction('view.zoom-in', {
-        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomDelta(2)),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 2 }),
         enabled: () => canZoomIn(),
     });
     actions.registerAction('view.zoom-out', {
-        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomDelta(0.5)),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 0.5 }),
         enabled: () => canZoomOut(),
     });
     actions.registerAction('view.zoom-fit', {
-        callback: () => updateCanvasStack(canvasControl => canvasControl.zoomToFit()),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_TO_FIT, { delta: 0.5 }),
     });
-}
-
-function updateCanvasStack(callback) {
-    iterateCanvases(callback)
-    eventBus.emit(EVENTS.ZOOM.ZOOMED);
 }
 
 

@@ -112,7 +112,14 @@ function setupActionButtons() {
 }
 
 function setupEventListeners() {
-    eventBus.on([EVENTS.REFRESH.CURRENT_FRAME, EVENTS.ZOOM.ZOOMED], () => redraw())
+    eventBus.on(
+        [
+            EVENTS.REFRESH.CURRENT_FRAME,
+            EVENTS.CANVAS.ZOOM_DELTA, EVENTS.CANVAS.ZOOM_TO_FIT, EVENTS.CANVAS.PAN_DELTA, EVENTS.CANVAS.PAN_TO_TARGET
+        ],
+        () => redraw()
+    )
+
     eventBus.on([EVENTS.REFRESH.ALL], () => reset())
 }
 

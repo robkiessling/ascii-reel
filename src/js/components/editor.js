@@ -11,7 +11,7 @@ import * as selection from '../canvas/selection.js';
 import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
-import {hoveredCell, iterateHoveredCells} from "../canvas/hover.js";
+import {hoveredCell, hoveredCells} from "./canvas_stack.js"
 import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {strings} from "../config/strings.js";
@@ -373,13 +373,13 @@ function setupBrushSubMenu() {
 
 function drawFreeformChar() {
     const primaryColorIndex = state.primaryColorIndex();
-    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
+    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, freeformChar, primaryColorIndex));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function erase() {
-    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
+    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -397,7 +397,7 @@ function fillConnectedCells(cell, char, colorIndex, options) {
 
 function paintBrush() {
     const primaryColorIndex = state.primaryColorIndex();
-    iterateHoveredCells(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
+    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -496,15 +496,15 @@ export let drawingContent = null;
 
 function startDrawing(klass, options = {}, recalculateArgs = []) {
     options = $.extend({ colorIndex: state.primaryColorIndex() }, options);
-    drawingContent = new klass(hoveredCell, options);
+    drawingContent = new klass(hoveredCell(), options);
     updateDrawing(recalculateArgs);
 }
 
 function updateDrawing(recalculateArgs = []) {
     if (!drawingContent) return;
-    if (!hoveredCell) return;
+    if (!hoveredCell()) return;
 
-    drawingContent.end = hoveredCell;
+    drawingContent.end = hoveredCell();
     drawingContent.recalculate(...recalculateArgs);
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);

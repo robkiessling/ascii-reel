@@ -83,12 +83,15 @@ export const EVENTS = {
          * */
         ALL: 'resize:all'
     },
-    HOVER: {
-        HOVERED: 'hover:hovered'
-    },
     SELECTION: {
         CHANGED: 'selection:changed',
         CURSOR_MOVED: 'selection:cursor-moved'
+    },
+    CANVAS: {
+        ZOOM_DELTA: 'canvas:zoom-delta',
+        ZOOM_TO_FIT: 'canvas:zoom-to-fit',
+        PAN_DELTA: 'canvas:pan-delta',
+        PAN_TO_TARGET: 'canvas:pan-to-target',
     },
     ZOOM: {
         ZOOMED: 'zoom:zoomed'
