@@ -5,7 +5,7 @@
 import SimpleBar from "simplebar";
 import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
-import CanvasControl from "../components/canvas/control.js";
+import CanvasControl from "../components/canvas_control/index.js";
 import ArrayRange from "../utils/arrays.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {strings} from "../config/strings.js";

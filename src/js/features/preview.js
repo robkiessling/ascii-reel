@@ -3,11 +3,10 @@
  */
 
 import * as state from "../state/index.js";
-import CanvasControl from "../components/canvas/control.js";
+import CanvasControl from "../components/canvas_control/index.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
 import {getCurrentViewRect} from "./main_canvas.js";
-import {setupMousePan, setupScrollZoom} from "../components/canvas/zoom.js";
 import {getDynamicColor} from "../config/colors.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -24,10 +23,14 @@ let popup, popupCanvas;
 
 export function init() {
     $container = $('#preview-controller');
-    previewCanvas = new CanvasControl($('#preview-canvas'), {});
-
-    setupScrollZoom(previewCanvas, false);
-    setupMousePan(previewCanvas, true)
+    previewCanvas = new CanvasControl($('#preview-canvas'), {
+        zoomEvents: {
+            targeted: false
+        },
+        panEvents: {
+            snapToCenter: true
+        }
+    });
 
     $fpsValue = $('#preview-fps-value');
 

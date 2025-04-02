@@ -4,8 +4,8 @@ import Cell from "../../geometry/cell.js";
  * Sets up mouse hover listeners for the given canvas control. Returns a small API to retrieve the current hovered cell,
  * attach hover callbacks, and more.
  *
- * Not using the events.js eventBus because these events do not need to propagate through the app; only the controller
- * that calls setupMouseEvents cares about the events.
+ * Not using the events.js eventBus because these events do not need to propagate through the app; only the feature
+ * that instantiates the CanvasControl cares about the events.
  *
  * @param canvasControl
  * @returns {Object} A small API for the hover handler:
@@ -13,7 +13,7 @@ import Cell from "../../geometry/cell.js";
  *   - api.getBrushCells: function to retrieve all hovered cells for a given brush shape/size
  *   - api.onHover: attaches a callback to be fired when hovering takes place
  */
-export function setupMouseEvents(canvasControl) {
+export function setupHoverTracking(canvasControl) {
     const listeners = [];
     let api = {
         cell: null,

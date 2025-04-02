@@ -160,7 +160,7 @@ export function setupMouseEvents(canvasControl) {
                 });
                 break;
             case 'pan':
-                // Pan tool is already handled by the setupMousePan() call in main_canvas.js
+                // Pan tool is already handled by main_canvas.js
                 break;
             case 'move-all':
                 startMoveAll(cell, mouseEvent);

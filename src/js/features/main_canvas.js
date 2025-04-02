@@ -11,40 +11,43 @@
  *   selection polygons that would have been on the selectionCanvas but that needed full opacity.
  */
 
-import CanvasControl from "../components/canvas/control.js";
+import CanvasControl from "../components/canvas_control/index.js";
 import * as selection from "./selection.js";
 import { setupMouseEvents as setupSelectionMouse } from "./selection.js";
-import {setupMouseEvents as setupHoverMouse} from "../components/canvas/hover.js";
 import {
     BRUSH_TOOLS,
     refreshMouseCoords,
     refreshSelectionDimensions,
     setupMouseEvents as setupEditorMouse
 } from "./editor.js";
-import {setupMousePan, setupScrollZoom} from "../components/canvas/zoom.js";
 import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
 import * as editor from "./editor.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
-let hoverApi;
 
 export function init() {
     charCanvas = new CanvasControl($('#char-canvas'), {});
     selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
     hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
-    selectionCanvas = new CanvasControl($('#selection-canvas'), {});
 
-    // Bind mouse events to controllers
-    // Note: many controllers attach mouse events to the selectionCanvas since it is on top, even though they have their
-    // own canvases underneath.
+    // #selection-canvas is on the top so it gets all the mouse events
+    selectionCanvas = new CanvasControl($('#selection-canvas'), {
+        hoverTracking: {
+            onHover: () => drawHoveredCell()
+        },
+        zoomEvents: {
+            targeted: true
+        },
+        panEvents: {
+            snapToCenter: false,
+            mouseButtons: () => state.getConfig('tool') === 'pan' ? [1, 3] : [3]
+        }
+    });
+
     setupSelectionMouse(selectionCanvas);
     setupEditorMouse(selectionCanvas);
-    setupScrollZoom(selectionCanvas, true);
-    setupMousePan(selectionCanvas, false, () => state.getConfig('tool') === 'pan' ? [1, 3] : [3])
-    hoverApi = setupHoverMouse(selectionCanvas);
-    hoverApi.onHover(() => drawHoveredCell())
 
     setupEventBus();
 }
@@ -90,7 +93,7 @@ export function canZoomOut() {
 }
 
 export function hoveredCell() {
-    return hoverApi.cell;
+    return selectionCanvas.hoveredCell();
 }
 
 export function hoveredCells() {
@@ -98,7 +101,7 @@ export function hoveredCells() {
     if (!primaryCell) return [];
     if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return [primaryCell];
     const { shape, size } = state.getConfig('brush');
-    return hoverApi.getBrushCells(shape, size)
+    return selectionCanvas.getBrushCells(shape, size)
 }
 
 export function getCurrentViewRect() {
