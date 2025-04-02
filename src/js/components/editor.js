@@ -217,7 +217,6 @@ export function setupMouseEvents(canvasControl) {
             case 'draw-freeform-char':
             case 'eraser':
             case 'paint-brush':
-                triggerRefresh('chars');
                 state.pushHistory();
                 break;
             case 'draw-rect':

@@ -53,6 +53,7 @@
     "browser-fs-access": "^0.35.0",
     "core-js": "^3.40.0",
     "dedent-js": "^1.0.1",
+    "events": "^3.3.0",
     "express": "^4.21.2",
     "gif-transparency": "2.0.0",
     "jquery": "^3.7.1",

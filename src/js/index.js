@@ -12,6 +12,7 @@ import { init as initToolsMenu } from "./menu/tools.js";
 import { init as initViewMenu } from "./menu/view.js";
 import { init as initThemeMenu } from "./menu/theme.js";
 import { init as initKeyboard } from "./io/keyboard.js";
+import { init as initActions } from "./io/actions.js";
 import { init as initPalette, refresh as refreshPalette, refreshSelection as refreshPaletteSelection } from "./components/palette.js";
 import * as preview from "./components/preview.js";
 import { init as initUnicode, refresh as refreshUnicode } from "./components/unicode.js";
@@ -22,7 +23,8 @@ import * as localstorage from "./storage/local_storage.js";
 import * as frames from "./components/frames.js";
 import * as layers from "./components/layers.js";
 import {debounce, defer} from "./utils/utilities.js";
-import {refreshShortcuts} from "./io/actions.js";
+import {events} from './events/events.js'
+import {calculateFontRatio} from "./canvas/font.js";
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
 initClipboard();
@@ -33,6 +35,7 @@ initToolsMenu();
 initViewMenu();
 initThemeMenu();
 initKeyboard();
+initActions();
 initPalette();
 initUnicode();
 preview.init();
@@ -42,21 +45,37 @@ canvasStack.init();
 frames.init();
 layers.init();
 
-// Attach window resize listener
-$(window).on('resize', debounce(triggerResize));
-
 // Load initial content
 defer(() => {
     /* Critical CSS -- not showing page until DOMContentLoaded to avoid flash of unstyled content */
     $('body').css('opacity', 1);
 
     const savedState = localstorage.readState();
-    savedState ? state.loadFromLocalStorage(savedState) : state.loadBlankState();
+    if (savedState) {
+        state.loadFromLocalStorage(savedState)
+    }
+    else {
+        state.loadBlankState();
+    }
 
-    if (state.isValid()) {
+    triggerResize({ clearSelection: true, resetZoom: true });
+    localstorage.setupAutoSave();
+});
+
+// Attach window resize listener
+$(window).on('resize', debounce(triggerResize));
+
+// Attach history state-change listener
+events.on('history:load', (newOptions, oldOptions) => {
+    selection.syncTextEditorCursorPos();
+
+    if (newOptions.requiresCalculateFontRatio || oldOptions.requiresCalculateFontRatio) calculateFontRatio();
+
+    if (newOptions.requiresResize || oldOptions.requiresResize) {
         triggerResize({ clearSelection: true, resetZoom: true });
-        refreshShortcuts();
-        localstorage.setupAutoSave();
+    }
+    else {
+        triggerRefresh();
     }
 })
 

@@ -41,7 +41,20 @@ let actionIdToShortcut = {
     'view.zoom-out': { displayChar: '-', char: '-', modifiers: [cmdKey] },
     'view.zoom-fit': { char: '0', modifiers: [cmdKey] },
 };
-let shortcutToActionId = {}; // populated by refreshShortcuts()
+
+let shortcutToActionId = {};
+
+export function init() {
+    shortcutToActionId = {};
+
+    for (let [actionId, shortcutData] of Object.entries(actionIdToShortcut)) {
+        (Array.isArray(shortcutData) ? shortcutData : [shortcutData]).forEach(shortcut => {
+            const shortcutKey = getShortcutKey(shortcut);
+            if (shortcutToActionId[shortcutKey]) console.warn(`There is already a shortcut for: ${shortcutKey}`);
+            shortcutToActionId[shortcutKey] = actionId;
+        })
+    }
+}
 
 
 /**
@@ -75,27 +88,6 @@ export function registerAction(id, data) {
     if (actions[id] !== undefined) { console.warn(`Re-registering action: ${id}`); }
     actions[id] = data;
 }
-
-export function refreshShortcuts() {
-    shortcutToActionId = {};
-
-    for (let [actionId, shortcutData] of Object.entries(actionIdToShortcut)) {
-        if (Array.isArray(shortcutData)) {
-            shortcutData.forEach(shortcut => refreshShortcut(actionId, shortcut))
-        }
-        else {
-            refreshShortcut(actionId, shortcutData);
-        }
-    }
-}
-function refreshShortcut(actionId, shortcut) {
-    const shortcutKey = getShortcutKey(shortcut);
-    if (shortcutToActionId[shortcutKey]) {
-        console.warn(`There is already a shortcut for: ${shortcutKey}`);
-    }
-    shortcutToActionId[shortcutKey] = actionId;
-}
-
 
 export function getActionInfo(id) {
     if (actions[id] === undefined) {

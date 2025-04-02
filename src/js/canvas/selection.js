@@ -450,8 +450,8 @@ export function moveCursorTo(cell, updateOrigin = true) {
         cursorCellOrigin = cell;
 
         // Update the current history slice so that if you undo to the slice, the cursor will be at the most recent position
-        // TODO This knows too much about history state obj
-        state.modifyHistory(history => history.state.config.cursorPosition = cell.serialize())
+        // TODO Is there a way to do this using state's setConfig somehow?
+        state.modifyHistory(historySlice => historySlice.config.cursorPosition = cell.serialize())
     }
 
     triggerRefresh('cursorCell');
@@ -544,6 +544,13 @@ export function moveCursorInDirection(direction, updateOrigin = true, amount = 1
             moveCursorTo(new Cell(cells[i][0], cells[i][1]), updateOrigin);
         }
     }
+}
+
+export function syncTextEditorCursorPos() {
+    if (state.getConfig('tool') !== 'text-editor') return;
+
+    const cursorCell = Cell.deserialize(state.getConfig('cursorPosition'));
+    if (cursorCell) moveCursorTo(cursorCell, false);
 }
 
 export function hideCursor() {

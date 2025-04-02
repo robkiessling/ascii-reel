@@ -1,11 +1,8 @@
 import * as actions from "../io/actions.js";
-import Cell from "../geometry/cell.js";
-import {moveCursorTo} from "../canvas/selection.js";
-import {calculateFontRatio} from "../canvas/font.js";
-import {triggerRefresh, triggerResize} from "../index.js";
-import {getConfig, getStateForHistory as getConfigState, updateStateFromHistory as updateConfigState} from "./config.js";
+import {getStateForHistory as getConfigState, updateStateFromHistory as updateConfigState} from "./config.js";
 import {getState as getTimelineState, replaceState as replaceTimelineState} from "./timeline/index.js";
 import {getState as getPaletteState, replaceState as replacePaletteState} from "./palette.js";
+import {events} from '../events/events.js'
 
 
 // -------------------------------------------------------------------------------- History (undo / redo)
@@ -47,15 +44,18 @@ export function setupActions() {
  *   fontRatio to be recalculated. Only needed if font is changed.
  */
 export function pushHistory(options = {}) {
-    // console.log('pushHistory', historyIndex, options);
-
     // Remove anything in the future (all "redo" states are removed)
-    if (historyIndex !== undefined) {
-        history.splice(historyIndex + 1, history.length);
-    }
+    if (historyIndex !== undefined) history.splice(historyIndex + 1, history.length);
 
-    // The snapshot to be saved in the history
-    const snapshot = buildHistorySnapshot(options);
+    // Build the snapshot to be saved in the history
+    const snapshot = {
+        state: $.extend(true, {},
+            { config: getConfigState() },
+            { timeline: getTimelineState() },
+            { palette: getPaletteState() },
+        ),
+        options: options,
+    };
 
     // If modifiable option is a match, we just update the current slice and return
     if (history.length && options.modifiable && options.modifiable === history[historyIndex].options.modifiable) {
@@ -75,52 +75,15 @@ export function pushHistory(options = {}) {
     }
 }
 
-// We only want to save a subset of the config state to history: certain things like what tool is selected, or whether
-// the grid is showing, should not be part of the "undo" sequence.
-function buildHistorySnapshot(options) {
-    const historyState = $.extend(
-        true,
-        {},
-        { config: getConfigState() },
-        { timeline: getTimelineState() },
-        { palette: getPaletteState() },
-    );
-
-    return {
-        state: historyState,
-        options: options,
-    }
-}
-
-// We are deep merging the config into our current state config, and replacing everything else.
-// That way certain settings (e.g. what tool is selected) is inherited from the current state
-function loadHistorySnapshot(snapshot) {
-    updateConfigState($.extend(true, {}, snapshot.state.config));
-    replaceTimelineState($.extend(true, {}, snapshot.state.timeline));
-    replacePaletteState($.extend(true, {}, snapshot.state.palette));
-}
-
 function loadStateFromHistory(newIndex, oldIndex) {
     const newState = history[newIndex];
     const oldState = history[oldIndex];
 
-    loadHistorySnapshot(newState);
+    updateConfigState($.extend(true, {}, newState.state.config));
+    replaceTimelineState($.extend(true, {}, newState.state.timeline));
+    replacePaletteState($.extend(true, {}, newState.state.palette));
 
-    const cursorCell = Cell.deserialize(getConfig('cursorPosition'));
-    if (getConfig('tool') === 'text-editor' && cursorCell) {
-        moveCursorTo(cursorCell, false)
-    }
-
-    if (newState.options.requiresCalculateFontRatio || oldState.options.requiresCalculateFontRatio) {
-        calculateFontRatio();
-    }
-
-    if (newState.options.requiresResize || oldState.options.requiresResize) {
-        triggerResize({ clearSelection: true, resetZoom: true });
-    }
-    else {
-        triggerRefresh();
-    }
+    events.emit('history:load', newState.options, oldState.options);
 }
 
 function canUndo() {
@@ -156,6 +119,6 @@ export function endHistoryModification() {
 // Modifies the current history slice
 export function modifyHistory(callback) {
     if (history.length) {
-        callback(history[historyIndex])
+        callback(history[historyIndex].state)
     }
 }
