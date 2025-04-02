@@ -13,7 +13,7 @@
 
 import CanvasControl from "../components/canvas_control/index.js";
 import * as selection from "./selection.js";
-import { BRUSH_TOOLS, refreshMouseCoords, refreshSelectionDimensions} from "./tools.js";
+import {BRUSH_TOOLS} from "./tools.js";
 import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
 import * as editor from "./tools.js";
@@ -22,6 +22,7 @@ import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
 let hoveredCell;
+let $canvasMessage, $canvasDetails;
 
 export function init() {
     charCanvas = new CanvasControl($('#char-canvas'), {});
@@ -40,6 +41,9 @@ export function init() {
         },
         emitHoverEvents: true,
     });
+
+    $canvasMessage = $('#canvas-message');
+    $canvasDetails = $('#canvas-details');
 
     setupEventBus();
 }
@@ -107,6 +111,14 @@ export function resize(resetZoom) {
     selectionCanvas.resize(resetZoom);
 }
 
+export function showCanvasMessage(message) {
+    $canvasMessage.show().html(message);
+}
+
+export function hideCanvasMessage() {
+    $canvasMessage.hide();
+}
+
 function redrawCharCanvas() {
     charCanvas.clear();
     charCanvas.drawBackground(state.getConfig('background'));
@@ -153,7 +165,7 @@ function redrawSelection() {
         selectionBorderCanvas.drawCursorCell(selection.cursorCell);
     }
 
-    refreshSelectionDimensions(selection.getSelectedCellArea())
+    refreshCanvasDetails();
 }
 
 const HIDE_HOVER_EFFECT_FOR_TOOLS = new Set([
@@ -181,6 +193,17 @@ function redrawHover() {
         })
     }
 
-    // We don't show mouse coords if we're showing selection dimensions
-    refreshMouseCoords(selection.hasSelection() ? null : hoveredCell);
+    refreshCanvasDetails();
+}
+
+function refreshCanvasDetails() {
+    $canvasDetails.find('.canvas-dimensions .value').html(`[${state.numCols()}x${state.numRows()}]`);
+
+    const selectedArea = selection.getSelectedCellArea();
+    $canvasDetails.find('.selection-dimensions').toggle(!!selectedArea)
+        .find('.value').html(selectedArea ? `${selectedArea.numRows}x${selectedArea.numCols}` : '&nbsp;');
+
+    const showHoveredCoords = !selectedArea && hoveredCell && hoveredCell.isInBounds()
+    $canvasDetails.find('.mouse-coordinates').toggle(!!showHoveredCoords)
+        .find('.value').html(showHoveredCoords ? `${hoveredCell.col}:${hoveredCell.row}` : '&nbsp;');
 }

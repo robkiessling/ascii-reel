@@ -32,7 +32,7 @@ export const DEFAULT_STATE = {
     drawLine: {
         type: 'basic'
     },
-    lastExportOptions: {},
+    lastExportOptions: null,
 
     font: 'monospace',
     dimensions: [30, 15], // [numCols, numRows]
@@ -49,7 +49,7 @@ const CONFIG_KEYS_SAVED_TO_HISTORY = [
 let state = {};
 
 export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE, newState);
+    state = $.extend(true, {}, DEFAULT_STATE, { createdAt: new Date().toISOString() }, newState);
 }
 export function replaceState(newState) {
     state = newState;

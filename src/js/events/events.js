@@ -34,13 +34,13 @@ export const eventBus = {
             removeListener(eventNameOrNames, handler);
         }
     },
-    // once: (eventName, handler, priority = 0) => {
-    //     const wrapper = (...args) => {
-    //         handler(...args);
-    //         eventBus.off(eventName, wrapper);
-    //     };
-    //     eventBus.on(eventName, wrapper, priority);
-    // },
+    once: (eventNameOrNames, handler, priority = 0) => {
+        const wrapper = (...args) => {
+            handler(...args);
+            eventBus.off(eventNameOrNames, wrapper);
+        };
+        eventBus.on(eventNameOrNames, wrapper, priority);
+    },
 }
 
 const emitter = new EventEmitter();
@@ -82,6 +82,9 @@ export const EVENTS = {
          * - resetZoom: If true, the canvas will be zoomed all the way out
          * */
         ALL: 'resize:all'
+    },
+    STATE: {
+        LOADED: 'state:loaded'
     },
     SELECTION: {
         CHANGED: 'selection:changed',

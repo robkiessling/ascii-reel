@@ -1,6 +1,10 @@
 @use 'variables' as *;
 
 .dialog-form {
+  .form-row {
+    margin-bottom: 1rem;
+  }
+
   label {
     display: block;
     margin-bottom: 1rem;
@@ -112,7 +116,10 @@
 
 #export-file-dialog {
   #example-container {
-    margin-top: 3rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-surface-hover);
+
     display: flex;
     flex-direction: column;
 

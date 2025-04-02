@@ -25,13 +25,10 @@ import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $standardTools, $selectionTools, drawRectSubMenu, drawLineSubMenu, brushSubMenu,
-    $canvasContainer, $canvasDetails, $canvasMessage;
+let $standardTools, $selectionTools, drawRectSubMenu, drawLineSubMenu, brushSubMenu, $canvasContainer;
 
 export function init() {
     $canvasContainer = $('#canvas-container');
-    $canvasDetails = $('#canvas-details');
-    $canvasMessage = $('#canvas-message');
 
     setupEventBus();
     setupStandardTools();
@@ -53,20 +50,6 @@ function refresh() {
     drawRectSubMenu.refresh();
     drawLineSubMenu.refresh();
     brushSubMenu.refresh();
-
-    $canvasDetails.find('.canvas-dimensions .value').html(`[${state.numCols()}x${state.numRows()}]`);
-}
-
-export function refreshMouseCoords(cell) {
-    const show = cell && cell.isInBounds();
-    $canvasDetails.find('.mouse-coordinates').toggle(!!show)
-        .find('.value').html(show ? `${cell.col}:${cell.row}` : '&nbsp;');
-}
-
-export function refreshSelectionDimensions(cellArea) {
-    const show = cellArea !== null;
-    $canvasDetails.find('.selection-dimensions').toggle(!!show)
-        .find('.value').html(show ? `${cellArea.numRows}x${cellArea.numCols}` : '&nbsp;');
 }
 
 export function changeTool(newTool) {
@@ -75,15 +58,6 @@ export function changeTool(newTool) {
     refresh();
 }
 
-
-
-export function showCanvasMessage(message) {
-    $canvasMessage.show().html(message);
-}
-
-export function hideCanvasMessage() {
-    $canvasMessage.hide();
-}
 
 // -------------------------------------------------------------------------------- Events
 
@@ -99,22 +73,22 @@ function setupEventBus() {
 
         switch(tool) {
             case 'draw-freeform-char':
-                drawFreeformChar();
+                drawFreeformChar(cell);
                 break;
             case 'eraser':
-                erase();
+                erase(cell);
                 break;
             case 'paint-brush':
-                paintBrush();
+                paintBrush(cell);
                 break;
             case 'draw-rect':
-                startDrawing(AsciiRect, { drawType: state.getConfig('drawRect').type });
+                startDrawing(cell, AsciiRect, { drawType: state.getConfig('drawRect').type });
                 break;
             case 'draw-line':
-                startDrawing(AsciiLine, { drawType: state.getConfig('drawLine').type });
+                startDrawing(cell, AsciiLine, { drawType: state.getConfig('drawLine').type });
                 break;
             case 'draw-freeform-ascii':
-                startDrawing(AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
+                startDrawing(cell, AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, pickedChar, state.primaryColorIndex(), {
@@ -167,24 +141,24 @@ function setupEventBus() {
         switch(tool) {
             case 'draw-freeform-char':
                 if (!isNewCell) return;
-                drawFreeformChar();
+                drawFreeformChar(cell);
                 break;
             case 'eraser':
                 if (!isNewCell) return;
-                erase();
+                erase(cell);
                 break;
             case 'paint-brush':
                 if (!isNewCell) return;
-                paintBrush();
+                paintBrush(cell);
                 break;
             case 'draw-rect':
             case 'draw-line':
                 if (!isNewCell) return;
-                updateDrawing();
+                updateDrawing(cell);
                 break;
             case 'draw-freeform-ascii':
                 // Do not return early if we're still on the same cell; we need pixel accuracy
-                updateDrawing([mouseEvent]);
+                updateDrawing(cell, [mouseEvent]);
                 break;
             case 'move-all':
                 if (!isNewCell) return;
@@ -219,9 +193,6 @@ function setupEventBus() {
                 return; // Ignore all other tools
         }
     });
-
-    eventBus.on(EVENTS.CANVAS.HOVERED, ({cell}) => hoveredCell = cell)
-    eventBus.on(EVENTS.CANVAS.HOVER_END, () => hoveredCell = null)
 }
 
 
@@ -342,13 +313,12 @@ function resizeToSelection() {
 // -------------------------------------------------------------------------------- Brushing shapes / painting
 
 export const BRUSH_TOOLS = ['draw-freeform-char', 'eraser', 'paint-brush'];
-let hoveredCell;
 
-function hoveredCells() {
-    if (!hoveredCell) return [];
-    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return [hoveredCell];
+function hoveredCells(primaryCell) {
+    if (!primaryCell) return [];
+    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return [primaryCell];
     const { shape, size } = state.getConfig('brush');
-    return getAllHoveredCells(hoveredCell, shape, size)
+    return getAllHoveredCells(primaryCell, shape, size)
 }
 
 function setupBrushSubMenu() {
@@ -364,15 +334,15 @@ function setupBrushSubMenu() {
     })
 }
 
-function drawFreeformChar() {
+function drawFreeformChar(primaryCell) {
     const primaryColorIndex = state.primaryColorIndex();
-    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, pickedChar, primaryColorIndex));
+    hoveredCells(primaryCell).forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, pickedChar, primaryColorIndex));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
-function erase() {
-    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
+function erase(primaryCell) {
+    hoveredCells(primaryCell).forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -388,9 +358,9 @@ function fillConnectedCells(cell, char, colorIndex, options) {
     state.pushHistory();
 }
 
-function paintBrush() {
+function paintBrush(primaryCell) {
     const primaryColorIndex = state.primaryColorIndex();
-    hoveredCells().forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
+    hoveredCells(primaryCell).forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -487,17 +457,17 @@ function setupDrawLineSubMenu() {
 
 export let drawingContent = null;
 
-function startDrawing(klass, options = {}, recalculateArgs = []) {
+function startDrawing(cell, klass, options = {}, recalculateArgs = []) {
     options = $.extend({ colorIndex: state.primaryColorIndex() }, options);
-    drawingContent = new klass(hoveredCell, options);
-    updateDrawing(recalculateArgs);
+    drawingContent = new klass(cell, options);
+    updateDrawing(cell, recalculateArgs);
 }
 
-function updateDrawing(recalculateArgs = []) {
+function updateDrawing(cell, recalculateArgs = []) {
     if (!drawingContent) return;
-    if (!hoveredCell) return;
+    if (!cell) return;
 
-    drawingContent.end = hoveredCell;
+    drawingContent.end = cell;
     drawingContent.recalculate(...recalculateArgs);
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);

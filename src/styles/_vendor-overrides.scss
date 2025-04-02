@@ -138,6 +138,12 @@
   &.ui-widget-content {
     border: 2px solid var(--color-background-border);
     padding: 1.5rem 2.5rem;
+
+    a {
+      color: var(--color-button-confirm-bg);
+      text-decoration: underline;
+      cursor: pointer;
+    }
   }
 
   .ui-widget-header {

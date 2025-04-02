@@ -3,11 +3,10 @@ import * as history from './history.js';
 import * as palette from './palette.js';
 import * as timeline from './timeline/index.js';
 
-import {calculateFontRatio} from "../config/font.js";
-import {recalculateBGColors} from "../config/background.js";
 import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "../storage/local_storage.js";
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
+import {eventBus, EVENTS} from "../events/events.js";
 
 export {
     numRows, numCols, setConfig, getConfig, fontFamily, getName, isMinimized,
@@ -53,6 +52,8 @@ export function loadBlankState(overrides) {
 }
 
 function load(data) {
+    valid = false; // State is considered invalid until it is fully loaded
+
     history.reset();
 
     config.load(data.config);
@@ -61,10 +62,13 @@ function load(data) {
 
     timeline.validate();
     timeline.vacuumColorTable();
-    calculateFontRatio();
-    recalculateBGColors();
+
+    valid = true; // State is now fully loaded
+
     history.pushHistory(); // Note: Does not need requiresResize:true since there is no previous history state
     saveToLocalStorage();
+
+    eventBus.emit(EVENTS.STATE.LOADED);
 }
 
 export function replaceState(newState) {

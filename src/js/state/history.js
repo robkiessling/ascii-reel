@@ -40,8 +40,8 @@ export function setupActions() {
  *   will update the latest history slice instead of adding a new slice. This is used for things like typing, where
  *   we don't want each new character to be a new slice.
  * @param {boolean} [options.requiresResize] - If true, undoing/redoing to this slice will force the canvas to be resized.
- * @param {boolean} [options.requiresCalculateFontRatio] - If true, undoing/redoing to this slice will force the canvas
- *   fontRatio to be recalculated. Only needed if font is changed.
+ * @param {boolean} [options.recalculateFont] - If true, undoing/redoing to this slice will recalculate the fontRatio.
+ * @param {boolean} [options.recalculateBackground] - If true, undoing/redoing to this slice will recalculate the background.
  */
 export function pushHistory(options = {}) {
     // Remove anything in the future (all "redo" states are removed)

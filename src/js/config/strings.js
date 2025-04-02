@@ -11,7 +11,7 @@ export const strings = {
     'file.save-warning-cleared': 'Your current file has been saved. You may proceed to opening a new file.',
     'file.cannot-rename-active-file.name': 'Cannot rename disk file',
     'file.cannot-rename-active-file.description': 'This file exists on your computer and cannot be renamed from the browser. ' +
-        'To rename it, save a copy with a new name and delete the original file manually.',
+        'To rename it, save a copy with a new name and manually delete the original file.',
     'file.active-file-info.name': 'Linked to Disk File',
     'file.active-file-info.description': 'Saving will directly update the linked file on your computer.',
 

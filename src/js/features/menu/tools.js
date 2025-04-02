@@ -1,7 +1,6 @@
 import * as state from "../../state/index.js";
 import * as actions from "../../io/actions.js";
 
-import {resetExportDimensions} from "./file.js";
 import {calculateFontRatio} from "../../config/font.js";
 import {AVAILABLE_FONTS} from "../../config/font.js";
 import {createDialog} from "../../utils/dialogs.js";
@@ -59,7 +58,7 @@ function setupFontDialog() {
 
         calculateFontRatio();
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
-        state.pushHistory({ requiresResize: true, requiresCalculateFontRatio: true });
+        state.pushHistory({ requiresResize: true, recalculateFont: true });
 
         $fontDialog.dialog('close');
     }, 'Save', {
@@ -91,8 +90,6 @@ function setupResizeDialog() {
             state.resize([dim.numCols, dim.numRows], dim.anchor.row, dim.anchor.col);
             eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
             state.pushHistory({ requiresResize: true });
-
-            resetExportDimensions();
             $resizeDialog.dialog('close');
         }
     }, 'Resize', {
@@ -125,7 +122,7 @@ function setupBackgroundDialog() {
         state.setConfig('background', backgroundPicker.value);
         recalculateBGColors();
         eventBus.emit(EVENTS.REFRESH.ALL);
-        state.pushHistory();
+        state.pushHistory({ recalculateBackground: true });
         $backgroundDialog.dialog('close');
     }, 'Save');
 

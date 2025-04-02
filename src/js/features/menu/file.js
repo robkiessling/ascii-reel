@@ -25,6 +25,11 @@ export function init() {
     setupOpen();
     setupSave();
     setupExport();
+    setupEventBus();
+}
+
+function setupEventBus() {
+    eventBus.on(EVENTS.STATE.LOADED, () => initFormWithSavedExportOptions())
 }
 
 // --------------------------------------------------------------------------------- New File
@@ -45,7 +50,6 @@ function setupNew() {
                     primaryColor: state.defaultContrastColor(backgroundPicker.value)
                 }
             })
-            eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
 
             $newFileDialog.dialog('close');
         }
@@ -104,7 +108,6 @@ function openFilePicker() {
     defer(() => {
         fileSystem.openFile()
             .then(() => {
-                eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
                 $openFileDialog.dialog('close')
             })
             .catch(err => {
@@ -225,7 +228,6 @@ const EXPORT_OPTION_VALIDATORS = {
 }
 
 let $exportFileDialog, $exportFormat, $exportOptions, $exportPreview;
-let firstTimeOpeningExport = true;
 let exportTextSimpleBar;
 
 function setupExport() {
@@ -276,17 +278,23 @@ function setupExport() {
         const width = $(evt.currentTarget).val();
         const height = Math.round(width / state.numCols() * state.numRows() / fontRatio);
         $exportOptions.find('[name="height"]').val(height);
+        refreshSetDefaultDimensions();
     });
     $exportOptions.find('[name="height"]').on('input', evt => {
         const height = $(evt.currentTarget).val();
         const width = Math.round(height / state.numRows() * state.numCols() * fontRatio);
         $exportOptions.find('[name="width"]').val(width);
+        refreshSetDefaultDimensions();
     });
+
+    $exportOptions.find('.set-default-dimensions').on('click', () => {
+        $exportOptions.find(`[name="width"]`).val(defaultWidth()).trigger('input');
+    })
 
     actions.registerAction('file.export-as', () => openExportDialog());
 
     actions.registerAction('file.export-active', {
-        enabled: () => fileSystem.hasActiveExport(),
+        enabled: () => fileSystem.hasActiveExport() && state.getConfig('lastExportOptions'),
         callback: () => exportActive()
     })
 
@@ -294,6 +302,25 @@ function setupExport() {
         autoHide: false,
         forceVisible: true
     });
+}
+
+function initFormWithSavedExportOptions() {
+    if (state.getConfig('lastExportOptions')) {
+        // If there are export settings from a previous save, initialize the export form with those settings
+
+        // TODO format should be part of the options
+        $exportFormat.val(state.getConfig('lastExportOptions').format);
+        if (!$exportFormat.val()) $exportFormat.val($exportFormat.find('option:first').val()); // Failsafe
+
+        for (const [key, value] of Object.entries(state.getConfig('lastExportOptions'))) {
+            const $input = $exportOptions.find(`[name="${key}"]`);
+            $input.is(':checkbox') ? $input.prop('checked', !!value) : $input.val(value);
+        }
+    }
+    else {
+        // No saved options found -> blank out any fields relevant to specific animations:
+        $exportOptions.find(`[name="width"]`).val('');
+    }
 }
 
 function toggleExportPreview(format) {
@@ -330,33 +357,14 @@ function toggleExportPreview(format) {
     }
 }
 
-
 function openExportDialog() {
     $exportFileDialog.dialog('open');
 
     $exportOptions.find(`[name="fps"]`).val(state.getConfig('fps'));
 
-    // If it's the first time opening the export dialog, set its values according to the last saved export settings
-    if (firstTimeOpeningExport && state.getConfig('lastExportOptions')) {
-        // TODO format should be part of the options
-        $exportFormat.val(state.getConfig('lastExportOptions').format);
-        if (!$exportFormat.val()) $exportFormat.val($exportFormat.find('option:first').val()); // Failsafe
-
-        for (const [key, value] of Object.entries(state.getConfig('lastExportOptions'))) {
-            const $input = $exportOptions.find(`[name="${key}"]`);
-            $input.is(':checkbox') ? $input.prop('checked', !!value) : $input.val(value);
-        }
-
-        firstTimeOpeningExport = false;
-    }
-
     const $width = $exportOptions.find(`[name="width"]`);
-    if (!$width.val()) {
-        // Default dimensions should be multiplied by the devicePixelRatio so that they don't appear
-        // blurry when downloaded. Reducing the image size smaller can actually increase blurriness
-        // due to rastering. https://stackoverflow.com/questions/55237929/ has a similar problem I faced.
-        $width.val(state.numCols() * DEFAULT_FONT_SIZE * window.devicePixelRatio).trigger('input');
-    }
+    if (!$width.val()) $width.val(defaultWidth());
+    $width.trigger('input');
 
     const $fontSize = $exportOptions.find(`[name="fontSize"]`);
     if (!$fontSize.val()) {
@@ -374,6 +382,24 @@ function openExportDialog() {
     $exportFormat.trigger('change');
 }
 
+
+function defaultWidth() {
+    // Default dimensions should be multiplied by the devicePixelRatio so that they don't appear
+    // blurry when downloaded. Reducing the image size smaller can actually increase blurriness
+    // due to rastering. https://stackoverflow.com/questions/55237929/ has a similar problem I faced.
+    // return state.numCols() * DEFAULT_FONT_SIZE * window.devicePixelRatio
+
+    // UPDATE: I am no longer multiplying by devicePixelRatio -- blur seems to be limited to small gifs
+    // TODO Maybe multiply by window.devicePixelRatio if width is below some threshold?
+    return state.numCols() * DEFAULT_FONT_SIZE;
+}
+
+function refreshSetDefaultDimensions() {
+    const $width = $exportOptions.find(`[name="width"]`);
+
+    $exportOptions.find('.set-default-dimensions').toggle(parseInt($width.val()) !== defaultWidth())
+}
+
 function optimalSpritesheetLayout() {
     const frameCount = state.frames().length;
 
@@ -383,12 +409,6 @@ function optimalSpritesheetLayout() {
     const cols = Math.ceil(frameCount / rows);
 
     return { rows, cols };
-}
-
-// Resets the export width input, so that the next time the export dialog is opened it recalculates good defaults
-// for exported width/height
-export function resetExportDimensions() {
-    $exportOptions.find(`[name="width"]`).val('');
 }
 
 function exportFromForm() {

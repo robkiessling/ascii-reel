@@ -9,7 +9,10 @@
 import {stateForLocalStorage, isValid, replaceState} from "../state/index.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
-
+export function init() {
+    setupBroadcastChannel();
+    setupAutoSave();
+}
 
 
 // ------------------------------------------------------------------------- Local Storage Helpers
@@ -64,7 +67,7 @@ export function resetState() {
     }
 }
 
-export function setupAutoSave() {
+function setupAutoSave() {
     window.setInterval(() => saveState(), AUTO_SAVE_INTERVAL);
 }
 
@@ -104,39 +107,44 @@ const CHANNEL_KEY = "ascii-reel-channel";
 const LEADER_MSG = "leader-updated";
 const UPDATE_MSG = "local-storage-updated"
 
-const channel = new BroadcastChannel(CHANNEL_KEY);
-let isLeader = false;
+let channel;
+let isLeader;
 
-// Listen for messages from other tabs
-channel.onmessage = (event) => {
-    switch(event.data.type) {
-        case LEADER_MSG:
-            // Another tab is now the leader
-            isLeader = false;
-            break;
-        case UPDATE_MSG:
-            // Another tab stored something to localstorage
-            switch (event.data.storageKey) {
-                case STATE_KEY:
-                    onAnotherTabStateUpdate(event.data.msgData)
-                    break;
-                case GLOBAL_SETTINGS_KEY:
-                    onAnotherTabGlobalSettingsUpdate(event.data.msgData)
-                    break;
-                default:
-                    console.warn(`Unknown UPDATE_MSG storageKey: ${event.data.storageKey}`);
-            }
-            break;
-        default:
-            console.warn(`Unknown BroadcastChannel message: ${event.data.type}`);
-    }
-};
+function setupBroadcastChannel() {
+    channel = new BroadcastChannel(CHANNEL_KEY);
+    isLeader = false;
 
-// Detect tab visibility changes
-document.addEventListener("visibilitychange", electLeader);
+    // Listen for messages from other tabs
+    channel.onmessage = (event) => {
+        switch(event.data.type) {
+            case LEADER_MSG:
+                // Another tab is now the leader
+                isLeader = false;
+                break;
+            case UPDATE_MSG:
+                // Another tab stored something to localstorage
+                switch (event.data.storageKey) {
+                    case STATE_KEY:
+                        onAnotherTabStateUpdate(event.data.msgData)
+                        break;
+                    case GLOBAL_SETTINGS_KEY:
+                        onAnotherTabGlobalSettingsUpdate(event.data.msgData)
+                        break;
+                    default:
+                        console.warn(`Unknown UPDATE_MSG storageKey: ${event.data.storageKey}`);
+                }
+                break;
+            default:
+                console.warn(`Unknown BroadcastChannel message: ${event.data.type}`);
+        }
+    };
 
-// Initial leader
-electLeader();
+    // Detect tab visibility changes
+    document.addEventListener("visibilitychange", electLeader);
+
+    // Initial leader
+    electLeader();
+}
 
 function electLeader() {
     if (document.hidden) {
