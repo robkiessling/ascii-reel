@@ -60,53 +60,52 @@ export default class SelectionWand extends SelectionPolygon {
     }
 
     complete() {
-        const cellHash = {};
         const [startChar, startColor] = state.getCurrentCelGlyph(this.start.row, this.start.col);
         const isBlank = startChar === '';
         const charblind = this.options.charblind;
         const colorblind = this.options.colorblind;
         const diagonal = this.options.diagonal;
 
-        // A unique way of identifying a cell (for Set lookup purposes)
-        function cellKey(cell) {
-            return `${cell.row},${cell.col}`
-        }
+        // A unique way of identifying a cell
+        const key = (cell) => `${cell.row},${cell.col}`;
 
-        function spread(cell) {
-            if (cellHash[cellKey(cell)] === undefined) {
-                const [char, color] = state.getCurrentCelGlyph(cell.row, cell.col);
-                if (char === undefined) return;
+        // Performing a breadth-first search (using a queue) to get all connected cells.
+        const queue = [this.start.clone()];
+        const visitedCells = {};
 
-                // If starting character was blank, only keep blank cells. Otherwise only keep non-blank cells
-                if (isBlank ? char !== '' : char === '') return;
+        while (queue.length > 0) {
+            const cell = queue.shift();
 
-                // Character values have to match unless charblind option is true
-                if (!isBlank && !charblind && char !== startChar) return;
+            if (visitedCells[key(cell)]) continue; // Skip cell if we've already visited it
 
-                // Character colors have to match unless colorblind option is true
-                if (!isBlank && !colorblind && color !== startColor) return;
+            const [char, color] = state.getCurrentCelGlyph(cell.row, cell.col);
+            if (char === undefined) continue; // Skip cell if out of bounds
 
-                // Add cell to result
-                cellHash[cellKey(cell)] = new Cell(cell.row, cell.col);
+            // If starting character was blank, only keep blank cells. Otherwise only keep non-blank cells
+            if (isBlank ? char !== '' : char === '') continue;
 
-                // Recursive call to adjacent cells (note: not instantiating full Cell objects for performance reasons)
-                spread({ row: cell.row - 1, col: cell.col });
-                spread({ row: cell.row, col: cell.col + 1 });
-                spread({ row: cell.row + 1, col: cell.col });
-                spread({ row: cell.row, col: cell.col - 1 });
+            // Character values have to match unless charblind option is true
+            if (!isBlank && !charblind && char !== startChar) continue;
 
-                if (diagonal) {
-                    spread({ row: cell.row - 1, col: cell.col - 1 });
-                    spread({ row: cell.row - 1, col: cell.col + 1 });
-                    spread({ row: cell.row + 1, col: cell.col + 1 });
-                    spread({ row: cell.row + 1, col: cell.col - 1 });
-                }
+            // Character colors have to match unless colorblind option is true
+            if (!isBlank && !colorblind && color !== startColor) continue;
+
+            visitedCells[key(cell)] = cell;
+
+            queue.push(new Cell(cell.row + 1, cell.col));
+            queue.push(new Cell(cell.row - 1, cell.col));
+            queue.push(new Cell(cell.row, cell.col + 1));
+            queue.push(new Cell(cell.row, cell.col - 1));
+
+            if (diagonal) {
+                queue.push(new Cell(cell.row + 1, cell.col + 1));
+                queue.push(new Cell(cell.row + 1, cell.col - 1));
+                queue.push(new Cell(cell.row - 1, cell.col + 1));
+                queue.push(new Cell(cell.row - 1, cell.col - 1));
             }
         }
 
-        spread(this.start);
-
-        this._cells = Object.values(cellHash);
+        this._cells = Object.values(visitedCells);
         this._cacheEndpoints();
 
         super.complete();

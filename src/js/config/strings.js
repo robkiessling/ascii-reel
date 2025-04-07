@@ -43,7 +43,7 @@ export const strings = {
     'theme.dark.name': 'Dark',
 
     'tools.standard.text-editor.name': 'Text Editor',
-    'tools.standard.text-editor.description': 'Functions similarly to a standard text editor.\n\n' +
+    'tools.standard.text-editor.description': 'Functions similarly to a normal text editing program.\n\n' +
         'Click to place your cursor, then type to enter text characters. Click and drag to highlight text. ',
     'tools.standard.eraser.name': 'Eraser',
     'tools.standard.eraser.description': 'Click and drag to remove characters.',

@@ -408,14 +408,14 @@ export default class CanvasControl {
     }
 
     /**
-     * Returns an {x, y} coordinate of a given point relative to the top-left corner of the cell.
-     * @param x The x value of the target point
-     * @param y The y value of the target point
-     * @param {Boolean} asPercentage If true, the returned x/y coordinates will be a percentage of the cell width/height,
-     *   respectively. E.g. if the point was in the center of the cell, the returned value would be { x: 0.5, y: 0.5 }.
+     * Returns an {x, y} coordinate of a given pixel relative to the top-left corner of the cell it's in.
+     * @param x The x value of the target pixel
+     * @param y The y value of the target pixel
+     * @param {Boolean} asFraction If true, the returned x/y coordinates will be a percentage of the cell width/height,
+     *   respectively. E.g. if the pixel was in the center of the cell, the returned value would be { x: 0.5, y: 0.5 }.
      * @returns {{x: number, y: number}}
      */
-    cellPixelAtExternalXY(x, y, asPercentage = true) {
+    cellPixelAtExternalXY(x, y, asFraction = true) {
         const point = this.pointAtExternalXY(x, y);
 
         const rowY = Math.floor(point.y / fontHeight) * fontHeight;
@@ -424,7 +424,7 @@ export default class CanvasControl {
         let relativeX = point.x - colX;
         let relativeY = point.y - rowY;
 
-        if (asPercentage) {
+        if (asFraction) {
             relativeX /= fontWidth;
             relativeY /= fontHeight;
         }
