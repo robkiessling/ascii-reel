@@ -16,7 +16,7 @@ import * as selection from "./selection.js";
 import {BRUSH_TOOLS} from "./tools.js";
 import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
-import * as editor from "./tools.js";
+import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
 
@@ -124,17 +124,14 @@ function redrawCharCanvas() {
     charCanvas.drawBackground(state.getConfig('background'));
 
     const glyphs = state.layeredGlyphs(state.currentFrame(), {
-        showMovingContent: true,
         movableContent: {
             glyphs: selection.movableContent,
             origin: selection.movableContent ? selection.getSelectedCellArea().topLeft : null
         },
-        showDrawingContent: true,
-        drawingContent: editor.drawingContent,
-        showOffsetContent: true,
+        drawingContent: tools.drawingContent,
         offset: {
-            amount: editor.moveAllOffset,
-            modifiers: editor.moveAllModifiers
+            amount: tools.moveAllOffset,
+            modifiers: tools.moveAllModifiers
         }
     });
 

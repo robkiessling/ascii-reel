@@ -4,7 +4,7 @@
 
 import SimpleBar from "simplebar";
 import * as state from '../state/index.js';
-import * as editor from './tools.js';
+import * as tools from './tools.js';
 import * as actions from "../io/actions.js";
 import {strings} from "../config/strings.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
@@ -26,7 +26,7 @@ export function init() {
 
     $colorList.on('click', '.color', evt => {
         const $color = $(evt.currentTarget);
-        editor.selectColor($color.data('color'));
+        tools.selectColor($color.data('color'));
     });
 
     setupActions();

@@ -1,5 +1,5 @@
 import * as state from "../state/index.js";
-import * as editor from "./tools.js";
+import * as tools from "./tools.js";
 import * as actions from "../io/actions.js";
 import {shouldModifyAction} from "../io/actions.js";
 import Cell from "../geometry/cell.js";
@@ -58,7 +58,7 @@ export function empty() {
 export function selectAll() {
     // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
     if (!['text-editor', 'selection-rect'].includes(state.getConfig('tool'))) {
-        editor.changeTool('selection-rect');
+        tools.changeTool('selection-rect');
     }
 
     if (cursorCell) {

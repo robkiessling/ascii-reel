@@ -222,7 +222,7 @@ export function layeredGlyphs(frame, options = {}) {
         if (options.showAllLayers || (getConfig('lockLayerVisibility') ? isCurrentLayer : layer.visible)) {
             celChars = cels.cel(layer, frame).chars;
             celColors = cels.cel(layer, frame).colors;
-            const offset = options.showOffsetContent && options.offset.amount;
+            const offset = options.offset && options.offset.amount;
 
             for (celR = 0; celR < celChars.length; celR++) {
                 for (celC = 0; celC < celChars[celR].length; celC++) {

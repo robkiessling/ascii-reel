@@ -11,6 +11,7 @@ import {getDynamicColor} from "../config/colors.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {strings} from "../config/strings.js";
+import * as tools from "./tools.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
@@ -59,7 +60,10 @@ export function resize() {
 function redraw() {
     previewCanvas.clear();
     previewCanvas.drawBackground(state.getConfig('background'));
-    previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
+    previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], {
+        showAllLayers: true,
+        drawingContent: tools.drawingContent,
+    }));
     previewCanvas.drawWindow(getCurrentViewRect());
 
     if (popup && !popup.closed && popupCanvas) {

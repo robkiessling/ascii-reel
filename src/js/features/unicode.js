@@ -5,7 +5,7 @@
 import SimpleBar from "simplebar";
 import * as actions from "../io/actions.js";
 import * as state from "../state/index.js";
-import * as editor from "./tools.js";
+import * as tools from "./tools.js";
 import {copyChar} from "../io/clipboard.js";
 import * as selection from "./selection.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
@@ -29,7 +29,7 @@ export function init() {
 
         copyChar(char);
         selection.setSelectionToSingleChar(char, state.primaryColorIndex());
-        if (state.getConfig('tool') === 'draw-freeform-char') editor.pickChar(char);
+        if (state.getConfig('tool') === 'draw-freeform-char') tools.pickChar(char);
     });
 
     setupActions();

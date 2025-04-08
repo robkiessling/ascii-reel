@@ -216,7 +216,7 @@ class FreeformInterpolator {
             if (this.lineRun === 0) {
                 // Special case for purely vertical interpolation; use middle x value
                 startPixel.x = 0.5;
-                endPixel.y = 0.5;
+                endPixel.x = 0.5;
             }
             else {
                 // Calculate start/end x based on position within group and overall slope

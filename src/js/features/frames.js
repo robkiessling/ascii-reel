@@ -10,6 +10,7 @@ import ArrayRange from "../utils/arrays.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {strings} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import * as tools from "./tools.js";
 
 let $container, $template, $list;
 let simpleBar, frameComponents, actionButtons;
@@ -293,6 +294,8 @@ class FrameComponent {
     redrawGlyphs() {
         this._canvasController.clear();
         this._canvasController.drawBackground(state.getConfig('background'));
-        this._canvasController.drawGlyphs(state.layeredGlyphs(this._frame));
+        this._canvasController.drawGlyphs(state.layeredGlyphs(this._frame, {
+            drawingContent: tools.drawingContent,
+        }));
     }
 }

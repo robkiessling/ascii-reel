@@ -70,6 +70,7 @@ function setupEventBus() {
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, tool, canvasControl }) => {
         if (mouseEvent.which !== 1) return; // Only apply to left-click
         editorMousedown = true;
+        prevCell = undefined;
 
         switch(tool) {
             case 'draw-freeform-char':
@@ -136,37 +137,31 @@ function setupEventBus() {
         // Keep track of whether the mousemove has reached a new cell (helps with performance, so we can just redraw
         // when a new cell is reached, not on every pixel change)
         const isNewCell = !prevCell || !prevCell.equals(cell);
-        prevCell = cell;
 
         switch(tool) {
             case 'draw-freeform-char':
-                if (!isNewCell) return;
-                drawFreeformChar(cell);
+                if (isNewCell) drawFreeformChar(cell, prevCell);
                 break;
             case 'eraser':
-                if (!isNewCell) return;
-                erase(cell);
+                if (isNewCell) erase(cell, prevCell);
                 break;
             case 'paint-brush':
-                if (!isNewCell) return;
-                paintBrush(cell);
+                if (isNewCell) paintBrush(cell, prevCell);
                 break;
             case 'draw-rect':
             case 'draw-line':
-                if (!isNewCell) return;
-                updateDrawing(cell);
+                if (isNewCell) updateDrawing(cell);
                 break;
             case 'draw-freeform-ascii':
-                // Do not return early if we're still on the same cell; we need pixel accuracy
+                // Intentionally not checking if isNewCell; we update the char based on pixels not cells
                 updateDrawing(cell, [mouseEvent]);
                 break;
             case 'move-all':
-                if (!isNewCell) return;
-                updateMoveAll(cell, isNewCell);
+                if (isNewCell) updateMoveAll(cell, isNewCell);
                 break;
-            default:
-                return; // Ignore all other tools
         }
+
+        prevCell = cell;
     });
 
     eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, tool, canvasControl }) => {
@@ -334,18 +329,47 @@ function setupBrushSubMenu() {
     })
 }
 
-function drawFreeformChar(primaryCell) {
+/**
+ * Updates a cell (and potentially its neighboring cells) according to the current brush shape/size. If a previous cell
+ * is provided, will interpolate the cells between the previous cell and the current cell. This is important in case the
+ * user drags their mouse very fast.
+ * @param {Cell} currentCell - The cell at the center of the brush
+ * @param {Cell} [prevCell] - The previous cell to interpolate from
+ * @param {(cell: Cell) => void} updater - Callback
+ */
+function freeformBrush(currentCell, prevCell, updater) {
+    if (prevCell) {
+        prevCell.lineTo(currentCell).forEach(cell => hoveredCells(cell).forEach(updater));
+    }
+    else {
+        hoveredCells(currentCell).forEach(updater)
+    }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+}
+
+function drawFreeformChar(currentCell, prevCell) {
     const primaryColorIndex = state.primaryColorIndex();
-    hoveredCells(primaryCell).forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, pickedChar, primaryColorIndex));
 
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    freeformBrush(currentCell, prevCell, cell => {
+        state.setCurrentCelGlyph(cell.row, cell.col, pickedChar, primaryColorIndex)
+    })
 }
 
-function erase(primaryCell) {
-    hoveredCells(primaryCell).forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, '', 0));
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+function erase(currentCell, prevCell) {
+    freeformBrush(currentCell, prevCell, cell => {
+        state.setCurrentCelGlyph(cell.row, cell.col, '', 0)
+    });
 }
+
+function paintBrush(currentCell, prevCell) {
+    const primaryColorIndex = state.primaryColorIndex();
+
+    freeformBrush(currentCell, prevCell, cell => {
+        state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex)
+    })
+}
+
 
 function fillConnectedCells(cell, char, colorIndex, options) {
     if (!cell.isInBounds()) return;
@@ -356,13 +380,6 @@ function fillConnectedCells(cell, char, colorIndex, options) {
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory();
-}
-
-function paintBrush(primaryCell) {
-    const primaryColorIndex = state.primaryColorIndex();
-    hoveredCells(primaryCell).forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex));
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
 function colorSwap(cell, options) {
