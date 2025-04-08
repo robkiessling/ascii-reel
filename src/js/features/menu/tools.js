@@ -47,7 +47,7 @@ function setupFontDialog() {
         }).appendTo($fontSelect);
 
         $('<div/>', {
-            html: `${fontName}<br> abcdefghijklmnopqrstuvwxyz<br/>ABCDEFGHIJKLMNOPQRSTUVWXYZ<br/>1234567890!@#$%^&*()[]{}/\\|-_+=<>,.\`~`,
+            html: `${fontName}<br>> ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz<br/>> 1234567890!@#$%^&*()[]{}/\\|-_+=<>,.\`~`,
             style: style,
             class: 'font-example'
         }).appendTo($examples);

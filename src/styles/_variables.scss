@@ -52,7 +52,7 @@
 
   /** Light theme surface colors -- modified to be a little bit darker */
   --clr-surface-a0: #ffffff;
-  --clr-surface-a05: #f1f1f1; // Added this intermediate step myself
+  --clr-surface-a05: #f5f5f5; // Added this intermediate step myself
   --clr-surface-a10: #e8e8e8;
   --clr-surface-a20: #d9d9d9;
   --clr-surface-a30: #bdbdbd;
@@ -156,7 +156,7 @@
   Note: This is the font used in the general UI, not the canvas (canvas font is configurable by user)
  */
 $font-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
-$font-monospace: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Liberation Mono", Menlo, Monaco, Consolas, monospace;
+$font-monospace: ui-monospace, "Segoe UI Mono", Menlo, Monaco, Consolas, "Lucida Console", monospace;
 $font-size-base: 14px;
 
 $header-height: 38px;
