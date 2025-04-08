@@ -158,6 +158,10 @@ export const strings = {
     'layers.toggle-visibility-lock.description': 'When locked, only the current layer is shown in the main canvas. When unlocked, you can manually show/hide all layers.',
 
     'preview.open-popup.description': 'Open preview in popup',
+    'preview.play.name': 'Play Preview',
+    'preview.play.description': 'Plays the preview at the given FPS.',
+    'preview.pause.name': 'Pause Preview',
+    'preview.pause.description': 'Pauses the preview on the current frame.',
 
     'palette.sort-colors.name.date-added': 'Sorting By: Date Added',
     'palette.sort-colors.name.hue': 'Sorting By: Hue',

@@ -11,7 +11,7 @@ import * as selection from "./selection.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
-let $container, $charList, $actions, tooltips;
+let $container, $charList, $actions, actionButtons;
 
 export function init() {
     $container = $('#unicode-controller');
@@ -32,11 +32,11 @@ export function init() {
         if (state.getConfig('tool') === 'draw-freeform-char') editor.pickChar(char);
     });
 
-    setupActionButtons();
+    setupActions();
     setupEventBus();
 }
 
-function setupActionButtons() {
+function setupActions() {
     actions.registerAction('unicode.toggle-component', () => {
         toggleComponent('unicode');
         refresh();
@@ -44,13 +44,9 @@ function setupActionButtons() {
 
     actions.registerAction('unicode.information', () => {}); // No callback at the moment;
 
-    actions.attachClickHandlers($container);
-
-    tooltips = actions.setupTooltips(
-        $container.find('[data-action]').toArray(),
-        element => $(element).data('action'),
-        { placement: 'top' }
-    );
+    actionButtons = actions.setupActionButtons($container, {
+        placement: 'top'
+    });
 }
 
 function setupEventBus() {
@@ -83,5 +79,5 @@ function refresh() {
         }).appendTo($charList);
     });
 
-    tooltips.refreshContent();
+    actionButtons.refreshContent();
 }

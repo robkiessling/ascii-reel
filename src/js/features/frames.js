@@ -12,14 +12,14 @@ import {strings} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
 let $container, $template, $list;
-let simpleBar, frameComponents, tooltips;
+let simpleBar, frameComponents, actionButtons;
 
 export function init() {
     $container = $('#frame-controller');
     $template = $container.find('.frame-template');
 
     setupList();
-    setupActionButtons();
+    setupActions();
     setupEventBus();
 }
 
@@ -131,7 +131,7 @@ function setupSortable() {
     });
 }
 
-function setupActionButtons() {
+function setupActions() {
     actions.registerAction('frames.new-frame', () => {
         const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
         state.createFrame(frameIndex, {});
@@ -196,12 +196,7 @@ function setupActionButtons() {
         selectFrame(index, 'changeFrameSingle');
     })
 
-    actions.attachClickHandlers($container);
-
-    tooltips = actions.setupTooltips(
-        $container.find('[data-action]').toArray(),
-        element => $(element).data('action')
-    );
+    actionButtons = actions.setupActionButtons($container);
 }
 
 function setupEventBus() {
@@ -236,9 +231,9 @@ function refreshAlignment() {
 
     $list.sortable('option', 'axis', orientation === 'left' ? 'y' : 'x');
 
-    tooltips.refreshContent();
+    actionButtons.refreshContent();
 
-    tooltips.forEach(tooltip => {
+    actionButtons.tooltips.forEach(tooltip => {
         tooltip.setProps({
             placement: orientation === 'left' ? 'right' : 'top'
         });

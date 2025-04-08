@@ -216,7 +216,7 @@
         </div>
 
         <div id="side-content">
-            <div id="preview-controller">
+            <div id="preview-container">
                 <div class="tools">
                     <button data-action="preview.toggle-component" class="component-toggle-header show-when-minimized">
                         <span class="ri ri-fw ri-arrow-down-s-fill"></span>
@@ -229,9 +229,14 @@
                 <div id="preview-canvas-container" class="minimizable">
                     <canvas id="preview-canvas" class="absolute-center full draggable"></canvas>
                 </div>
-                <div id="preview-fps-container" class="minimizable">
-                    <div id="preview-fps-value"></div>
-                    <div id="preview-fps-slider"></div>
+                <div id="preview-controls" class="minimizable">
+                    <div id="preview-fps-container">
+                        <div id="preview-fps-value"></div>
+                        <div id="preview-fps-slider"></div>
+                    </div>
+                    <button data-action="preview.toggle-play">
+                        <span class="ri ri-fw ri-play-circle-line"></span>
+                    </button>
                 </div>
             </div>
 

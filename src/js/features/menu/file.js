@@ -43,11 +43,16 @@ function setupNew() {
 
             fileSystem.resetHandles();
 
+            const contrastColor = state.defaultContrastColor(backgroundPicker.value);
+
             state.loadBlankState({
                 config: {
                     dimensions: [dim.numCols, dim.numRows],
                     background: backgroundPicker.value,
-                    primaryColor: state.defaultContrastColor(backgroundPicker.value)
+                    primaryColor: contrastColor
+                },
+                palette: {
+                    colors: [contrastColor]
                 }
             })
 

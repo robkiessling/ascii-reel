@@ -5,7 +5,6 @@ export const COLOR_FORMAT = 'hex'; // vanilla-picker format we ues to store colo
 const BLACK = 'rgba(0,0,0,1)';
 const WHITE = 'rgba(255,255,255,1)';
 
-const DEFAULT_PALETTE = [BLACK, WHITE];
 export const DEFAULT_COLOR = BLACK;
 
 // Note: these values get used to look up strings->description value for tooltip. If this is changed need to update strings.
@@ -18,7 +17,7 @@ export const SORT_BY_OPTIONS = {
 }
 
 const DEFAULT_STATE = {
-    colors: DEFAULT_PALETTE,
+    colors: [BLACK],
     sortBy: null,
     sortedColors: []
 }

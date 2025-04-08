@@ -11,7 +11,7 @@ import {refreshComponentVisibility, toggleComponent} from "../utils/components.j
 import {eventBus, EVENTS} from "../events/events.js";
 
 
-let $container, $colorList, $actions, tooltips;
+let $container, $colorList, $actions, actionButtons;
 
 export function init() {
     $container = $('#palette-controller');
@@ -29,11 +29,11 @@ export function init() {
         editor.selectColor($color.data('color'));
     });
 
-    setupActionButtons();
+    setupActions();
     setupEventBus();
 }
 
-function setupActionButtons() {
+function setupActions() {
     actions.registerAction('palette.toggle-component', () => {
         toggleComponent('palette');
         refresh();
@@ -64,13 +64,9 @@ function setupActionButtons() {
 
     });
 
-    actions.attachClickHandlers($container);
-
-    tooltips = actions.setupTooltips(
-        $container.find('[data-action]').toArray(),
-        element => $(element).data('action'),
-        { placement: 'top' }
-    );
+    actionButtons = actions.setupActionButtons($container, {
+        placement: 'top'
+    });
 }
 
 function setupEventBus() {
@@ -101,7 +97,7 @@ function refresh() {
     }
 
     refreshSelectedColor();
-    tooltips.refreshContent();
+    actionButtons.refreshContent();
 }
 
 function refreshSelectedColor() {

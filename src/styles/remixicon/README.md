@@ -36,21 +36,19 @@ This will populate the collection of selected icons in the UI.
 to download an updated `.remixicon` file. Name it `RemixIcon_Collection.remixicon` and 
 replace the existing file in this directory.
 6. Click the "↓ Fonts" button to download a zip of the various font files.
-7. Expand the zip and copy the `.css`, `.ttf`, `.woff`, and `.woff2` files to this directory
+7. Expand the zip and copy the `.css` and `.woff2` files to this directory
 (replacing the existing files).
-You don't need to copy the `.less`, `.eot`, `.svg` files since I don't care about supporting IE9
+You don't need any of the other formats since I don't care about supporting older browsers
 and I just use font-based classes.
 8. In the `remixicon.css` file, update the `@font-face`:
-  - Delete the urls referencing the `.eot` and `.svg` that we deleted.
-  - Prepend `remixicon/` to all the url paths because our build uses absolute urls. 
+  - In `src`, delete all urls except for the `.woff` one.
+  - Prepend `remixicon/` to the kept urls because our build uses absolute urls. 
   - The final result should look like:
 
 ```css
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1740813594771") format("woff2"),
-    url("remixicon/remixicon.woff?t=1740813594771") format("woff"),
-    url('remixicon/remixicon.ttf?t=1740813594771') format('truetype'); /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
+    src: url("remixicon/remixicon.woff2?t=1744085091249") format("woff2");
     font-display: swap;
 }
 ```

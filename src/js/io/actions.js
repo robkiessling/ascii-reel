@@ -66,7 +66,9 @@ export function init() {
  *     description: string/fn   (optional) Text to display in tooltips. Default: strings[<id>.description]
  *     enabled: boolean/fn      (optional) Whether the action is allowed to be called. Default: true
  *     shortcutAbbr: string/fn  (optional) Hardcoded shortcut abbreviation (not common; most abbr will come from preferences)
- *     icon: string             (optional) Icon class to show next to action (currently only applies to menu actions)
+ *     icon: string/fn          (optional) Class name of icon:
+ *                                         - If this is a button, icon will replace button's content
+ *                                         - If this is a menu action, icon is shown next to action name
  *
  *     Alternatively, if `data` is just a function, it will be used as the callback
  *
@@ -100,6 +102,7 @@ export function getActionInfo(id) {
     if (isFunction(info.name)) { info.name = info.name(); }
     if (isFunction(info.description)) { info.description = info.description(); }
     if (isFunction(info.enabled)) { info.enabled = info.enabled(); }
+    if (isFunction(info.icon)) { info.icon = info.icon(); }
 
     if (info.shortcutAbbr === undefined && actionIdToShortcut[id]) {
         info.shortcutAbbr = shortcutAbbr(actionIdToShortcut[id]);
@@ -135,13 +138,12 @@ export function callActionByShortcut(shortcut, callbackData) {
 
 /**
  * Sets up tippy tooltips for a group of action buttons
- * @param targets Can be an Array of DOM elements or a DOM query selector. These elements are the action buttons that
- *   the tooltips will be attached to.
- * @param getActionId Can be an action-id string, or a function that returns an action-id. The function will be passed
- *   an `element` that refers to each target.
+ * @param {string | Element[]} targets Can be a DOM query selector or an Array of DOM elements. These elements are the
+ *   action buttons that the tooltips will be attached to.
+ * @param {string | function(element):string} getActionId Can be an action-id string, or a function that returns an action-id.
+ *   The function will be passed an `element` that refers to each target.
  * @param options Standard tippy options
- * @returns {Array.<Tippy>} The array also has a `refreshContent` function that can be called to refresh
- *   the content of all its tooltips (e.g. useful if action->description is a function and needs to be re-evaluated)
+ * @returns {{tooltips: Tippy[], refreshContent: function}}
  */
 export function setupTooltips(targets, getActionId, options = {}) {
     const tooltips = tippy(targets, $.extend({}, {
@@ -155,20 +157,50 @@ export function setupTooltips(targets, getActionId, options = {}) {
         }
     }, options));
 
-    tooltips.refreshContent = () => {
+    const refreshContent = () => {
         tooltips.forEach(tooltip => {
             tooltip.setContent(tooltipContentBuilder(getActionId));
         })
     }
 
-    return tooltips;
+    return { tooltips, refreshContent };
+}
+
+/**
+ * Looks for any buttons with [data-action] attributes in the $container and attaches the appropriate action to them.
+ * Also sets up tooltips.
+ * @param $container
+ * @param tooltipOptions
+ * @returns {{tooltips: Tippy[], refreshContent: function}}
+ */
+export function setupActionButtons($container, tooltipOptions) {
+    attachClickHandlers($container);
+
+    const $buttons = $container.find('[data-action]');
+    const getActionId = (button) => $(button).data('action')
+
+    const { tooltips, refreshContent: refreshTooltips } = setupTooltips($buttons.toArray(), getActionId, tooltipOptions)
+
+    return {
+        tooltips: tooltips,
+        refreshContent: () => {
+            // Refresh any button icons if the action has an `icon` attribute
+            $buttons.each((index, button) => {
+                const actionId = getActionId(button);
+                const actionInfo = getActionInfo(actionId);
+                if (actionInfo.icon) $(button).empty().append(`<span class="ri ri-fw ${actionInfo.icon}"></span>`);
+            })
+
+            refreshTooltips();
+        }
+    }
 }
 
 /**
  * Attaches click handlers to all buttons (that have a data-action attribute) within the container.
  * @param $container
  */
-export function attachClickHandlers($container) {
+function attachClickHandlers($container) {
     $container.off('click', '[data-action]').on('click', '[data-action]', evt => {
         const $element = $(evt.currentTarget);
         if (!$element.hasClass('disabled')) {

@@ -69,10 +69,12 @@ const CHECKERBOARD_DARK_A = '#4c4c4c';
 const CHECKERBOARD_DARK_B = '#555';
 
 // Light mode checkerboard
-const CHECKERBOARD_LIGHT_A = '#ccc';
-const CHECKERBOARD_LIGHT_B = '#ddd';
+const CHECKERBOARD_LIGHT_A = '#ddd';
+const CHECKERBOARD_LIGHT_B = '#eee';
 
 const CHECKER_SIZE = 10;
+
+const USE_CHECKERBOARD = true;
 
 function checkerboardA() {
     switch (currentTheme().name) {
@@ -98,6 +100,8 @@ export function drawCheckerboard(context, area) {
     context.fillStyle = checkerboardA();
     context.rect(...area.xywh);
     context.fill();
+
+    if (!USE_CHECKERBOARD) return;
 
     // Then draw many little squares for checkerboard-B color
     context.beginPath();

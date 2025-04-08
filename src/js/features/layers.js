@@ -12,14 +12,14 @@ import {refreshComponentVisibility, toggleComponent} from "../utils/components.j
 import {eventBus, EVENTS} from "../events/events.js";
 
 let $container, $template, $list, $editDialog, $editName;
-let simpleBar, layerComponents, tooltips;
+let simpleBar, layerComponents;
 
 export function init() {
     $container = $('#layer-controller');
     $template = $container.find('.layer-template');
 
     setupList();
-    setupActionButtons();
+    setupActions();
     setupEventBus();
 }
 
@@ -91,7 +91,7 @@ function setupSortable() {
     });
 }
 
-function setupActionButtons() {
+function setupActions() {
     actions.registerAction('layers.toggle-component', () => {
         toggleComponent('layers');
         refresh();
@@ -118,13 +118,9 @@ function setupActionButtons() {
         eventBus.emit(EVENTS.REFRESH.ALL);
     });
 
-    actions.attachClickHandlers($container);
-
-    tooltips = actions.setupTooltips(
-        $container.find('[data-action]').toArray(),
-        element => $(element).data('action'),
-        { placement: 'top' }
-    );
+    actions.setupActionButtons($container, {
+        placement: 'top'
+    });
 }
 
 function setupEventBus() {

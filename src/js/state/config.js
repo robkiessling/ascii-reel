@@ -6,11 +6,12 @@ export const DEFAULT_STATE = {
     name: '',
     createdAt: undefined,
     fps: 6,
+    isPreviewPlaying: true,
     grid: {
         show: true,
         minorGridEnabled: true,
         minorGridSpacing: 1,
-        majorGridEnabled: true,
+        majorGridEnabled: false,
         majorGridSpacing: 5,
     },
     whitespace: false,
@@ -18,7 +19,8 @@ export const DEFAULT_STATE = {
     lockLayerVisibility: true,
     frameOrientation: 'left',
     minimizedComponents: {
-        layers: true
+        layers: true,
+        palette: true
     },
     tool: 'draw-freeform-ascii',
     primaryColor: DEFAULT_COLOR,

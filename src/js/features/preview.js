@@ -10,6 +10,7 @@ import {getCurrentViewRect} from "./main_canvas.js";
 import {getDynamicColor} from "../config/colors.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {strings} from "../config/strings.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
@@ -18,11 +19,11 @@ const POPUP_RESIZE_DEBOUNCE_LENGTH = 200;
 let $container, $fpsValue, $fpsSlider;
 let previewCanvas;
 let previewInterval, previewIndex;
-let tooltips;
+let actionButtons;
 let popup, popupCanvas;
 
 export function init() {
-    $container = $('#preview-controller');
+    $container = $('#preview-container');
     previewCanvas = new CanvasControl($('#preview-canvas'), {
         emitZoomEvents: {
             targeted: false
@@ -43,7 +44,7 @@ export function init() {
         }
     });
 
-    setupActionButtons();
+    setupActions();
     setupEventBus();
 }
 
@@ -72,13 +73,17 @@ function redraw() {
 function reset() {
     if (previewInterval) { previewInterval.stop(); }
 
-    $fpsSlider.slider('value', state.getConfig('fps'));
-    $fpsValue.html(`${state.getConfig('fps')} FPS`);
+    const fps = state.getConfig('fps');
+    const usableFps = state.getConfig('isPreviewPlaying') ? state.getConfig('fps') : 0;
+
+    $fpsSlider.slider('value', fps);
+    $fpsValue.html(`${fps} FPS`);
+    actionButtons.refreshContent();
 
     previewIndex = state.frameIndex();
     redraw();
 
-    if (state.getConfig('fps') === 0) {
+    if (usableFps === 0) {
         // Even if FPS is zero, we still redraw the canvas at a slow interval. This is mainly to support the popup.
         previewInterval = setIntervalUsingRAF(() => {
             redraw();
@@ -91,11 +96,11 @@ function reset() {
                 previewIndex = 0;
             }
             redraw();
-        }, 1000 / state.getConfig('fps'));
+        }, 1000 / usableFps);
     }
 }
 
-function setupActionButtons() {
+function setupActions() {
     actions.registerAction('preview.toggle-component', () => {
         toggleComponent('preview');
         resize();
@@ -105,13 +110,19 @@ function setupActionButtons() {
         callback: () => openPopup()
     });
 
-    actions.attachClickHandlers($container);
+    actions.registerAction('preview.toggle-play', {
+        name: () => state.getConfig('isPreviewPlaying') ? strings['preview.pause.name'] : strings['preview.play.name'],
+        description: () => state.getConfig('isPreviewPlaying') ? strings['preview.pause.description'] : strings['preview.play.description'],
+        icon: () => state.getConfig('isPreviewPlaying') ? 'ri-pause-circle-line' : 'ri-play-circle-line',
+        callback: () => {
+            state.setConfig('isPreviewPlaying', !state.getConfig('isPreviewPlaying'));
+            reset();
+        }
+    });
 
-    tooltips = actions.setupTooltips(
-        $container.find('[data-action]').toArray(),
-        element => $(element).data('action'),
-        { placement: 'top' }
-    )
+    actionButtons = actions.setupActionButtons($container, {
+        placement: 'top'
+    })
 }
 
 function setupEventBus() {
@@ -129,7 +140,7 @@ function setupEventBus() {
 
 function openPopup() {
     // Manually hide 'open-popup' button tooltip since we are leaving the page and it won't detect mouseleave
-    tooltips.forEach(tooltip => tooltip.hide());
+    actionButtons.tooltips.forEach(tooltip => tooltip.hide());
 
     // Check if popup already open. If so, just focus it and return.
     if (popup && !popup.closed) {

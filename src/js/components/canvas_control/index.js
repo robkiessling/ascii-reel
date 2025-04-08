@@ -34,7 +34,8 @@ const ZOOM_IN_THRESHOLD_VALUE = 30;
 
 // Threshold value limiting how far you can zoom out (actual value depends on length of largest axis)
 // E.g. ratio of 1.25 means show 125% more than the largest axis
-const ZOOM_OUT_THRESHOLD_RATIO = 1.25;
+// const ZOOM_OUT_THRESHOLD_RATIO = 1.25;
+const ZOOM_OUT_THRESHOLD_RATIO = 1.05;
 
 /**
  * Handles all the setup around a <canvas> element, drawing to the canvas, and zooming/translating the canvas view.
