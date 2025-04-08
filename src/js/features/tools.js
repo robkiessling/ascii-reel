@@ -22,20 +22,21 @@ import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Cell from "../geometry/cell.js";
+import AsciiEllipse from "../geometry/ascii/ascii_ellipse.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $standardTools, $selectionTools, drawRectSubMenu, drawLineSubMenu, brushSubMenu, $canvasContainer;
+let $standardTools, $selectionTools, $canvasContainer, subMenus;
 
 export function init() {
     $canvasContainer = $('#canvas-container');
+    subMenus = [];
 
     setupEventBus();
     setupStandardTools();
     setupPickedChar();
     setupSelectionTools();
-    setupDrawRectSubMenu();
-    setupDrawLineSubMenu();
+    setupDrawSubMenus();
     setupBrushSubMenu();
     setupColorPicker();
 }
@@ -47,9 +48,8 @@ function refresh() {
     $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
-    drawRectSubMenu.refresh();
-    drawLineSubMenu.refresh();
-    brushSubMenu.refresh();
+
+    subMenus.forEach(subMenu => subMenu.refresh());
 }
 
 export function changeTool(newTool) {
@@ -93,6 +93,9 @@ function setupEventBus() {
                 break;
             case 'draw-freeform-ascii':
                 startDrawing(cell, AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
+                break;
+            case 'draw-ellipse':
+                startDrawing(cell, AsciiEllipse, { drawType: state.getConfig('drawEllipse').type });
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, pickedChar, state.primaryColorIndex(), {
@@ -155,6 +158,7 @@ function setupEventBus() {
                 break;
             case 'draw-rect':
             case 'draw-line':
+            case 'draw-ellipse':
                 if (isNewCell) updateDrawing(cell);
                 break;
             case 'draw-freeform-ascii':
@@ -186,6 +190,7 @@ function setupEventBus() {
             case 'draw-rect':
             case 'draw-line':
             case 'draw-freeform-ascii':
+            case 'draw-ellipse':
                 finishDrawing();
                 break;
             case 'move-all':
@@ -389,7 +394,7 @@ function circleBrushCells(primaryCell, size) {
 }
 
 function setupBrushSubMenu() {
-    brushSubMenu = new ToolSubMenu({
+    const subMenu = new ToolSubMenu({
         $menu: $('#brush-shapes'),
         configKey: 'brush',
         visible: () => BRUSH_TOOLS.includes(state.getConfig('tool')),
@@ -399,6 +404,8 @@ function setupBrushSubMenu() {
             return `<span class="title">${capitalizeFirstLetter(shape)} Brush</span><br><span>Size: ${size}</span>`;
         }
     })
+
+    subMenus.push(subMenu);
 }
 
 /**
@@ -516,38 +523,38 @@ export function canPickChar() {
 
 // -------------------------------------------------------------------------------- Drawing
 
-function setupDrawRectSubMenu() {
-    drawRectSubMenu = new ToolSubMenu({
-        $menu: $('#draw-rect-types'),
-        configKey: 'drawRect',
-        visible: () => state.getConfig('tool') === 'draw-rect',
-        tooltipContent: $tool => {
-            const type = $tool.data('type');
-            const name = strings[`tools.draw-rect-types.${type}.name`];
-            const description = strings[`tools.draw-rect-types.${type}.description`];
-            return `<span class="title">${name}</span><br><span>${description}</span>`;
-        }
-    })
+function setupDrawSubMenus() {
+    setupDrawSubMenu('drawRect', 'draw-rect');
+    setupDrawSubMenu('drawLine', 'draw-line');
+    setupDrawSubMenu('drawEllipse', 'draw-ellipse');
 }
 
-function setupDrawLineSubMenu() {
-    drawLineSubMenu = new ToolSubMenu({
-        $menu: $('#draw-line-types'),
-        configKey: 'drawLine',
-        visible: () => false, // We currently only have one sub-menu option so no need to show this
+function setupDrawSubMenu(configKey, toolKey) {
+    const typesKey = `${toolKey}-types`; // E.g. 'draw-rect-types', 'draw-line-types'
+
+    const subMenu = new ToolSubMenu({
+        $menu: $(`#${typesKey}`),
+        configKey: configKey,
+        visible: () => state.getConfig('tool') === toolKey,
         tooltipContent: $tool => {
             const type = $tool.data('type');
-            const name = strings[`tools.draw-line-types.${type}.name`];
-            const description = strings[`tools.draw-line-types.${type}.description`];
+            const name = strings[`tools.${typesKey}.${type}.name`];
+            const description = strings[`tools.${typesKey}.${type}.description`];
             return `<span class="title">${name}</span><br><span>${description}</span>`;
         }
     })
+
+    subMenus.push(subMenu);
 }
 
 export let drawingContent = null;
 
 function startDrawing(cell, klass, options = {}, recalculateArgs = []) {
-    options = $.extend({ colorIndex: state.primaryColorIndex() }, options);
+    options = $.extend({
+        colorIndex: state.primaryColorIndex(),
+        pickedChar: pickedChar
+    }, options);
+
     drawingContent = new klass(cell, options);
     updateDrawing(cell, recalculateArgs);
 }

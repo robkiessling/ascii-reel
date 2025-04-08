@@ -34,6 +34,9 @@ export const DEFAULT_STATE = {
     drawLine: {
         type: 'basic'
     },
+    drawEllipse: {
+        type: 'current-char-outline'
+    },
     lastExportOptions: null,
 
     font: 'monospace',
