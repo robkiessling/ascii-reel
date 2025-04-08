@@ -58,20 +58,17 @@ export function init() {
 
 
 /**
- * @param id   Unique identifier string that can be used to call an action at a later time
- * @param data Object with attributes:
- *
- *     callback: fn             (required) Function to call when action is performed
- *     name: string/fn          (optional) Name to display in menus/tooltips. Default: strings[<id>.name]
- *     description: string/fn   (optional) Text to display in tooltips. Default: strings[<id>.description]
- *     enabled: boolean/fn      (optional) Whether the action is allowed to be called. Default: true
- *     shortcutAbbr: string/fn  (optional) Hardcoded shortcut abbreviation (not common; most abbr will come from preferences)
- *     icon: string/fn          (optional) Class name of icon:
- *                                         - If this is a button, icon will replace button's content
- *                                         - If this is a menu action, icon is shown next to action name
- *
- *     Alternatively, if `data` is just a function, it will be used as the callback
- *
+ * @param {string} id - Unique identifier string that can be used to call an action at a later time.
+ * @param {function | Object} data - Action data. If param is a function, it is equivalent to passing { callback: fn }
+ * @param {function} data.callback - Function to call when action is performed
+ * @param {string|function:string} [data.name] - Name to display in menus/tooltips. Default: strings[<id>.name]
+ * @param {string|function:string} [data.description] - Text to display in tooltips. Default: strings[<id>.description]
+ * @param {boolean|function:boolean} [data.enabled] - Whether the action is allowed to be called. Default: true
+ * @param {string|function:string} [data.shortcutAbbr] - Hardcoded shortcut abbreviation (not common; most abbr will
+ *   come from preferences)
+ * @param {string|function:string} [data.icon] - Remixicon class name of an icon. If the action is shown in a <button>,
+ *   the icon will be used for the button's content. If the action is shown in the menu, the icon will be shown next to
+ *   the action name.
  */
 export function registerAction(id, data) {
     if (actions === undefined) {
@@ -138,11 +135,11 @@ export function callActionByShortcut(shortcut, callbackData) {
 
 /**
  * Sets up tippy tooltips for a group of action buttons
- * @param {string | Element[]} targets Can be a DOM query selector or an Array of DOM elements. These elements are the
+ * @param {string | Element[]} targets - Can be a DOM query selector or an Array of DOM elements. These elements are the
  *   action buttons that the tooltips will be attached to.
- * @param {string | function(element):string} getActionId Can be an action-id string, or a function that returns an action-id.
+ * @param {string | function(element):string} getActionId - Can be an action-id string, or a function that returns an action-id.
  *   The function will be passed an `element` that refers to each target.
- * @param options Standard tippy options
+ * @param options - Standard tippy options
  * @returns {{tooltips: Tippy[], refreshContent: function}}
  */
 export function setupTooltips(targets, getActionId, options = {}) {
@@ -169,8 +166,8 @@ export function setupTooltips(targets, getActionId, options = {}) {
 /**
  * Looks for any buttons with [data-action] attributes in the $container and attaches the appropriate action to them.
  * Also sets up tooltips.
- * @param $container
- * @param tooltipOptions
+ * @param $container - Element containing buttons
+ * @param tooltipOptions - Standard tippy options
  * @returns {{tooltips: Tippy[], refreshContent: function}}
  */
 export function setupActionButtons($container, tooltipOptions) {
@@ -198,7 +195,7 @@ export function setupActionButtons($container, tooltipOptions) {
 
 /**
  * Attaches click handlers to all buttons (that have a data-action attribute) within the container.
- * @param $container
+ * @param $container - Element containing buttons
  */
 function attachClickHandlers($container) {
     $container.off('click', '[data-action]').on('click', '[data-action]', evt => {

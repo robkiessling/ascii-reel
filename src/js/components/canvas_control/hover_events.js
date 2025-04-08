@@ -3,7 +3,7 @@ import {eventBus, EVENTS} from "../../events/events.js";
 
 /**
  * Adds mouse event handlers to a canvasControl so hovering over the canvas emits hover events
- * @param canvasControl The canvas controller to apply mouse event handlers to
+ * @param {CanvasControl} canvasControl - The canvas controller to apply mouse event handlers to
  */
 export function setupHoverEvents(canvasControl) {
     canvasControl.$canvas.on('mouseenter', evt => {

@@ -4,7 +4,7 @@ let loaderShownAt;
 
 /**
  * Blocks the whole screen and shows a loader (a spinning icon) accompanied by some text.
- * @param {String} [message] The text to display
+ * @param {string} [message='Loading...'] - The text to display
  */
 export function showFullScreenLoader(message = 'Loading...') {
     toggleStandard('overlay', true); // Need to disable our app shortcuts while full screen loader is shown
@@ -16,7 +16,7 @@ export function showFullScreenLoader(message = 'Loading...') {
 
 /**
  * Hides the full screen loader.
- * @param {Number} [minDisplayTime=500] The minimum time the loader must be displayed before closing. This is used to avoid
+ * @param {Number} [minDisplayTime=500] - The minimum time the loader must be displayed before closing. This is used to avoid
  *   flashing (e.g. if the loader is only shown for 10ms it will be jarring -- a minDisplayTime of 500 means that the loader
  *   will continue to be displayed for 500ms). A minDisplayTime of 0 means the loader is always immediately hidden.
  */

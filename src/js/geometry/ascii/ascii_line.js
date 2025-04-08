@@ -2,10 +2,10 @@ import AsciiPolygon from "./ascii_polygon.js";
 
 /**
  * A short segment of a line, used to draw a line of any length by repeating the template over and over.
- * @param repeatCoord The row/col offset where the template should start looping (i.e. start its next character).
- *   This cannot simply be calculated from looking at the chars array -- it depends on the shape of the line.
- *   Note: Since rows go top to bottom, a negative row offset indicates upward movement
- * @param chars A 2d array of chars to represent the line.
+ * @param {[number, number]} repeatCoord - The row/col offset where the template should start looping (i.e. start its
+ *   next character). This cannot simply be calculated from looking at the chars array -- it depends on the shape of the
+ *   line. Note: Since rows go top to bottom, a negative row offset indicates upward movement.
+ * @param {char[][]} chars - A 2d array of chars to represent the line.
  */
 class LineTemplate {
     constructor(repeatCoord, chars) {
@@ -21,9 +21,9 @@ class LineTemplate {
 
     /**
      * Creates a path for this template, repeating the template over and over until the length is reached.
-     * @param length How many chars long the path should be
-     * @param callback Function that is called for each character in the line.
-     *   It receives 3 arguments: (glyphRow, glyphCol, char)
+     * @param {number} length - How many chars long the path should be
+     * @param {(glyphRow: number, glyphCol: number, char: char) => void} callback - Function that is called for each
+     *   character in the line. Function parameters:
      *   - glyphRow: The row to place the char in the final glyphs array. This value can be NEGATIVE, which means it
      *     should precede row 0.
      *   - glyphCol: Same as glyphRow but for columns.
@@ -64,15 +64,15 @@ class LineTemplate {
      * Then the rows will be iterated in reverse. That way, row index 3 (the bottom row) will be first, followed by
      * row index 2 (second to bottom row), etc.
      *
-     * @param callback A callback called for each character in the template (including spaces). It receives 3
-     *   arguments: (char, glyphRow, glyphCol):
+     * @param {(char: char, glyphRow: number, glyphCol: number) => void} callback - A callback called for each character
+     *   in the template (including spaces). Function parameters:
      *   - char: The char in the template
      *   - glyphRow: The row index to place the char in the final drawn array. Can be negative to indicate it should
      *     precede row index 0. In the example above, when the `A` char is processed, its glyphRow is 0. When `B`
      *     is processed, its glyphRow is -1. And so on.
      *   - glyphCol: Same as glyphRow but for column.
      *   - If the callback returns true, iteration will stop
-     * @returns {boolean} Returns true if iteration was stopped due to the callback returning true.
+     * @returns {boolean} - Returns true if iteration was stopped due to the callback returning true.
      */
     _iterateTemplate(callback) {
         return this._iterate(this.maxRowIndex, this.rise < 0, (templateR, glyphRow) => {

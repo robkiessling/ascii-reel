@@ -3,7 +3,7 @@ import {getConfig} from "../../state/index.js";
 
 /**
  * Adds mouse event handlers to a canvasControl so that clicking/moving the mouse emits raw canvas events.
- * @param canvasControl The canvas controller to apply mouse event handlers to.
+ * @param {CanvasControl} canvasControl - The canvas controller to apply mouse event handlers to.
  */
 export function setupRawMouseEvents(canvasControl) {
     function _emitEvent(eventName, mouseEvent) {

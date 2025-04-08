@@ -84,11 +84,11 @@ export function copyChar(char) {
 }
 
 /**
- *
- * @param glyphs           An object like: { chars: [[2d array of chars]], colors: [[2d array of colors]] }
- * @param limitToSelection If true, pasted text will only be pasted within the current selection bounds
+ * Pastes the glyph content in the selection
+ * @param {{chars: char[][], colors: number[][]}} glyphs - Content to paste
+ * @param {boolean} [limitToSelection=false] - If true, pasted text will only be pasted within the current selection bounds
  */
-function pasteGlyphs(glyphs, limitToSelection) {
+function pasteGlyphs(glyphs, limitToSelection = false) {
     // If there is no selection area, that means there is simply a cursor to paste at (this only happens when using the
     // text-editor tool). In this case, paste the content at the cursor, then move the cursor an amount equal to the content's width
     const pasteAtCursor = !selection.hasSelection();

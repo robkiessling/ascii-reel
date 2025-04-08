@@ -234,9 +234,9 @@ let standardKeyboardLocks = {};
  *   3. Source A calls toggleStandard('A', false)   -> standard keyboard is still enabled ("B" lock is still applied)
  *   4. Source B calls toggleStandard('B', false)   -> app keyboard is enabled (all locks have been removed)
  *
- * @param {String} lockingKey A unique key to assign this toggle to. This allows multiple sources to call toggleStandard
+ * @param {string} lockingKey - A unique key to assign this toggle to. This allows multiple sources to call toggleStandard
  *   and the standard keyboard will be used if ANY locks remain.
- * @param {boolean} useStandard If true, lock will be applied (standard keyboard will be used). If false, lock will be
+ * @param {boolean} useStandard - If true, lock will be applied (standard keyboard will be used). If false, lock will be
  *   removed (app keyboard will be used, assuming this was the final lock).
  */
 export function toggleStandard(lockingKey, useStandard) {

@@ -2,12 +2,12 @@ import {isFunction} from "./utilities.js";
 
 /**
  * Creates an array of arrays
- * @param numRows
- * @param numCols
- * @param [defaultValue] Can be a primitive value (like an integer or string) or a function that returns the desired
- *   value. Do not pass an object as a default value; otherwise all the elements will be a reference to the same
- *   object. You should pass a function that returns a new object.
- * @returns {*[]}
+ * @param {number} numRows - Number of rows in the 2d array
+ * @param {number} numCols - Number of columns in the 2d array
+ * @param {*|function:*} [defaultValue=undefined] - Can be a primitive value (like an integer or string) or a function that
+ *   returns the desired value. Do not pass an object as a default value; otherwise all the elements will be a reference
+ *   to the same object. You should pass a function that returns a new object.
+ * @returns {*[][]} - The 2d array
  */
 export function create2dArray(numRows, numCols, defaultValue) {
     let array = [];
@@ -30,9 +30,9 @@ export function create2dArray(numRows, numCols, defaultValue) {
  *
  * Throws an error if the array cannot be evenly split
  *
- * @param arr
- * @param rowLength
- * @returns {*[]}
+ * @param {*[]} arr - The 1d array to split
+ * @param {number} rowLength - How long each row should be in the final 2d array
+ * @returns {*[][]} - A 2d array
  */
 export function split1DArrayInto2D(arr, rowLength) {
     if (arr.length % rowLength !== 0) throw new Error(`1d array of length ${arr.length} cannot be split into rows of length ${rowLength}`);
@@ -50,9 +50,10 @@ export function split1DArrayInto2D(arr, rowLength) {
  * Translates 2d arrays of chars/colors as if they were positioned at a Cell.
  * Note: The callback rows/cols can be out of bounds
  *
- * @param glyphs         An object like: { chars: [[2d array of chars]], colors: [[2d array of colors]] }
- * @param cell           Position to move the top-left Cell of the layout to
- * @param callback       function(row, col, char, color), where row and col are the coordinates if the layout was moved
+ * @param {{chars: char[][], colors: number[][]}} glyphs - Content to translate
+ * @param {Cell} cell - Position to move the top-left cell of the layout to
+ * @param {(row: number, col: number, char: char, color: number) => void} callback - Callback function where row and col
+ *   are the coordinates of the cell after translating
  */
 export function translateGlyphs(glyphs, cell, callback) {
     // Note: rows may have different number of columns (e.g. when pasting from a text editor) so not caching row/col length

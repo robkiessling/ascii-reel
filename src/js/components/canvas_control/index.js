@@ -58,8 +58,8 @@ export default class CanvasControl {
 
     /**
      * Resizes the canvas control according to its container boundaries.
-     * @param {boolean} resetZoom If true, will zoom all the way out. If false, will maintain the zoom/pan from before
-     *   the resize (provided there is previous zoom/pan data).
+     * @param {boolean} [resetZoom=false] - If true, will zoom all the way out. If false, will maintain the zoom/pan
+     *   from before the resize (provided there is previous zoom/pan data).
      */
     resize(resetZoom = false) {
         let previousTransform = this.context.getTransform();
@@ -339,7 +339,7 @@ export default class CanvasControl {
 
     /**
      * Calculates the zoom/pan boundaries.  
-     * @param {boolean} zoomOutToMax If true, canvas will be zoomed all the way out. If false, canvas's current zoom
+     * @param {boolean} zoomOutToMax - If true, canvas will be zoomed all the way out. If false, canvas's current zoom
      *   will be maintained. This option is to increase performance: we have to zoom all the way out anyway to calculate
      *   the boundaries, so if that is the desired zoom state we have an option to leave it zoomed out. 
      */
@@ -371,7 +371,7 @@ export default class CanvasControl {
     /**
      * Performs a callback that affects the entire canvas (entire <canvas> element; includes those margins that appear
      * when zoomed all the way out)
-     * @param {function(Rect)} callback Callback is passed the full area Rect as its parameter
+     * @param {function(Rect)} callback - Callback is passed the full area Rect as its parameter
      */
     _usingFullArea(callback) {
         this._inTemporaryContext(() => {
@@ -410,11 +410,11 @@ export default class CanvasControl {
 
     /**
      * Returns an {x, y} coordinate of a given pixel relative to the top-left corner of the cell it's in.
-     * @param x The x value of the target pixel
-     * @param y The y value of the target pixel
-     * @param {Boolean} asFraction If true, the returned x/y coordinates will be a percentage of the cell width/height,
+     * @param {number} x - The x value of the target pixel
+     * @param {number} y - The y value of the target pixel
+     * @param {Boolean} [asFraction=true] - If true, the returned x/y coordinates will be a percentage of the cell width/height,
      *   respectively. E.g. if the pixel was in the center of the cell, the returned value would be { x: 0.5, y: 0.5 }.
-     * @returns {{x: number, y: number}}
+     * @returns {{x: number, y: number}} - Coordinate of cell pixel
      */
     cellPixelAtExternalXY(x, y, asFraction = true) {
         const point = this.pointAtExternalXY(x, y);
@@ -480,8 +480,9 @@ export default class CanvasControl {
 
     /**
      * Zooms the canvas in or out focused at a particular target
-     * @param delta Float controlling the magnitude of the zoom. A value > 1 will zoom in, a value < 1 will zoom out.
-     * @param target Point to zoom towards. If undefined, will zoom in/out relative to center of the current view.
+     * @param {number} delta - Controls the magnitude of the zoom. A value > 1 will zoom in, a value < 1 will zoom out.
+     * @param {{x: number, y: number}} [target] - Point to zoom towards. If undefined, will zoom in/out relative to
+     *   center of the current view.
      */
     zoomDelta(delta, target) {
         const currentZoom = this._currentZoom();

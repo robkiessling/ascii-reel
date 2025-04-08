@@ -3,8 +3,8 @@ import {getConfig, setConfig} from "../state/index.js";
 
 /**
  * Minimizes/maximizes the component according to the current state.
- * @param $container The component's container element
- * @param componentKey The component to minimize/maximize
+ * @param $container - The component's container element
+ * @param {string} componentKey - The component to minimize/maximize
  */
 export function refreshComponentVisibility($container, componentKey) {
     const minimized = state.isMinimized(componentKey);
@@ -19,9 +19,11 @@ export function refreshComponentVisibility($container, componentKey) {
 /**
  * Updates the state that controls whether a component is minimized/maximized. Typically, the component's refresh
  * function will be called after calling this.
- * @param componentKey The component to minimize/maximize
- * @param {boolean} [isMinimized] If true, will minimize the component. If false, will maximize the component. If
- *   undefined, will toggle the component from its current state.
+ * @param {string} componentKey - The component to minimize/maximize
+ * @param {boolean} [isMinimized] -
+ *   - If true, will minimize the component.
+ *   - If false, will maximize the component.
+ *   - If undefined, will toggle the component from its current state.
  */
 export function toggleComponent(componentKey, isMinimized) {
     const minimizedComponents = getConfig('minimizedComponents') || {};

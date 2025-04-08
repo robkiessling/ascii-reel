@@ -45,7 +45,8 @@ export function frameIndex(newIndex) {
 
 /**
  * Gets and/or sets the frameRangeSelection.
- * @param {ArrayRange|null} [newRange] A value of null means the frameRangeSelection will match the currently selected frameIndex().
+ * @param {ArrayRange|null} [newRange] - If defined, will set the current rangeSelection. A value of null means the
+ *   frameRangeSelection will match the currently selected frameIndex().
  * @returns {ArrayRange}
  */
 export function frameRangeSelection(newRange) {

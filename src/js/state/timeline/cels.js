@@ -83,11 +83,11 @@ function normalizeCel(cel) {
 
 /**
  * Returns the cel for either a celId or a layer & frame combination.
- * @param {string|object} celIdOrLayer Can be a celId string or a Layer object. If it is a celId string, simply returns
+ * @param {string|Object} celIdOrLayer - Can be a celId string or a Layer object. If it is a celId string, simply returns
  *   the cel for that given id. If it is a Layer object, must also provide a Frame object as second parameter. The cel
  *   for that given layer & frame is returned.
- * @param {object} [frame] Frame object (only applicable if celIdOrLayer was a Layer object)
- * @returns {object}
+ * @param {Object} [frame] - Frame object (only applicable if celIdOrLayer was a Layer object)
+ * @returns {Object} - The cel at the given layer/frame
  */
 export function cel(celIdOrLayer, frame) {
     if (arguments.length === 1 && typeof celIdOrLayer === 'string') {
@@ -144,10 +144,10 @@ export function charInBounds(row, col) {
 
 /**
  * Shifts all the contents (chars/colors) of a cel.
- * @param cel The cel to affect
- * @param {Number} rowOffset How many rows to shift (can be negative)
- * @param {Number} colOffset How many columns to shift content (can be negative)
- * @param {Boolean} wrap If true, shifting content past the cel boundaries will wrap it around to the other side
+ * @param {cel} cel - The cel to affect
+ * @param {number} rowOffset - How many rows to shift (can be negative)
+ * @param {number} colOffset - How many columns to shift content (can be negative)
+ * @param {boolean} [wrap=false] - If true, shifting content past the cel boundaries will wrap it around to the other side
  */
 export function translateCel(cel, rowOffset, colOffset, wrap = false) {
     let chars = create2dArray(numRows(), numCols(), '');
@@ -274,11 +274,11 @@ export function hasCharContent() {
 
 /**
  * Resizes the canvas dimensions. If the canvas shrinks, all content outside of the new dimensions will be truncated.
- * @param newDimensions Array [num columns, num rows] of the new dimensions
- * @param rowOffset Integer or 'top'/'middle'/'bottom' - If an integer is provided, it will determine the starting row
- *                  for the content in the new dimensions. Alternatively, a string 'top'/'middle'/'bottom' can be given
- *                  to anchor the content to the top, middle, or bottom row in the new dimensions.
- * @param colOffset Same as rowOffset, but for the column.
+ * @param {[number, number]} newDimensions - A tuple representing [num columns, num rows] of the new dimensions
+ * @param {number|'top'|'middle'|'bottom'} rowOffset - If an integer is provided, it will determine the starting row
+ *   for the content in the new dimensions. Alternatively, a string 'top'/'middle'/'bottom' can be given to anchor the
+ *   content to the top, middle, or bottom row in the new dimensions.
+ * @param {number|'top'|'middle'|'bottom'} colOffset - Same definition as rowOffset, but for the column.
  */
 export function resize(newDimensions, rowOffset, colOffset) {
     switch(rowOffset) {
@@ -368,8 +368,8 @@ export function decodeState(encodedState, celRowLength) {
 
 /**
  * Encode a 2d chars array into a compressed Base64 string.
- * @param {Array} chars 2d array of chars. The empty string "" is a valid char.
- * @returns {string} Base 64 string representing the compressed 2d array
+ * @param {char[][]} chars - 2d array of chars. Note: The empty string "" is a valid char.
+ * @returns {string} - Base 64 string representing the compressed 2d array
  */
 function encodeChars(chars) {
     const flatStr = chars.flat().map(char => char === "" ? "\0" : char).join(''); // convert to flat string
@@ -382,9 +382,9 @@ function encodeChars(chars) {
 
 /**
  * Decodes a compressed Base64 string into a 2d chars array
- * @param base64String Base 64 string representing the compressed 2d array (from encodeChars function)
- * @param {Number} rowLength How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
- * @returns {Array} 2d array of chars
+ * @param {string} base64String - Base 64 string representing the compressed 2d array (from encodeChars function)
+ * @param {number} rowLength - How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
+ * @returns {char[][]} - 2d array of chars
  */
 function decodeChars(base64String, rowLength) {
     const compressed = Uint8Array.from(window.atob(base64String), c => c.charCodeAt(0)); // convert to compressed Uint8Array
@@ -394,10 +394,10 @@ function decodeChars(base64String, rowLength) {
 
 /**
  * Encode a 2d colors array into a compressed Base64 string.
- * @param {Array} colors 2d array of color integers
- * @param {Boolean} has16BitNumbers If your colors array contains integers greater than 255 you must set this param
+ * @param {number[][]} colors - 2d array of color integers
+ * @param {Boolean} has16BitNumbers - If your colors array contains integers greater than 255 you must set this param
  *   to be true, otherwise they won't be encoded correctly
- * @returns {string} Base 64 string representing the compressed 2d array
+ * @returns {string} - Base 64 string representing the compressed 2d array
  */
 function encodeColors(colors, has16BitNumbers) {
     let uncompressed;
@@ -422,11 +422,11 @@ function encodeColors(colors, has16BitNumbers) {
 
 /**
  * Decodes a compressed Base64 string into a 2d colors array
- * @param base64String Base 64 string representing the compressed 2d array (from encodeColors function)
- * @param {Number} rowLength How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
- * @param {Boolean} has16BitNumbers If the encoded colors array contains integers greater than 255, you must set this param
+ * @param {string} base64String - Base 64 string representing the compressed 2d array (from encodeColors function)
+ * @param {number} rowLength - How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
+ * @param {boolean} has16BitNumbers - If the encoded colors array contains integers greater than 255, you must set this param
  *   to be true, otherwise they won't be decoded correctly
- * @returns {Array} 2d array of color integers
+ * @returns {number[][]} - 2d array of color integers
  */
 function decodeColors(base64String, rowLength, has16BitNumbers) {
     const compressed = Uint8Array.from(atob(base64String), c => c.charCodeAt(0)); // Base64 string -> compressed Uint8Array

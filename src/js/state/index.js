@@ -151,9 +151,9 @@ const CURRENT_VERSION = 5;
 /**
  * Migrates a state object to the latest version. A state object might be out-of-date if it was saved from an earlier
  * version of the app.
- * @param {object} state The state object to migrate
- * @param {string} source Whether the state was saved to 'disk' or 'localStorage' (might be useful if a migration
- *   only affects one or the other).
+ * @param {Object} state - The state object to migrate
+ * @param {'disk'|'localStorage'} source - Where the state is being loaded from. Might be useful if a migration only
+ *    affects certain save types.
  */
 function migrateState(state, source) {
     // State migrations (list will grow longer as more migrations are added):

@@ -175,9 +175,9 @@ export function iterateCelsForCurrentFrame(callback) {
 
 /**
  * Iterates through cels. Which cels are iterated over depends on the allLayers and allFrames params.
- * @param {Boolean} allLayers If true, will include cels across all layers. If false, just includes cels for current layer.
- * @param {Boolean} allFrames If true, will include cels across all frames. If false, just includes cels for current frame.
- * @param {function(cel)} celCallback Callback called for each cel being iterated over
+ * @param {Boolean} allLayers - If true, will include cels across all layers. If false, just includes cels for current layer.
+ * @param {Boolean} allFrames - If true, will include cels across all frames. If false, just includes cels for current frame.
+ * @param {function(cel)} celCallback - Callback called for each cel being iterated over
  */
 export function iterateCels(allLayers, allFrames, celCallback) {
     if (allLayers && allFrames) {

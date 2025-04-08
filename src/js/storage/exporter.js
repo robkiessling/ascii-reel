@@ -10,11 +10,11 @@ import {hideFullScreenLoader, showFullScreenLoader} from "../utils/overlays.js";
 
 /**
  * Exports the ASCII animation into a variety of formats.
- * @param {Object} options Object containing various export options. Must contain a key `format` with one of the allowed
+ * @param {Object} options - Object containing various export options. Must contain a key `format` with one of the allowed
  *   export formats. For further options, see the export functions below (e.g. for format:json, look at exportJson).
- * @param {boolean} [exportToActiveFile] If true, will re-export to the current active export file rather than prompting
+ * @param {boolean} [exportToActiveFile] - If true, will re-export to the current active export file rather than prompting
  *   the user for a new save location.
- * @returns {Promise<string>} Returns the name of the saved export file (will be undefined if File System API not supported).
+ * @returns {Promise<string>} - Returns the name of the saved export file (will be undefined if File System API not supported).
  */
 export async function exportAnimation(options, exportToActiveFile) {
     state.vacuumColorTable(); // We embed the colorTable into some formats; this ensures it is as small as possible
@@ -493,8 +493,8 @@ async function exportWebm(options, exportToActiveFile) {
  * delayed by the potentially expensive blob generation. Any delays to its showSaveFilePicker call will cause a "must
  * be handling a user gesture" error to occur: https://developer.mozilla.org/en-US/docs/Web/Security/User_activation
  *
- * @param {function:Promise<Blob>} generateBlob An asynchronous function that returns a Promise resolving to a Blob.
- * @returns {Promise<Blob>} A Promise that resolves with the generated Blob.
+ * @param {function:Promise<Blob>} generateBlob - An asynchronous function that returns a Promise resolving to a Blob.
+ * @returns {Promise<Blob>} - A Promise that resolves with the generated Blob.
  */
 function lazyBlobPromise(generateBlob) {
     return new Promise((resolve, reject) => {

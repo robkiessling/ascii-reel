@@ -632,12 +632,12 @@ function moveDelta(rowDelta, colDelta) {
 
 /**
  * Move all selection polygons in a particular direction
- * @param direction {String} Direction to move selection ('left'/'up'/'right'/'down')
- * @param amount {Number} Number of cells to move the selection
- * @param moveStart {Boolean} If false, the start cell of the polygon will not be moved
- * @param moveEnd {Boolean} If false, the end cell of the polygon will not be moved
- * @param moveContent {Boolean} If true (and we are not already moving content), the chars underneath the selection
- *   polygons will be moved along with the selection.
+ * @param {string} direction - Direction to move selection ('left'/'up'/'right'/'down')
+ * @param {number} amount - Number of cells to move the selection
+ * @param {boolean} [moveStart=true] - If false, the start cell of the polygon will not be moved
+ * @param {boolean} [moveEnd=true] - If false, the end cell of the polygon will not be moved
+ * @param {boolean} [moveContent=true] - If true (and we are not already moving content), the chars underneath the
+ *   selection polygons will be moved along with the selection.
  */
 export function moveInDirection(direction, amount, moveStart = true, moveEnd = true, moveContent = true) {
     if (!hasTarget()) {

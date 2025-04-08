@@ -4,7 +4,7 @@ const ZOOM_SCROLL_FACTOR = 1.1;
 
 /**
  * Adds mouse event handlers to a canvasControl so scrolling the mouse wheel emits zoom events
- * @param canvasControl - The canvas controller to apply mouse event handlers to
+ * @param {CanvasControl} canvasControl - The canvas controller to apply mouse event handlers to.
  * @param {Object} options - Zoom event options
  * @param {boolean} [options.targeted] - If true, zooms in/out at mouse cursor. If false, zooms in/out at canvas center
  */

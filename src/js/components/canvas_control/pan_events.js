@@ -3,10 +3,10 @@ import {eventBus, EVENTS} from "../../events/events.js";
 
 /**
  * Adds mouse event handlers to a canvasControl so clicking-and-dragging emits pan events
- * @param canvasControl The canvas controller to apply mouse event handlers to
+ * @param {CanvasControl} canvasControl - The canvas controller to apply mouse event handlers to
  * @param {Object} options - Pan event options
- * @param {boolean} [options.snapToCenter] If true, canvas view will snap so that its center is at mouse
- * @param {Array|Function} [options.mouseButtons=[1,2,3]] Which mouse buttons (left/right/middle) should trigger panning.
+ * @param {boolean} [options.snapToCenter] - If true, canvas view will snap so that its center is at mouse
+ * @param {Array|Function} [options.mouseButtons=[1,2,3]] - Which mouse buttons (left/right/middle) should trigger panning.
  *   If param is an array, the integers in the array are the allowed mouse buttons. If param is a function, the function
  *   will be evaluated on mousedown and should return an array of integers representing the allowed mouse buttons (this
  *   can be useful if the mouse buttons that affect panning can change over time). Mouse button integers are based on

@@ -39,10 +39,10 @@ export async function openFile() {
  *
  * Note: Promise will be rejected if user closes the file picker; use isPickerCanceledError to catch this case.
  *
- * @param {boolean} [saveToActiveFile] If true, will update the most recent saved file (on the user's OS). Requires
+ * @param {boolean} [saveToActiveFile] - If true, will update the most recent saved file (on the user's OS). Requires
  *   a handle to have been previously set up (e.g. by previously opening/saving a file). Only used if the browser
  *   supports the File System API.
- * @returns {Promise<string|undefined>} Returns the name of the file (will be undefined if File System API not supported)
+ * @returns {Promise<string|undefined>} - Returns the name of the file (will be undefined if File System API not supported)
  */
 export async function saveFile(saveToActiveFile) {
     if (saveToActiveFile && !fileHandle) throw new Error(`No handle found for saveToActiveFile`);
@@ -87,17 +87,17 @@ export function hasActiveExport() {
  *
  * Note: Promise will be rejected if user closes the file picker; use isPickerCanceledError to catch this case.
  *
- * @param {Blob|Promise<Blob>} blobOrPromiseBlob The content to export. Note: If generating the Blob is slow (i.e. it
+ * @param {Blob|Promise<Blob>} blobOrPromiseBlob - The content to export. Note: If generating the Blob is slow (i.e. it
  *   will be more than ~200ms from when the user clicked 'export'), you must pass a deferred Promise<Blob> to avoid
  *   a user activation error. See exporter.js#lazyBlobPromise for more info.
- * @param {String} extension File extension (e.g. "txt")
- * @param {String} mimeType File MIME type (e.g. "text/plain")
- * @param {boolean} [exportToActiveFile] If true, will update the most recent exported file (on the user's OS). Requires
+ * @param {String} extension - File extension (e.g. "txt")
+ * @param {String} mimeType - File MIME type (e.g. "text/plain")
+ * @param {boolean} [exportToActiveFile] - If true, will update the most recent exported file (on the user's OS). Requires
  *   a handle to have been previously set up (e.g. by previously exporting and picking a file). Only used if the browser
  *   supports the File System API.
- * @param {function()} [onExportStarted] Callback called once the user has selected where they want to save the file.
+ * @param {function()} [onExportStarted] - Callback called once the user has selected where they want to save the file.
  *   If File System API is not supported or if the export handle is already known this will be instantly called.
- * @returns {Promise<string|undefined>} Returns the name of the file (will be undefined if File System API not supported)
+ * @returns {Promise<string|undefined>} - Returns the name of the file (will be undefined if File System API not supported)
  */
 export async function exportFile(blobOrPromiseBlob, extension, mimeType, exportToActiveFile, onExportStarted) {
     if (exportToActiveFile && !exportHandle) throw new Error(`No handle found for exportToActiveFile`);

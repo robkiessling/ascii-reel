@@ -20,10 +20,11 @@ export function defer(callback, delay = 1) {
  * Similar to window.setInterval, but built on top of requestAnimationFrame. This is better for animations
  * and can pause when the tab is inactive. Do not use if the callback needs to run at an extremely precise interval.
  *
- * @param callback The function to call every interval
- * @param delay Time in milliseconds between intervals
- * @param evaluateImmediately If true, callback immediately fires instead of waiting for first interval to pass
- * @returns {{stop: function}} `stop` is a function that can be called to clear the interval
+ * @param {function} callback - The function to call every interval
+ * @param {number} delay - Time in milliseconds between intervals
+ * @param {boolean} [evaluateImmediately=false] - If true, callback immediately fires instead of waiting for first interval
+ *   to pass.
+ * @returns {{stop: function}} - `stop` is a function that can be called to clear the interval
  */
 export function setIntervalUsingRAF(callback, delay, evaluateImmediately = false) {
     let now = performance.now();
