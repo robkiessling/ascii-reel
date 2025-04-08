@@ -79,11 +79,11 @@ class FreeformChar {
             // position; if the avgY position is high we choose a character like `, if low we choose a character like _.
             // Note: If the slope is zero, if the user draws a line along the bottom of the cells it will use the _ char
             // (not the - char).
-            if (this.avgY < 1/6) return '`';
-            if (this.avgY < 2/6) return '\'';
-            if (this.avgY < 3/6) return '-';
-            if (this.avgY < 4/6) return '.';
-            if (this.avgY < 5/6) return ',';
+            if (this.avgY <= 1/6) return '`';
+            if (this.avgY <= 2/6) return '\'';
+            if (this.avgY <= 3/6) return '-';
+            if (this.avgY <= 4/6) return '.';
+            if (this.avgY <= 5/6) return ',';
             return '_';
         }
     }
@@ -200,12 +200,30 @@ class FreeformInterpolator {
         if (this.groupBy === 'row') {
             startPixel.x = 0;
             endPixel.x = 1;
-            startPixel.y = indexWithinGroup * Math.abs(groupSlope);
-            endPixel.y = (indexWithinGroup + 1) * Math.abs(groupSlope);
+
+            if (this.lineRise === 0) {
+                // Special case for purely horizontal interpolation; use middle y value
+                startPixel.y = 0.5;
+                endPixel.y = 0.5;
+            }
+            else {
+                // Calculate start/end y based on position within group and overall slope
+                startPixel.y = indexWithinGroup * Math.abs(groupSlope);
+                endPixel.y = (indexWithinGroup + 1) * Math.abs(groupSlope);
+            }
         }
         else {
-            startPixel.x = indexWithinGroup * Math.abs(1 / groupSlope);
-            endPixel.x = (indexWithinGroup + 1) * Math.abs(1 / groupSlope);
+            if (this.lineRun === 0) {
+                // Special case for purely vertical interpolation; use middle x value
+                startPixel.x = 0.5;
+                endPixel.y = 0.5;
+            }
+            else {
+                // Calculate start/end x based on position within group and overall slope
+                startPixel.x = indexWithinGroup * Math.abs(1 / groupSlope);
+                endPixel.x = (indexWithinGroup + 1) * Math.abs(1 / groupSlope);
+            }
+
             startPixel.y = 0;
             endPixel.y = 1;
         }
