@@ -253,8 +253,10 @@ function setupEventBus() {
 
     let moveStep, hasMoved;
 
-    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, tool, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
         if (mouseEvent.which !== 1) return; // Only apply to left-click
+
+        const tool = state.getConfig('tool')
 
         switch(tool) {
             case 'selection-rect':
@@ -332,7 +334,9 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, tool, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvasControl }) => {
+        const tool = state.getConfig('tool')
+
         // TODO This could be more efficient, could just trigger refreshes if cell is different than last?
 
         if (isDrawing) {
@@ -358,7 +362,9 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, tool, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ cell }) => {
+        const tool = state.getConfig('tool')
+
         if (isDrawing) {
             lastPolygon().complete();
             isDrawing = false;
@@ -379,7 +385,9 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.DBLCLICK, ({ mouseEvent, cell, tool, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.DBLCLICK, ({ cell }) => {
+        const tool = state.getConfig('tool')
+
         switch(tool) {
             case 'selection-rect':
             case 'selection-line':

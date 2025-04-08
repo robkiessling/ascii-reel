@@ -7,10 +7,7 @@ import CellArea from "../../geometry/cell_area.js";
 import {roundForComparison} from "../../utils/numbers.js";
 import {PRIMARY_COLOR, SELECTION_COLOR} from "../../config/colors.js";
 import {drawCheckerboard, getHoverColor, HOVER_CELL_OPACITY} from "../../config/background.js";
-import {setupRawMouseEvents} from "./raw_mouse_events.js";
-import {setupZoomEvents} from "./zoom_events.js";
-import {setupPanEvents} from "./pan_events.js";
-import {setupHoverEvents} from "./hover_events.js";
+import {setupHoverEvents, setupPanEvents, setupRawMouseEvents, setupZoomEvents} from "./events.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 4;

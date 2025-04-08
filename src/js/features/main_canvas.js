@@ -13,12 +13,11 @@
 
 import CanvasControl from "../components/canvas_control/index.js";
 import * as selection from "./selection.js";
-import {BRUSH_TOOLS} from "./tools.js";
+import {BRUSH_TOOLS, hoveredCells} from "./tools.js";
 import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
 import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
-import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
 let hoveredCell;
@@ -178,14 +177,8 @@ const HIDE_HOVER_EFFECT_FOR_TOOLS = new Set([
 function redrawHover() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell && !selection.isDrawing && !selection.isMoving &&
-        !HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.getConfig('tool'))) {
-
-        const { shape, size } = state.getConfig('brush');
-        const hoveredCells = BRUSH_TOOLS.includes(state.getConfig('tool')) ?
-            getAllHoveredCells(hoveredCell, shape, size) : [hoveredCell];
-
-        hoveredCells.forEach(cell => {
+    if (hoveredCell && !selection.isDrawing && !selection.isMoving && !HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.getConfig('tool'))) {
+        hoveredCells(hoveredCell).forEach(cell => {
             if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
         })
     }

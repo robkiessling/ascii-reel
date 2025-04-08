@@ -21,7 +21,7 @@ import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
-import {getAllHoveredCells} from "../components/canvas_control/hover_events.js";
+import Cell from "../geometry/cell.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -67,8 +67,11 @@ function setupEventBus() {
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
     let editorMousedown = false; // Used to keep track of whether the mousedown started in the editor canvas
 
-    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, tool, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
         if (mouseEvent.which !== 1) return; // Only apply to left-click
+
+        const tool = state.getConfig('tool')
+
         editorMousedown = true;
         prevCell = undefined;
 
@@ -127,7 +130,9 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, tool, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell }) => {
+        const tool = state.getConfig('tool')
+
         $canvasContainer.css('cursor', cursorStyle(mouseEvent, cell, tool));
 
         if (!editorMousedown) return;
@@ -164,11 +169,13 @@ function setupEventBus() {
         prevCell = cell;
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, tool, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent }) => {
         if (mouseEvent.which !== 1) return; // Only apply to left-click
         if (!editorMousedown) return;
 
         editorMousedown = false;
+
+        const tool = state.getConfig('tool')
 
         switch(tool) {
             case 'draw-freeform-char':
@@ -309,11 +316,76 @@ function resizeToSelection() {
 
 export const BRUSH_TOOLS = ['draw-freeform-char', 'eraser', 'paint-brush'];
 
-function hoveredCells(primaryCell) {
+export function hoveredCells(primaryCell) {
     if (!primaryCell) return [];
     if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return [primaryCell];
     const { shape, size } = state.getConfig('brush');
-    return getAllHoveredCells(primaryCell, shape, size)
+
+    switch(shape) {
+        case 'square':
+            return squareBrushCells(primaryCell, size);
+        case 'circle':
+            return circleBrushCells(primaryCell, size);
+        default:
+            console.error('Unsupported brush shape: ', shape);
+    }
+}
+
+// Iterates through cells in a square shape, centered around the primaryCell
+function squareBrushCells(primaryCell, size) {
+    const result = []
+    const offset = Math.floor(size / 2);
+
+    for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+            result.push(new Cell(primaryCell.row - offset + row, primaryCell.col - offset + col));
+        }
+    }
+    return result;
+}
+
+// Iterates through cells in a circle shape, centered around the primaryCell
+// Also, it's actually more of a diamond than a circle
+function circleBrushCells(primaryCell, size) {
+    const result = [];
+    let offsets;
+
+    switch(size) {
+        // Note: There are mathematical ways to generate a circle shape around a point, but since I'm only implementing
+        //       a few sizes I'm just hard-coding the cell coordinates. Offsets are formatted: [row offset, col offset]
+        case 3:
+            offsets = [
+                [-1, 0],
+                [ 0,-1], [ 0, 0], [ 0, 1],
+                [ 1, 0]
+            ];
+            break;
+        // case 4:
+        //     offsets = [
+        //                  [-2,-1], [-2, 0],
+        //         [-1,-2], [-1,-1], [-1, 0], [-1, 1],
+        //         [ 0,-2], [ 0,-1], [ 0, 0], [ 0, 1],
+        //                  [ 1,-1], [ 1, 0]
+        //     ];
+        //     break;
+        case 5:
+            offsets = [
+                [-2, 0],
+                [-1,-1], [-1, 0], [-1, 1],
+                [ 0,-2], [ 0,-1], [ 0, 0], [ 0, 1], [ 0, 2],
+                [ 1,-1], [ 1, 0], [ 1, 1],
+                [ 2, 0]
+            ];
+            break;
+        default:
+            console.error('Unsupported circle size: ', size);
+            return;
+    }
+
+    offsets.forEach(offset => {
+        result.push(new Cell(primaryCell.row + offset[0], primaryCell.col + offset[1]));
+    });
+    return result;
 }
 
 function setupBrushSubMenu() {
