@@ -99,7 +99,7 @@ export function newBlankState() {
 // --------------------------------------------------------------------------- Frames API
 export {
     frames as frames, frameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame,
-    previousFrame, reorderFrames
+    previousFrame, reorderFrames, reverseFrames
 } from './frames.js'
 
 export function createFrame(index, data) {

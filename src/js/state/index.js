@@ -19,7 +19,7 @@ export {
 
     // frames
     frames, frameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame, previousFrame, createFrame,
-    duplicateFrames, deleteFrames, reorderFrames,
+    duplicateFrames, deleteFrames, reorderFrames, reverseFrames,
 
     // cels
     hasCharContent, iterateCelsForCurrentLayer, iterateCels, iterateCellsForCel,

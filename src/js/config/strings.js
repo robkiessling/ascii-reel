@@ -135,6 +135,8 @@ export const strings = {
     'frames.duplicate-frame.description': 'Duplicates the currently selected frame(s).',
     'frames.delete-frame.name': 'Delete Frame',
     'frames.delete-frame.description': 'Deletes the currently selected frame(s).',
+    'frames.reverse-frames.name': 'Reverse Frames',
+    'frames.reverse-frames.description': 'Reverses the order of the currently selected frames.',
     'frames.toggle-onion.name': 'Toggle Onion',
     'frames.toggle-onion.description': 'When enabled, the previous frame will be faintly displayed.',
     'frames.show-component.name': 'Maximize',

@@ -1,4 +1,5 @@
 import ArrayRange from "../../utils/arrays.js";
+import * as cels from "./cels.js";
 
 const DEFAULT_STATE = {
     frames: [],
@@ -97,4 +98,16 @@ export function deleteFrames(range) {
 
 export function reorderFrames(oldRange, newIndex) {
     state.frames.splice(newIndex, 0, ...state.frames.splice(oldRange.startIndex, oldRange.length));
+}
+
+export function reverseFrames(range) {
+    let start = range.startIndex;
+    let end = range.endIndex;
+
+    while (start < end) {
+        // Swap elements at start and end
+        [state.frames[start], state.frames[end]] = [state.frames[end], state.frames[start]];
+        start++;
+        end--;
+    }
 }

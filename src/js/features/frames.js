@@ -156,6 +156,20 @@ function setupActions() {
         enabled: () => state.frames() && state.frames().length > 1
     });
 
+    actions.registerAction('frames.reverse-frames', {
+        callback: () => {
+            const currentRange = state.frameRangeSelection();
+            state.reverseFrames(currentRange);
+
+            selectFrameRange(
+                currentRange,
+                state.frameIndex()
+            )
+        },
+        enabled: () => state.frameRangeSelection().length > 1,
+        icon: () => state.getConfig('frameOrientation') === 'bottom' ? 'ri-arrow-left-right-line' : 'ri-arrow-up-down-line',
+    });
+
     actions.registerAction('frames.toggle-onion', () => {
         state.setConfig('onion', !state.getConfig('onion'));
         refreshOnion(); // have to refresh this manually since just refreshing chars
@@ -172,13 +186,13 @@ function setupActions() {
     });
 
     actions.registerAction('frames.align-left', () => {
-        toggleComponent('frames', false);
+        if (state.getConfig('frameOrientation') === 'left') toggleComponent('frames', false);
         state.setConfig('frameOrientation', 'left');
         eventBus.emit(EVENTS.RESIZE.ALL)
     });
 
     actions.registerAction('frames.align-bottom', () => {
-        toggleComponent('frames', false);
+        if (state.getConfig('frameOrientation') === 'bottom') toggleComponent('frames', false);
         state.setConfig('frameOrientation', 'bottom');
         eventBus.emit(EVENTS.RESIZE.ALL)
     });
