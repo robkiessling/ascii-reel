@@ -6,11 +6,7 @@ import '../styles/app.scss'
 
 import { init as initClipboard } from "./io/clipboard.js"
 import { init as initEditor } from "./features/tools.js"
-import { init as initMainMenu } from "./features/menu/main.js";
-import { init as initFileMenu } from "./features/menu/file.js";
-import { init as initToolsMenu } from "./features/menu/tools.js";
-import { init as initViewMenu } from "./features/menu/view.js";
-import { init as initThemeMenu } from "./features/menu/theme.js";
+import { init as initMainMenu } from "./features/menu/index.js";
 import { init as initKeyboard } from "./io/keyboard.js";
 import { init as initActions } from "./io/actions.js";
 import { init as initPalette } from "./features/palette.js";
@@ -31,10 +27,6 @@ import {recalculateBGColors} from "./config/background.js";
 initClipboard();
 initEditor();
 initMainMenu();
-initFileMenu();
-initToolsMenu();
-initViewMenu();
-initThemeMenu();
 initKeyboard();
 initActions();
 initPalette();

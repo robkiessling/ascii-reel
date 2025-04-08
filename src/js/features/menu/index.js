@@ -8,17 +8,93 @@ import {hasActiveFile} from "../../storage/file_system.js";
 import tippy from "tippy.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 
+import {init as initFile} from "./file.js";
+import {init as initTheme} from "./theme.js";
+import {init as initTools} from "./tools.js";
+import {init as initView} from "./view.js";
+
+const SPACER = 'spacer';
+const LEFT_MENU_BAR = [
+    {
+        name: "File",
+        actions: [
+            'file.new',
+            'file.open',
+            SPACER,
+            'file.save-as',
+            'file.save-active',
+            SPACER,
+            'file.export-as',
+            'file.export-active',
+        ]
+    },
+    {
+        name: "Edit",
+        actions: [
+            'state.undo',
+            'state.redo',
+            SPACER,
+            'clipboard.cut',
+            'clipboard.copy',
+            'clipboard.paste',
+            'clipboard.paste-in-selection',
+            SPACER,
+            'selection.select-all'
+        ]
+    },
+    {
+        name: "View",
+        actions: [
+            'view.toggle-grid',
+            'view.grid-settings',
+            'view.toggle-whitespace',
+            SPACER,
+            'view.zoom-in',
+            'view.zoom-out',
+            'view.zoom-fit',
+        ]
+    },
+    {
+        name: "Tools",
+        actions: [
+            'settings.open-font-dialog',
+            'settings.open-background-dialog',
+            'settings.open-resize-dialog',
+            SPACER,
+            'preferences',
+            'keyboard-shortcuts'
+        ]
+    }
+]
+
+const RIGHT_MENU_BAR = [
+    {
+        nameClass: 'current-theme',
+        actions: [
+            'theme.system',
+            'theme.light',
+            'theme.dark'
+        ]
+    }
+]
+
 let leftMenu, rightMenu
 let $fileName, $activeFileIcon;
 
 export function init() {
-    leftMenu = new HorizontalMenu($('#left-menu'), {
+    // Build menu html before initializing various menus
+    leftMenu = new HorizontalMenu($('#left-menu'), LEFT_MENU_BAR, {
         onOpen: () => rightMenu.close()
     });
-    rightMenu = new HorizontalMenu($('#right-menu'), {
+    rightMenu = new HorizontalMenu($('#right-menu'), RIGHT_MENU_BAR, {
         onOpen: () => leftMenu.close(),
         rightAligned: true
     });
+
+    initFile();
+    initTheme();
+    initTools();
+    initView();
 
     setupFileName();
     setupActiveFileIcon();
@@ -108,13 +184,13 @@ function setupFileName() {
 class HorizontalMenu {
     static idSequence = 0;
 
-    constructor($menu, options = {}) {
+    constructor($menu, barData, options = {}) {
         this.id = ++HorizontalMenu.idSequence;
 
         this.$menu = $menu;
         this.options = options;
 
-        this._init();
+        this._init(barData);
     }
 
     close() {
@@ -152,7 +228,9 @@ class HorizontalMenu {
         });
     }
 
-    _init() {
+    _init(barData) {
+        this._buildHTML(barData);
+
         this.isOpen = false;
         this.$currentLi = null;
 
@@ -184,6 +262,25 @@ class HorizontalMenu {
         });
 
         this._refresh();
+    }
+
+    _buildHTML(barData) {
+        barData.forEach(menuData => {
+            const $li = $('<li>').appendTo(this.$menu);
+
+            $('<span>', {
+                class: menuData.nameClass,
+                html: menuData.name
+            }).appendTo($li);
+
+            const $ul = $('<ul>').appendTo($li);
+            menuData.actions.forEach(action => {
+                $('<li>', {
+                    class: action === SPACER ? 'break' : 'action-item',
+                    'data-action': action
+                }).appendTo($ul);
+            })
+        })
     }
 
     _refresh() {
