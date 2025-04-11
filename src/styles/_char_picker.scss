@@ -1,0 +1,147 @@
+@use 'variables' as *;
+
+$char-picker-size: 25rem;
+$char-picker-border-color: #000;
+$char-picker-char-width: 12px;
+$char-picker-char-height: $char-picker-char-width * calc(5 / 3);
+$char-picker-char-border-size: 2px;
+$char-picker-arrow-size: 12px;
+$char-picker-arrow-border-size: $char-picker-arrow-size + 2px;
+
+.char-well {
+  font-size: 1.5rem;
+  font-family: $font-monospace;
+  position: relative;
+  overflow: hidden;
+}
+.char-well.empty {
+  &::before {
+    content: "";
+    position: absolute;
+    width: calc(($standard-tool-size - 2 * $well-border-size) * 1.41);
+    height: 3px;
+    //background-color: var(--color-well-bg);
+    background-color: var(--color-font-white);
+    transform: rotate(-45deg);
+    transform-origin: center;
+    pointer-events: none;
+  }
+
+  //&:hover, &.picker-open {
+  //  &::before {
+  //    background-color: var(--color-well-hover);
+  //  }
+  //}
+}
+
+
+.char-picker-popup {
+  position: absolute;
+  width: $char-picker-size;
+  height: $char-picker-size;
+  z-index: 4;
+  background: var(--color-tooltip-bg);
+  border: 1px solid $char-picker-border-color;
+
+  box-shadow: 0 0.5rem 1rem 0 rgba(0,0,0,0.3);
+
+  font-family: $font-monospace;
+  padding: 0.5rem;
+
+  .char-list {
+    // https://github.com/Grsmto/simplebar/issues/473#issuecomment-653741529
+    overflow-y: auto;
+    height: 100%;
+
+    .simplebar-content {
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      margin-right: 0.75rem; // so chars don't overlap scrollbar
+    }
+  }
+
+  .section-title {
+    &:not(:first-child) {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-tooltip-accent);
+    }
+
+    text-align: center;
+    //font-weight: bold;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    //border-bottom: 1px solid var(--color-contrast);
+    //color: var(--color-primary)
+  }
+
+  .char-section {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    padding-top: 5px;
+    margin-top: 5px;
+
+    font-size: 16px;
+
+    .spacer {
+      width: $char-picker-char-width + 2 * $char-picker-char-border-size;
+      height: $char-picker-char-height + 2 * $char-picker-char-border-size;
+    }
+
+    .break {
+      flex-basis: 100%;
+    }
+
+    .char {
+      width: $char-picker-char-width;
+      height: $char-picker-char-height;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border: $char-picker-char-border-size solid transparent;
+      //border: $char-picker-char-border-size solid var(--color-tooltip-accent)
+
+      &.large {
+        font-size: 14px;
+        width: 5rem;
+        border: $char-picker-char-border-size solid var(--color-tooltip-accent)
+      }
+
+      &:hover {
+        border: $char-picker-char-border-size solid var(--color-primary);
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+/* Outer triangle (the border) */
+.char-picker-popup::before {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  left: -$char-picker-arrow-border-size;
+  width: 0;
+  height: 0;
+  border-top: $char-picker-arrow-border-size solid transparent;
+  border-bottom: $char-picker-arrow-border-size solid transparent;
+  border-right: $char-picker-arrow-border-size solid $char-picker-border-color;
+}
+
+/* Outer triangle */
+.char-picker-popup::after {
+  content: "";
+  position: absolute;
+  bottom: 8px;
+  left: -$char-picker-arrow-size;
+  width: 0;
+  height: 0;
+  border-top: $char-picker-arrow-size solid transparent;
+  border-bottom: $char-picker-arrow-size solid transparent;
+  border-right: $char-picker-arrow-size solid var(--color-tooltip-bg);
+}

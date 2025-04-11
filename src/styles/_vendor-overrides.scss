@@ -73,6 +73,60 @@
   }
 }
 
+// The default way popup:'right' works is: the popup opens to the right and then DOWN. I've changed this
+// so that the popup opens to the right and then UP.
+.picker_wrapper.popup.popup_right {
+  top: auto;
+  bottom: 0;
+  left: 160%;
+
+  .picker_arrow {
+    top: auto;
+    bottom: 0;
+
+    &::before, &::after {
+      top: auto;
+      bottom: 0;
+    }
+
+    &::before {
+      //transform: scaleY(-1)
+      transform: skew(135deg);
+      transform-origin: 0 0;
+    }
+  }
+}
+
+[data-theme="dark"] {
+  .picker_wrapper.popup {
+    background: var(--color-tooltip-bg);
+    border: 1px solid #000;
+
+    .picker_arrow::before {
+      border: 1px solid #000;
+      bottom: -1px;
+    }
+
+    .picker_arrow::before, .picker_arrow::after {
+      background: var(--color-tooltip-bg);
+    }
+  }
+
+  .picker_editor, .picker_hue, .picker_sl, .picker_alpha, .picker_sample {
+    //box-shadow: 0 0 0 1px #fff;
+  }
+}
+
+//[data-theme="light"] {
+//  .picker_wrapper.popup {
+//    background: var(--color-tooltip-bg);
+//
+//    .picker_arrow::before, .picker_arrow::after {
+//      background: var(--color-tooltip-bg);
+//    }
+//  }
+//}
+
 // ---------------------------------------------------------------------- remixicon (and other icons)
 
 .ri-fw {

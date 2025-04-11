@@ -15,9 +15,10 @@
 // App styles
 @use 'buttons';
 @use 'canvas';
+@use 'char_picker';
 @use 'common';
 @use 'dialogs';
-@use 'editor';
+@use 'tools';
 @use 'frames';
 @use 'full-page-divs';
 @use 'header';

@@ -36,7 +36,7 @@ export default class BackgroundPicker {
 
         this.colorPicker = new Picker({
             parent: $colorWell.get(0),
-            popup: 'top',
+            popup: 'right',
             color: DEFAULT_COLORED_BACKGROUND,
             onOpen: () => {
                 this.$types.filter(`[value="${COLORED}"]`).prop('checked', true)

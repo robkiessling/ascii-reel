@@ -21,7 +21,7 @@
     flex-direction: column;
   }
 
-  .standard-tool, .color-well {
+  .standard-tool, #current-color, #current-char {
     width: $standard-tool-size;
     height: $standard-tool-size;
     display: flex;
@@ -31,7 +31,6 @@
     border: 3px solid transparent;
     font-size: 2rem;
     box-sizing: border-box;
-    position: relative;
 
     &:hover:not(.selected) {
       cursor: pointer;
@@ -42,35 +41,39 @@
       border-color: var(--color-primary);
       background: var(--color-surface-hover);
     }
-
-    &[data-tool="draw-freeform-char"], &[data-tool="fill-char"] {
-      > .picked-char {
-        position: absolute;
-        bottom: 1px;
-        right: 4px;
-        font-size: 0.875rem;
-      }
-    }
-
-    &[data-tool="fill-char"] {
-      > .ri-paint-fill {
-        // clip off the droplet coming out of the paint bucket (it will be replaced with a char)
-        clip-path: polygon(0% 0%, 100% 0%, 100% 45%, 45% 100%, 0% 100%)
-      }
-    }
   }
 
-  #current-color {
-    border: 5px solid var(--color-well-bg);
+  #current-color, #current-char {
+    border: $well-border-size solid var(--color-well-bg);
 
-    // The following might be useful if the color well is hard to see in darkmode?
-    //box-shadow: inset 0 0 0 1px var(--color-font-white);
+    box-shadow: inset 0 0 0 1px var(--color-font-white);
 
     &:hover, &.picker-open {
-      border: 5px solid var(--color-well-hover);
+      border: $well-border-size solid var(--color-well-hover);
     }
   }
 }
+
+.standard-tool, .sub-tool {
+  position: relative;
+
+  &[data-tool="draw-freeform-char"], &[data-tool="fill-char"] {
+    > .picked-char {
+      position: absolute;
+      bottom: 1px;
+      right: 4px;
+      font-size: 0.875rem;
+    }
+  }
+
+  &[data-tool="fill-char"] {
+    > .ri-paint-fill {
+      // clip off the droplet coming out of the paint bucket (it will be replaced with a char)
+      clip-path: polygon(0% 0%, 100% 0%, 100% 45%, 45% 100%, 0% 100%)
+    }
+  }
+}
+
 
 .sub-tool-menu {
   position: absolute;

@@ -23,6 +23,7 @@ import {modifierAbbr} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Cell from "../geometry/cell.js";
 import AsciiEllipse from "../geometry/ascii/ascii_ellipse.js";
+import CharPicker from "../components/char_picker.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -98,7 +99,7 @@ function setupEventBus() {
                 startDrawing(cell, AsciiEllipse, { drawType: state.getConfig('drawEllipse').type });
                 break;
             case 'fill-char':
-                fillConnectedCells(cell, pickedChar, state.primaryColorIndex(), {
+                fillConnectedCells(cell, pickedChar(), state.primaryColorIndex(), {
                     diagonal: shouldModifyAction('tools.standard.fill-char.diagonal', mouseEvent),
                     charblind: false,
                     colorblind: shouldModifyAction('tools.standard.fill-char.colorblind', mouseEvent)
@@ -267,7 +268,8 @@ function setupSelectionTools() {
     registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
     registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
     registerAction('clone', () => selection.cloneToAllFrames());
-    registerAction('fill-color', () => paintSelection());
+    registerAction('fill-char', () => fillSelection(pickedChar(), undefined));
+    registerAction('fill-color', () => fillSelection(undefined, state.primaryColorIndex()));
     registerAction('resize', () => resizeToSelection());
     registerAction('close', () => selection.clear(), true, true, 'Esc');
 
@@ -298,11 +300,9 @@ function refreshSelectionTools() {
     });
 }
 
-function paintSelection() {
-    const primaryColorIndex = state.primaryColorIndex();
-
+function fillSelection(char, color) {
     selection.getSelectedCells().forEach(cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex);
+        state.setCurrentCelGlyph(cell.row, cell.col, char, color);
     });
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -431,7 +431,7 @@ function drawFreeformChar(currentCell, prevCell) {
     const primaryColorIndex = state.primaryColorIndex();
 
     freeformBrush(currentCell, prevCell, cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, pickedChar, primaryColorIndex)
+        state.setCurrentCelGlyph(cell.row, cell.col, pickedChar(), primaryColorIndex)
     })
 }
 
@@ -493,34 +493,6 @@ function eyedropper(cell, options) {
 }
 
 
-// -------------------------------------------------------------------------------- Char Picker
-
-let pickedChar, $pickedChar;
-
-function setupPickedChar() {
-    $pickedChar = $('.picked-char');
-    pickChar('A'); // initial value
-}
-
-export function pickChar(char) {
-    pickedChar = char;
-
-    // Making it possible to visualize characters that don't actually take up space
-    let visibleChar = char;
-    if (char === ' ') visibleChar = '␣';
-    if (char === '') visibleChar = '∅';
-
-    $pickedChar.html(visibleChar);
-}
-
-export function canPickChar() {
-    // return state.getConfig('tool') === 'draw-freeform-char' || state.getConfig('tool') === 'fill-char';
-
-    // Currently we are always updating the picked char, even if a char-related tool is not selected
-    return true;
-}
-
-
 // -------------------------------------------------------------------------------- Drawing
 
 function setupDrawSubMenus() {
@@ -552,7 +524,7 @@ export let drawingContent = null;
 function startDrawing(cell, klass, options = {}, recalculateArgs = []) {
     options = $.extend({
         colorIndex: state.primaryColorIndex(),
-        pickedChar: pickedChar
+        pickedChar: pickedChar()
     }, options);
 
     drawingContent = new klass(cell, options);
@@ -620,6 +592,41 @@ function finishMoveAll() {
     }
 }
 
+
+
+// -------------------------------------------------------------------------------- Char Picker
+
+let charPicker;
+
+function setupPickedChar() {
+    charPicker = new CharPicker($('#current-char'), {
+        initialValue: 'A',
+        onChange: (newValue) => {
+            // If you want the paint bucket char icon to change along with the selected char
+            // let visibleChar = newValue;
+            // if (visibleChar === ' ') visibleChar = '␣';
+            // if (visibleChar === '') visibleChar = '∅';
+            // $('.picked-char').html(visibleChar);
+        }
+    })
+}
+
+function pickedChar() {
+    return charPicker.value();
+}
+
+export function pickChar(char) {
+    charPicker.value(char);
+}
+
+export function canPickChar() {
+    // return state.getConfig('tool') === 'draw-freeform-char' || state.getConfig('tool') === 'fill-char';
+
+    // Currently we are always updating the picked char, even if a char-related tool is not selected
+    return true;
+}
+
+
 // -------------------------------------------------------------------------------- Color Picker
 
 let colorPicker, colorPickerTooltip, $addToPalette, addToPaletteTooltip;
@@ -640,7 +647,7 @@ function setupColorPicker() {
 
     colorPicker = new Picker({
         parent: $colorPicker.get(0),
-        popup: 'top',
+        popup: 'right',
         onOpen: () => {
             keyboard.toggleStandard('color-picker', true);
             colorPickerTooltip.disable();

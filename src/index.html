@@ -59,7 +59,7 @@
 
                             <div class="standard-tool" data-tool="fill-char">
                                 <span class="ri ri-fw ri-paint-fill"></span>
-                                <span class="picked-char"></span>
+                                <span class="picked-char">#</span>
                             </div>
                         </div>
                     </div>
@@ -121,7 +121,14 @@
                     <div class="spacer"></div>
                     <div class="standard-tool-row">
                         <div class="standard-tool-column">
-                            <div class="color-well" id="current-color"></div>
+                            <div id="current-char" class="char-well"></div>
+                        </div>
+                    </div>
+
+                    <div class="spacer"></div>
+                    <div class="standard-tool-row">
+                        <div class="standard-tool-column">
+                            <div id="current-color"></div>
                         </div>
                     </div>
 
@@ -132,6 +139,10 @@
                     <div class="sub-tool" data-tool="flip-v"><span class="ri ri-fw ri-flip-vertical-fill"></span></div>
                     <div class="sub-tool" data-tool="flip-h"><span class="ri ri-fw ri-flip-horizontal-fill"></span></div>
                     <div class="sub-tool" data-tool="clone"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
+                    <div class="sub-tool" data-tool="fill-char">
+                        <span class="ri ri-fw ri-paint-fill"></span>
+                        <span class="picked-char">#</span>
+                    </div>
                     <div class="sub-tool" data-tool="fill-color"><span class="ri ri-fw ri-paint-fill"></span></div>
                     <div class="sub-tool" data-tool="resize"><span class="ri ri-fw ri-crop-line"></span></div>
                     <div class="sub-tool" data-tool="close"><span class="ri ri-fw ri-close-line"></span></div>
