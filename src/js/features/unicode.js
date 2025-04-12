@@ -10,8 +10,9 @@ import {copyChar} from "../io/clipboard.js";
 import * as selection from "./selection.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {createDialog} from "../utils/dialogs.js";
 
-let $container, $charList, $actions, actionButtons;
+let $container, $charList, $actions, actionButtons, $unicodeDialog;
 
 export function init() {
     $container = $('#unicode-controller');
@@ -25,15 +26,33 @@ export function init() {
     $charList = $(charListSimpleBar.getContentElement());
 
     $charList.on('click', '.unicode-option', evt => {
-        const char = $(evt.currentTarget).data('unicode-char');
+        const char = $(evt.currentTarget).data('char');
 
-        copyChar(char);
-        selection.setSelectionToSingleChar(char, state.primaryColorIndex());
-        if (state.getConfig('tool') === 'draw-freeform-char') tools.pickChar(char);
+        // TODO Is this useful?
+        // copyChar(char);
+
+        selection.setSelectionToSingleChar(char, selection.cursorCell ? state.primaryColorIndex() : undefined);
+        tools.selectChar(char);
     });
 
+    setupSettings();
     setupActions();
     setupEventBus();
+}
+
+function setupSettings() {
+    $unicodeDialog = $("#unicode-dialog");
+
+    createDialog($unicodeDialog, () => {
+        state.importChars($unicodeDialog.find('#unicode-chars').val().split(''))
+        state.setUnicodeSetting('autoAddAscii', $unicodeDialog.find('.auto-add-ascii').is(':checked'));
+        state.setUnicodeSetting('autoAddUnicode', $unicodeDialog.find('.auto-add-unicode').is(':checked'));
+        $unicodeDialog.dialog('close');
+    }, 'Save', {
+        minWidth: 520,
+        minHeight: 400,
+        maxHeight: 720,
+    });
 }
 
 function setupActions() {
@@ -42,7 +61,14 @@ function setupActions() {
         refresh();
     })
 
-    actions.registerAction('unicode.information', () => {}); // No callback at the moment;
+    actions.registerAction('unicode.information', () => {}); // No callback; just displays information
+
+    actions.registerAction('unicode.open-settings', () => {
+        $unicodeDialog.find('#unicode-chars').val(state.sortedChars().join(''));
+        $unicodeDialog.find('.auto-add-ascii').prop('checked', state.getUnicodeSetting('autoAddAscii'));
+        $unicodeDialog.find('.auto-add-unicode').prop('checked', state.getUnicodeSetting('autoAddUnicode'))
+        $unicodeDialog.dialog('open');
+    });
 
     actionButtons = actions.setupActionButtons($container, {
         placement: 'top'
@@ -51,33 +77,29 @@ function setupActions() {
 
 function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
-}
 
-// Currently hardcoding the list of available unicode shortcuts.
-// This is currently structured into rows 8 chars long because that's how many fit on a row with our current styling.
-// TODO Maybe keep track of any additional unicode chars the user has pasted into the canvas and add them?
-const UNICODE_CHARS = [
-    '¯', '·', '¨', '°', '≡', '´', '¡', '÷',
-    '┬', '┐', '┤', '┘', '┴', '└', '├', '┌',
-    '│', '─', '┼', '«', '»', '║', '═', '╬',
-    '╦', '╗', '╣', '╝', '╩', '╚', '╠', '╔',
-    '░', '▒', '▓', '█', '▄', '▀', '■', '¦',
-    'ø', '£', 'Ø', '×', 'í', 'î', 'ì', '¿',
-    '¬', '¤',  '±', '‗', '¶', '§'
-]
+    eventBus.on(EVENTS.UNICODE.CHANGED, () => refresh())
+
+    eventBus.on(EVENTS.TOOLS.CHAR_CHANGED, () => refreshSelectedChar())
+}
 
 function refresh() {
     refreshComponentVisibility($container, 'unicode');
 
     $charList.empty();
 
-    UNICODE_CHARS.forEach((char, i) => {
-        $('<div></div>', {
-            class: `unicode-option`,
-            attr: { 'data-unicode-char': char },
-            html: char
-        }).appendTo($charList);
-    });
+    // Inserting Unicode option char <divs> as one string for improved performance
+    const charsString = state.sortedChars().map(char => {
+        return `<div class="unicode-option" data-char="${char}">${char}</div>`
+    }).join('');
+    $charList.append(charsString);
+
+    refreshSelectedChar();
 
     actionButtons.refreshContent();
+}
+
+function refreshSelectedChar() {
+    $charList.find('.unicode-option.selected').removeClass('selected');
+    $charList.find(`.unicode-option[data-char="${state.getConfig('primaryChar')}"]`).addClass('selected');
 }

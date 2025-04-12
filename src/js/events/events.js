@@ -108,6 +108,7 @@ export const EVENTS = {
     TOOLS: {
         COLOR_ADDED: 'tools:color-added',
         COLOR_CHANGED: 'tools:color-changed',
+        CHAR_CHANGED: 'tools:char-changed'
     },
     ACTIONS: {
         PERFORMED: 'actions:performed'
@@ -123,6 +124,9 @@ export const EVENTS = {
     },
     THEME: {
         CHANGED: 'theme:changed',
+    },
+    UNICODE: {
+        CHANGED: 'unicode:changed'
     }
 }
 

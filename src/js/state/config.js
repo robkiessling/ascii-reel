@@ -5,6 +5,9 @@ import {pick} from "../utils/objects.js";
 export const DEFAULT_STATE = {
     name: '',
     createdAt: undefined,
+    dimensions: [30, 15], // [numCols, numRows]
+    background: false,
+    font: 'monospace',
     fps: 6,
     isPreviewPlaying: true,
     grid: {
@@ -24,6 +27,7 @@ export const DEFAULT_STATE = {
     },
     tool: 'draw-freeform-ascii',
     primaryColor: DEFAULT_COLOR,
+    primaryChar: 'A',
     brush: {
         shape: 'square',
         size: 1
@@ -38,10 +42,6 @@ export const DEFAULT_STATE = {
         type: 'current-char-outline'
     },
     lastExportOptions: null,
-
-    font: 'monospace',
-    dimensions: [30, 15], // [numCols, numRows]
-    background: false,
     cursorPosition: {},
 }
 

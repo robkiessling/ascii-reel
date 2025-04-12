@@ -5,6 +5,7 @@ import {create2dArray, split1DArrayInto2D} from "../../utils/arrays.js";
 import {mod} from "../../utils/numbers.js";
 import {DEFAULT_COLOR} from "../palette.js";
 import pako from "pako";
+import {addToCache} from "../unicode.js";
 
 // -------------------------------------------------------------------------------- Cels
 // The term "cel" is short for "celluloid" https://en.wikipedia.org/wiki/Cel
@@ -132,7 +133,10 @@ export function iterateCellsForCel(cel, callback) {
 
 export function setCelGlyph(cel, row, col, char, color) {
     if (charInBounds(row, col)) {
-        if (char !== undefined) { cel.chars[row][col] = char; }
+        if (char !== undefined) {
+            addToCache(char);
+            cel.chars[row][col] = char;
+        }
         if (color !== undefined) { cel.colors[row][col] = color; }
     }
 }

@@ -178,15 +178,16 @@ export const strings = {
     'palette.open-settings.name': 'Palette Settings',
     'palette.open-settings.description': 'TODO',
 
-    'unicode.information.name': 'Character Reference',
-    'unicode.information.description': 'The following table provides quick access to several extended ASCII characters. ' +
-        'These characters are not technically ASCII, but can be useful if you are not strictly limited to the 128 ASCII characters.\n\n' +
-        'Click on a character below to copy it to your clipboard. ' +
-        'This can also have additional effects depending on your current tool:\n' +
-        '- Text Editor: Pastes the character once\n' +
-        '- Freeform Character Line: Sets the character\n' +
-        '- Character Fill: Sets the character\n' +
-        '- Selections: Fill selected areas with the character',
+    'unicode.information.name': 'Unicode Quick Reference',
+    'unicode.information.description': "Unicode characters aren't part of standard ASCII, but they're sometimes used in " +
+        "ASCII art for their unique shapes and styles. Any time you use a Unicode character in your drawing it'll automatically " +
+        'appear here for easy access and reuse.\n\n' +
+        'Click a character below to select it in the character picker. ' +
+        "This may also have additional effects depending on the tool you're using:\n" +
+        '• Text Editor: Pastes the character once\n' +
+        '• Selections: Fill selected area with the character',
+    'unicode.open-settings.name': 'Unicode Settings',
+    'unicode.open-settings.description': 'Opens unicode character settings.',
 
     'warnings.current-layer-not-visible': 'The current layer is not visible!'
 }

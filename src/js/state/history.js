@@ -2,6 +2,7 @@ import * as actions from "../io/actions.js";
 import {getStateForHistory as getConfigState, updateStateFromHistory as updateConfigState} from "./config.js";
 import {getState as getTimelineState, replaceState as replaceTimelineState} from "./timeline/index.js";
 import {getState as getPaletteState, replaceState as replacePaletteState} from "./palette.js";
+import {getState as getUnicodeState, replaceState as replaceUnicodeState} from "./unicode.js";
 import {eventBus, EVENTS} from '../events/events.js'
 
 
@@ -53,6 +54,7 @@ export function pushHistory(options = {}) {
             { config: getConfigState() },
             { timeline: getTimelineState() },
             { palette: getPaletteState() },
+            { unicode: getUnicodeState() },
         ),
         options: options,
     };
@@ -82,6 +84,7 @@ function loadStateFromHistory(newIndex, oldIndex) {
     updateConfigState($.extend(true, {}, newState.state.config));
     replaceTimelineState($.extend(true, {}, newState.state.timeline));
     replacePaletteState($.extend(true, {}, newState.state.palette));
+    replaceUnicodeState($.extend(true, {}, newState.state.unicode));
 
     // When emitting, include any options that were true in either the newState or the oldState:
     const trueOptions = Object.fromEntries(

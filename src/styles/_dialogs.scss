@@ -41,6 +41,17 @@
   }
 }
 
+#unicode-dialog {
+  textarea {
+    margin-top: 6px;
+    font-family: $font-monospace;
+    height: 10rem;
+    font-size: 1.25rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
 .unsaved-warning {
   display: flex;
   justify-content: space-between;

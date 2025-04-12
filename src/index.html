@@ -319,12 +319,15 @@
                     <div>
                         <button data-action="unicode.toggle-component" class="component-toggle-header show-when-minimized">
                             <span class="ri ri-fw ri-arrow-down-s-fill"></span>
-                            <span class="section-header no-select">Characters</span>
+                            <span class="section-header no-select">Unicode</span>
                         </button>
                     </div>
                     <div>
                         <button data-action="unicode.information">
                             <span class="ri ri-fw ri-information-line"></span>
+                        </button>
+                        <button data-action="unicode.open-settings">
+                            <span class="ri ri-fw ri-settings-5-line"></span>
                         </button>
                     </div>
                 </div>
@@ -526,6 +529,21 @@
         <label>
             Name<br>
             <input type="text" class="name highlight">
+        </label>
+    </div>
+
+    <div id="unicode-dialog" title="Unicode Reference" class="dialog-form">
+        <label>
+            Enter the characters you'd like to have available in the quick reference:
+            <textarea id="unicode-chars"></textarea>
+        </label>
+        <label>
+            <input type="checkbox" class="auto-add-unicode">
+            Automatically add new Unicode characters
+        </label>
+        <label>
+            <input type="checkbox" class="auto-add-ascii">
+            Automatically add new ASCII characters
         </label>
     </div>
 

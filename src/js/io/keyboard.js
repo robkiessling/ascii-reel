@@ -132,8 +132,8 @@ function handleBackspaceKey(char) {
         selection.empty();
     }
 
-    if (tools.canPickChar()) {
-        tools.pickChar('');
+    if (tools.canSelectChar()) {
+        tools.selectChar('');
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -188,8 +188,8 @@ function arrowKeyToDirection(arrowKey) {
 }
 
 function handleSingleChar(char, moveCursor = true) {
-    if (tools.canPickChar()) {
-        tools.pickChar(char);
+    if (tools.canSelectChar()) {
+        tools.selectChar(char);
     }
 
     selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCursor);

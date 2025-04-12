@@ -26,7 +26,7 @@ let state = {};
 
 export function load(newState = {}) {
     state = $.extend(true, {}, DEFAULT_STATE, newState);
-    importPalette(state.colors, true); // Re-import current colors array to ensure proper format and sorting
+    importPalette(state.colors || [], true); // Re-import current colors array to ensure proper format and sorting
 }
 export function replaceState(newState) {
     state = newState;

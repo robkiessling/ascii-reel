@@ -1,6 +1,7 @@
 import * as config from './config.js';
 import * as history from './history.js';
 import * as palette from './palette.js';
+import * as unicode from './unicode.js';
 import * as timeline from './timeline/index.js';
 
 import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "../storage/local_storage.js";
@@ -32,6 +33,9 @@ export {
     importPalette, COLOR_FORMAT, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
 } from './palette.js'
 export {
+    sortedChars, importChars, setUnicodeSetting, getUnicodeSetting
+} from './unicode.js'
+export {
     hasHistory, pushHistory, endHistoryModification, modifyHistory
 } from './history.js'
 
@@ -59,6 +63,7 @@ function load(data) {
     config.load(data.config);
     timeline.load(data.timeline);
     palette.load(data.palette);
+    unicode.load(data.unicode);
 
     timeline.validate();
     timeline.vacuumColorTable();
@@ -75,6 +80,7 @@ export function replaceState(newState) {
     config.replaceState(newState.config);
     timeline.replaceState(newState.timeline);
     palette.replaceState(newState.palette);
+    unicode.replaceState(newState.unicode);
 }
 
 export function stateForLocalStorage() {
@@ -83,6 +89,7 @@ export function stateForLocalStorage() {
         config: config.getState(),
         timeline: timeline.getState(),
         palette: palette.getState(),
+        unicode: unicode.getState(),
     }
 }
 export function loadFromLocalStorage(localStorageState) {
@@ -111,6 +118,7 @@ export function stateForDiskStorage() {
         version: CURRENT_VERSION,
         config: config.getState(),
         palette: palette.getState(),
+        unicode: unicode.getState(),
         timeline: timeline.encodeState()
     }
 }
