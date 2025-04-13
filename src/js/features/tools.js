@@ -24,6 +24,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import Cell from "../geometry/cell.js";
 import AsciiEllipse from "../geometry/ascii/ascii_ellipse.js";
 import CharPicker from "../components/char_picker.js";
+import {standardTip} from "../components/tooltips.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -35,11 +36,11 @@ export function init() {
 
     setupEventBus();
     setupStandardTools();
-    setupPickedChar();
     setupSelectionTools();
     setupDrawSubMenus();
     setupBrushSubMenu();
     setupColorPicker();
+    setupCharPicker();
 }
 
 function refresh() {
@@ -525,7 +526,7 @@ export let drawingContent = null;
 function startDrawing(cell, klass, options = {}, recalculateArgs = []) {
     options = $.extend({
         colorIndex: state.primaryColorIndex(),
-        pickedChar: state.getConfig('primaryChar')
+        char: state.getConfig('primaryChar')
     }, options);
 
     drawingContent = new klass(cell, options);
@@ -597,10 +598,16 @@ function finishMoveAll() {
 
 // -------------------------------------------------------------------------------- Char Picker
 
-let charPicker;
+let charPicker, charPickerTooltip;
 
-function setupPickedChar() {
-    charPicker = new CharPicker($('#current-char'), {
+function setupCharPicker() {
+    const $charPicker = $('#current-char');
+
+    charPickerTooltip = standardTip($charPicker, 'tools.standard.char-picker', {
+        placement: 'right',
+    })
+
+    charPicker = new CharPicker($charPicker, {
         initialValue: 'A',
         onChange: (newValue) => {
             state.setConfig('primaryChar', newValue);
@@ -612,6 +619,12 @@ function setupPickedChar() {
             // $('.picked-char').html(visibleChar);
 
             eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
+        },
+        onOpen: () => {
+            charPickerTooltip.disable();
+        },
+        onClose: () => {
+            charPickerTooltip.enable();
         }
     })
 }
@@ -639,11 +652,8 @@ export function selectColor(colorStr) {
 function setupColorPicker() {
     const $colorPicker = $('#current-color');
 
-    colorPickerTooltip = tippy($colorPicker.get(0), {
-        content: `<span class="title">Primary Color</span><br>` +
-            `<span>Click to change.</span>`,
+    colorPickerTooltip = standardTip($colorPicker, 'tools.standard.color-picker', {
         placement: 'right',
-        allowHTML: true,
     })
 
     colorPicker = new Picker({
@@ -656,14 +666,9 @@ function setupColorPicker() {
 
             if (!$addToPalette) {
                 $addToPalette = $colorPicker.find('.picker_sample');
-                addToPaletteTooltip = tippy($addToPalette.get(0), {
-                    content: () => {
-                        return `<span class="title">Add Color To Palette</span><br>` +
-                            `<span>This color is not currently saved to your palette. Click here if you want to add it.</span>`;
-                    },
+                addToPaletteTooltip = standardTip($addToPalette, 'tools.standard.color-picker-add', {
                     placement: 'right',
                     offset: [0, 20],
-                    allowHTML: true,
                 })
             }
 

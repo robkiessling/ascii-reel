@@ -12,6 +12,7 @@ import {init as initFile} from "./file.js";
 import {init as initTheme} from "./theme.js";
 import {init as initTools} from "./tools.js";
 import {init as initView} from "./view.js";
+import {standardTip} from "../../components/tooltips.js";
 
 const SPACER = 'spacer';
 const LEFT_MENU_BAR = [
@@ -111,11 +112,9 @@ function refresh() {
 
 function setupActiveFileIcon() {
     $activeFileIcon = $('#active-file-icon');
-    tippy($activeFileIcon.get(0), {
-        content: `<span class="title">${strings['file.active-file-info.name']}</span><br>` +
-            `<span>${strings['file.active-file-info.description']}</span>`,
+
+    standardTip($activeFileIcon, 'file.active-file-info', {
         placement: 'bottom',
-        allowHTML: true,
     })
 }
 

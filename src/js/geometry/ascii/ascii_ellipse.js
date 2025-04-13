@@ -19,7 +19,7 @@ export default class AsciiEllipse extends AsciiPolygon {
         this._origin = topLeft;
 
         const drawGlyph = (row, col) => {
-            this._glyphs.chars[row][col] = this.options.pickedChar;
+            this._glyphs.chars[row][col] = this.options.char;
             this._glyphs.colors[row][col] = this.options.colorIndex;
         }
 

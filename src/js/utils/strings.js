@@ -56,3 +56,8 @@ export function getFormattedDateTime(date = new Date()) {
 
     return `${year}-${month}-${day}-${hours}${minutes}`;
 }
+
+// Convert string chars like \n to HTML elements like <br>
+export function strToHTML(str) {
+    return str.replace(/\n/g, '<br/>');
+}

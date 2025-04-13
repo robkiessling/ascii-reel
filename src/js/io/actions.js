@@ -3,6 +3,7 @@ import {strings} from "../config/strings.js";
 import {isFunction}from "../utils/utilities.js";
 import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {strToHTML} from "../utils/strings.js";
 
 let actions;
 
@@ -222,7 +223,7 @@ function tooltipContentBuilder(getActionId) {
             });
         }
 
-        const htmlDescription = actionInfo.description ? actionInfo.description.replace(/\n/g, '<br/>') : '';
+        const htmlDescription = actionInfo.description ? strToHTML(actionInfo.description) : '';
 
         if (actionInfo.name) {
             return `<div class="header">` +

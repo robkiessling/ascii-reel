@@ -1,8 +1,12 @@
 import SimpleBar from "simplebar";
 import {isObject} from "../utils/objects.js";
 
-const EMPTY = { label: 'Empty', value: '' }
-const WHITESPACE = { label: 'Space', value: ' ' }
+
+const SPECIAL_CHARS = new Map(Object.entries({
+    '': { label: 'Empty', value: '', wellClass: 'ri-delete-back-2-line', large: true },
+    ' ': { label: 'Space', value: ' ', wellClass: 'ri-space' },
+}))
+const WELL_CLASSES = [...SPECIAL_CHARS.values()].map(special => special.wellClass).filter(Boolean);
 const ASCII_TITLE = 'ASCII';
 const UNICODE_TITLE = 'Unicode';
 const SPACER = '__spacer__'
@@ -11,7 +15,7 @@ const BREAK = '__break__'
 const CHARS = [
     ASCII_TITLE,
     [
-        EMPTY, SPACER, WHITESPACE
+        SPECIAL_CHARS.get(''), SPACER, SPECIAL_CHARS.get(' ')
     ],
     [
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
@@ -166,8 +170,15 @@ export default class CharPicker {
     value(newValue) {
         if (newValue !== undefined) {
             this._value = newValue;
-            this.$well.html(this._value);
-            this.$well.toggleClass('empty', this._value === '');
+
+            this.$popup.find('.char').removeClass('selected');
+            this.$popup.find(`.char[data-char="${this._value}"]`).addClass('selected');
+
+            const special = SPECIAL_CHARS.get(this._value);
+            this.$well.html(special && special.wellClass ? '' : this._value);
+            this.$well.removeClass(WELL_CLASSES.join(' '))
+            if (special && special.wellClass) this.$well.addClass(special.wellClass);
+
             if (this.options.onChange) this.options.onChange(newValue);
         }
 
