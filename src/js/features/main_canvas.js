@@ -13,11 +13,15 @@
 
 import CanvasControl from "../components/canvas_control/index.js";
 import * as selection from "./selection.js";
-import {BRUSH_TOOLS, hoveredCells} from "./tools.js";
+import {hoveredCells} from "./tools.js";
 import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
 import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
+
+
+const ONION_OPACITY = 0.3;
+const NON_CURRENT_LAYER_OPACITY = 0.5;
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
 let hoveredCell;
@@ -88,7 +92,10 @@ function redrawAll() {
 }
 
 function iterateCanvases(callback) {
-    [selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas].forEach(canvas => callback(canvas));
+    [
+        selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas
+    ].forEach(canvas => callback(canvas));
+
     redrawAll();
 }
 
@@ -118,11 +125,12 @@ export function hideCanvasMessage() {
     $canvasMessage.hide();
 }
 
+/**
+ * Draws the char-canvas which includes the background, multiple layers of chars, the onion, and the grid
+ */
 function redrawCharCanvas() {
-    charCanvas.clear();
-    charCanvas.drawBackground(state.getConfig('background'));
-
-    const glyphs = state.layeredGlyphs(state.currentFrame(), {
+    const layeredGlyphsOptions = {
+        applyLayerVisibility: true,
         movableContent: {
             glyphs: selection.movableContent,
             origin: selection.movableContent ? selection.getSelectedCellArea().topLeft : null
@@ -132,18 +140,78 @@ function redrawCharCanvas() {
             amount: tools.moveAllOffset,
             modifiers: tools.moveAllModifiers
         }
+    }
+
+    // Build glyphs for current layer
+    const currentGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend({}, layeredGlyphsOptions, {
+        layers: [state.currentLayer()],
+    }));
+
+    // If showing all layers, build glyphs for all-layers-below-current and all-layers-above-current.:
+    let belowGlyphs, aboveGlyphs;
+    if (!state.getConfig('lockLayerVisibility')) {
+        belowGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend({}, layeredGlyphsOptions, {
+            layers: state.layers().slice(0, state.layerIndex())
+        }));
+        aboveGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend({}, layeredGlyphsOptions, {
+            layers: state.layers().slice(state.layerIndex() + 1)
+        }));
+    }
+
+    // Begin rendering:
+    // 1. Clear and draw background
+    charCanvas.clear();
+    charCanvas.drawBackground(state.getConfig('background'));
+
+    // 2. If there are any layers below current layer, draw them at lower opacity
+    if (belowGlyphs) {
+        charCanvas.drawGlyphs(belowGlyphs, {
+            showWhitespace: state.getConfig('whitespace'),
+            opacity: NON_CURRENT_LAYER_OPACITY,
+            mask: (row, col) => {
+                // Don't include chars that will be covered by canvases above
+                if (currentGlyphs.chars[row][col] !== '') return false;
+                if (aboveGlyphs && aboveGlyphs.chars[row][col] !== '') return false;
+                return true;
+            }
+        });
+    }
+
+    // 3. Draw current layer at normal opacity
+    charCanvas.drawGlyphs(currentGlyphs, {
+        showWhitespace: state.getConfig('whitespace'),
+
+        // The following is commented out because I think it looks better if we DO draw current-layer chars, even if
+        // they will be covered by canvases above
+        // mask: state.getConfig('lockLayerVisibility') ? undefined : (row, col) => {
+        //     return aboveGlyphs.chars[row][col] === '';
+        // }
     });
 
-    charCanvas.drawGlyphs(glyphs, { showWhitespace: state.getConfig('whitespace') });
+    // 4. If there are any layers above current layer, draw them at lower opacity
+    if (aboveGlyphs) {
+        charCanvas.drawGlyphs(aboveGlyphs, {
+            showWhitespace: state.getConfig('whitespace'),
+            opacity: NON_CURRENT_LAYER_OPACITY
+        });
+    }
 
+    // 5. Draw onion at lower opacity
+    if (state.getConfig('onion')) {
+        // TODO Add an option in case user wants onion to apply to all layers?
+        const onionGlyphs = state.layeredGlyphs(state.previousFrame(), {
+            layers: [state.currentLayer()],
+        })
+        charCanvas.drawGlyphs(onionGlyphs, {
+            opacity: ONION_OPACITY
+        });
+    }
+
+    // 6. Draw grid
     const grid = state.getConfig('grid');
     if (grid.show) {
         if (grid.minorGridEnabled) charCanvas.drawGrid(1, grid.minorGridSpacing, getMinorGridColor());
         if (grid.majorGridEnabled) charCanvas.drawGrid(1, grid.majorGridSpacing, getMajorGridColor());
-    }
-
-    if (state.getConfig('onion')) {
-        charCanvas.drawOnion(state.layeredGlyphs(state.previousFrame()));
     }
 }
 

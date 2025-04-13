@@ -12,8 +12,6 @@ import {setupHoverEvents, setupPanEvents, setupRawMouseEvents, setupZoomEvents} 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 4;
 
-const ONION_OPACITY = 0.25;
-
 const WHITESPACE_CHAR = '·';
 const WHITESPACE_COLOR = 'rgba(192,192,192,0.5)'
 const WHITESPACE_COLOR_INDEX = -1;
@@ -128,7 +126,23 @@ export default class CanvasControl {
         }
     }
 
+    /**
+     * Draws the glyphs content onto the canvas
+     * @param {{chars: string[][], colors: number[][]}} glyphs - Content to draw
+     * @param {Object} options - Draw options
+     * @param {number} [options.opacity] - Opacity level to draw the content at
+     * @param {(row: number, col: number) => boolean} [options.mask] - Masking function. If provided, will be called
+     *   for every drawn cell. If the function returns false, the cell will not be drawn.
+     * @param {boolean} [options.showWhitespace] - If true, whitespace (' ' strings) will be depicted as a light grey dot
+     */
     drawGlyphs(glyphs, options = {}) {
+        let needsRestore = false;
+        if (options.opacity !== undefined) {
+            this.context.save();
+            this.context.globalAlpha = options.opacity;
+            needsRestore = true;
+        }
+
         // Convert individual glyphs into lines of text (of matching color), so we can call fillText as few times as possible
         let lines = [];
         let row, col, rowLength = glyphs.chars.length, colLength = glyphs.chars[0].length;
@@ -136,22 +150,23 @@ export default class CanvasControl {
         for (row = 0; row < rowLength; row++) {
             let line, colorIndex, char;
             for (col = 0; col < colLength; col++) {
+                char = glyphs.chars[row][col];
                 colorIndex = glyphs.colors[row][col];
-                if (options.showWhitespace && glyphs.chars[row][col] === ' ') colorIndex = WHITESPACE_COLOR_INDEX;
 
-                if (line && colorIndex !== line.colorIndex) {
-                    // Have to make new line
+                if (options.mask && !options.mask(row, col)) char = '';
+                if (options.showWhitespace && glyphs.chars[row][col] === ' ') {
+                    char = WHITESPACE_CHAR;
+                    colorIndex = WHITESPACE_COLOR_INDEX;
+                }
+                if (char === '') char = ' '; // Every char needs to have width
+
+                // If current char is different from current line's color (and is not whitespace), need to make a new line
+                if (line && colorIndex !== line.colorIndex && char !== ' ') {
                     lines.push(line);
                     line = null;
                 }
 
-                if (!line) {
-                    // Increase row by 0.5 so it is centered in cell
-                    line = { x: Cell.x(col), y: Cell.y(row + 0.5), colorIndex: colorIndex, text: '' }
-                }
-
-                char = glyphs.chars[row][col] === '' ? ' ' : glyphs.chars[row][col];
-                if (options.showWhitespace && glyphs.chars[row][col] === ' ') char = WHITESPACE_CHAR;
+                if (!line) line = { row, col, colorIndex: colorIndex, text: '' }
 
                 line.text += char;
             }
@@ -159,15 +174,12 @@ export default class CanvasControl {
         }
         lines.forEach(line => {
             this.context.fillStyle = line.colorIndex === WHITESPACE_COLOR_INDEX ? WHITESPACE_COLOR : colorStr(line.colorIndex)
-            this.context.fillText(line.text, line.x, line.y);
-        });
-    }
 
-    drawOnion(glyphs) {
-        this.context.save();
-        this.context.globalAlpha = ONION_OPACITY;
-        this.drawGlyphs(glyphs);
-        this.context.restore();
+            // For y value, increase row by 0.5 so it is centered in cell
+            this.context.fillText(line.text, Cell.x(line.col), Cell.y(line.row + 0.5));
+        });
+
+        if (needsRestore) this.context.restore();
     }
 
     highlightPolygons(polygons) {

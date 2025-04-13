@@ -48,9 +48,19 @@ export function currentLayer() {
 }
 
 export function createLayer(index, data) {
+    let max = 0;
+
+    state.layers.map(layer => layer.name).forEach(name => {
+        const match = name.match(/^Layer (\d+)$/);
+        if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > max) max = num;
+        }
+    });
+
     const layer = $.extend({}, LAYER_DEFAULTS, {
         id: ++idSequence,
-        name: `Layer ${state.layers.length + 1}`
+        name: `Layer ${max + 1}`
     }, data);
 
     state.layers.splice(index, 0, layer);

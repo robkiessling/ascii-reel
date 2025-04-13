@@ -1,6 +1,6 @@
 import Color from "@sphinxxxx/color-conversion";
 
-export const COLOR_FORMAT = 'hex'; // vanilla-picker format we ues to store colors
+export const COLOR_FORMAT = 'hex'; // vanilla-picker format we use to store colors
 
 const BLACK = 'rgba(0,0,0,1)';
 const WHITE = 'rgba(255,255,255,1)';

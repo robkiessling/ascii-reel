@@ -81,7 +81,7 @@ async function exportJson(options = {}, exportToActiveFile) {
         }
 
         state.frames().forEach((frame, i) => {
-            const glyphs = state.layeredGlyphs(frame, { showAllLayers: true, convertEmptyStrToSpace: true });
+            const glyphs = state.layeredGlyphs(frame, { convertEmptyStrToSpace: true });
             let jsonFrame;
             switch (options.frameStructure) {
                 case 'array-chars':
@@ -516,7 +516,7 @@ function lazyBlobPromise(generateBlob) {
 function exportableFrameString(frame, newLineChar, lineFormatter = function(line) { return line.text; }) {
     let image = '';
 
-    const glyphs = state.layeredGlyphs(frame, { showAllLayers: true, convertEmptyStrToSpace: true });
+    const glyphs = state.layeredGlyphs(frame, { convertEmptyStrToSpace: true });
     let row, col, rowLength = glyphs.chars.length, colLength = glyphs.chars[0].length;
 
     for (row = 0; row < rowLength; row++) {
@@ -603,7 +603,7 @@ function setupExportCanvas(options) {
 function renderExportFrame(frame, options) {
     exportCanvas.clear();
     if (options.background && state.getConfig('background')) exportCanvas.drawBackground(state.getConfig('background'));
-    exportCanvas.drawGlyphs(state.layeredGlyphs(frame, { showAllLayers: true }));
+    exportCanvas.drawGlyphs(state.layeredGlyphs(frame));
 }
 
 // Converts canvas.toBlob's asynchronous callback-based function into a Promise for await support

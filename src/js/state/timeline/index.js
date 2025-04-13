@@ -208,10 +208,26 @@ export function setCurrentCelGlyph(row, col, char, color) {
     cels.setCelGlyph(currentCel(), row, col, char, color);
 }
 
-// Aggregates all visible layers for a frame
+/**
+ * Aggregates multiple layers into a final result. Chars on lower layers will be blocked if higher layers also have
+ * a char at that spot.
+ * @param {Object} frame - The frame to process
+ * @param {Object} options Layering options:
+ * @param {Object[]} [options.layers] - Array of Layers to include. If not provided, all layers will be included. If
+ *   it is provided, the array will be further filtered to only include `visible` layers.
+ * @param {Object} [options.offset] - Object containing information about how much to offset all the content
+ * @param {Object} [options.movableContent] - If provided, the content will be drawn on top of the current layer
+ * @param {Object} [options.drawingContent] - If provided, the content will be drawn on top of the current layer
+ * @param {boolean} [options.convertEmptyStrToSpace] - If true, empty strings '' will be converted to spaces ' '
+ * @returns {{chars: string[][], colors: number[][]}|null} - Aggregated 2d arrays of chars and color indexes. Will be
+ *   null if the layers option is provided and there are no valid layers.
+ */
 export function layeredGlyphs(frame, options = {}) {
-    let chars = create2dArray(numRows(), numCols(), '');
-    let colors = create2dArray(numRows(), numCols(), 0);
+    const layerIds = options.layers ? new Set(options.layers.filter(layer => layer.visible).map(layer => layer.id)) : null;
+    if (layerIds && layerIds.size === 0) return null; // Short circuit
+
+    const chars = create2dArray(numRows(), numCols(), '');
+    const colors = create2dArray(numRows(), numCols(), 0);
 
     let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
 
@@ -219,26 +235,26 @@ export function layeredGlyphs(frame, options = {}) {
         layer = layers.layerAt(l);
         isCurrentLayer = l === layers.layerIndex();
 
-        if (options.showAllLayers || (getConfig('lockLayerVisibility') ? isCurrentLayer : layer.visible)) {
-            celChars = cels.cel(layer, frame).chars;
-            celColors = cels.cel(layer, frame).colors;
-            const offset = options.offset && options.offset.amount;
+        if (layerIds && !layerIds.has(layer.id)) continue;
 
-            for (celR = 0; celR < celChars.length; celR++) {
-                for (celC = 0; celC < celChars[celR].length; celC++) {
-                    if (celChars[celR][celC] === '') continue;
+        celChars = cels.cel(layer, frame).chars;
+        celColors = cels.cel(layer, frame).colors;
+        const offset = options.offset && options.offset.amount;
 
-                    r = celR;
-                    c = celC;
+        for (celR = 0; celR < celChars.length; celR++) {
+            for (celC = 0; celC < celChars[celR].length; celC++) {
+                if (celChars[celR][celC] === '') continue;
 
-                    if (offset && (options.offset.modifiers.allLayers || isCurrentLayer)) {
-                        ({ r, c } = cels.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap));
-                        if (!cels.charInBounds(r, c)) continue;
-                    }
+                r = celR;
+                c = celC;
 
-                    chars[r][c] = celChars[celR][celC];
-                    colors[r][c] = celColors[celR][celC];
+                if (offset && (options.offset.modifiers.allLayers || isCurrentLayer)) {
+                    ({ r, c } = cels.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap));
+                    if (!cels.charInBounds(r, c)) continue;
                 }
+
+                chars[r][c] = celChars[celR][celC];
+                colors[r][c] = celColors[celR][celC];
             }
         }
 
@@ -274,8 +290,5 @@ export function layeredGlyphs(frame, options = {}) {
         }
     }
 
-    return {
-        chars: chars,
-        colors: colors
-    };
+    return { chars, colors }
 }

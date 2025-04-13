@@ -60,16 +60,13 @@ export function resize() {
 function redraw() {
     previewCanvas.clear();
     previewCanvas.drawBackground(state.getConfig('background'));
-    previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], {
-        showAllLayers: true,
-        drawingContent: tools.drawingContent,
-    }));
+    previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { drawingContent: tools.drawingContent }));
     previewCanvas.drawWindow(getCurrentViewRect());
 
     if (popup && !popup.closed && popupCanvas) {
         popupCanvas.clear();
         popupCanvas.drawBackground(state.getConfig('background'));
-        popupCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { showAllLayers: true }));
+        popupCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex]));
     }
 }
 
