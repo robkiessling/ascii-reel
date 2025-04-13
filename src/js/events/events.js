@@ -120,6 +120,7 @@ export const EVENTS = {
         CHANGED: 'file:changed'
     },
     HISTORY: {
+        BEFORE_CHANGE: 'history:before-change',
         CHANGED: 'history:changed'
     },
     THEME: {

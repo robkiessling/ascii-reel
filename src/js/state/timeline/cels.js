@@ -372,7 +372,7 @@ export function decodeState(encodedState, celRowLength) {
 
 /**
  * Encode a 2d chars array into a compressed Base64 string.
- * @param {char[][]} chars - 2d array of chars. Note: The empty string "" is a valid char.
+ * @param {string[][]} chars - 2d array of chars. Note: The empty string "" is a valid char.
  * @returns {string} - Base 64 string representing the compressed 2d array
  */
 function encodeChars(chars) {
@@ -388,7 +388,7 @@ function encodeChars(chars) {
  * Decodes a compressed Base64 string into a 2d chars array
  * @param {string} base64String - Base 64 string representing the compressed 2d array (from encodeChars function)
  * @param {number} rowLength - How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
- * @returns {char[][]} - 2d array of chars
+ * @returns {string[][]} - 2d array of chars
  */
 function decodeChars(base64String, rowLength) {
     const compressed = Uint8Array.from(window.atob(base64String), c => c.charCodeAt(0)); // convert to compressed Uint8Array

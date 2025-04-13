@@ -85,7 +85,7 @@ export function copyChar(char) {
 
 /**
  * Pastes the glyph content in the selection
- * @param {{chars: char[][], colors: number[][]}} glyphs - Content to paste
+ * @param {{chars: string[][], colors: number[][]}} glyphs - Content to paste
  * @param {boolean} [limitToSelection=false] - If true, pasted text will only be pasted within the current selection bounds
  */
 function pasteGlyphs(glyphs, limitToSelection = false) {

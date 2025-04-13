@@ -50,9 +50,9 @@ export function split1DArrayInto2D(arr, rowLength) {
  * Translates 2d arrays of chars/colors as if they were positioned at a Cell.
  * Note: The callback rows/cols can be out of bounds
  *
- * @param {{chars: char[][], colors: number[][]}} glyphs - Content to translate
+ * @param {{chars: string[][], colors: number[][]}} glyphs - Content to translate
  * @param {Cell} cell - Position to move the top-left cell of the layout to
- * @param {(row: number, col: number, char: char, color: number) => void} callback - Callback function where row and col
+ * @param {(row: number, col: number, char: string, color: number) => void} callback - Callback function where row and col
  *   are the coordinates of the cell after translating
  */
 export function translateGlyphs(glyphs, cell, callback) {

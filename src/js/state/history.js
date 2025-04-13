@@ -78,6 +78,8 @@ export function pushHistory(options = {}) {
 }
 
 function loadStateFromHistory(newIndex, oldIndex) {
+    eventBus.emit(EVENTS.HISTORY.BEFORE_CHANGE);
+
     const newState = history[newIndex];
     const oldState = history[oldIndex];
 

@@ -251,6 +251,12 @@ function setupEventBus() {
         clearCaches()
     }, 1) // Higher than default priority because this must happen before other callbacks
 
+    // If we're in the middle of moving content and the user presses undo, it can be jarring. So we always finish the
+    // current move and then undo it.
+    eventBus.on(EVENTS.HISTORY.BEFORE_CHANGE, () => {
+        if (movableContent) finishMovingContent()
+    })
+
     let moveStep, hasMoved;
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
@@ -420,6 +426,9 @@ export function startMovingContent() {
 
 export function finishMovingContent() {
     translateGlyphs(movableContent, getSelectedCellArea().topLeft, (r, c, char, color) => {
+        // Moving empty cells does not override existing cells
+        if (char === '') return;
+
         state.setCurrentCelGlyph(r, c, char, color);
     });
 

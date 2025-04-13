@@ -5,7 +5,7 @@ import AsciiPolygon from "./ascii_polygon.js";
  * @param {[number, number]} repeatCoord - The row/col offset where the template should start looping (i.e. start its
  *   next character). This cannot simply be calculated from looking at the chars array -- it depends on the shape of the
  *   line. Note: Since rows go top to bottom, a negative row offset indicates upward movement.
- * @param {char[][]} chars - A 2d array of chars to represent the line.
+ * @param {string[][]} chars - A 2d array of chars to represent the line.
  */
 class LineTemplate {
     constructor(repeatCoord, chars) {
@@ -22,7 +22,7 @@ class LineTemplate {
     /**
      * Creates a path for this template, repeating the template over and over until the length is reached.
      * @param {number} length - How many chars long the path should be
-     * @param {(glyphRow: number, glyphCol: number, char: char) => void} callback - Function that is called for each
+     * @param {(glyphRow: number, glyphCol: number, char: string) => void} callback - Function that is called for each
      *   character in the line. Function parameters:
      *   - glyphRow: The row to place the char in the final glyphs array. This value can be NEGATIVE, which means it
      *     should precede row 0.
@@ -64,7 +64,7 @@ class LineTemplate {
      * Then the rows will be iterated in reverse. That way, row index 3 (the bottom row) will be first, followed by
      * row index 2 (second to bottom row), etc.
      *
-     * @param {(char: char, glyphRow: number, glyphCol: number) => void} callback - A callback called for each character
+     * @param {(char: string, glyphRow: number, glyphCol: number) => void} callback - A callback called for each character
      *   in the template (including spaces). Function parameters:
      *   - char: The char in the template
      *   - glyphRow: The row index to place the char in the final drawn array. Can be negative to indicate it should
