@@ -51,7 +51,6 @@ function refresh() {
     $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
 
     refreshSelectionTools();
-
     subMenus.forEach(subMenu => subMenu.refresh());
 }
 
@@ -79,26 +78,25 @@ function setupEventBus() {
         prevCell = undefined;
 
         switch(tool) {
-            case 'draw-freeform-char':
-                drawFreeformChar(cell);
-                break;
             case 'eraser':
                 erase(cell);
                 break;
             case 'paint-brush':
                 paintBrush(cell);
                 break;
+            case 'draw-freeform':
+                state.getConfig('drawTypes')[tool] === 'current-char' ?
+                    drawFreeformChar(cell) :
+                    startDrawing(cell, AsciiFreeform, { canvas: canvasControl }, [mouseEvent])
+                break;
             case 'draw-rect':
-                startDrawing(cell, AsciiRect, { drawType: state.getConfig('drawRect').type });
+                startDrawing(cell, AsciiRect);
                 break;
             case 'draw-line':
-                startDrawing(cell, AsciiLine, { drawType: state.getConfig('drawLine').type });
-                break;
-            case 'draw-freeform-ascii':
-                startDrawing(cell, AsciiFreeform, { canvas: canvasControl }, [mouseEvent]);
+                startDrawing(cell, AsciiLine);
                 break;
             case 'draw-ellipse':
-                startDrawing(cell, AsciiEllipse, { drawType: state.getConfig('drawEllipse').type });
+                startDrawing(cell, AsciiEllipse);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
@@ -150,23 +148,25 @@ function setupEventBus() {
         const isNewCell = !prevCell || !prevCell.equals(cell);
 
         switch(tool) {
-            case 'draw-freeform-char':
-                if (isNewCell) drawFreeformChar(cell, prevCell);
-                break;
             case 'eraser':
                 if (isNewCell) erase(cell, prevCell);
                 break;
             case 'paint-brush':
                 if (isNewCell) paintBrush(cell, prevCell);
                 break;
+            case 'draw-freeform':
+                if (state.getConfig('drawTypes')[tool] === 'current-char') {
+                    if (isNewCell) drawFreeformChar(cell, prevCell);
+                }
+                else {
+                    // Intentionally not checking if isNewCell; we update the char based on pixels not cells
+                    updateDrawing(cell, [mouseEvent]);
+                }
+                break;
             case 'draw-rect':
             case 'draw-line':
             case 'draw-ellipse':
                 if (isNewCell) updateDrawing(cell);
-                break;
-            case 'draw-freeform-ascii':
-                // Intentionally not checking if isNewCell; we update the char based on pixels not cells
-                updateDrawing(cell, [mouseEvent]);
                 break;
             case 'move-all':
                 if (isNewCell) updateMoveAll(cell, isNewCell);
@@ -185,14 +185,17 @@ function setupEventBus() {
         const tool = state.getConfig('tool')
 
         switch(tool) {
-            case 'draw-freeform-char':
             case 'eraser':
             case 'paint-brush':
                 state.pushHistory();
                 break;
+            case 'draw-freeform':
+                state.getConfig('drawTypes')[tool] === 'current-char' ?
+                    state.pushHistory() :
+                    finishDrawing()
+                break;
             case 'draw-rect':
             case 'draw-line':
-            case 'draw-freeform-ascii':
             case 'draw-ellipse':
                 finishDrawing();
                 break;
@@ -321,11 +324,23 @@ function resizeToSelection() {
 
 // -------------------------------------------------------------------------------- Brushing shapes / painting
 
-export const BRUSH_TOOLS = ['draw-freeform-char', 'eraser', 'paint-brush'];
+const BRUSH_TOOLS = ['draw-freeform', 'eraser', 'paint-brush'];
+
+function brushEnabled() {
+    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return false;
+
+    switch(state.getConfig('tool')) {
+        case 'draw-freeform':
+            // Brush is only used when drawing current-char (not other types of freeform drawings)
+            return state.getConfig('drawTypes')['draw-freeform'] === 'current-char';
+        default:
+            return true;
+    }
+}
 
 export function hoveredCells(primaryCell) {
     if (!primaryCell) return [];
-    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return [primaryCell];
+    if (!brushEnabled()) return [primaryCell];
     const { shape, size } = state.getConfig('brush');
 
     switch(shape) {
@@ -396,10 +411,14 @@ function circleBrushCells(primaryCell, size) {
 }
 
 function setupBrushSubMenu() {
-    const subMenu = new ToolSubMenu({
-        $menu: $('#brush-shapes'),
-        configKey: 'brush',
+    const subMenu = new ToolSubMenu($('#brush-shapes'), {
         visible: () => BRUSH_TOOLS.includes(state.getConfig('tool')),
+        disabled: () => !brushEnabled(),
+        getValue: () => state.getConfig('brush'),
+        onChange: (newValue) => {
+            state.setConfig('brush', newValue)
+            refresh();
+        },
         tooltipContent: $tool => {
             const shape = $tool.data('shape');
             const size = $tool.data('size');
@@ -498,18 +517,22 @@ function eyedropper(cell, options) {
 // -------------------------------------------------------------------------------- Drawing
 
 function setupDrawSubMenus() {
-    setupDrawSubMenu('drawRect', 'draw-rect');
-    setupDrawSubMenu('drawLine', 'draw-line');
-    setupDrawSubMenu('drawEllipse', 'draw-ellipse');
+    setupDrawSubMenu('draw-freeform');
+    setupDrawSubMenu('draw-rect');
+    setupDrawSubMenu('draw-line');
+    setupDrawSubMenu('draw-ellipse');
 }
 
-function setupDrawSubMenu(configKey, toolKey) {
+function setupDrawSubMenu(toolKey) {
     const typesKey = `${toolKey}-types`; // E.g. 'draw-rect-types', 'draw-line-types'
 
-    const subMenu = new ToolSubMenu({
-        $menu: $(`#${typesKey}`),
-        configKey: configKey,
+    const subMenu = new ToolSubMenu($(`#${typesKey}`), {
         visible: () => state.getConfig('tool') === toolKey,
+        getValue: () => ({ type: state.getConfig('drawTypes')[toolKey] }),
+        onChange: (newValue) => {
+            state.updateDrawType(toolKey, newValue.type);
+            refresh();
+        },
         tooltipContent: $tool => {
             const type = $tool.data('type');
             const name = strings[`tools.${typesKey}.${type}.name`];
@@ -525,6 +548,7 @@ export let drawingContent = null;
 
 function startDrawing(cell, klass, options = {}, recalculateArgs = []) {
     options = $.extend({
+        drawType: state.getConfig('drawTypes')[state.getConfig('tool')],
         colorIndex: state.primaryColorIndex(),
         char: state.getConfig('primaryChar')
     }, options);
@@ -634,7 +658,7 @@ export function selectChar(char) {
 }
 
 export function canSelectChar() {
-    // return state.getConfig('tool') === 'draw-freeform-char' || state.getConfig('tool') === 'fill-char';
+    // return state.getConfig('tool') === 'draw-freeform' || state.getConfig('tool') === 'fill-char';
 
     // Currently we are always updating the picked char, even if a char-related tool is not selected
     return true;
@@ -733,10 +757,10 @@ function cursorStyle(mouseEvent, cell, tool) {
         case 'selection-lasso':
         case 'selection-wand':
             return selection.isSelectedCell(cell) ? 'grab' : 'cell';
+        case 'draw-freeform':
         case 'draw-rect':
         case 'draw-line':
-        case 'draw-freeform-ascii':
-        case 'draw-freeform-char':
+        case 'draw-ellipse':
         case 'fill-char':
         case 'eraser':
         case 'paint-brush':
@@ -754,29 +778,25 @@ function cursorStyle(mouseEvent, cell, tool) {
 
 
 class ToolSubMenu {
-    constructor(options = {}) {
-        this.$menu = options.$menu;
+    /**
+     * @param $menu - jQuery element for the menu
+     * @param {Object} options - Menu options
+     * @param {(Object) => void} options.onChange - Callback when sub-tool changes
+     * @param {() => Object} options.getValue - Callback to get the current value of the submenu
+     * @param {() => boolean} options.visible - Callback that controls whether the submenu is visible
+     * @param {() => boolean} [options.disabled] - Callback that controls whether the submenu is disabled. Default: always enabled.
+     * @param {function} [options.tooltipContent] - Tooltip content callback. Passed the current $tool, returns tooltip content.
+     */
+    constructor($menu, options = {}) {
+        this.$menu = $menu;
         this.options = options;
-        this.setup();
+        this._init();
     }
 
-    get state() {
-        return state.getConfig(this.options.configKey);
-    }
-
-    set state(newState) {
-        state.setConfig(this.options.configKey, newState);
-    }
-
-    setup() {
+    _init() {
         this.$menu.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
-            const $tool = $(evt.currentTarget);
-            const newState = {};
-            Object.keys(this.state).forEach(dataAttr => {
-                newState[dataAttr] = $tool.data(dataAttr);
-            })
-            this.state = newState;
-            this.refresh();
+            this.options.onChange($(evt.currentTarget).data());
+            // this.refresh(); // Don't need to refresh here; entire tools panel will refresh
         });
 
         if (this.options.tooltipContent) {
@@ -792,10 +812,11 @@ class ToolSubMenu {
     refresh() {
         let show = this.options.visible();
         this.$menu.toggle(show);
+        this.$menu.toggleClass('disabled', !!this.options.disabled && this.options.disabled())
 
         if (show) {
             let str = '';
-            for (const [key, value] of Object.entries(this.state)) {
+            for (const [key, value] of Object.entries(this.options.getValue())) {
                 str += `[data-${key}="${value}"]`;
             }
             this.$menu.find('.sub-tool').toggleClass('active', false);

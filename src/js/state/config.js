@@ -25,21 +25,18 @@ export const DEFAULT_STATE = {
         layers: true,
         palette: true
     },
-    tool: 'draw-freeform-ascii',
+    tool: 'draw-freeform',
     primaryColor: DEFAULT_COLOR,
     primaryChar: 'A',
     brush: {
         shape: 'square',
         size: 1
     },
-    drawRect: {
-        type: 'printable-ascii-1'
-    },
-    drawLine: {
-        type: 'basic'
-    },
-    drawEllipse: {
-        type: 'current-char-outline'
+    drawTypes: {
+        'draw-freeform': 'ascii-generated',
+        'draw-rect': 'printable-ascii-1',
+        'draw-line': 'basic',
+        'draw-ellipse': 'current-char-outline',
     },
     lastExportOptions: null,
     cursorPosition: {},
@@ -109,4 +106,8 @@ export function getName(includeDefaultTimestamp = true) {
 
 export function isMinimized(componentKey) {
     return !!(getConfig('minimizedComponents') || {})[componentKey];
+}
+
+export function updateDrawType(toolKey, newType) {
+    state.drawTypes[toolKey] = newType;
 }

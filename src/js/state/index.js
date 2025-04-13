@@ -10,7 +10,7 @@ import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.
 import {eventBus, EVENTS} from "../events/events.js";
 
 export {
-    numRows, numCols, setConfig, getConfig, fontFamily, getName, isMinimized,
+    numRows, numCols, setConfig, getConfig, fontFamily, getName, isMinimized, updateDrawType,
     DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {

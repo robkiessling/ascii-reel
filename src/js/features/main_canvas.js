@@ -18,6 +18,7 @@ import * as state from "../state/index.js";
 import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
 import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {currentFrame} from "../state/index.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -130,12 +131,6 @@ export function hideCanvasMessage() {
  */
 function redrawCharCanvas() {
     const layeredGlyphsOptions = {
-        applyLayerVisibility: true,
-        movableContent: {
-            glyphs: selection.movableContent,
-            origin: selection.movableContent ? selection.getSelectedCellArea().topLeft : null
-        },
-        drawingContent: tools.drawingContent,
         offset: {
             amount: tools.moveAllOffset,
             modifiers: tools.moveAllModifiers
@@ -145,6 +140,11 @@ function redrawCharCanvas() {
     // Build glyphs for current layer
     const currentGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend({}, layeredGlyphsOptions, {
         layers: [state.currentLayer()],
+        movableContent: {
+            glyphs: selection.movableContent,
+            origin: selection.movableContent ? selection.getSelectedCellArea().topLeft : null
+        },
+        drawingContent: tools.drawingContent,
     }));
 
     // If showing all layers, build glyphs for all-layers-below-current and all-layers-above-current.:
@@ -197,7 +197,7 @@ function redrawCharCanvas() {
     }
 
     // 5. Draw onion at lower opacity
-    if (state.getConfig('onion')) {
+    if (state.getConfig('onion') && state.previousFrame() !== currentFrame()) {
         // TODO Add an option in case user wants onion to apply to all layers?
         const onionGlyphs = state.layeredGlyphs(state.previousFrame(), {
             layers: [state.currentLayer()],
