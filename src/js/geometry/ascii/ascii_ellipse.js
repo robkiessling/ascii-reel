@@ -36,9 +36,11 @@ export default class AsciiEllipse extends AsciiPolygon {
         switch (this.options.drawType) {
             case 'current-char-outline':
                 drawEllipseSymmetric(area, { filled: false }, drawGlyph)
+                // drawEllipseFuzzy(area, { thickness: 1, filled: false }, drawGlyph)
                 break;
             case 'current-char-filled':
                 drawEllipseSymmetric(area, { filled: true }, drawGlyph)
+                // drawEllipseFuzzy(area, { thickness: 1, filled: true }, drawGlyph)
                 break;
             case 'ascii-outline':
             case 'ascii-filled':
@@ -47,9 +49,6 @@ export default class AsciiEllipse extends AsciiPolygon {
             default:
                 console.warn(`unknown drawType: ${this.options.drawType}`);
         }
-
-        // drawEllipseFuzzy(area, { thickness: 2, filled: false }, drawGlyph)
-        // drawEllipseSymmetric(area, { filled: true }, drawGlyph)
     }
 }
 
@@ -71,10 +70,10 @@ function getEllipseAttributes(area) {
  *   ((x - cx) / rx)² + ((y - cy) / ry)² = 1        where cx/cy = x/y coord of the ellipse center,
  *                                                        rx/ry = horizontal/vertical ellipse radius
  *
- * and fills in any point where the result is close enough to 1.0, using a given epsilon.
+ * and fills in any point where the result is close enough to 1.0 using a given epsilon.
  *
- * Note: even if the provided thickness option is 1, this may result in outlines that are 0–2 cells thick depending on
- * grid resolution and epsilon.
+ * Note: using a thickness option of 1 does not guarantee the line will be one cell thick all the way around; there
+ *       will likely be parts that are 0 or 2 cells thick depending on the grid resolution and ellipse size.
  *
  * @param {CellArea} area - CellArea representing the bounding box of the ellipse
  * @param {Object} options - Draw options
@@ -120,6 +119,7 @@ function drawEllipseFuzzy(area, options, callback) {
  * variation in thickness.
  *
  * See: https://medium.com/@trey.tomes/the-midpoint-ellipse-algorithm-d3c7442866da
+ *  and https://www.gpp7.org.in/wp-content/uploads/sites/22/2020/04/file_5e95c769ba7ed.pdf
  *
  * @param {CellArea} area - CellArea representing the bounding box of the ellipse
  * @param {Object} options - Draw options
@@ -129,9 +129,9 @@ function drawEllipseFuzzy(area, options, callback) {
 function drawEllipseSymmetric(area, options, callback) {
     let { rx, ry, cx, cy } = getEllipseAttributes(area);
 
-    // If the ellipse has an even number of rows/cols, then ry/rx will be a fraction (e.g. 3.5) instead of a whole
-    // number. Since we are plotting on discrete 2d array, we need everything to be whole numbers. As a solution, I am
-    // flooring the ry/rx and then manually padding the ellipse with an extra row/col to make up the lost halves.
+    // If the ellipse has an even number of rows/cols, then ry & rx will be fractions (e.g. 3.5) instead of whole
+    // numbers. Since we are plotting on discrete 2d array, we need everything to be whole numbers. As a solution, I am
+    // flooring the ry & rx and then manually padding the ellipse with an extra row/col to make up the lost halves.
     let xPad = 0, yPad = 0;
     if (!Number.isInteger(rx)) {
         xPad = 1;

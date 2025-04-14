@@ -1,4 +1,6 @@
 import AsciiPolygon from "./ascii_polygon.js";
+import {create2dArray} from "../../utils/arrays.js";
+import Cell from "../cell.js";
 
 /**
  * A short segment of a line, used to draw a line of any length by repeating the template over and over.
@@ -302,6 +304,12 @@ function isHorizontalSlope(slope) {
  */
 export default class AsciiLine extends AsciiPolygon {
     recalculate() {
+        // Short-circuit if using single char
+        if (this.options.drawType === 'current-char') {
+            this._singleCharLine();
+            return;
+        }
+
         // Short-circuit if line is only one single character long
         if (this.start.equals(this.end)) {
             this._glyphs = { chars: [['-']], colors: [[this.options.colorIndex]] }
@@ -323,6 +331,22 @@ export default class AsciiLine extends AsciiPolygon {
         this._glyphs.colors = this._convertObjToArray(this._glyphs.colors);
 
         this._recalculateOrigin(rise, run);
+    }
+
+    _singleCharLine() {
+        const numRows = Math.abs(this.start.row - this.end.row) + 1
+        const numCols = Math.abs(this.start.col - this.end.col) + 1
+        this._origin = new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
+        this._glyphs = {
+            chars: create2dArray(numRows, numCols),
+            colors: create2dArray(numRows, numCols)
+        }
+        this.start.lineTo(this.end).forEach(cell => {
+            const relativeRow = cell.row - this._origin.row;
+            const relativeCol = cell.col - this._origin.col;
+            this._glyphs.chars[relativeRow][relativeCol] = this.options.char;
+            this._glyphs.colors[relativeRow][relativeCol] = this.options.colorIndex;
+        })
     }
 
     _setGlyph(row, col, char, color) {

@@ -41,6 +41,18 @@ const DRAW_RECT_CHARS = {
     }
 }
 
+function createSingleCharSheet(char, filled = false) {
+    return {
+        TOP_LEFT: char,
+        TOP_RIGHT: char,
+        BOTTOM_LEFT: char,
+        BOTTOM_RIGHT: char,
+        HORIZONTAL: char,
+        VERTICAL: char,
+        FILL: filled ? char : undefined
+    }
+}
+
 /**
  * Handles drawing a rect out of ASCII characters. This is different than just making a rect outline selection and
  * pressing a keyboard character to fill the line; that would create a rect of all the same character whereas this
@@ -57,7 +69,16 @@ export default class AsciiRect extends AsciiPolygon {
             colors: create2dArray(numRows, numCols)
         }
 
-        const charSheet = DRAW_RECT_CHARS[this.options.drawType];
+        let charSheet;
+        switch (this.options.drawType) {
+            case 'current-char-outline':
+            case 'current-char-filled':
+                charSheet = createSingleCharSheet(this.options.char, this.options.drawType === 'current-char-filled');
+                break;
+            default:
+                charSheet = DRAW_RECT_CHARS[this.options.drawType];
+        }
+
         if (charSheet === undefined) {
             console.error("Invalid char sheet for: ", this.options.drawType)
             return;
@@ -85,7 +106,9 @@ export default class AsciiRect extends AsciiPolygon {
                     else if (row === lastRow) { char = charSheet.HORIZONTAL; }
                 }
 
-                if (char) {
+                if (charSheet.FILL !== undefined) char = charSheet.FILL;
+
+                if (char !== undefined) {
                     this._glyphs.chars[row][col] = char;
                     this._glyphs.colors[row][col] = this.options.colorIndex;
                 }

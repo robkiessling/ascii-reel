@@ -25,6 +25,7 @@ import Cell from "../geometry/cell.js";
 import AsciiEllipse from "../geometry/ascii/ascii_ellipse.js";
 import CharPicker from "../components/char_picker.js";
 import {standardTip} from "../components/tooltips.js";
+import {getIconHTML} from "../config/icons.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -235,11 +236,17 @@ function setupStandardTools() {
         actions.callAction(actionIdForStandardTool($element.data('tool')));
     });
 
-    const $leftTools = $standardTools.find('.standard-tool-column:first-child .standard-tool').toArray();
-    const $rightTools = $standardTools.find('.standard-tool-column:last-child .standard-tool').toArray();
+    const $leftTools = $standardTools.find('.standard-tool-column:first-child:not(:last-child) .standard-tool').toArray();
+    const $centerTools = $standardTools.find('.standard-tool-column:first-child:last-child .standard-tool').toArray();
+    const $rightTools = $standardTools.find('.standard-tool-column:last-child:not(:first-child) .standard-tool').toArray();
     const TIP_X_OFFSET = 15; // Move the tip a bit to the right so it's over the canvas
+    const STANDARD_TOOL_SIZE = 42; // matches $standard-tool-size
+    const MARGIN_SIZE = 1;
     setupTooltips($leftTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: [0, TIP_X_OFFSET + 43] // 42px for the button to the right ($standard-tool-size), 1px for margin
+        offset: [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE + MARGIN_SIZE]
+    });
+    setupTooltips($centerTools, element => actionIdForStandardTool($(element).data('tool')), {
+        offset: [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE / 2 + MARGIN_SIZE]
     });
     setupTooltips($rightTools, element => actionIdForStandardTool($(element).data('tool')), {
         offset: [0, TIP_X_OFFSET]
@@ -533,6 +540,10 @@ function setupDrawSubMenu(toolKey) {
             state.updateDrawType(toolKey, newValue.type);
             refresh();
         },
+        icon: $tool => {
+            const type = $tool.data('type');
+            return getIconHTML(`tools.${typesKey}.${type}`);
+        },
         tooltipContent: $tool => {
             const type = $tool.data('type');
             const name = strings[`tools.${typesKey}.${type}.name`];
@@ -785,7 +796,8 @@ class ToolSubMenu {
      * @param {() => Object} options.getValue - Callback to get the current value of the submenu
      * @param {() => boolean} options.visible - Callback that controls whether the submenu is visible
      * @param {() => boolean} [options.disabled] - Callback that controls whether the submenu is disabled. Default: always enabled.
-     * @param {function} [options.tooltipContent] - Tooltip content callback. Passed the current $tool, returns tooltip content.
+     * @param {function} [options.icon] - Icon retriever. Passed the current $tool, returns the icon.
+     * @param {function} [options.tooltipContent] - Tooltip content retriever. Passed the current $tool, returns tooltip content.
      */
     constructor($menu, options = {}) {
         this.$menu = $menu;
@@ -798,6 +810,14 @@ class ToolSubMenu {
             this.options.onChange($(evt.currentTarget).data());
             // this.refresh(); // Don't need to refresh here; entire tools panel will refresh
         });
+
+        if (this.options.icon) {
+            this.$menu.find('.sub-tool').each((i, element) => {
+                const $tool = $(element);
+                const icon = this.options.icon($tool);
+                if (icon) $tool.html(icon);
+            })
+        }
 
         if (this.options.tooltipContent) {
             tippy(this.$menu.find('.sub-tool').toArray(), {
