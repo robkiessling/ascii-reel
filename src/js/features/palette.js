@@ -91,8 +91,8 @@ function refresh() {
     }
     else {
         $('<div></div>', {
-            class: 'message',
-            html: 'No colors...'
+            class: 'empty-list',
+            html: strings['palette.empty']
         }).appendTo($colorList);
     }
 

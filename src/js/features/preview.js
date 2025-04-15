@@ -52,7 +52,7 @@ export function init() {
 export function resize() {
     refreshComponentVisibility($container, 'preview');
 
-    previewCanvas.resize();
+    previewCanvas.resize(true);
     previewCanvas.zoomToFit();
 }
 

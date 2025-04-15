@@ -11,6 +11,7 @@ import * as selection from "./selection.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {createDialog} from "../utils/dialogs.js";
+import {strings} from "../config/strings.js";
 
 let $container, $charList, $actions, actionButtons, $unicodeDialog;
 
@@ -88,13 +89,21 @@ function refresh() {
 
     $charList.empty();
 
-    // Inserting Unicode option char <divs> as one string for improved performance
-    const charsString = state.sortedChars().map(char => {
-        return `<div class="unicode-option" data-char="${char}">${char}</div>`
-    }).join('');
-    $charList.append(charsString);
+    if (state.sortedChars().length) {
+        // Inserting Unicode option char <divs> as one string for improved performance
+        const charsString = state.sortedChars().map(char => {
+            return `<div class="unicode-option" data-char="${char}">${char}</div>`
+        }).join('');
+        $charList.append(charsString);
 
-    refreshSelectedChar();
+        refreshSelectedChar();
+    }
+    else {
+        $('<div>', {
+            class: 'empty-list',
+            html: strings['unicode.empty']
+        }).appendTo($charList);
+    }
 
     actionButtons.refreshContent();
 }

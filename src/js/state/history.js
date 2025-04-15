@@ -83,10 +83,10 @@ function loadStateFromHistory(newIndex, oldIndex) {
     const newState = history[newIndex];
     const oldState = history[oldIndex];
 
-    updateConfigState($.extend(true, {}, newState.state.config));
-    replaceTimelineState($.extend(true, {}, newState.state.timeline));
-    replacePaletteState($.extend(true, {}, newState.state.palette));
-    replaceUnicodeState($.extend(true, {}, newState.state.unicode));
+    updateConfigState(structuredClone(newState.state.config));
+    replaceTimelineState(structuredClone(newState.state.timeline));
+    replacePaletteState(structuredClone(newState.state.palette));
+    replaceUnicodeState(structuredClone(newState.state.unicode));
 
     // When emitting, include any options that were true in either the newState or the oldState:
     const trueOptions = Object.fromEntries(

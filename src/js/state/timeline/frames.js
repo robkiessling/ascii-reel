@@ -1,5 +1,4 @@
 import ArrayRange from "../../utils/arrays.js";
-import * as cels from "./cels.js";
 
 const DEFAULT_STATE = {
     frames: [],
