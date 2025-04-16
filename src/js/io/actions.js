@@ -64,12 +64,15 @@ export function init() {
  * @param {function} data.callback - Function to call when action is performed
  * @param {string|function:string} [data.name] - Name to display in menus/tooltips. Default: strings[<id>.name]
  * @param {string|function:string} [data.description] - Text to display in tooltips. Default: strings[<id>.description]
- * @param {boolean|function:boolean} [data.enabled] - Whether the action is allowed to be called. Default: true
+ * @param {boolean|function:boolean} [data.enabled=true] - Whether the action is allowed to be called. If disabled, the
+ *   action will be greyed out and un-clickable.
+ * @param {boolean|function:boolean} [data.visible=true] - Whether the action is visible in the UI. If an action is
+ *   not visible it can still be called via shortcut -- if that is not desired makes sure enabled is false.
  * @param {string|function:string} [data.shortcutAbbr] - Hardcoded shortcut abbreviation (not common; most abbr will
  *   come from preferences)
- * @param {string|function:string} [data.icon] - Remixicon class name of an icon. If the action is shown in a <button>,
- *   the icon will be used for the button's content. If the action is shown in the menu, the icon will be shown next to
- *   the action name.
+ * @param {string|function:string} [data.icon] - Class name of an icon (e.g. remixicon class). If the action is shown in
+ *   a <button>, the icon will be used for the button's content. If the action is shown in the menu, the icon will be
+ *   shown next to the action name.
  */
 export function registerAction(id, data) {
     if (actions === undefined) {
@@ -84,6 +87,7 @@ export function registerAction(id, data) {
     if (data.name === undefined) { data.name = ''; }
     if (data.description === undefined) { data.description = strings[`${id}.description`]; }
     if (data.enabled === undefined) { data.enabled = true; }
+    if (data.visible === undefined) { data.visible = true; }
 
     if (actions[id] !== undefined) { console.warn(`Re-registering action: ${id}`); }
     actions[id] = data;
@@ -100,6 +104,7 @@ export function getActionInfo(id) {
     if (isFunction(info.name)) { info.name = info.name(); }
     if (isFunction(info.description)) { info.description = info.description(); }
     if (isFunction(info.enabled)) { info.enabled = info.enabled(); }
+    if (isFunction(info.visible)) { info.visible = info.visible(); }
     if (isFunction(info.icon)) { info.icon = info.icon(); }
 
     if (info.shortcutAbbr === undefined && actionIdToShortcut[id]) {
@@ -168,10 +173,10 @@ export function setupTooltips(targets, getActionId, options = {}) {
  * Looks for any buttons with [data-action] attributes in the $container and attaches the appropriate action to them.
  * Also sets up tooltips.
  * @param $container - Element containing buttons
- * @param tooltipOptions - Standard tippy options
+ * @param {Object} [tooltipOptions] - Standard tippy options
  * @returns {{tooltips: Tippy[], refreshContent: function}}
  */
-export function setupActionButtons($container, tooltipOptions) {
+export function setupActionButtons($container, tooltipOptions = {}) {
     attachClickHandlers($container);
 
     const $buttons = $container.find('[data-action]');
@@ -186,7 +191,9 @@ export function setupActionButtons($container, tooltipOptions) {
             $buttons.each((index, button) => {
                 const actionId = getActionId(button);
                 const actionInfo = getActionInfo(actionId);
-                if (actionInfo.icon) $(button).empty().append(`<span class="ri ri-fw ${actionInfo.icon}"></span>`);
+                const $button = $(button)
+                $button.toggleClass('hidden', !actionInfo.visible)
+                if (actionInfo.icon) $button.empty().append(`<span class="ri ri-fw ${actionInfo.icon}"></span>`);
             })
 
             refreshTooltips();

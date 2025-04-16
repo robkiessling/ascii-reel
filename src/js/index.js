@@ -15,8 +15,9 @@ import { init as initUnicode } from "./features/unicode.js";
 import { init as initMainCanvas, resize as resizeMainCanvas } from './features/main_canvas.js';
 import { init as initSelection, clear as performClearSelection, syncTextEditorCursorPos } from './features/selection.js';
 import { init as initState, isValid as isStateValid, loadFromLocalStorage, loadBlankState } from "./state/index.js";
-import { init as initFrames, refresh as refreshFrames } from "./features/frames.js";
+import { init as initFrames, resize as resizeFrames } from "./features/frames.js";
 import { init as initLayers } from "./features/layers.js";
+import { init as initSidebar, resize as resizeSidebar } from "./features/sidebar.js";
 import { init as initLocalStorage, readState as readLocalStorage} from "./storage/local_storage.js";
 import {debounce, defer} from "./utils/utilities.js";
 import {eventBus, EVENTS} from './events/events.js'
@@ -36,6 +37,7 @@ initState();
 initMainCanvas();
 initFrames();
 initLayers();
+initSidebar();
 initSelection();
 initLocalStorage();
 
@@ -58,12 +60,13 @@ function setupEventBus() {
 
         if (clearSelection) performClearSelection(false);
 
-        // Refresh frames controller first, since its configuration (align left/bottom) can affect canvas boundaries
-        refreshFrames();
+        // Resize frames & sidebar first since their alignment affects canvas dimensions
+        resizeFrames();
+        resizeSidebar();
 
-        // Resize all CanvasControls:
+        // Resize all canvas controls
         resizeMainCanvas(resetZoom);
-        resizePreview(); // Don't care about resetZoom since it will zoomToFit anyway
+        resizePreview();
         // Frame canvases don't need to be resized here since EVENTS.REFRESH.ALL will rebuild them all anyway
 
         eventBus.emit(EVENTS.REFRESH.ALL);

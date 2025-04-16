@@ -47,7 +47,16 @@ export function init() {
     });
 
     $canvasMessage = $('#canvas-message');
-    $canvasDetails = $('#canvas-details');
+    
+    const $canvasDetailsContainer = $('#canvas-details');
+    $canvasDetails = {
+        canvasDimensions: $canvasDetailsContainer.find('.canvas-dimensions'),
+        canvasDimensionsValue: $canvasDetailsContainer.find('.canvas-dimensions .value'),
+        selectedDimensions: $canvasDetailsContainer.find('.selection-dimensions'),
+        selectedDimensionsValue: $canvasDetailsContainer.find('.selection-dimensions .value'),
+        mouseCoordinates: $canvasDetailsContainer.find('.mouse-coordinates'),
+        mouseCoordinatesValue: $canvasDetailsContainer.find('.mouse-coordinates .value')
+    }
 
     setupEventBus();
 }
@@ -255,13 +264,13 @@ function redrawHover() {
 }
 
 function refreshCanvasDetails() {
-    $canvasDetails.find('.canvas-dimensions .value').html(`[${state.numCols()}x${state.numRows()}]`);
+    $canvasDetails.canvasDimensionsValue.html(`[${state.numCols()}x${state.numRows()}]`);
 
     const selectedArea = selection.getSelectedCellArea();
-    $canvasDetails.find('.selection-dimensions').toggle(!!selectedArea)
-        .find('.value').html(selectedArea ? `${selectedArea.numRows}x${selectedArea.numCols}` : '&nbsp;');
+    $canvasDetails.selectedDimensions.toggle(!!selectedArea);
+    $canvasDetails.selectedDimensionsValue.html(selectedArea ? `${selectedArea.numRows}x${selectedArea.numCols}` : '&nbsp;');
 
     const showHoveredCoords = !selectedArea && hoveredCell && hoveredCell.isInBounds()
-    $canvasDetails.find('.mouse-coordinates').toggle(!!showHoveredCoords)
-        .find('.value').html(showHoveredCoords ? `${hoveredCell.col}:${hoveredCell.row}` : '&nbsp;');
+    $canvasDetails.mouseCoordinates.toggle(!!showHoveredCoords);
+    $canvasDetails.mouseCoordinatesValue.html(showHoveredCoords ? `${hoveredCell.col}:${hoveredCell.row}` : '&nbsp;');
 }

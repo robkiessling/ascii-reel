@@ -4,7 +4,7 @@
 // 'unicode' sections, each taking up 1/3 of the remaining height.
 #side-content {
   min-width: $right-col-width;
-  margin: 0.25rem $main-spacing $main-spacing 0;
+  margin: $tiny-spacing $main-spacing $tiny-spacing $main-spacing;
 
   display: flex;
   flex-direction: column;
@@ -93,6 +93,29 @@
       font-size: 0.875rem;
     }
   }
+
+
+  // Showing/hiding the entire sidebar:
+  #maximize-side-content {
+    display: none;
+  }
+
+  &.minimized {
+    min-width: auto;
+    margin-right: $tiny-spacing;
+    margin-left: 0;
+    margin-bottom: $tiny-spacing;
+    justify-content: end;
+
+    > div {
+      display: none;
+    }
+    > #maximize-side-content {
+      display: flex;
+      margin-bottom: 0;
+    }
+  }
+
 }
 
 
@@ -292,3 +315,10 @@
   }
 }
 
+#sidebar-details {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  margin-top: auto; // forces details to always be at bottom of page, even if all other sections are minimized
+}

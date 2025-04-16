@@ -34,6 +34,10 @@
   visibility: hidden; // Will still take up space, but be invisible
 }
 
+.hidden {
+  display: none !important;
+}
+
 .primary-color {
   color: var(--color-primary)
 }

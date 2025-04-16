@@ -219,6 +219,7 @@ class HorizontalMenu {
                 $item.html(html);
                 $item.off('click').on('click', () => action.callback());
                 $item.toggleClass('disabled', !action.enabled);
+                $item.toggleClass('hidden', !action.visible);
             }
             else {
                 $item.empty();

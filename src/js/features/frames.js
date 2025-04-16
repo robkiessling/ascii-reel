@@ -11,6 +11,7 @@ import {refreshComponentVisibility, toggleComponent} from "../utils/components.j
 import {strings} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import * as tools from "./tools.js";
+import {hideAll as hideAllTooltips} from "tippy.js";
 
 let $container, $template, $list;
 let simpleBar, frameComponents, actionButtons;
@@ -24,12 +25,28 @@ export function init() {
     setupEventBus();
 }
 
-export function refresh() {
-    refreshAlignment();
-    refreshOnion();
+export function resize() {
+    refreshComponentVisibility($container, 'frames');
+
+    // Frames on left vs. bottom:
+    const orientation = state.getConfig('frameOrientation');
+
+    $('#frames-and-canvas')
+        .toggleClass('frames-on-left', orientation === 'left')
+        .toggleClass('frames-on-bottom', orientation === 'bottom');
+
+    $list.sortable('option', 'axis', orientation === 'left' ? 'y' : 'x');
+
+    actionButtons.tooltips.forEach(tooltip => {
+        tooltip.setProps({
+            placement: orientation === 'left' ? 'right' : 'top'
+        });
+    });
+
+    // Frame canvases don't need to be resized here since refresh() will be called at end of EVENTS.RESIZE.ALL event
 }
 
-function rebuild() {
+function refresh() {
     const scrollElement = simpleBar.getScrollElement();
     const scrollLeft = scrollElement.scrollLeft;
     const scrollTop = scrollElement.scrollTop;
@@ -60,7 +77,7 @@ function rebuild() {
         $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
     });
 
-    refresh();
+    actionButtons.refreshContent();
 }
 
 function currentFrameComponent() {
@@ -171,10 +188,13 @@ function setupActions() {
         icon: () => state.getConfig('frameOrientation') === 'bottom' ? 'ri-arrow-left-right-line' : 'ri-arrow-up-down-line',
     });
 
-    actions.registerAction('frames.toggle-onion', () => {
-        state.setConfig('onion', !state.getConfig('onion'));
-        refreshOnion(); // have to refresh this manually since just refreshing chars
-        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    actions.registerAction('frames.toggle-onion', {
+        callback: () => {
+            state.setConfig('onion', !state.getConfig('onion'));
+            actionButtons.refreshContent();
+            eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+        },
+        icon: () => state.getConfig('onion') ? 'ri-stack-line active' : 'ri-stack-line'
     });
 
     actions.registerAction('frames.toggle-component', {
@@ -182,20 +202,37 @@ function setupActions() {
         description: () => strings[state.isMinimized('frames') ? 'frames.show-component.description' : 'frames.hide-component.description'],
         callback: () => {
             toggleComponent('frames');
+            hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
+        },
+        icon: () => {
+            let icon = 'ri ri-fw ';
+            icon += state.isMinimized('frames') ? 'ri-sidebar-unfold-line active ' : 'ri-sidebar-fold-line ';
+            if (state.getConfig('frameOrientation') === 'bottom') icon += 'rotate270 ';
+            return icon;
         }
     });
 
-    actions.registerAction('frames.align-left', () => {
-        if (state.getConfig('frameOrientation') === 'left') toggleComponent('frames', false);
-        state.setConfig('frameOrientation', 'left');
-        eventBus.emit(EVENTS.RESIZE.ALL)
+    actions.registerAction('frames.align-left', {
+        callback: () => {
+            if (state.getConfig('frameOrientation') === 'left') toggleComponent('frames', false);
+            state.setConfig('frameOrientation', 'left');
+            hideAllTooltips({ duration: 0 });
+            eventBus.emit(EVENTS.RESIZE.ALL)
+        },
+        visible: () => state.getConfig('frameOrientation') !== 'left' && !state.isMinimized('frames'),
+        icon: () => 'ri ri-fw ri-layout-left-line'
     });
 
-    actions.registerAction('frames.align-bottom', () => {
-        if (state.getConfig('frameOrientation') === 'bottom') toggleComponent('frames', false);
-        state.setConfig('frameOrientation', 'bottom');
-        eventBus.emit(EVENTS.RESIZE.ALL)
+    actions.registerAction('frames.align-bottom', {
+        callback: () => {
+            if (state.getConfig('frameOrientation') === 'bottom') toggleComponent('frames', false);
+            state.setConfig('frameOrientation', 'bottom');
+            hideAllTooltips({ duration: 0 });
+            eventBus.emit(EVENTS.RESIZE.ALL)
+        },
+        visible: () => state.getConfig('frameOrientation') !== 'bottom' && !state.isMinimized('frames'),
+        icon: () => 'ri ri-fw ri-layout-bottom-line'
     });
 
     actions.registerAction('frames.previous-frame', () => {
@@ -215,48 +252,8 @@ function setupActions() {
 }
 
 function setupEventBus() {
-    eventBus.on(EVENTS.REFRESH.ALL, () => rebuild())
+    eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
     eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => currentFrameComponent().redrawGlyphs())
-}
-
-function refreshAlignment() {
-    const orientation = state.getConfig('frameOrientation');
-
-    // Minimized frames component:
-    refreshComponentVisibility($container, 'frames');
-    const minimized = state.isMinimized('frames');
-    $container.find('[data-action="frames.toggle-component"]').find('.ri')
-        .toggleClass('active', minimized)
-        .toggleClass('ri-sidebar-fold-line', !minimized)
-        .toggleClass('ri-sidebar-unfold-line', minimized)
-        .toggleClass('rotate270', orientation === 'bottom');
-
-    // Frames on left vs. bottom:
-    $('#frames-and-canvas')
-        .toggleClass('frames-on-left', orientation === 'left')
-        .toggleClass('frames-on-bottom', orientation === 'bottom');
-
-    const framesLeftActive = orientation === 'left' && !minimized;
-    $container.find('[data-action="frames.align-left"]').toggleClass('disabled', framesLeftActive)
-        .find('.ri').toggleClass('active', framesLeftActive);
-
-    const framesBottomActive = orientation === 'bottom' && !minimized;
-    $container.find('[data-action="frames.align-bottom"]').toggleClass('disabled', framesBottomActive)
-        .find('.ri').toggleClass('active', framesBottomActive);
-
-    $list.sortable('option', 'axis', orientation === 'left' ? 'y' : 'x');
-
-    actionButtons.refreshContent();
-
-    actionButtons.tooltips.forEach(tooltip => {
-        tooltip.setProps({
-            placement: orientation === 'left' ? 'right' : 'top'
-        });
-    });
-}
-
-function refreshOnion() {
-    $container.find('.toggle-onion').find('.ri').toggleClass('active', state.getConfig('onion'));
 }
 
 function selectFrame(index, historyModifiable) {

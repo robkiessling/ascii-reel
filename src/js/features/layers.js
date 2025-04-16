@@ -25,10 +25,7 @@ export function init() {
 
 function refresh() {
     refreshComponentVisibility($container, 'layers');
-    refreshVisibilities();
-}
 
-function rebuild() {
     const scrollElement = simpleBar.getScrollElement();
     const scrollTop = scrollElement.scrollTop;
 
@@ -45,7 +42,7 @@ function rebuild() {
         $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
     });
 
-    refresh();
+    refreshVisibilities();
 }
 
 function setupList() {
@@ -94,7 +91,7 @@ function setupSortable() {
 function setupActions() {
     actions.registerAction('layers.toggle-component', () => {
         toggleComponent('layers');
-        refresh();
+        eventBus.emit(EVENTS.REFRESH.ALL);
     })
 
     actions.registerAction('layers.add-layer', () => {
@@ -124,7 +121,7 @@ function setupActions() {
 }
 
 function setupEventBus() {
-    eventBus.on(EVENTS.REFRESH.ALL, () => rebuild())
+    eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
 }
 
 function refreshVisibilities() {

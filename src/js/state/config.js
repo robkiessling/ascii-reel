@@ -22,8 +22,7 @@ export const DEFAULT_STATE = {
     lockLayerVisibility: true,
     frameOrientation: 'left',
     minimizedComponents: {
-        layers: true,
-        palette: true
+        layers: true
     },
     tool: 'draw-freeform',
     primaryColor: DEFAULT_COLOR,

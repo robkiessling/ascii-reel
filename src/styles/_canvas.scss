@@ -31,7 +31,6 @@
 #canvas-details {
   display: flex;
   flex-direction: row;
-  margin-top: auto; // forces details to always be at bottom of page, even if all other sections are minimized
 
   // Using monospace so coords don't shift around as they are rapidly updated
   font-family: $font-monospace;

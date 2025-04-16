@@ -209,20 +209,12 @@
                         <span class="spacer"></span>
                         <button data-action="frames.reverse-frames"></button>
                         <span class="spacer"></span>
-                        <button class="toggle-onion" data-action="frames.toggle-onion">
-                            <span class="ri ri-fw ri-stack-line"></span>
-                        </button>
+                        <button class="toggle-onion" data-action="frames.toggle-onion"></button>
                     </div>
                     <div>
-                        <button class="show-when-minimized" data-action="frames.toggle-component">
-                            <span class="ri ri-fw ri-sidebar-fold-line"></span>
-                        </button>
-                        <button class="show-when-minimized" data-action="frames.align-left">
-                            <span class="ri ri-fw ri-layout-left-line"></span>
-                        </button>
-                        <button class="show-when-minimized" data-action="frames.align-bottom">
-                            <span class="ri ri-fw ri-layout-bottom-line"></span>
-                        </button>
+                        <button data-action="frames.align-left"></button>
+                        <button data-action="frames.align-bottom"></button>
+                        <button class="show-when-minimized" data-action="frames.toggle-component"></button>
                     </div>
                 </div>
                 <div class="frame-template frame">
@@ -234,15 +226,23 @@
         </div>
 
         <div id="side-content">
+            <div id="maximize-side-content">
+                <button data-action="sidebar.toggle-component" class="show-when-minimized"></button>
+            </div>
+
             <div id="preview-container">
                 <div class="tools">
-                    <button data-action="preview.toggle-component" class="component-toggle-header show-when-minimized">
-                        <span class="ri ri-fw ri-arrow-down-s-fill"></span>
-                        <span class="section-header no-select">Preview</span>
-                    </button>
-                    <button data-action="preview.open-popup">
-                        <span class="ri ri-fw ri-external-link-line"></span>
-                    </button>
+                    <div>
+                        <button data-action="preview.toggle-component" class="component-toggle-header show-when-minimized">
+                            <span class="ri ri-fw ri-arrow-down-s-fill"></span>
+                            <span class="section-header no-select">Preview</span>
+                        </button>
+                    </div>
+                    <div>
+                        <button data-action="preview.open-popup">
+                            <span class="ri ri-fw ri-external-link-line"></span>
+                        </button>
+                    </div>
                 </div>
                 <div id="preview-canvas-container" class="minimizable">
                     <canvas id="preview-canvas" class="absolute-center full draggable"></canvas>
@@ -333,18 +333,23 @@
                 <div class="list as-rows no-select minimizable"></div>
             </div>
 
-            <div id="canvas-details">
-                <span class="canvas-dimensions">
-                    <span class="value"></span>
-                </span>
-                <span class="mouse-coordinates">
-                    <span class="ri ri-fw ri-focus-3-line"></span>
-                    <span class="value"></span>
-                </span>
-                <span class="selection-dimensions">
-                    <span class="ri ri-fw ri-crop-line"></span>
-                    <span class="value"></span>
-                </span>
+            <div id="sidebar-details">
+                <div id="canvas-details">
+                    <span class="canvas-dimensions">
+                        <span class="value"></span>
+                    </span>
+                        <span class="mouse-coordinates">
+                        <span class="ri ri-fw ri-focus-3-line"></span>
+                        <span class="value"></span>
+                    </span>
+                        <span class="selection-dimensions">
+                        <span class="ri ri-fw ri-crop-line"></span>
+                        <span class="value"></span>
+                    </span>
+                </div>
+                <div>
+                    <button data-action="sidebar.toggle-component"></button>
+                </div>
             </div>
         </div>
     </div>

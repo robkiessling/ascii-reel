@@ -162,9 +162,9 @@ export const strings = {
     'frames.reverse-frames.description': 'Reverses the order of the currently selected frames.',
     'frames.toggle-onion.name': 'Toggle Onion',
     'frames.toggle-onion.description': 'When enabled, the previous frame will be faintly displayed.',
-    'frames.show-component.name': 'Maximize',
+    'frames.show-component.name': 'Maximize Frames View',
     'frames.show-component.description': 'Shows the frames component.',
-    'frames.hide-component.name': 'Minimize',
+    'frames.hide-component.name': 'Minimize Frames View',
     'frames.hide-component.description': 'Hides the frames component.',
     'frames.align-left.name': 'Align Frames: Left',
     'frames.align-left.description': 'Positions the frames on the left side of the screen.',
@@ -182,7 +182,8 @@ export const strings = {
     'layers.toggle-visibility-lock.name': 'Toggle Layer Visibility',
     'layers.toggle-visibility-lock.description': 'When locked, only the current layer is shown in the main canvas. When unlocked, you can manually show/hide all layers.',
 
-    'preview.open-popup.description': 'Open preview in popup',
+    'preview.open-popup.name': 'Preview Popup',
+    'preview.open-popup.description': 'Opens the preview in a resizeable popup window.',
     'preview.play.name': 'Play Preview',
     'preview.play.description': 'Plays the preview at the given FPS.',
     'preview.pause.name': 'Pause Preview',
@@ -212,5 +213,11 @@ export const strings = {
     'unicode.open-settings.description': 'Opens unicode character settings.',
     'unicode.empty': 'No characters added.',
 
-    'warnings.current-layer-not-visible': 'The current layer is not visible!'
+    'warnings.current-layer-not-visible': 'The current layer is not visible!',
+
+    'sidebar.show-component.name': 'Maximize Sidebar',
+    'sidebar.show-component.description': 'Shows the sidebar content.',
+    'sidebar.hide-component.name': 'Minimize Sidebar',
+    'sidebar.hide-component.description': 'Hides the sidebar content.',
+
 }

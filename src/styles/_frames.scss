@@ -2,6 +2,7 @@
 
 #frame-controller {
   display: flex;
+  margin: $main-spacing;
   // Note: More flex settings get set below, depending on frames-on-left vs. frames-on-bottom
 
   .tools {
@@ -72,7 +73,8 @@
 
 .frames-on-left #frame-controller {
   flex-direction: row;
-  margin-right: 1rem;
+  margin-left: $tiny-spacing;
+  margin-bottom: $tiny-spacing;
 
   // Only showing the border when minimized; when maximized the scrollbar track is a good enough border
   &.minimized {
@@ -119,9 +121,14 @@
 
 .frames-on-bottom #frame-controller {
   flex-direction: column;
-  margin-top: 1rem;
+  margin: $main-spacing;
 
   border-top: 1px solid var(--color-surface);
+
+  &.minimized {
+    margin: 0 $main-spacing;
+    margin-bottom: 2px; // This was chosen so 'maximize' button aligns with sidebar 'maximize' button when both minimized
+  }
 
   .tools {
     flex-direction: row;
