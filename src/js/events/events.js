@@ -88,7 +88,6 @@ export const EVENTS = {
     },
     SELECTION: {
         CHANGED: 'selection:changed',
-        CURSOR_MOVED: 'selection:cursor-moved'
     },
     CANVAS: {
         ZOOM_DELTA: 'canvas:zoom-delta', /* Event data: { delta, target } */

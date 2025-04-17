@@ -65,7 +65,7 @@ export function changeTool(newTool) {
 // -------------------------------------------------------------------------------- Events
 
 function setupEventBus() {
-    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => refresh())
+    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED], () => refresh())
 
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
     let editorMousedown = false; // Used to keep track of whether the mousedown started in the editor canvas
@@ -263,27 +263,25 @@ function actionIdForStandardTool(tool) {
 function setupSelectionTools() {
     $selectionTools = $('#selection-tools');
 
-    function registerAction(tool, callback, disableOnMove = true, disableOnCursor = true, shortcutAbbr) {
+    function registerAction(tool, callback, disableOnMove = true, shortcutAbbr) {
         actions.registerAction(actionIdForSelectionTool(tool), {
             callback: callback,
             enabled: () => {
                 if (disableOnMove && selection.movableContent) { return false; }
-                if (disableOnCursor && selection.cursorCell) { return false; }
                 return true;
             },
             shortcutAbbr: shortcutAbbr
         });
     }
     
-    registerAction('move', () => selection.toggleMovingContent(), false, true, `${modifierAbbr('metaKey')}Click`);
-    registerAction('typewriter', () => selection.toggleCursor(), true, false, 'Double Click');
+    registerAction('move', () => selection.toggleMovingContent(), false, `${modifierAbbr('metaKey')}Click`);
     registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
     registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
     registerAction('clone', () => selection.cloneToAllFrames());
     registerAction('fill-char', () => fillSelection(state.getConfig('primaryChar'), undefined));
     registerAction('fill-color', () => fillSelection(undefined, state.primaryColorIndex()));
     registerAction('resize', () => resizeToSelection());
-    registerAction('close', () => selection.clear(), true, true, 'Esc');
+    registerAction('close', () => selection.clear(), true, 'Esc');
 
     $selectionTools.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
         const $element = $(evt.currentTarget);
@@ -300,11 +298,7 @@ function actionIdForSelectionTool(tool) {
 function refreshSelectionTools() {
     $selectionTools.toggle(selection.hasSelection());
 
-    // Hide typewriter when using text-editor tool
-    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggle(state.getConfig('tool') !== 'text-editor');
-
     $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
-    $selectionTools.find('.sub-tool[data-tool="typewriter"]').toggleClass('active', !!selection.cursorCell);
 
     $selectionTools.find('.sub-tool').each((i, element) => {
         const $element = $(element);
@@ -767,7 +761,7 @@ function cursorStyle(mouseEvent, cell, tool) {
         case 'selection-line':
         case 'selection-lasso':
         case 'selection-wand':
-            return selection.isSelectedCell(cell) ? 'grab' : 'cell';
+            return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? 'grab' : 'cell';
         case 'draw-freeform':
         case 'draw-rect':
         case 'draw-line':

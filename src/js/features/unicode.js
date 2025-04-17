@@ -32,7 +32,7 @@ export function init() {
         // TODO Is this useful?
         // copyChar(char);
 
-        selection.setSelectionToSingleChar(char, selection.cursorCell ? state.primaryColorIndex() : undefined);
+        selection.setSelectionToSingleChar(char, selection.cursorCell() ? state.primaryColorIndex() : undefined);
         tools.selectChar(char);
     });
 

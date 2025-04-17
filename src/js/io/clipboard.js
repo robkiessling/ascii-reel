@@ -22,7 +22,7 @@ export function init() {
     });
     actions.registerAction('clipboard.paste', {
         callback: () => paste(),
-        enabled: () => selection.hasTarget() && !selection.movableContent
+        enabled: () => selection.hasSelection() && !selection.movableContent
     });
     actions.registerAction('clipboard.paste-in-selection', {
         callback: () => paste(true),
@@ -55,7 +55,7 @@ function copy() {
  * - Otherwise, paste content relative to topLeft of selection
  */
 function paste(limitToSelection) {
-    if (!selection.hasTarget()) {
+    if (!selection.hasSelection()) {
         // There is nowhere to paste the text
         return;
     }
@@ -89,24 +89,18 @@ export function copyChar(char) {
  * @param {boolean} [limitToSelection=false] - If true, pasted text will only be pasted within the current selection bounds
  */
 function pasteGlyphs(glyphs, limitToSelection = false) {
-    // If there is no selection area, that means there is simply a cursor to paste at (this only happens when using the
-    // text-editor tool). In this case, paste the content at the cursor, then move the cursor an amount equal to the content's width
-    const pasteAtCursor = !selection.hasSelection();
-
     if (glyphs.chars.length === 1 && glyphs.chars[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         const char = glyphs.chars[0][0];
         const color = glyphs.colors[0][0];
 
-        const cells = pasteAtCursor ? [selection.cursorCell] : selection.getSelectedCells();
-        cells.forEach(cell => {
+        selection.getSelectedCells().forEach(cell => {
             state.setCurrentCelGlyph(cell.row, cell.col, char, color);
         });
     }
     else {
         // Paste glyphs at topLeft of entire selected area
-        const topLeft = pasteAtCursor ? selection.cursorCell : selection.getSelectedCellArea().topLeft;
-        translateGlyphs(glyphs, topLeft, (r, c, char, color) => {
+        translateGlyphs(glyphs, selection.getSelectedCellArea().topLeft, (r, c, char, color) => {
             // Copied empty cells do not override existing cells (if you want to override existing cells to make them
             // blank, original copy should have spaces not empty cells)
             if (char === '') return;
@@ -117,8 +111,17 @@ function pasteGlyphs(glyphs, limitToSelection = false) {
         });
     }
 
-    if (pasteAtCursor) {
-        selection.moveCursorInDirection('right', false, glyphs.chars[0].length);
+    if (selection.cursorCell()) {
+        selection.moveInDirection('down', {
+            amount: glyphs.chars.length - 1,
+            updateCursorOrigin: false,
+            wrapCursorPosition: false,
+        });
+        selection.moveInDirection('right', {
+            amount: glyphs.chars.at(-1).length,
+            updateCursorOrigin: false,
+            wrapCursorPosition: false,
+        });
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);

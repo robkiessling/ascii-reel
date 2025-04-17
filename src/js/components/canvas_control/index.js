@@ -18,7 +18,7 @@ const WHITESPACE_COLOR_INDEX = -1;
 
 const OUTLINE_WIDTH = 0.5;
 
-const CURSOR_CELL_COLOR = PRIMARY_COLOR;
+const CURSOR_CELL_COLOR = SELECTION_COLOR;
 const CURSOR_WIDTH = 0.5;
 
 const DASH_OUTLINE_LENGTH = 5;
@@ -189,13 +189,6 @@ export default class CanvasControl {
     }
 
     drawCursorCell(cell) {
-        this.context.strokeStyle = CURSOR_CELL_COLOR; // TODO Maybe color should be whatever color is selected?
-        this.context.lineWidth = OUTLINE_WIDTH;
-
-        // Clear out targeted cell and surround it with a border
-        this.context.clearRect(...cell.xywh);
-        // this.context.strokeRect(...cell.xywh);
-
         this._cursorInterval = setIntervalUsingRAF(() => {
             this._drawCursor(cell);
         }, 1000 / 5, true);
@@ -208,32 +201,29 @@ export default class CanvasControl {
     }
 
     _drawCursor(cell) {
-        const now = new Date().getMilliseconds();
+        const now = new Date();
 
         // If a new cell is being targeted, we want to immediately show the cursor
         if (this._textCursorCell === undefined || !this._textCursorCell.equals(cell)) {
             this._textCursorCell = cell;
-            this._textCursorCellTime = now;
+            this._textCursorCellStart = now;
         }
 
-        const elapsed = (now >= this._textCursorCellTime ? now : now + 1000) - this._textCursorCellTime;
+        const elapsed = now - this._textCursorCellStart;
 
         // Alternate cursor every 500ms
-        if (elapsed <= 500) {
+        if (elapsed % 1000 <= 500) {
             this.context.strokeStyle = CURSOR_CELL_COLOR;
+            this.context.fillStyle = CURSOR_CELL_COLOR;
             this.context.lineWidth = CURSOR_WIDTH;
 
-            this.context.beginPath();
-            cell = cell.clone();
-            this.context.moveTo(cell.x + OUTLINE_WIDTH + CURSOR_WIDTH, cell.y + OUTLINE_WIDTH + CURSOR_WIDTH);
-            cell.translate(1, 0);
-            this.context.lineTo(cell.x + OUTLINE_WIDTH + CURSOR_WIDTH, cell.y - OUTLINE_WIDTH - CURSOR_WIDTH);
-            this.context.stroke();
+            this.context.fillRect(...cell.xywh);
         }
         else {
-            // Reduce rect size by half an outline width
-            const innerRect = new Rect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
-            this.context.clearRect(...innerRect.xywh);
+            // Clearing a rect that is a little larger than the cell -- for some reason there are sometimes stray pixels
+            // right along the cell edge at certain zoom levels
+            const outerRect = new Rect(cell.x - OUTLINE_WIDTH / 2, cell.y - OUTLINE_WIDTH / 2, cell.width + OUTLINE_WIDTH, cell.height + OUTLINE_WIDTH);
+            this.context.clearRect(...outerRect.xywh);
         }
     }
 
@@ -440,16 +430,6 @@ export default class CanvasControl {
         }
 
         return { x: relativeX, y: relativeY };
-    }
-
-    // Getting the "cursor" positioning is slightly different than just getting the corresponding cell; we round the x
-    // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
-    // click on the right half of a character, it will round up to the next character
-    cursorAtExternalXY(x, y) {
-        const point = this.pointAtExternalXY(x, y);
-        const row = Math.floor(point.y / fontHeight);
-        const col = Math.round(point.x / fontWidth);
-        return new Cell(row, col);
     }
 
     // Zooms to a particular zoom level centered around the midpoint of the canvas

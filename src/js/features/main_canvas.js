@@ -65,7 +65,7 @@ export function init() {
 function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.ALL, () => redrawAll())
 
-    eventBus.on([EVENTS.SELECTION.CHANGED, EVENTS.SELECTION.CURSOR_MOVED], () => {
+    eventBus.on([EVENTS.SELECTION.CHANGED], () => {
         redrawSelection();
         redrawHover(); // since we hide hover mouse coords if there is a selection
     })
@@ -234,18 +234,14 @@ function redrawSelection() {
         selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
     }
 
-    if (selection.cursorCell) {
-        selectionBorderCanvas.drawCursorCell(selection.cursorCell);
+    if (selection.cursorCell()) {
+        selectionCanvas.drawCursorCell(selection.cursorCell());
     }
 
     refreshCanvasDetails();
 }
 
 const HIDE_HOVER_EFFECT_FOR_TOOLS = new Set([
-    // Not showing hover cell for text-editor, since clicking on a cell does not necessarily go to that cell (it gets
-    // rounded up/down like a real text editor does).
-    'text-editor',
-
     // Not showing hover cell for these tools since they affect entire canvas, not one cell
     'pan',
     'move-all'

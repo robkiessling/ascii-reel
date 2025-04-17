@@ -8,7 +8,6 @@ import SelectionRect from "../geometry/selection/selection_rect.js";
 import SelectionWand from "../geometry/selection/selection_wand.js";
 import SelectionLine from "../geometry/selection/selection_line.js";
 import SelectionLasso from "../geometry/selection/selection_lasso.js";
-import SelectionText from "../geometry/selection/selection_text.js";
 import {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -20,7 +19,6 @@ export let polygons = [];
 export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
 export let isMoving = false; // Only true when mouse is down and polygon is being moved
 export let movableContent = null; // Selected glyph content IF there is any (it will be surrounded by dashed outline)
-export let cursorCell = null; // Cell that the cursor is in
 
 export function init() {
     actions.registerAction('selection.select-all', () => selectAll());
@@ -32,17 +30,11 @@ export function init() {
 
 // Returns true if there is any area selected
 export function hasSelection() {
-    return polygons.some(polygon => polygon.hasArea);
-}
-
-// Returns true if there is any area selected or a cursor showing (i.e. a target visible on the canvas)
-export function hasTarget() {
-    return hasSelection() || cursorCell;
+    return polygons.length > 0;
 }
 
 export function clear(refresh = true) {
     if (movableContent) { finishMovingContent(); }
-    if (cursorCell) { hideCursor(); }
     polygons = [];
     if (refresh) eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
@@ -58,11 +50,7 @@ export function empty() {
 export function selectAll() {
     // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
     if (!['text-editor', 'selection-rect'].includes(state.getConfig('tool'))) {
-        tools.changeTool('selection-rect');
-    }
-
-    if (cursorCell) {
-        hideCursor();
+        tools.changeTool('text-editor');
     }
 
     polygons = [SelectionRect.drawableArea()];
@@ -75,23 +63,27 @@ export function isSelectedCell(cell) {
     return caches.selectedCells.has(cellKey(cell));
 }
 
-// We allow the selection to be moved in all cases except for when the text-editor tool is being used and the
-// shift key is down (in that case - we simply modify the text-editor polygon).
 export function allowMovement(tool, mouseEvent) {
-    return !(tool === 'text-editor' && mouseEvent.shiftKey)
+    if (isDrawing) return false;
+
+    // In text-editor tool, holding shift and clicking will modify the polygon instead of move it
+    if (tool === 'text-editor' && mouseEvent.shiftKey) return false;
+
+    return true;
 }
 
 export function setSelectionToSingleChar(char, color, moveCursor = true) {
     if (movableContent) {
+        // Update entire movable content
         updateMovableContent(char, color);
     }
-    else if (cursorCell) {
-        // update cursor cell and then move to next cell
-        state.setCurrentCelGlyph(cursorCell.row, cursorCell.col, char, color);
-        if (moveCursor) moveCursorInDirection('right', false);
+    else if (cursorCell()) {
+        // Update cursor cell and then move to next cell
+        state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, char, color);
+        if (moveCursor) moveInDirection('right', { updateCursorOrigin: false });
     }
     else if (hasSelection()) {
-        // update entire selection
+        // Update entire selection
         getSelectedCells().forEach(cell => {
             state.setCurrentCelGlyph(cell.row, cell.col, char, color);
         });
@@ -322,17 +314,14 @@ function setupEventBus() {
                     polygons.push(wand);
                     break;
                 case 'text-editor':
-                    cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
-
-                    // We only ever use one polygon for the text-editor tool
                     if (polygons.length === 0) {
-                        polygons.push(new SelectionText(cell));
+                        moveCursorTo(cell)
                     }
                     else {
+                        // This case only happens if there is already a selection and the user holds shift and clicks on a
+                        // new cell. We extend the current selection to that cell since that is how editors usually work.
                         polygons[0].end = cell;
                     }
-
-                    hasSelection() ? hideCursor() : moveCursorTo(cell);
                     break;
             }
 
@@ -340,22 +329,12 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvasControl }) => {
-        const tool = state.getConfig('tool')
-
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ cell }) => {
         // TODO This could be more efficient, could just trigger refreshes if cell is different than last?
 
         if (isDrawing) {
-            if (tool === 'text-editor') {
-                cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
-                lastPolygon().end = cell;
-                eventBus.emit(EVENTS.SELECTION.CHANGED);
-                hasSelection() ? hideCursor() : moveCursorTo(cell);
-            }
-            else {
-                lastPolygon().end = cell;
-                eventBus.emit(EVENTS.SELECTION.CHANGED);
-            }
+            lastPolygon().end = cell;
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
         }
         else if (isMoving) {
             moveDelta(cell.row - moveStep.row, cell.col - moveStep.col);
@@ -377,34 +356,19 @@ function setupEventBus() {
             eventBus.emit(EVENTS.SELECTION.CHANGED);
         }
         else if (isMoving) {
+            isMoving = false;
+
             // For text-editor, if you click somewhere in the selected area (and we're not trying to move the underlying
             // content or the selected area) it will immediately place the cursor into that spot, removing the selection.
             if (tool === 'text-editor' && !movableContent && !hasMoved) {
                 clear();
                 moveCursorTo(cell);
             }
-
-            isMoving = false;
-
-            eventBus.emit(EVENTS.SELECTION.CHANGED)
-            if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+            else {
+                eventBus.emit(EVENTS.SELECTION.CHANGED)
+                if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+            }
         }
-    });
-
-    eventBus.on(EVENTS.CANVAS.DBLCLICK, ({ cell }) => {
-        const tool = state.getConfig('tool')
-
-        switch(tool) {
-            case 'selection-rect':
-            case 'selection-line':
-            case 'selection-lasso':
-            case 'selection-wand':
-                break;
-            default:
-                return; // Ignore all other tools
-        }
-
-        moveCursorTo(cell);
     });
 }
 
@@ -416,8 +380,6 @@ export function toggleMovingContent() {
 }
 
 export function startMovingContent() {
-    if (cursorCell) { hideCursor(); } // Cannot move content and show cursor at the same time
-
     movableContent = getSelectedValues();
 
     empty();
@@ -458,14 +420,24 @@ export function updateMovableContent(char, color) {
 // -------------------------------------------------------------------------------- Cursor
 let cursorCellOrigin; // Where to move from on return key
 
-export function toggleCursor() {
-    cursorCell ? hideCursor() : moveCursorToStart();
+// We show a blinking cursor cell if using the text-editor tool and a single 1x1 square is selected
+export function cursorCell() {
+    if (state.getConfig('tool') !== 'text-editor') return null;
+    if (!hasSelection()) return null;
+    if (movableContent) return null;
+    if (!polygons[0].topLeft.equals(polygons[0].bottomRight)) return null;
+    return polygons[0].topLeft;
 }
 
 export function moveCursorTo(cell, updateOrigin = true) {
+    if (state.getConfig('tool') !== 'text-editor') {
+        console.warn('Can only call moveCursorTo if tool is text-editor')
+        return;
+    }
+
     if (movableContent) { finishMovingContent(); } // Cannot move content and show cursor at the same time
 
-    cursorCell = cell;
+    polygons = [new SelectionRect(cell)];
     state.setConfig('cursorPosition', cell.serialize());
 
     if (updateOrigin) {
@@ -476,116 +448,14 @@ export function moveCursorTo(cell, updateOrigin = true) {
         state.modifyHistory(historySlice => historySlice.config.cursorPosition = cell.serialize())
     }
 
-    eventBus.emit(EVENTS.SELECTION.CURSOR_MOVED);
-}
-
-export function moveCursorToStart() {
-    if (state.getConfig('tool') === 'text-editor') {
-        // Move cursor to top-left cell of entire canvas. This only really happens during page init.
-        moveCursorTo(new Cell(0, 0));
-        matchPolygonToCursor();
-        return;
-    }
-
-    // Move cursor to top-left of current selection
-    cacheUniqueSortedCells();
-    const cellData = caches.cellsLeftToRight[0];
-    if (cellData) moveCursorTo(new Cell(cellData[0], cellData[1]));
-}
-
-// When using the text-editor tool, moves the cursor down one row and back to the origin column.
-// This is similar to how Excel moves your cell when using the tab/return keys.
-export function moveCursorCarriageReturn() {
-    if (cursorCell) {
-        if (state.getConfig('tool') === 'text-editor') {
-            let col = cursorCellOrigin.col,
-                row = cursorCell.row + 1;
-
-            if (row >= state.numRows()) {
-                return; // Do not wrap around or move cursor at all
-            }
-
-            moveCursorTo(new Cell(row, col));
-            matchPolygonToCursor();
-        }
-        else {
-            moveCursorInDirection('down', false);
-        }
-    }
-}
-
-export function moveCursorInDirection(direction, updateOrigin = true, amount = 1) {
-    if (cursorCell) {
-        if (state.getConfig('tool') === 'text-editor') {
-            let col = cursorCell.col, row = cursorCell.row;
-
-            if (direction === 'left') {
-                col = Math.max(0, col - amount);
-            }
-            if (direction === 'up') {
-                row = Math.max(0, row - amount);
-            }
-            if (direction === 'right') {
-                // Note: When moving right, we intentionally allow column to go 1 space out of bounds
-                col = Math.min(col + amount, state.numCols());
-            }
-            if (direction === 'down' && row < state.numRows() - 1) {
-                row = Math.min(row + amount, state.numRows() - 1);
-            }
-
-            moveCursorTo(new Cell(row, col), updateOrigin);
-            matchPolygonToCursor();
-        }
-        else {
-            // For selection tools, the cursor traverses through the domain of the selection (wrapping when it reaches the end of a row)
-
-            // TODO This case is hardcoded to step 1 space, but so far it does not need to support anything more
-            if (amount !== 1) {
-                console.error('moveCursorInDirection only supports an `amount` of `1` for selection tools');
-            }
-
-            cacheUniqueSortedCells();
-
-            // Find the current targeted cell index
-            let i;
-            let cells = (direction === 'left' || direction === 'right') ? caches.cellsLeftToRight : caches.cellsTopToBottom;
-            let length = cells.length;
-            for (i = 0; i < length; i++) {
-                if (cursorCell.row === cells[i][0] && cursorCell.col === cells[i][1]) {
-                    break;
-                }
-            }
-
-            // Step forward/backward
-            (direction === 'right' || direction === 'down') ? i++ : i--;
-
-            // Wrap around if necessary
-            if (i >= length) { i = 0; }
-            if (i < 0) { i = length - 1; }
-
-            moveCursorTo(new Cell(cells[i][0], cells[i][1]), updateOrigin);
-        }
-    }
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
 export function syncTextEditorCursorPos() {
     if (state.getConfig('tool') !== 'text-editor') return;
 
-    const cursorCell = Cell.deserialize(state.getConfig('cursorPosition'));
-    if (cursorCell) moveCursorTo(cursorCell, false);
-}
-
-export function hideCursor() {
-    cursorCell = null;
-    state.setConfig('cursorPosition', {});
-
-    eventBus.emit(EVENTS.SELECTION.CURSOR_MOVED);
-}
-
-// Sets the current polygon to be a SelectionText of size 0 located at the cursor
-function matchPolygonToCursor() {
-    polygons = [new SelectionText(cursorCell)];
-    eventBus.emit(EVENTS.SELECTION.CHANGED);
+    const deserializedCell = Cell.deserialize(state.getConfig('cursorPosition'));
+    if (deserializedCell) moveCursorTo(deserializedCell, false);
 }
 
 
@@ -599,34 +469,91 @@ function clearCaches() {
     caches = {};
 }
 
-function cacheUniqueSortedCells() {
-    if (caches.cellsLeftToRight === undefined) {
-        // using Set to find unique cell keys
-        caches.cellsLeftToRight = new Set(getSelectedCells().map(cell => cellKey(cell)));
-
-        // Convert cell keys to pairs of [row, col]
-        caches.cellsLeftToRight = [...caches.cellsLeftToRight].map(cellKey => cellKeyToRowCol(cellKey));
-
-        // Sort by row, then column
-        caches.cellsLeftToRight.sort((a,b) => a[0] === b[0] ? a[1] - b[1] : a[0] - b[0]);
-    }
-    if (caches.cellsTopToBottom === undefined) {
-        // using Set to find unique cell keys
-        caches.cellsTopToBottom = new Set(getSelectedCells().map(cell => cellKey(cell)));
-
-        // Convert cell keys to pairs of [row, col]
-        caches.cellsTopToBottom = [...caches.cellsTopToBottom].map(cellKey => cellKeyToRowCol(cellKey));
-
-        // Sort by column, then row
-        caches.cellsTopToBottom.sort((a,b) => a[1] === b[1] ? a[0] - b[0] : a[1] - b[1]);
-    }
-}
-
 function cacheSelectedCells() {
     if (caches.selectedCells === undefined) {
         caches.selectedCells = new Set(getSelectedCells().map(selectedCell => cellKey(selectedCell)));
     }
 }
+
+
+// -------------------------------------------------------------------------------- Keyboard handlers
+
+export function handleArrowKey(direction, shiftKey) {
+    // If holding shift, arrow keys extend the current selection
+    if (shiftKey) {
+        extendInDirection(direction, 1)
+        return;
+    }
+
+    if (state.getConfig('tool') === 'text-editor' && !cursorCell() && !movableContent) {
+        // Jump cursor to start/end of the selection area
+        switch(direction) {
+            case 'left':
+            case 'up':
+                moveCursorTo(polygons[0].topLeft);
+                break;
+            case 'right':
+            case 'down':
+                // Cursor actually needs to go one cell to the right of the selection end
+                moveCursorTo(nextCursorPosition(polygons[0].bottomRight, 'right', 1));
+                break;
+            default:
+                console.warn(`Invalid direction: ${direction}`);
+        }
+        return;
+    }
+
+    moveInDirection(direction);
+}
+
+export function handleBackspaceKey(isDelete) {
+    if (movableContent) {
+        updateMovableContent('', 0);
+    }
+    else if (cursorCell()) {
+        if (!isDelete) {
+            moveInDirection('left', { updateCursorOrigin: false });
+        }
+        state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, '', 0);
+    }
+    else {
+        empty();
+    }
+}
+
+export function handleTabKey(shiftKey) {
+    if (shiftKey) {
+        // If shift key is pressed, we move in opposite direction
+        moveInDirection('left', { updateCursorOrigin: false });
+    } else {
+        moveInDirection('right', { updateCursorOrigin: false })
+    }
+}
+
+export function handleEnterKey(shiftKey) {
+    if (movableContent) {
+        finishMovingContent();
+    }
+    else {
+        // Push a state to the history where the cursor is at the end of the current line -- that way when
+        // you undo, the first undo just jumps back to the previous line with cursor at end.
+        if (cursorCell()) state.pushHistory();
+
+        if (shiftKey) {
+            // If shift key is pressed, we move in opposite direction
+            moveInDirection('up')
+        } else if (cursorCell()) {
+            // 'Enter' key differs from 'ArrowDown' in that the cursor will go to the start of the next line (like Excel)
+            let col = cursorCellOrigin.col,
+                row = cursorCell().row + 1;
+            if (row >= state.numRows()) row = 0
+            moveCursorTo(new Cell(row, col));
+        } else {
+            moveInDirection('down')
+        }
+    }
+}
+
 
 
 // -------------------------------------------------------------------------------- Translating/Modifying Polygons
@@ -638,11 +565,6 @@ function moveDelta(rowDelta, colDelta) {
 
     polygons.forEach(polygon => polygon.translate(rowDelta, colDelta));
 
-    if (cursorCell) {
-        cursorCell.row += rowDelta;
-        cursorCell.col += colDelta;
-    }
-
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
 }
@@ -650,98 +572,114 @@ function moveDelta(rowDelta, colDelta) {
 /**
  * Move all selection polygons in a particular direction
  * @param {string} direction - Direction to move selection ('left'/'up'/'right'/'down')
- * @param {number} amount - Number of cells to move the selection
- * @param {boolean} [moveStart=true] - If false, the start cell of the polygon will not be moved
- * @param {boolean} [moveEnd=true] - If false, the end cell of the polygon will not be moved
- * @param {boolean} [moveContent=true] - If true (and we are not already moving content), the chars underneath the
- *   selection polygons will be moved along with the selection.
+ * @param {Object} [options={}] - move options
+ * @param {number} [options.amount=1] - Number of cells to move the selection
+ * @param {boolean} [options.updateCursorOrigin=true] - Whether to update the cursorCellOrigin (where carriage return takes you)
+ * @param {boolean} [options.wrapCursorPosition=true] - Whether to wrap the cursor if it goes out of bounds
  */
-export function moveInDirection(direction, amount, moveStart = true, moveEnd = true, moveContent = true) {
-    if (!hasTarget()) {
+export function moveInDirection(direction, options = {}) {
+    const amount = options.amount === undefined ? 1 : options.amount;
+    const updateCursorOrigin = options.updateCursorOrigin === undefined ? true : options.updateCursorOrigin;
+    const wrapCursorPosition = options.wrapCursorPosition === undefined ? true : options.wrapCursorPosition;
+
+    if (!hasSelection()) return;
+
+    if (cursorCell()) {
+        moveCursorTo(nextCursorPosition(cursorCell(), direction, amount, wrapCursorPosition), updateCursorOrigin);
         return;
     }
 
-    // If we are already moving content, do not do any special moveContent handling; the content will already be moved
-    // with the selection
-    if (movableContent) moveContent = false;
-
-    if (moveContent) startMovingContent();
-
     switch(direction) {
         case 'left':
-            polygons.forEach(polygon => polygon.translate(0, -amount, moveStart, moveEnd));
+            polygons.forEach(polygon => polygon.translate(0, -amount));
             break;
         case 'up':
-            polygons.forEach(polygon => polygon.translate(-amount, 0, moveStart, moveEnd));
+            polygons.forEach(polygon => polygon.translate(-amount, 0));
             break;
         case 'right':
-            polygons.forEach(polygon => polygon.translate(0, amount, moveStart, moveEnd));
+            polygons.forEach(polygon => polygon.translate(0, amount));
             break;
         case 'down':
-            polygons.forEach(polygon => polygon.translate(amount, 0, moveStart, moveEnd));
+            polygons.forEach(polygon => polygon.translate(amount, 0));
             break;
         default:
             console.warn(`Invalid direction: ${direction}`);
-    }
-
-    if (moveContent) {
-        finishMovingContent();
-        return; // finishMovingContent will trigger a refresh
     }
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
 }
 
-/**
- * Special handler for text-editor tool when arrow keys are pressed. We simulate a real text editor, where:
- *   - the arrow keys move the cursor
- *   - if you hold shift, the cursor begins highlighting text
- *   - if you keep holding shift and make your highlighted text area size 0, it reverts to a normal cursor
- *   - if you let go of shift after highlighting text and hit an arrow key, the cursor jumps to beginning/end of what
- *     you had selected
- */
-export function handleTextEditorArrowKey(direction, shiftKey) {
-    if (shiftKey) {
-        if (cursorCell) {
-            // Switch from a cursor to a selection area (by extending the current polygon and hiding the cursor)
-            moveInDirection(direction, 1, false);
-            hideCursor();
-        }
-        else {
-            // Grow/shrink the selection area like normal
-            moveInDirection(direction, 1, false);
+export function extendInDirection(direction, amount = 1) {
+    if (!hasSelection()) return;
+    if (movableContent) return; // Cannot extend while moving content
 
-            // However, if the selection area ever gets to be size 0, revert back to showing a cursor
-            if (polygons[0] && !hasSelection()) {
-                moveCursorTo(polygons[0].start);
-            }
+    switch(direction) {
+        case 'left':
+            polygons.forEach(polygon => polygon.translate(0, -amount, false, true));
+            break;
+        case 'up':
+            polygons.forEach(polygon => polygon.translate(-amount, 0, false, true));
+            break;
+        case 'right':
+            polygons.forEach(polygon => polygon.translate(0, amount, false, true));
+            break;
+        case 'down':
+            polygons.forEach(polygon => polygon.translate(amount, 0, false, true));
+            break;
+        default:
+            console.warn(`Invalid direction: ${direction}`);
+    }
+
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+}
+
+function nextCursorPosition(currentPosition, direction, amount, wrapCursorPosition = true) {
+    let col = currentPosition.col, row = currentPosition.row;
+
+    switch (direction) {
+        case 'left':
+            col -= amount;
+            break;
+        case 'up':
+            row -= amount;
+            break;
+        case 'right':
+            col += amount;
+            break;
+        case 'down':
+            row += amount;
+            break;
+        default:
+            console.warn(`Invalid direction: ${direction}`);
+    }
+
+    if (wrapCursorPosition) {
+        // Wrap around canvas
+        if (col >= state.numCols()) {
+            col = 0
+            row += 1
+        }
+        if (row >= state.numRows()) {
+            row = 0
+        }
+        if (col < 0) {
+            col = state.numCols() - 1
+            row -= 1
+        }
+        if (row < 0) {
+            row = state.numRows() - 1
         }
     }
     else {
-        if (cursorCell) {
-            // Move the cursor like normal
-            moveCursorInDirection(direction)
-        }
-        else {
-            // Jump cursor to start/end of the selection area, and go back to just having a cursor
-            switch(direction) {
-                case 'left':
-                case 'up':
-                    moveCursorTo(polygons[0].topLeft);
-                    break;
-                case 'right':
-                case 'down':
-                    const target = polygons[0].bottomRight;
-                    target.translate(0, 1); // Cursor actually needs to go one cell to the right of the selection end
-                    moveCursorTo(target);
-                    break;
-                default:
-                    console.warn(`Invalid direction: ${direction}`);
-            }
-            matchPolygonToCursor();
-        }
+        if (col >= state.numCols()) col = state.numCols() - 1
+        if (row >= state.numRows()) row = state.numRows() - 1
+        if (col < 0) col = 0
+        if (row < 0) row = 0;
     }
+
+    return new Cell(row, col);
 }
 
 export function flipVertically(mirrorChars) {

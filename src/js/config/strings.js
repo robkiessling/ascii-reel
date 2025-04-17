@@ -107,9 +107,6 @@ export const strings = {
 
     'tools.selection.move.name': 'Move Selected Content',
     'tools.selection.move.description': 'When activated, clicking and dragging on the selected area will move the content.',
-    'tools.selection.typewriter.name': 'Type Within Selection',
-    'tools.selection.typewriter.description': 'When activated, content can be typed into the selection one character at a time. ' +
-        'The cursor can be moved with the arrow keys, and will wrap when it reaches the end of the selection.',
     'tools.selection.flip-v.name': 'Flip Vertically',
     'tools.selection.flip-v.description': 'Mirrors the selected content vertically.',
     'tools.selection.flip-v.mirror': 'Mirrors characters when possible, e.g. b => p',

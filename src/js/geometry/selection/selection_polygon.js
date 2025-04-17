@@ -40,12 +40,6 @@ export default class SelectionPolygon {
         return new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
     }
 
-    // Return true if the polygon has visible area. By default, even the smallest polygon occupies a 1x1 cell and is
-    // visible. Some subclasses override this.
-    get hasArea() {
-        return true;
-    }
-
     complete() {
         this.completed = true;
     }

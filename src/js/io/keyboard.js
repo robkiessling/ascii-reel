@@ -79,58 +79,21 @@ function setupKeydownListener() {
 function handleEscapeKey() {
     state.endHistoryModification();
 
-    if (state.getConfig('tool') === 'text-editor') {
-        selection.clear();
-    }
-    else {
-        // Regular selection: If cursor is showing, escape just hides the cursor but keeps the selection intact
-        selection.cursorCell ? selection.hideCursor() : selection.clear();
-    }
+    selection.clear();
 }
 
 function handleTabKey(e) {
     state.endHistoryModification();
 
-    if (e.shiftKey) {
-        // If shift key is pressed, we move in opposite direction
-        selection.cursorCell ? selection.moveCursorInDirection('left', false) : selection.moveInDirection('left', 1);
-    } else {
-        selection.cursorCell ? selection.moveCursorInDirection('right', false) : selection.moveInDirection('right', 1);
-    }
+    selection.handleTabKey(e.shiftKey);
 }
 
 function handleEnterKey(e) {
-    if (selection.movableContent) {
-        selection.finishMovingContent();
-    }
-    else {
-        // Push a state to the history where the cursor is at the end of the current line -- that way when
-        // you undo, the first undo just jumps back to the previous line with cursor at end.
-        if (selection.cursorCell) state.pushHistory();
-
-        if (e.shiftKey) {
-            // If shift key is pressed, we move in opposite direction
-            selection.cursorCell ? selection.moveCursorInDirection('up', false) : selection.moveInDirection('up', 1);
-        } else {
-            // 'Enter' key differs from 'ArrowDown' in that the cursor will go to the start of the next line (like Excel)
-            selection.cursorCell ? selection.moveCursorCarriageReturn() : selection.moveInDirection('down', 1);
-        }
-    }
+    selection.handleEnterKey(e.shiftKey);
 }
 
 function handleBackspaceKey(char) {
-    if (selection.movableContent) {
-        selection.updateMovableContent('', 0);
-    }
-    else if (selection.cursorCell) {
-        if (char === 'Backspace') {
-            selection.moveCursorInDirection('left', false);
-        }
-        state.setCurrentCelGlyph(selection.cursorCell.row, selection.cursorCell.col, '', 0);
-    }
-    else {
-        selection.empty();
-    }
+    selection.handleBackspaceKey(char === 'Delete')
 
     if (tools.canSelectChar()) {
         tools.selectChar('');
@@ -143,20 +106,10 @@ function handleBackspaceKey(char) {
 function handleArrowKey(e, arrowKey) {
     const direction = arrowKeyToDirection(arrowKey);
 
-    if (selection.hasTarget()) {
+    if (selection.hasSelection()) {
         state.endHistoryModification();
 
-        if (state.getConfig('tool') === 'text-editor') {
-            // text-editor tool has a special arrow key handler
-            selection.handleTextEditorArrowKey(direction, e.shiftKey);
-        }
-        else {
-            // For non-text-editor selections, if there is a cursor within the selection move that cursor, otherwise
-            // move the entire selection
-            selection.cursorCell ?
-                selection.moveCursorInDirection(direction) :
-                selection.moveInDirection(direction, 1, !e.shiftKey, true, false);
-        }
+        selection.handleArrowKey(direction, e.shiftKey);
     }
     else {
         switch(direction) {
@@ -188,9 +141,7 @@ function arrowKeyToDirection(arrowKey) {
 }
 
 function handleSingleChar(char, moveCursor = true) {
-    if (tools.canSelectChar()) {
-        tools.selectChar(char);
-    }
+    if (tools.canSelectChar()) tools.selectChar(char);
 
     selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCursor);
 }
@@ -299,6 +250,6 @@ function setupCompositionListener() {
 
         // Since we didn't move the cursor in compositionupdate (moveCursor=false), we move the cursor now that
         // composition is finished
-        selection.moveCursorInDirection('right', false)
+        selection.moveInDirection('right', { updateCursorOrigin: false })
     })
 }
