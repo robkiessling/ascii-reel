@@ -1,10 +1,10 @@
 import tippy from "tippy.js";
 import {strToHTML} from "../utils/strings.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 
 export function standardTip($element, stringsKey, overrides = {}) {
-    const name = strings[`${stringsKey}.name`];
-    const description = strings[`${stringsKey}.description`];
+    const name = STRINGS[`${stringsKey}.name`];
+    const description = STRINGS[`${stringsKey}.description`];
 
     return tippy($element.get(0), $.extend({}, {
         content: `<span class="title">${strToHTML(name)}</span><br>` +

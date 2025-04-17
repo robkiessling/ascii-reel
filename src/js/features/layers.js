@@ -7,7 +7,7 @@ import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./main_canvas.js";
 import {createDialog} from "../utils/dialogs.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
@@ -140,7 +140,7 @@ function refreshVisibilities() {
         if (!locked && !state.currentLayer().visible) {
             showCanvasMessage(
                 "<span class='ri ri-fw ri-error-warning-line warning'></span>&emsp;" +
-                strings['warnings.current-layer-not-visible']
+                STRINGS['warnings.current-layer-not-visible']
             )
         }
     }

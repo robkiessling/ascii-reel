@@ -1,6 +1,6 @@
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import * as actions from "../io/actions.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 import * as state from "../state/index.js";
 import {hideAll as hideAllTooltips} from "tippy.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -20,8 +20,8 @@ export function resize() {
 
 function setupActionButtons() {
     actions.registerAction('sidebar.toggle-component', {
-        name: () => strings[state.isMinimized('sidebar') ? 'sidebar.show-component.name' : 'sidebar.hide-component.name'],
-        description: () => strings[state.isMinimized('sidebar') ? 'sidebar.show-component.description' : 'sidebar.hide-component.description'],
+        name: () => STRINGS[state.isMinimized('sidebar') ? 'sidebar.show-component.name' : 'sidebar.hide-component.name'],
+        description: () => STRINGS[state.isMinimized('sidebar') ? 'sidebar.show-component.description' : 'sidebar.hide-component.description'],
         callback: () => {
             toggleComponent('sidebar');
             hideAllTooltips({ duration: 0 }); // Instantly hide tooltips to avoid flash in top-left corner

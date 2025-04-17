@@ -1,5 +1,5 @@
 import tippy from "tippy.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 import {isFunction}from "../utils/utilities.js";
 import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -83,9 +83,9 @@ export function registerAction(id, data) {
         data = { callback: data };
     }
 
-    if (data.name === undefined) { data.name = strings[`${id}.name`]; }
+    if (data.name === undefined) { data.name = STRINGS[`${id}.name`]; }
     if (data.name === undefined) { data.name = ''; }
-    if (data.description === undefined) { data.description = strings[`${id}.description`]; }
+    if (data.description === undefined) { data.description = STRINGS[`${id}.description`]; }
     if (data.enabled === undefined) { data.enabled = true; }
     if (data.visible === undefined) { data.visible = true; }
 
@@ -225,7 +225,7 @@ function tooltipContentBuilder(getActionId) {
         if (ACTION_MODIFIERS[actionId]) {
             ACTION_MODIFIERS[actionId].forEach(modification => {
                 const modifierKey = modifierWord(MODIFIER_KEYS[modification]);
-                const modifierDesc = strings[modification];
+                const modifierDesc = STRINGS[modification];
                 modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
             });
         }

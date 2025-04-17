@@ -1,4 +1,4 @@
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 import {hasActiveFile, isPickerCanceledError, saveFile} from "../storage/file_system.js";
 import {strToHTML} from "../utils/strings.js";
 
@@ -14,8 +14,8 @@ export default class UnsavedWarning {
         this.options = $.extend({}, DEFAULT_OPTIONS, options);
         
         this._createHTML(
-            strings['file.save-warning'],
-            this.options.successStringId ? strings[this.options.successStringId] : ''
+            STRINGS['file.save-warning'],
+            this.options.successStringId ? STRINGS[this.options.successStringId] : ''
         );
 
         this.$container.find('.save').on('click', () => {

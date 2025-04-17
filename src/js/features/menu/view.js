@@ -1,6 +1,6 @@
 import * as state from "../../state/index.js";
 import * as actions from "../../io/actions.js";
-import {strings} from "../../config/strings.js";
+import {STRINGS} from "../../config/strings.js";
 import {createDialog} from "../../utils/dialogs.js";
 import {canZoomIn, canZoomOut} from "../main_canvas.js";
 import {eventBus, EVENTS} from "../../events/events.js";
@@ -31,7 +31,7 @@ let $gridDialog, minorGridSettings, majorGridSettings;
 
 function setupGridToggle() {
     actions.registerAction('view.toggle-grid', {
-        name: () => state.getConfig('grid').show ? strings['view.hide-grid.name'] : strings['view.show-grid.name'],
+        name: () => state.getConfig('grid').show ? STRINGS['view.hide-grid.name'] : STRINGS['view.show-grid.name'],
         callback: () => {
             let grid = $.extend({}, state.getConfig('grid'));
             grid.show = !grid.show;
@@ -138,7 +138,7 @@ class GridSettings {
 
 function setupWhitespaceToggle() {
     actions.registerAction('view.toggle-whitespace', {
-        name: () => state.getConfig('whitespace') ? strings['view.hide-whitespace.name'] : strings['view.show-whitespace.name'],
+        name: () => state.getConfig('whitespace') ? STRINGS['view.hide-whitespace.name'] : STRINGS['view.show-whitespace.name'],
         callback: () => {
             state.setConfig('whitespace', !state.getConfig('whitespace'));
             eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);

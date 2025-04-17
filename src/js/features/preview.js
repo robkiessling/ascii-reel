@@ -10,7 +10,7 @@ import {getCurrentViewRect} from "./main_canvas.js";
 import {getDynamicColor} from "../config/colors.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 import * as tools from "./tools.js";
 
 const MAX_FPS = 24;
@@ -112,8 +112,8 @@ function setupActions() {
     });
 
     actions.registerAction('preview.toggle-play', {
-        name: () => state.getConfig('isPreviewPlaying') ? strings['preview.pause.name'] : strings['preview.play.name'],
-        description: () => state.getConfig('isPreviewPlaying') ? strings['preview.pause.description'] : strings['preview.play.description'],
+        name: () => state.getConfig('isPreviewPlaying') ? STRINGS['preview.pause.name'] : STRINGS['preview.play.name'],
+        description: () => state.getConfig('isPreviewPlaying') ? STRINGS['preview.pause.description'] : STRINGS['preview.play.description'],
         icon: () => state.getConfig('isPreviewPlaying') ? 'ri-pause-circle-line' : 'ri-play-circle-line',
         callback: () => {
             state.setConfig('isPreviewPlaying', !state.getConfig('isPreviewPlaying'));

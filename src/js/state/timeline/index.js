@@ -261,7 +261,7 @@ export function layeredGlyphs(frame, options = {}) {
         // If there is movableContent, show it on top of the rest of the layer
         if (options.movableContent && options.movableContent.glyphs && isCurrentLayer) {
             translateGlyphs(options.movableContent.glyphs, options.movableContent.origin, (r, c, char, color) => {
-                if (char !== undefined && cels.charInBounds(r, c)) {
+                if (char !== undefined && char !== '' && cels.charInBounds(r, c)) {
                     chars[r][c] = char;
                     colors[r][c] = color;
                 }
@@ -271,7 +271,7 @@ export function layeredGlyphs(frame, options = {}) {
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
         if (options.drawingContent && isCurrentLayer) {
             translateGlyphs(options.drawingContent.glyphs, options.drawingContent.origin, (r, c, char, color) => {
-                if (char !== undefined && cels.charInBounds(r, c)) {
+                if (char !== undefined && char !== '' && cels.charInBounds(r, c)) {
                     chars[r][c] = char;
                     colors[r][c] = color;
                 }

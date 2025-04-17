@@ -1,5 +1,5 @@
 
-export const strings = {
+export const STRINGS = {
     'file.new.name': 'New File',
     'file.open.name': 'Open File',
     'file.save-as.name': 'Save to...',

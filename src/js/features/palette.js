@@ -6,7 +6,7 @@ import SimpleBar from "simplebar";
 import * as state from '../state/index.js';
 import * as tools from './tools.js';
 import * as actions from "../io/actions.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
@@ -41,7 +41,7 @@ function setupActions() {
 
     actions.registerAction('palette.sort-colors', {
         name: () => {
-            return strings[`palette.sort-colors.name.${state.getPaletteSortBy()}`]
+            return STRINGS[`palette.sort-colors.name.${state.getPaletteSortBy()}`]
         },
         callback: () => {
             let sortIndex = Object.values(state.PALETTE_SORT_BY_OPTIONS).indexOf(state.getPaletteSortBy());
@@ -92,7 +92,7 @@ function refresh() {
     else {
         $('<div></div>', {
             class: 'empty-list',
-            html: strings['palette.empty']
+            html: STRINGS['palette.empty']
         }).appendTo($colorList);
     }
 

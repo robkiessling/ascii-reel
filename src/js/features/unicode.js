@@ -11,7 +11,7 @@ import * as selection from "./selection.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {createDialog} from "../utils/dialogs.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 
 let $container, $charList, $actions, actionButtons, $unicodeDialog;
 
@@ -101,7 +101,7 @@ function refresh() {
     else {
         $('<div>', {
             class: 'empty-list',
-            html: strings['unicode.empty']
+            html: STRINGS['unicode.empty']
         }).appendTo($charList);
     }
 

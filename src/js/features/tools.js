@@ -13,7 +13,7 @@ import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 import AsciiRect from "../geometry/ascii/ascii_rect.js";
 import AsciiLine from "../geometry/ascii/ascii_line.js";
 import AsciiFreeform from "../geometry/ascii/ascii_freeform.js";
@@ -540,8 +540,8 @@ function setupDrawSubMenu(toolKey) {
         },
         tooltipContent: $tool => {
             const type = $tool.data('type');
-            const name = strings[`tools.${typesKey}.${type}.name`];
-            const description = strings[`tools.${typesKey}.${type}.description`];
+            const name = STRINGS[`tools.${typesKey}.${type}.name`];
+            const description = STRINGS[`tools.${typesKey}.${type}.description`];
             return `<span class="title">${name}</span><br><span>${description}</span>`;
         }
     })

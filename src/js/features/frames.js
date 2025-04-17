@@ -8,7 +8,7 @@ import * as actions from "../io/actions.js";
 import CanvasControl from "../components/canvas_control/index.js";
 import ArrayRange from "../utils/arrays.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
-import {strings} from "../config/strings.js";
+import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import * as tools from "./tools.js";
 import {hideAll as hideAllTooltips} from "tippy.js";
@@ -198,8 +198,8 @@ function setupActions() {
     });
 
     actions.registerAction('frames.toggle-component', {
-        name: () => strings[state.isMinimized('frames') ? 'frames.show-component.name' : 'frames.hide-component.name'],
-        description: () => strings[state.isMinimized('frames') ? 'frames.show-component.description' : 'frames.hide-component.description'],
+        name: () => STRINGS[state.isMinimized('frames') ? 'frames.show-component.name' : 'frames.hide-component.name'],
+        description: () => STRINGS[state.isMinimized('frames') ? 'frames.show-component.description' : 'frames.hide-component.description'],
         callback: () => {
             toggleComponent('frames');
             hideAllTooltips({ duration: 0 });

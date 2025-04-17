@@ -3,9 +3,8 @@ import {getName, setConfig} from "../../state/index.js";
 import {toggleStandard} from "../../io/keyboard.js";
 import {confirmDialog} from "../../utils/dialogs.js";
 import * as fileSystem from "../../storage/file_system.js";
-import {strings} from "../../config/strings.js";
+import {STRINGS} from "../../config/strings.js";
 import {hasActiveFile} from "../../storage/file_system.js";
-import tippy from "tippy.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 
 import {init as initFile} from "./file.js";
@@ -163,7 +162,7 @@ function setupFileName() {
         if (fileSystem.hasActiveFile()) {
             evt.preventDefault();
 
-            confirmDialog(strings['file.cannot-rename-active-file.name'], strings['file.cannot-rename-active-file.description'], () => {
+            confirmDialog(STRINGS['file.cannot-rename-active-file.name'], STRINGS['file.cannot-rename-active-file.description'], () => {
                 fileSystem.saveFile()
                     .then(() => {
                         eventBus.emit(EVENTS.MENU.CHANGED); // For new file name
