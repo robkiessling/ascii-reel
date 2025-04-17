@@ -10,6 +10,7 @@ import * as frames from './frames.js';
 import * as layers from './layers.js';
 import {create2dArray, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows, getConfig} from "../config.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 
 
 export function load(data = {}) {
@@ -218,7 +219,7 @@ export function setCurrentCelGlyph(row, col, char, color) {
  * @param {Object} [options.offset] - Object containing information about how much to offset all the content
  * @param {Object} [options.movableContent] - If provided, the content will be drawn on top of the current layer
  * @param {Object} [options.drawingContent] - If provided, the content will be drawn on top of the current layer
- * @param {boolean} [options.convertEmptyStrToSpace] - If true, empty strings '' will be converted to spaces ' '
+ * @param {boolean} [options.convertEmptyStrToSpace] - If true, EMPTY_CHAR will be converted to WHITESPACE_CHAR
  * @returns {{chars: string[][], colors: number[][]}|null} - Aggregated 2d arrays of chars and color indexes. Will be
  *   null if the layers option is provided and there are no valid layers.
  */
@@ -226,7 +227,7 @@ export function layeredGlyphs(frame, options = {}) {
     const layerIds = options.layers ? new Set(options.layers.filter(layer => layer.visible).map(layer => layer.id)) : null;
     if (layerIds && layerIds.size === 0) return null; // Short circuit
 
-    const chars = create2dArray(numRows(), numCols(), '');
+    const chars = create2dArray(numRows(), numCols(), EMPTY_CHAR);
     const colors = create2dArray(numRows(), numCols(), 0);
 
     let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
@@ -243,7 +244,7 @@ export function layeredGlyphs(frame, options = {}) {
 
         for (celR = 0; celR < celChars.length; celR++) {
             for (celC = 0; celC < celChars[celR].length; celC++) {
-                if (celChars[celR][celC] === '') continue;
+                if (celChars[celR][celC] === EMPTY_CHAR) continue;
 
                 r = celR;
                 c = celC;
@@ -261,7 +262,7 @@ export function layeredGlyphs(frame, options = {}) {
         // If there is movableContent, show it on top of the rest of the layer
         if (options.movableContent && options.movableContent.glyphs && isCurrentLayer) {
             translateGlyphs(options.movableContent.glyphs, options.movableContent.origin, (r, c, char, color) => {
-                if (char !== undefined && char !== '' && cels.charInBounds(r, c)) {
+                if (char !== undefined && char !== EMPTY_CHAR && cels.charInBounds(r, c)) {
                     chars[r][c] = char;
                     colors[r][c] = color;
                 }
@@ -271,7 +272,7 @@ export function layeredGlyphs(frame, options = {}) {
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
         if (options.drawingContent && isCurrentLayer) {
             translateGlyphs(options.drawingContent.glyphs, options.drawingContent.origin, (r, c, char, color) => {
-                if (char !== undefined && char !== '' && cels.charInBounds(r, c)) {
+                if (char !== undefined && char !== EMPTY_CHAR && cels.charInBounds(r, c)) {
                     chars[r][c] = char;
                     colors[r][c] = color;
                 }
@@ -281,8 +282,8 @@ export function layeredGlyphs(frame, options = {}) {
         if (options.convertEmptyStrToSpace) {
             for (r = 0; r < chars.length; r++) {
                 for (c = 0; c < chars[r].length; c++) {
-                    if (chars[r][c] === '') {
-                        chars[r][c] = ' ';
+                    if (chars[r][c] === EMPTY_CHAR) {
+                        chars[r][c] = WHITESPACE_CHAR;
                         // colors[r][c] will be left at default (0)
                     }
                 }

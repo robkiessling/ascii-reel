@@ -26,6 +26,7 @@ import AsciiEllipse from "../geometry/ascii/ascii_ellipse.js";
 import CharPicker from "../components/char_picker.js";
 import {standardTip} from "../components/tooltips.js";
 import {getIconHTML} from "../config/icons.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -459,7 +460,7 @@ function drawFreeformChar(currentCell, prevCell) {
 
 function erase(currentCell, prevCell) {
     freeformBrush(currentCell, prevCell, cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, '', 0)
+        state.setCurrentCelGlyph(cell.row, cell.col, EMPTY_CHAR, 0)
     });
 }
 
@@ -487,7 +488,7 @@ function colorSwap(cell, options) {
     if (!cell.isInBounds()) return;
 
     const [targetChar, targetColor] = state.getCurrentCelGlyph(cell.row, cell.col);
-    if (targetChar === '') return;
+    if (targetChar === EMPTY_CHAR) return;
 
     const primaryColorIndex = state.primaryColorIndex();
 
@@ -643,8 +644,8 @@ function setupCharPicker() {
 
             // If you want the paint bucket char icon to change along with the selected char
             // let visibleChar = newValue;
-            // if (visibleChar === ' ') visibleChar = '␣';
-            // if (visibleChar === '') visibleChar = '∅';
+            // if (visibleChar === WHITESPACE_CHAR) visibleChar = '␣';
+            // if (visibleChar === EMPTY_CHAR) visibleChar = '∅';
             // $('.picked-char').html(visibleChar);
 
             eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);

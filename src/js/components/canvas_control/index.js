@@ -8,13 +8,14 @@ import {roundForComparison} from "../../utils/numbers.js";
 import {PRIMARY_COLOR, SELECTION_COLOR} from "../../config/colors.js";
 import {drawCheckerboard, getHoverColor, HOVER_CELL_OPACITY} from "../../config/background.js";
 import {setupHoverEvents, setupPanEvents, setupRawMouseEvents, setupZoomEvents} from "./events.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 4;
 
-const WHITESPACE_CHAR = '·';
-const WHITESPACE_COLOR = 'rgba(192,192,192,0.5)'
-const WHITESPACE_COLOR_INDEX = -1;
+const VISIBLE_WHITESPACE_CHAR = '·';
+const VISIBLE_WHITESPACE_COLOR = 'rgba(192,192,192,0.5)'
+const VISIBLE_WHITESPACE_COLOR_INDEX = -1;
 
 const OUTLINE_WIDTH = 0.5;
 
@@ -133,7 +134,7 @@ export default class CanvasControl {
      * @param {number} [options.opacity] - Opacity level to draw the content at
      * @param {(row: number, col: number) => boolean} [options.mask] - Masking function. If provided, will be called
      *   for every drawn cell. If the function returns false, the cell will not be drawn.
-     * @param {boolean} [options.showWhitespace] - If true, whitespace (' ' strings) will be depicted as a light grey dot
+     * @param {boolean} [options.showWhitespace] - If true, WHITESPACE_CHARs will be depicted as VISIBLE_WHITESPACE_CHARs
      */
     drawGlyphs(glyphs, options = {}) {
         let needsRestore = false;
@@ -153,15 +154,15 @@ export default class CanvasControl {
                 char = glyphs.chars[row][col];
                 colorIndex = glyphs.colors[row][col];
 
-                if (options.mask && !options.mask(row, col)) char = '';
-                if (options.showWhitespace && glyphs.chars[row][col] === ' ') {
-                    char = WHITESPACE_CHAR;
-                    colorIndex = WHITESPACE_COLOR_INDEX;
+                if (options.mask && !options.mask(row, col)) char = EMPTY_CHAR;
+                if (options.showWhitespace && glyphs.chars[row][col] === WHITESPACE_CHAR) {
+                    char = VISIBLE_WHITESPACE_CHAR;
+                    colorIndex = VISIBLE_WHITESPACE_COLOR_INDEX;
                 }
-                if (char === '') char = ' '; // Every char needs to have width
+                if (char === EMPTY_CHAR) char = WHITESPACE_CHAR; // Every char needs to have width
 
-                // If current char is different from current line's color (and is not whitespace), need to make a new line
-                if (line && colorIndex !== line.colorIndex && char !== ' ') {
+                // If current char is different from current line's color (and is not WHITESPACE_CHAR), need to make a new line
+                if (line && colorIndex !== line.colorIndex && char !== WHITESPACE_CHAR) {
                     lines.push(line);
                     line = null;
                 }
@@ -173,7 +174,7 @@ export default class CanvasControl {
             if (line) { lines.push(line); }
         }
         lines.forEach(line => {
-            this.context.fillStyle = line.colorIndex === WHITESPACE_COLOR_INDEX ? WHITESPACE_COLOR : colorStr(line.colorIndex)
+            this.context.fillStyle = line.colorIndex === VISIBLE_WHITESPACE_COLOR_INDEX ? VISIBLE_WHITESPACE_COLOR : colorStr(line.colorIndex)
 
             // For y value, increase row by 0.5 so it is centered in cell
             this.context.fillText(line.text, Cell.x(line.col), Cell.y(line.row + 0.5));

@@ -1,10 +1,11 @@
 import SimpleBar from "simplebar";
 import {isObject} from "../utils/objects.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 
 
 const SPECIAL_CHARS = new Map(Object.entries({
-    '': { label: 'Empty', value: '', wellClass: 'ri-delete-back-2-line', large: true },
-    ' ': { label: 'Space', value: ' ', wellClass: 'ri-space' },
+    [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-delete-back-2-line', large: true },
+    [WHITESPACE_CHAR]: { label: 'Space', value: WHITESPACE_CHAR, wellClass: 'ri-space' },
 }))
 const WELL_CLASSES = [...SPECIAL_CHARS.values()].map(special => special.wellClass).filter(Boolean);
 const ASCII_TITLE = 'ASCII';
@@ -15,7 +16,7 @@ const BREAK = '__break__'
 const CHARS = [
     ASCII_TITLE,
     [
-        SPECIAL_CHARS.get(''), SPACER, SPECIAL_CHARS.get(' ')
+        SPECIAL_CHARS.get(EMPTY_CHAR), SPACER, SPECIAL_CHARS.get(WHITESPACE_CHAR)
     ],
     [
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',

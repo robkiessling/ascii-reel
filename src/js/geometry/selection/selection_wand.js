@@ -1,6 +1,7 @@
 import * as state from "../../state/index.js";
 import Cell from "../cell.js";
 import SelectionPolygon from "./selection_polygon.js";
+import {EMPTY_CHAR} from "../../config/chars.js";
 
 /**
  * SelectionWand starts with a single cell and then finds all connected cells of the same color.
@@ -61,7 +62,7 @@ export default class SelectionWand extends SelectionPolygon {
 
     complete() {
         const [startChar, startColor] = state.getCurrentCelGlyph(this.start.row, this.start.col);
-        const isBlank = startChar === '';
+        const isBlank = startChar === EMPTY_CHAR;
         const charblind = this.options.charblind;
         const colorblind = this.options.colorblind;
         const diagonal = this.options.diagonal;
@@ -82,7 +83,7 @@ export default class SelectionWand extends SelectionPolygon {
             if (char === undefined) continue; // Skip cell if out of bounds
 
             // If starting character was blank, only keep blank cells. Otherwise only keep non-blank cells
-            if (isBlank ? char !== '' : char === '') continue;
+            if (isBlank ? char !== EMPTY_CHAR : char === EMPTY_CHAR) continue;
 
             // Character values have to match unless charblind option is true
             if (!isBlank && !charblind && char !== startChar) continue;

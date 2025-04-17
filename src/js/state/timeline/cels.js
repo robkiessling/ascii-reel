@@ -6,6 +6,7 @@ import {mod} from "../../utils/numbers.js";
 import {DEFAULT_COLOR} from "../palette.js";
 import pako from "pako";
 import {addToCache} from "../unicode.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 
 // -------------------------------------------------------------------------------- Cels
 // The term "cel" is short for "celluloid" https://en.wikipedia.org/wiki/Cel
@@ -71,7 +72,7 @@ function normalizeCel(cel) {
             if (cel.colors && cel.colors[row] && cel.colors[row][col] !== undefined) {
                 color = cel.colors[row][col];
             }
-            if (char === undefined) { char = ''; }
+            if (char === undefined) { char = EMPTY_CHAR; }
             if (color === undefined) { color = 0; }
 
             normalizedCel.chars[row][col] = char;
@@ -154,7 +155,7 @@ export function charInBounds(row, col) {
  * @param {boolean} [wrap=false] - If true, shifting content past the cel boundaries will wrap it around to the other side
  */
 export function translateCel(cel, rowOffset, colOffset, wrap = false) {
-    let chars = create2dArray(numRows(), numCols(), '');
+    let chars = create2dArray(numRows(), numCols(), EMPTY_CHAR);
     let colors = create2dArray(numRows(), numCols(), 0);
 
     let celR, celC, r, c;
@@ -268,7 +269,7 @@ export function primaryColorIndex() {
 // TODO would be better if this was smarter - what I really want is a way to detect if there are changes that require saving
 export function hasCharContent() {
     return Object.values(state.cels).some(cel => {
-        return cel.chars.some(row => row.some(char => char !== '' && char !== ' '));
+        return cel.chars.some(row => row.some(char => char !== EMPTY_CHAR && char !== WHITESPACE_CHAR));
     })
 }
 
@@ -327,7 +328,7 @@ export function resize(newDimensions, rowOffset, colOffset) {
                 let oldRow = r + rowOffset;
                 let oldCol = c + colOffset;
 
-                resizedChars[r][c] = cel.chars[oldRow] && cel.chars[oldRow][oldCol] ? cel.chars[oldRow][oldCol] : '';
+                resizedChars[r][c] = cel.chars[oldRow] && cel.chars[oldRow][oldCol] ? cel.chars[oldRow][oldCol] : EMPTY_CHAR;
                 resizedColors[r][c] = cel.colors[oldRow] && cel.colors[oldRow][oldCol] ? cel.colors[oldRow][oldCol] : 0;
             }
         }
@@ -369,14 +370,15 @@ export function decodeState(encodedState, celRowLength) {
     }
 }
 
+const ENCODED_EMPTY_CHAR = "\0";
 
 /**
  * Encode a 2d chars array into a compressed Base64 string.
- * @param {string[][]} chars - 2d array of chars. Note: The empty string "" is a valid char.
+ * @param {string[][]} chars - 2d array of chars. Note: EMPTY_CHAR is a valid char.
  * @returns {string} - Base 64 string representing the compressed 2d array
  */
 function encodeChars(chars) {
-    const flatStr = chars.flat().map(char => char === "" ? "\0" : char).join(''); // convert to flat string
+    const flatStr = chars.flat().map(char => char === EMPTY_CHAR ? ENCODED_EMPTY_CHAR : char).join(''); // convert to flat string
     const compressed = pako.deflate(flatStr); // convert to compressed Uint8Array
     return window.btoa(String.fromCharCode(...compressed)); // convert to Base64 string
 
@@ -393,7 +395,7 @@ function encodeChars(chars) {
 function decodeChars(base64String, rowLength) {
     const compressed = Uint8Array.from(window.atob(base64String), c => c.charCodeAt(0)); // convert to compressed Uint8Array
     const flatStr = pako.inflate(compressed, {to: 'string'}) // convert to uncompressed flat string
-    return split1DArrayInto2D(flatStr.split('').map(char => char === "\0" ? "" : char), rowLength) // convert to 2d chars array
+    return split1DArrayInto2D(flatStr.split('').map(char => char === ENCODED_EMPTY_CHAR ? EMPTY_CHAR : char), rowLength) // convert to 2d chars array
 }
 
 /**

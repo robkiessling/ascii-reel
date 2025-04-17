@@ -7,6 +7,7 @@ import * as state from "../state/index.js";
 import * as actions from "./actions.js";
 import {translateGlyphs} from "../utils/arrays.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 
 let copiedSelection = null;
 let copiedText = null;
@@ -103,7 +104,7 @@ function pasteGlyphs(glyphs, limitToSelection = false) {
         translateGlyphs(glyphs, selection.getSelectedCellArea().topLeft, (r, c, char, color) => {
             // Copied empty cells do not override existing cells (if you want to override existing cells to make them
             // blank, original copy should have spaces not empty cells)
-            if (char === '') return;
+            if (char === EMPTY_CHAR) return;
 
             if (!limitToSelection || selection.isSelectedCell({row: r, col: c})) {
                 state.setCurrentCelGlyph(r, c, char, color);
@@ -132,8 +133,8 @@ function convertGlyphsToText(glyphs) {
     // TODO Only caring about the char, not the color
     return glyphs.chars.map(row => {
         return row.map(char => {
-            // Convert empty cells to space char ' ' so when it is pasted to a text document the spacing is correct
-            return char === undefined || char === '' ? ' ' : char;
+            // Convert empty cells to WHITESPACE_CHAR so when it is pasted to a text document the spacing is correct
+            return char === undefined || char === EMPTY_CHAR ? WHITESPACE_CHAR : char;
         }).join('');
     }).join('\n');
 }

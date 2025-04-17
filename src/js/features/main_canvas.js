@@ -19,6 +19,7 @@ import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
 import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
+import {EMPTY_CHAR} from "../config/chars.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -179,8 +180,8 @@ function redrawCharCanvas() {
             opacity: NON_CURRENT_LAYER_OPACITY,
             mask: (row, col) => {
                 // Don't include chars that will be covered by canvases above
-                if (currentGlyphs.chars[row][col] !== '') return false;
-                if (aboveGlyphs && aboveGlyphs.chars[row][col] !== '') return false;
+                if (currentGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
+                if (aboveGlyphs && aboveGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
                 return true;
             }
         });
@@ -193,7 +194,7 @@ function redrawCharCanvas() {
         // The following is commented out because I think it looks better if we DO draw current-layer chars, even if
         // they will be covered by canvases above
         // mask: state.getConfig('lockLayerVisibility') ? undefined : (row, col) => {
-        //     return aboveGlyphs.chars[row][col] === '';
+        //     return aboveGlyphs.chars[row][col] === EMPTY_CHAR;
         // }
     });
 

@@ -3,6 +3,7 @@ import * as state from "../state/index.js";
 import * as tools from "../features/tools.js";
 import * as actions from "./actions.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {EMPTY_CHAR} from "../config/chars.js";
 
 const $document = $(document);
 
@@ -96,7 +97,7 @@ function handleBackspaceKey(char) {
     selection.handleBackspaceKey(char === 'Delete')
 
     if (tools.canSelectChar()) {
-        tools.selectChar('');
+        tools.selectChar(EMPTY_CHAR);
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);

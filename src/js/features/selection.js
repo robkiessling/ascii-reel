@@ -11,6 +11,7 @@ import SelectionLasso from "../geometry/selection/selection_lasso.js";
 import {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {EMPTY_CHAR} from "../config/chars.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -42,7 +43,7 @@ export function clear(refresh = true) {
 // Empties the selection's contents. Does not clear the selection.
 export function empty() {
     getSelectedCells().forEach(cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, '', 0);
+        state.setCurrentCelGlyph(cell.row, cell.col, EMPTY_CHAR, 0);
     });
 }
 
@@ -389,7 +390,7 @@ export function startMovingContent() {
 export function finishMovingContent() {
     translateGlyphs(movableContent, getSelectedCellArea().topLeft, (r, c, char, color) => {
         // Moving empty cells does not override existing cells
-        if (char === '') return;
+        if (char === EMPTY_CHAR) return;
 
         state.setCurrentCelGlyph(r, c, char, color);
     });
@@ -508,13 +509,13 @@ export function handleArrowKey(direction, shiftKey) {
 
 export function handleBackspaceKey(isDelete) {
     if (movableContent) {
-        updateMovableContent('', 0);
+        updateMovableContent(EMPTY_CHAR, 0);
     }
     else if (cursorCell()) {
         if (!isDelete) {
             moveInDirection('left', { updateCursorOrigin: false });
         }
-        state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, '', 0);
+        state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, EMPTY_CHAR, 0);
     }
     else {
         empty();
@@ -710,7 +711,7 @@ function flip(horizontally, vertically, mirrorChars) {
             char: char,
             color: color
         });
-        state.setCurrentCelGlyph(cell.row, cell.col, '', 0);
+        state.setCurrentCelGlyph(cell.row, cell.col, EMPTY_CHAR, 0);
     });
 
     updates.forEach(update => {
