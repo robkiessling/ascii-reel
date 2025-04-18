@@ -78,24 +78,22 @@ function setupEventBus() {
 
         switch(tool) {
             case 'eraser':
-                erase(cell);
+                startDrawing(PolygonFactory.createFreeform, cell, { drawType: 'eraser' })
                 break;
             case 'paint-brush':
-                paintBrush(cell);
+                startDrawing(PolygonFactory.createFreeform, cell, { drawType: 'paint-brush' })
                 break;
             case 'draw-freeform':
-                state.getConfig('drawTypes')[tool] === 'current-char' ?
-                    drawFreeformChar(cell) :
-                    startDrawing(cell, { canvas: canvasControl }, [mouseEvent])
+                startDrawing(PolygonFactory.createFreeform, cell, { canvas: canvasControl }, [mouseEvent])
                 break;
             case 'draw-rect':
-                startDrawing(cell, {}, [mouseEvent.shiftKey]);
+                startDrawing(PolygonFactory.createRect, cell, {}, [mouseEvent.shiftKey]);
                 break;
             case 'draw-line':
-                startDrawing(cell, {}, [mouseEvent.shiftKey]);
+                startDrawing(PolygonFactory.createLine, cell, {}, [mouseEvent.shiftKey]);
                 break;
             case 'draw-ellipse':
-                startDrawing(cell, {}, [mouseEvent.shiftKey]);
+                startDrawing(PolygonFactory.createEllipse, cell, {}, [mouseEvent.shiftKey]);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
@@ -148,19 +146,12 @@ function setupEventBus() {
 
         switch(tool) {
             case 'eraser':
-                if (isNewCell) erase(cell, prevCell);
-                break;
             case 'paint-brush':
-                if (isNewCell) paintBrush(cell, prevCell);
+                if (isNewCell) updateDrawing(cell);
                 break;
             case 'draw-freeform':
-                if (state.getConfig('drawTypes')[tool] === 'current-char') {
-                    if (isNewCell) drawFreeformChar(cell, prevCell);
-                }
-                else {
-                    // Intentionally not checking if isNewCell; we update the char based on pixels not cells
-                    updateDrawing(cell, [mouseEvent]);
-                }
+                // Intentionally not checking if isNewCell; we update the char based on pixels not cells
+                updateDrawing(cell, [mouseEvent]);
                 break;
             case 'draw-rect':
             case 'draw-line':
@@ -186,13 +177,7 @@ function setupEventBus() {
         switch(tool) {
             case 'eraser':
             case 'paint-brush':
-                state.pushHistory();
-                break;
             case 'draw-freeform':
-                state.getConfig('drawTypes')[tool] === 'current-char' ?
-                    state.pushHistory() :
-                    finishDrawing()
-                break;
             case 'draw-rect':
             case 'draw-line':
             case 'draw-ellipse':
@@ -338,7 +323,7 @@ function resizeToSelection() {
 }
 
 
-// -------------------------------------------------------------------------------- Brushing shapes / painting
+// -------------------------------------------------------------------------------- Brush
 
 const BRUSH_TOOLS = ['draw-freeform', 'eraser', 'paint-brush'];
 
@@ -445,47 +430,7 @@ function setupBrushSubMenu() {
     subMenus.push(subMenu);
 }
 
-/**
- * Updates a cell (and potentially its neighboring cells) according to the current brush shape/size. If a previous cell
- * is provided, will interpolate the cells between the previous cell and the current cell. This is important in case the
- * user drags their mouse very fast.
- * @param {Cell} currentCell - The cell at the center of the brush
- * @param {Cell} [prevCell] - The previous cell to interpolate from
- * @param {(cell: Cell) => void} updater - Callback
- */
-function freeformBrush(currentCell, prevCell, updater) {
-    if (prevCell) {
-        prevCell.lineTo(currentCell).forEach(cell => hoveredCells(cell).forEach(updater));
-    }
-    else {
-        hoveredCells(currentCell).forEach(updater)
-    }
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-}
-
-function drawFreeformChar(currentCell, prevCell) {
-    const primaryColorIndex = state.primaryColorIndex();
-
-    freeformBrush(currentCell, prevCell, cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, state.getConfig('primaryChar'), primaryColorIndex)
-    })
-}
-
-function erase(currentCell, prevCell) {
-    freeformBrush(currentCell, prevCell, cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, EMPTY_CHAR, 0)
-    });
-}
-
-function paintBrush(currentCell, prevCell) {
-    const primaryColorIndex = state.primaryColorIndex();
-
-    freeformBrush(currentCell, prevCell, cell => {
-        state.setCurrentCelGlyph(cell.row, cell.col, undefined, primaryColorIndex)
-    })
-}
-
+// -------------------------------------------------------------------------------- Color Tools
 
 function fillConnectedCells(cell, char, colorIndex, options) {
     if (!cell.isInBounds()) return;
@@ -566,20 +511,15 @@ function setupDrawSubMenu(toolKey) {
 
 export let drawingContent = null;
 
-function startDrawing(cell, options = {}, recalculateArgs = []) {
-    options = $.extend({
+function startDrawing(factory, cell, options = {}, recalculateArgs = []) {
+    drawingContent = factory(cell, $.extend({
         drawType: state.getConfig('drawTypes')[state.getConfig('tool')],
         colorIndex: state.primaryColorIndex(),
-        char: state.getConfig('primaryChar')
-    }, options);
+        char: state.getConfig('primaryChar'),
+        hoveredCells: hoveredCells,
+        canvasDimensions: state.getConfig('dimensions'),
+    }, options));
 
-    // drawingContent = new klass(cell, options);
-    drawingContent = PolygonFactory.create(
-        state.getConfig('tool'),
-        state.getConfig('drawTypes')[state.getConfig('tool')],
-        cell,
-        options
-    )
     updateDrawing(cell, recalculateArgs);
 }
 

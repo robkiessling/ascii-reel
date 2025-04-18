@@ -272,9 +272,9 @@ export function layeredGlyphs(frame, options = {}) {
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
         if (options.drawingContent && isCurrentLayer) {
             translateGlyphs(options.drawingContent.glyphs, options.drawingContent.origin, (r, c, char, color) => {
-                if (char !== undefined && char !== EMPTY_CHAR && cels.charInBounds(r, c)) {
-                    chars[r][c] = char;
-                    colors[r][c] = color;
+                if (cels.charInBounds(r, c)) {
+                    if (char !== undefined) chars[r][c] = char;
+                    if (color !== undefined) colors[r][c] = color;
                 }
             });
         }
