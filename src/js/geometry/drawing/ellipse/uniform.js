@@ -1,12 +1,12 @@
-import AsciiPolygon from "./ascii_polygon.js";
-import Cell from "../cell.js";
-import {create2dArray} from "../../utils/arrays.js";
-import CellArea from "../cell_area.js";
+import Cell from "../../cell.js";
+import {create2dArray} from "../../../utils/arrays.js";
+import CellArea from "../../cell_area.js";
+import DrawingEllipse from "./base.js";
 
 /**
  * Handles drawing an ellipse out of ASCII characters.
  */
-export default class AsciiEllipse extends AsciiPolygon {
+export default class UniformEllipse extends DrawingEllipse {
     recalculate() {
         const topLeft = new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
         const bottomRight = new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));

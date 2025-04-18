@@ -14,10 +14,6 @@ import Color from "@sphinxxxx/color-conversion";
 import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
-import AsciiRect from "../geometry/drawing/ascii_rect.js";
-import AsciiLine from "../geometry/drawing/ascii_line.js";
-import AsciiFreeform from "../geometry/drawing/ascii_freeform.js";
-import AsciiEllipse from "../geometry/drawing/ascii_ellipse.js";
 import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
@@ -27,6 +23,7 @@ import CharPicker from "../components/char_picker.js";
 import {standardTip} from "../components/tooltips.js";
 import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
+import PolygonFactory from "../geometry/drawing/polygon_factory.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -89,16 +86,16 @@ function setupEventBus() {
             case 'draw-freeform':
                 state.getConfig('drawTypes')[tool] === 'current-char' ?
                     drawFreeformChar(cell) :
-                    startDrawing(cell, AsciiFreeform, { canvas: canvasControl }, [mouseEvent])
+                    startDrawing(cell, { canvas: canvasControl }, [mouseEvent])
                 break;
             case 'draw-rect':
-                startDrawing(cell, AsciiRect, {}, [mouseEvent.shiftKey]);
+                startDrawing(cell, {}, [mouseEvent.shiftKey]);
                 break;
             case 'draw-line':
-                startDrawing(cell, AsciiLine, {}, [mouseEvent.shiftKey]);
+                startDrawing(cell, {}, [mouseEvent.shiftKey]);
                 break;
             case 'draw-ellipse':
-                startDrawing(cell, AsciiEllipse, {}, [mouseEvent.shiftKey]);
+                startDrawing(cell, {}, [mouseEvent.shiftKey]);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
@@ -569,14 +566,20 @@ function setupDrawSubMenu(toolKey) {
 
 export let drawingContent = null;
 
-function startDrawing(cell, klass, options = {}, recalculateArgs = []) {
+function startDrawing(cell, options = {}, recalculateArgs = []) {
     options = $.extend({
         drawType: state.getConfig('drawTypes')[state.getConfig('tool')],
         colorIndex: state.primaryColorIndex(),
         char: state.getConfig('primaryChar')
     }, options);
 
-    drawingContent = new klass(cell, options);
+    // drawingContent = new klass(cell, options);
+    drawingContent = PolygonFactory.create(
+        state.getConfig('tool'),
+        state.getConfig('drawTypes')[state.getConfig('tool')],
+        cell,
+        options
+    )
     updateDrawing(cell, recalculateArgs);
 }
 

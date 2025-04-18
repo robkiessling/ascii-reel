@@ -1,6 +1,7 @@
-import AsciiPolygon from "./ascii_polygon.js";
-import Cell from "../cell.js";
-import {create2dArray} from "../../utils/arrays.js";
+import DrawingPolygon from "../polygon.js";
+import Cell from "../../cell.js";
+import {create2dArray} from "../../../utils/arrays.js";
+import {isFunction} from "../../../utils/utilities.js";
 
 /**
  * Characters used to draw the different types of ascii rectangles. A rectangle is made up of 4 corners (TOP_LEFT,
@@ -38,18 +39,27 @@ const DRAW_RECT_CHARS = {
         BOTTOM_RIGHT: '╝',
         HORIZONTAL: '═',
         VERTICAL: '║'
-    }
-}
-
-function createSingleCharSheet(char, filled = false) {
-    return {
-        TOP_LEFT: char,
-        TOP_RIGHT: char,
-        BOTTOM_LEFT: char,
-        BOTTOM_RIGHT: char,
-        HORIZONTAL: char,
-        VERTICAL: char,
-        FILL: filled ? char : undefined
+    },
+    'current-char-outline': char => {
+        return {
+            TOP_LEFT: char,
+            TOP_RIGHT: char,
+            BOTTOM_LEFT: char,
+            BOTTOM_RIGHT: char,
+            HORIZONTAL: char,
+            VERTICAL: char,
+        }
+    },
+    'current-char-filled': char => {
+        return {
+            TOP_LEFT: char,
+            TOP_RIGHT: char,
+            BOTTOM_LEFT: char,
+            BOTTOM_RIGHT: char,
+            HORIZONTAL: char,
+            VERTICAL: char,
+            FILL: char
+        }
     }
 }
 
@@ -59,7 +69,7 @@ function createSingleCharSheet(char, filled = false) {
  * tries to approximate an actual rectangle shape out of many characters (e.g. vertical line char on sides, horizontal
  * line char on top/bottom, rounded corners, etc.)
  */
-export default class AsciiRect extends AsciiPolygon {
+export default class DrawingRect extends DrawingPolygon {
     recalculate() {
         const numRows = Math.abs(this.start.row - this.end.row) + 1
         const numCols = Math.abs(this.start.col - this.end.col) + 1
@@ -69,15 +79,8 @@ export default class AsciiRect extends AsciiPolygon {
             colors: create2dArray(numRows, numCols)
         }
 
-        let charSheet;
-        switch (this.options.drawType) {
-            case 'current-char-outline':
-            case 'current-char-filled':
-                charSheet = createSingleCharSheet(this.options.char, this.options.drawType === 'current-char-filled');
-                break;
-            default:
-                charSheet = DRAW_RECT_CHARS[this.options.drawType];
-        }
+        let charSheet = DRAW_RECT_CHARS[this.options.drawType];
+        if (isFunction(charSheet)) charSheet = charSheet(this.options.char);
 
         if (charSheet === undefined) {
             console.error("Invalid char sheet for: ", this.options.drawType)

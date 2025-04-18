@@ -1,7 +1,7 @@
 /**
  * Base class for Ascii drawings. Subclasses will override recalculate() function.
  */
-export default class AsciiPolygon {
+export default class DrawingPolygon {
     constructor(startCell, options = {}) {
         this.start = startCell;
         this.end = startCell.clone();

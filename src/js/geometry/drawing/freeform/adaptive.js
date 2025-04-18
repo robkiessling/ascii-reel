@@ -1,7 +1,8 @@
-import AsciiPolygon from "./ascii_polygon.js";
-import {create2dArray} from "../../utils/arrays.js";
-import Cell from "../cell.js";
-import {roundToDecimal} from "../../utils/numbers.js";
+import DrawingPolygon from "../polygon.js";
+import {create2dArray} from "../../../utils/arrays.js";
+import Cell from "../../cell.js";
+import {roundToDecimal} from "../../../utils/numbers.js";
+import DrawingFreeform from "./base.js";
 
 const DEBUG = false;
 
@@ -248,7 +249,7 @@ class FreeformInterpolator {
  * Handles drawing a freeform line out of ASCII characters. The line can have many twists and turns as the user draws.
  * Chars will be chosen to best fit the line; see FreeformChar class for details on how chars are chosen.
  */
-export default class AsciiFreeform extends AsciiPolygon {
+export default class AdaptiveFreeform extends DrawingFreeform {
     constructor(...args) {
         super(...args);
 
