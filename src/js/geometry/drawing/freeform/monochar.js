@@ -4,7 +4,7 @@ import {create2dArray} from "../../../utils/arrays.js";
 import {EMPTY_CHAR} from "../../../config/chars.js";
 
 
-export default class UniformFreeform extends DrawingFreeform {
+export default class MonocharFreeform extends DrawingFreeform {
     constructor(...args) {
         super(...args);
 
@@ -28,12 +28,16 @@ export default class UniformFreeform extends DrawingFreeform {
         }
 
         this._brushCell(this.end)
+
+        this.prevCell = this.end;
     }
 
     _brushCell(primaryCell) {
         this.options.hoveredCells(primaryCell).forEach(cell => {
+            if (!cell.isInBounds()) return;
+
             switch(this.options.drawType) {
-                case 'current-char':
+                case 'irregular-monochar':
                     this._glyphs.chars[cell.row][cell.col] = this.options.char;
                     this._glyphs.colors[cell.row][cell.col] = this.options.colorIndex;
                     break;
@@ -44,7 +48,7 @@ export default class UniformFreeform extends DrawingFreeform {
                     this._glyphs.colors[cell.row][cell.col] = this.options.colorIndex;
                     break;
                 default:
-                    console.warn(`Unknown UniformFreeform drawType: ${this.options.drawType}`)
+                    console.warn(`Unknown MonocharFreeform drawType: ${this.options.drawType}`)
             }
         })
     }

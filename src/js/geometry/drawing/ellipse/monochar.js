@@ -6,7 +6,7 @@ import DrawingEllipse from "./base.js";
 /**
  * Handles drawing an ellipse out of ASCII characters.
  */
-export default class UniformEllipse extends DrawingEllipse {
+export default class MonocharEllipse extends DrawingEllipse {
     recalculate() {
         const topLeft = new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
         const bottomRight = new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
@@ -34,17 +34,13 @@ export default class UniformEllipse extends DrawingEllipse {
         }
 
         switch (this.options.drawType) {
-            case 'current-char-outline':
+            case 'outline-monochar':
                 drawEllipseSymmetric(area, { filled: false }, drawGlyph)
                 // drawEllipseFuzzy(area, { thickness: 1, filled: false }, drawGlyph)
                 break;
-            case 'current-char-filled':
+            case 'filled-monochar':
                 drawEllipseSymmetric(area, { filled: true }, drawGlyph)
                 // drawEllipseFuzzy(area, { thickness: 1, filled: true }, drawGlyph)
-                break;
-            case 'ascii-outline':
-            case 'ascii-filled':
-                console.warn('not implemented')
                 break;
             default:
                 console.warn(`unknown drawType: ${this.options.drawType}`);

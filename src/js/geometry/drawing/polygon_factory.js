@@ -1,21 +1,21 @@
 import DrawingRect from "./rect/base.js";
 import AdaptiveFreeform from "./freeform/adaptive.js";
-import UniformEllipse from "./ellipse/uniform.js";
+import MonocharEllipse from "./ellipse/monochar.js";
 import AdaptiveLine from "./line/adaptive.js";
-import UniformLine from "./line/uniform.js";
+import MonocharLine from "./line/monochar.js";
 import ElbowLine from "./line/elbow.js";
-import UniformFreeform from "./freeform/uniform.js";
+import MonocharFreeform from "./freeform/monochar.js";
 
 export default class PolygonFactory {
 
     static createFreeform(cell, options) {
         switch (options.drawType) {
-            case 'ascii-generated':
+            case 'irregular-adaptive':
                 return new AdaptiveFreeform(cell, options);
-            case 'current-char':
+            case 'irregular-monochar':
             case 'eraser':
             case 'paint-brush':
-                return new UniformFreeform(cell, options);
+                return new MonocharFreeform(cell, options);
 
             // TODO elbow
 
@@ -26,13 +26,15 @@ export default class PolygonFactory {
 
     static createLine(cell, options) {
         switch (options.drawType) {
-            case 'ascii-straight':
+            case 'straight-adaptive':
                 return new AdaptiveLine(cell, options);
-            case 'current-char-straight':
-                return new UniformLine(cell, options);
-            case 'ascii-right-angle-line':
-            case 'ascii-right-angle-arrow':
-            case 'current-char-right-angle':
+            case 'straight-monochar':
+                return new MonocharLine(cell, options);
+            case 'elbow-line-ascii':
+            case 'elbow-arrow-ascii':
+            case 'elbow-line-unicode':
+            case 'elbow-arrow-unicode':
+            case 'elbow-line-monochar':
                 return new ElbowLine(cell, options);
             default:
                 console.warn(`No Line drawing found for: ${options.drawType}`);
@@ -41,12 +43,12 @@ export default class PolygonFactory {
 
     static createRect(cell, options) {
         switch (options.drawType) {
-            case 'printable-ascii-1':
-            case 'printable-ascii-2':
-            case 'single-line':
-            case 'double-line':
-            case 'current-char-outline':
-            case 'current-char-filled':
+            case 'outline-ascii-1':
+            case 'outline-ascii-2':
+            case 'outline-unicode-1':
+            case 'outline-unicode-2':
+            case 'outline-monochar':
+            case 'filled-monochar':
                 return new DrawingRect(cell, options);
             default:
                 console.warn(`No Rect drawing found for: ${options.drawType}`);
@@ -55,9 +57,9 @@ export default class PolygonFactory {
 
     static createEllipse(cell, options) {
         switch (options.drawType) {
-            case 'current-char-outline':
-            case 'current-char-filled':
-                return new UniformEllipse(cell, options);
+            case 'outline-monochar':
+            case 'filled-monochar':
+                return new MonocharEllipse(cell, options);
 
             // TODO adaptive
 

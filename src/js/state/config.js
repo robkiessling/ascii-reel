@@ -32,10 +32,10 @@ export const DEFAULT_STATE = {
         size: 1
     },
     drawTypes: {
-        'draw-freeform': 'ascii-generated',
-        'draw-rect': 'printable-ascii-1',
-        'draw-line': 'ascii-straight',
-        'draw-ellipse': 'current-char-outline',
+        'draw-freeform': 'irregular-adaptive',
+        'draw-rect': 'outline-ascii-1',
+        'draw-line': 'straight-adaptive',
+        'draw-ellipse': 'outline-monochar',
     },
     lastExportOptions: null,
     cursorPosition: {},

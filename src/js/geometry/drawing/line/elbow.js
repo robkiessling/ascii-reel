@@ -6,7 +6,7 @@ import {isFunction} from "../../../utils/utilities.js";
 
 
 const RIGHT_ANGLE_CHARS = {
-    'ascii-right-angle-line': {
+    'elbow-line-ascii': {
         LINE: {
             UP: '|',
             RIGHT: '-',
@@ -15,25 +15,13 @@ const RIGHT_ANGLE_CHARS = {
         },
         BEND: '+',
     },
-    'ascii-right-angle-arrow': {
-        // START: {
-        //     UP: '|',
-        //     RIGHT: '-',
-        //     DOWN: '|',
-        //     LEFT: '-',
-        // },
+    'elbow-arrow-ascii': {
         LINE: {
             UP: '|',
             RIGHT: '-',
             DOWN: '|',
             LEFT: '-',
         },
-        // BEND: {
-        //     UP_RIGHT: '+',
-        //     UP_LEFT: '+',
-        //     DOWN_RIGHT: '+',
-        //     DOWN_LEFT: '+',
-        // },
         BEND: '+',
         END: {
             UP: '^',
@@ -42,7 +30,49 @@ const RIGHT_ANGLE_CHARS = {
             LEFT: '<',
         }
     },
-    'current-char-right-angle': char => {
+    'elbow-line-unicode': {
+        LINE: {
+            UP: '│',
+            RIGHT: '─',
+            DOWN: '│',
+            LEFT: '─',
+        },
+        BEND: {
+            UP_RIGHT: '┌',
+            UP_LEFT: '┐',
+            RIGHT_UP: '┘',
+            RIGHT_DOWN: '┐',
+            DOWN_RIGHT: '└',
+            DOWN_LEFT: '┘',
+            LEFT_UP: '└',
+            LEFT_DOWN: '┌'
+        },
+    },
+    'elbow-arrow-unicode': {
+        LINE: {
+            UP: '│',
+            RIGHT: '─',
+            DOWN: '│',
+            LEFT: '─',
+        },
+        BEND: {
+            UP_RIGHT: '┌',
+            UP_LEFT: '┐',
+            RIGHT_UP: '┘',
+            RIGHT_DOWN: '┐',
+            DOWN_RIGHT: '└',
+            DOWN_LEFT: '┘',
+            LEFT_UP: '└',
+            LEFT_DOWN: '┌'
+        },
+        END: {
+            UP: '▲',
+            RIGHT: '▶',
+            DOWN: '▼',
+            LEFT: '◀',
+        }
+    },
+    'elbow-line-monochar': char => {
         return {
             LINE: char
         }
@@ -66,20 +96,33 @@ export default class ElbowLine extends DrawingLine {
             colors: create2dArray(numRows, numCols)
         }
 
-        const getCharBetween = (type, fromCell, toCell) => {
-            const direction = getDirectionBetween(fromCell, toCell);
+        const getCharBetween = (type, ...cells) => {
+            const direction = getDirectionBetweenCells(...cells);
             if (charSheet[type] === undefined) type = 'LINE';
             return isObject(charSheet[type]) ? charSheet[type][direction] : charSheet[type];
         }
-        const getDirectionBetween = (fromCell, toCell) => {
-            let vertical = '';
-            if (fromCell.row < toCell.row) vertical = 'DOWN'
-            if (fromCell.row > toCell.row) vertical = 'UP'
-            let horizontal = '';
-            if (fromCell.col < toCell.col) horizontal = 'RIGHT'
-            if (fromCell.col > toCell.col) horizontal = 'LEFT'
-            if (!vertical && !horizontal) return 'DOWN';
-            return `${vertical}${vertical && horizontal ? '_' : ''}${horizontal}`
+        const getDirectionBetweenCells = (...cells) => {
+            const directions = [];
+
+            for (let i = 1; i < cells.length; i++) {
+                const fromCell = cells[i - 1];
+                const toCell = cells[i];
+                if ((fromCell.row !== toCell.row) && (fromCell.col !== toCell.col)) {
+                    console.warn('Cell points must be along a horizontal or vertical line')
+                } else if (fromCell.row < toCell.row) {
+                    directions.push('DOWN')
+                } else if (fromCell.row > toCell.row) {
+                    directions.push('UP')
+                } else if (fromCell.col < toCell.col) {
+                    directions.push('RIGHT')
+                } else if (fromCell.col > toCell.col) {
+                    directions.push('LEFT')
+                } else {
+                    directions.push('DOWN') // No movement; just show DOWN icon
+                }
+            }
+
+            return directions.join('_')
         }
         const setGlyph = (row, col, char) => {
             if (char !== undefined) {
@@ -123,9 +166,11 @@ export default class ElbowLine extends DrawingLine {
         else {
             setGlyph(relativeStart.row, relativeStart.col, getCharBetween('START', relativeStart, bend));
             straightLineBetween(relativeStart, bend, getCharBetween('LINE', relativeStart, bend));
-            setGlyph(bend.row, bend.col, getCharBetween('BEND', relativeStart, relativeEnd));
+            setGlyph(bend.row, bend.col, getCharBetween('BEND', relativeStart, bend, relativeEnd));
             straightLineBetween(bend, relativeEnd, getCharBetween('LINE', bend, relativeEnd));
             setGlyph(relativeEnd.row, relativeEnd.col, getCharBetween('END', bend, relativeEnd));
         }
     }
+
+
 }

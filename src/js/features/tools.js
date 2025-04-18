@@ -296,7 +296,7 @@ function actionIdForSelectionTool(tool) {
 }
 
 function refreshSelectionTools() {
-    $selectionTools.toggle(selection.hasSelection());
+    $selectionTools.toggle(selection.hasSelection() && !selection.cursorCell());
 
     $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
 
@@ -332,8 +332,8 @@ function brushEnabled() {
 
     switch(state.getConfig('tool')) {
         case 'draw-freeform':
-            // Brush is only used when drawing current-char (not other types of freeform drawings)
-            return state.getConfig('drawTypes')['draw-freeform'] === 'current-char';
+            // Brush is only used when drawing irregular-monochar (not other types of freeform drawings)
+            return state.getConfig('drawTypes')['draw-freeform'] === 'irregular-monochar';
         default:
             return true;
     }

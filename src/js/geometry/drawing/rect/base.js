@@ -8,7 +8,7 @@ import {isFunction} from "../../../utils/utilities.js";
  * TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT), 2 HORIZONTAL lines, and 2 VERTICAL lines.
  */
 const DRAW_RECT_CHARS = {
-    'printable-ascii-1': {
+    'outline-ascii-1': {
         TOP_LEFT: '/',
         TOP_RIGHT: '\\',
         BOTTOM_LEFT: '\\',
@@ -16,7 +16,7 @@ const DRAW_RECT_CHARS = {
         HORIZONTAL: '-',
         VERTICAL: '|'
     },
-    'printable-ascii-2': {
+    'outline-ascii-2': {
         TOP_LEFT: '+',
         TOP_RIGHT: '+',
         BOTTOM_LEFT: '+',
@@ -24,7 +24,7 @@ const DRAW_RECT_CHARS = {
         HORIZONTAL: '-',
         VERTICAL: '|'
     },
-    'single-line': {
+    'outline-unicode-1': {
         TOP_LEFT: '┌',
         TOP_RIGHT: '┐',
         BOTTOM_LEFT: '└',
@@ -32,7 +32,7 @@ const DRAW_RECT_CHARS = {
         HORIZONTAL: '─',
         VERTICAL: '│'
     },
-    'double-line': {
+    'outline-unicode-2': {
         TOP_LEFT: '╔',
         TOP_RIGHT: '╗',
         BOTTOM_LEFT: '╚',
@@ -40,7 +40,7 @@ const DRAW_RECT_CHARS = {
         HORIZONTAL: '═',
         VERTICAL: '║'
     },
-    'current-char-outline': char => {
+    'outline-monochar': char => {
         return {
             TOP_LEFT: char,
             TOP_RIGHT: char,
@@ -50,7 +50,7 @@ const DRAW_RECT_CHARS = {
             VERTICAL: char,
         }
     },
-    'current-char-filled': char => {
+    'filled-monochar': char => {
         return {
             TOP_LEFT: char,
             TOP_RIGHT: char,
