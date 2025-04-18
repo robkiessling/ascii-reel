@@ -137,6 +137,8 @@ export default class CanvasControl {
      * @param {boolean} [options.showWhitespace] - If true, WHITESPACE_CHARs will be depicted as VISIBLE_WHITESPACE_CHARs
      */
     drawGlyphs(glyphs, options = {}) {
+        if (!glyphs) return; // Glyphs can be null if, for example, all layers are hidden
+
         let needsRestore = false;
         if (options.opacity !== undefined) {
             this.context.save();

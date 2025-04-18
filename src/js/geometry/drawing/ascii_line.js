@@ -2,7 +2,6 @@ import AsciiPolygon from "./ascii_polygon.js";
 import {create2dArray} from "../../utils/arrays.js";
 import Cell from "../cell.js";
 import {isObject} from "../../utils/objects.js";
-import {start} from "core-js/internals/string-pad.js";
 
 /**
  * A short segment of a line, used to draw a line of any length by repeating the template over and over.

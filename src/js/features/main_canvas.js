@@ -174,18 +174,16 @@ function redrawCharCanvas() {
     charCanvas.drawBackground(state.getConfig('background'));
 
     // 2. If there are any layers below current layer, draw them at lower opacity
-    if (belowGlyphs) {
-        charCanvas.drawGlyphs(belowGlyphs, {
-            showWhitespace: state.getConfig('whitespace'),
-            opacity: NON_CURRENT_LAYER_OPACITY,
-            mask: (row, col) => {
-                // Don't include chars that will be covered by canvases above
-                if (currentGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
-                if (aboveGlyphs && aboveGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
-                return true;
-            }
-        });
-    }
+    charCanvas.drawGlyphs(belowGlyphs, {
+        showWhitespace: state.getConfig('whitespace'),
+        opacity: NON_CURRENT_LAYER_OPACITY,
+        mask: (row, col) => {
+            // Don't include chars that will be covered by canvases above
+            if (currentGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
+            if (aboveGlyphs && aboveGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
+            return true;
+        }
+    });
 
     // 3. Draw current layer at normal opacity
     charCanvas.drawGlyphs(currentGlyphs, {
@@ -199,12 +197,10 @@ function redrawCharCanvas() {
     });
 
     // 4. If there are any layers above current layer, draw them at lower opacity
-    if (aboveGlyphs) {
-        charCanvas.drawGlyphs(aboveGlyphs, {
-            showWhitespace: state.getConfig('whitespace'),
-            opacity: NON_CURRENT_LAYER_OPACITY
-        });
-    }
+    charCanvas.drawGlyphs(aboveGlyphs, {
+        showWhitespace: state.getConfig('whitespace'),
+        opacity: NON_CURRENT_LAYER_OPACITY
+    });
 
     // 5. Draw onion at lower opacity
     if (state.getConfig('onion') && state.previousFrame() !== currentFrame()) {
