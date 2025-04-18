@@ -127,6 +127,9 @@ export const EVENTS = {
     },
     UNICODE: {
         CHANGED: 'unicode:changed'
+    },
+    KEYBOARD: {
+        SHIFT_KEY: 'keyboard:shift-key'
     }
 }
 

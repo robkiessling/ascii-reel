@@ -512,10 +512,14 @@ export function handleBackspaceKey(isDelete) {
         updateMovableContent(EMPTY_CHAR, 0);
     }
     else if (cursorCell()) {
-        if (!isDelete) {
-            moveInDirection('left', { updateCursorOrigin: false });
+        if (isDelete) {
+            state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, EMPTY_CHAR, 0);
+            moveInDirection('right', { updateCursorOrigin: false });
         }
-        state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, EMPTY_CHAR, 0);
+        else {
+            moveInDirection('left', { updateCursorOrigin: false });
+            state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, EMPTY_CHAR, 0);
+        }
     }
     else {
         empty();

@@ -11,8 +11,13 @@ const ICON_DATA = {
     'tools.draw-freeform-types.ascii-generated': { type: PRE, content: "  /'.\n| | |\n'./  " },
     'tools.draw-freeform-types.current-char': { type: PRE, content: "  AAA\nA A A\nAAA  " },
 
-    'tools.draw-line-types.basic': { type: PRE, content: "  _,-\n-'   " },
-    'tools.draw-line-types.current-char': { type: PRE, content: '  A\n A \nA  ' },
+    'tools.draw-line-types.ascii-straight': { type: PRE, content: "  _,-\n-'   " },
+    // 'tools.draw-line-types.current-char-straight': { type: PRE, content: '  A\n A \nA  ' },
+    'tools.draw-line-types.current-char-straight': { type: PRE, content: '    AA\n  AA  \nAA    ' },
+
+    'tools.draw-line-types.ascii-right-angle-line': { type: PRE, content: '+----\n|    \n|    ' },
+    'tools.draw-line-types.ascii-right-angle-arrow': { type: PRE, content: '+--->\n|    \n|    ' },
+    'tools.draw-line-types.current-char-right-angle': { type: PRE, content: 'AAAAA\nA    \nA    ' },
 
     'tools.draw-rect-types.printable-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
     'tools.draw-rect-types.printable-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },

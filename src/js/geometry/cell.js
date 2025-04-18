@@ -87,4 +87,9 @@ export default class Cell extends Rect {
     isInBounds() {
         return charInBounds(this.row, this.col);
     }
+
+    // Returns a new Cell that represents the relative distance of this cell from another cell
+    relativeTo(cell) {
+        return new Cell(this.row - cell.row, this.col - cell.col)
+    }
 }

@@ -231,7 +231,7 @@ function redrawSelection() {
 
     selectionCanvas.highlightPolygons(selection.polygons);
 
-    if (selection.hasSelection() && !selection.isDrawing) {
+    if (selection.hasSelection() && !selection.isDrawing && !selection.cursorCell()) {
         selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
     }
 

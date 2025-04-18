@@ -68,6 +68,9 @@ function setupKeydownListener() {
             case 'ArrowDown':
                 handleArrowKey(e, char);
                 break;
+            case 'Shift':
+                handleShiftKey(e);
+                break;
             default:
                 if (char.length !== 1) return; // Unrecognized input; let browser handle as normal
                 handleSingleChar(char);
@@ -75,6 +78,18 @@ function setupKeydownListener() {
 
         e.preventDefault();
     });
+
+    $document.keyup(function(e) {
+        const char = e.key; // E.g. x X 1 Control Alt Shift Meta Enter [ { \ /
+
+        switch (char) {
+            case 'Shift':
+                handleShiftKey(e);
+                break;
+            default:
+                // Do nothing
+        }
+    })
 }
 
 function handleEscapeKey() {
@@ -139,6 +154,10 @@ function arrowKeyToDirection(arrowKey) {
         case 'ArrowDown':
             return 'down';
     }
+}
+
+function handleShiftKey(e) {
+    eventBus.emit(EVENTS.KEYBOARD.SHIFT_KEY, { shiftKey: e.shiftKey });
 }
 
 function handleSingleChar(char, moveCursor = true) {

@@ -34,7 +34,7 @@ export const DEFAULT_STATE = {
     drawTypes: {
         'draw-freeform': 'ascii-generated',
         'draw-rect': 'printable-ascii-1',
-        'draw-line': 'basic',
+        'draw-line': 'ascii-straight',
         'draw-ellipse': 'current-char-outline',
     },
     lastExportOptions: null,

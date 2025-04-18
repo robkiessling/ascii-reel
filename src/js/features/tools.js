@@ -92,13 +92,13 @@ function setupEventBus() {
                     startDrawing(cell, AsciiFreeform, { canvas: canvasControl }, [mouseEvent])
                 break;
             case 'draw-rect':
-                startDrawing(cell, AsciiRect);
+                startDrawing(cell, AsciiRect, {}, [mouseEvent.shiftKey]);
                 break;
             case 'draw-line':
-                startDrawing(cell, AsciiLine);
+                startDrawing(cell, AsciiLine, {}, [mouseEvent.shiftKey]);
                 break;
             case 'draw-ellipse':
-                startDrawing(cell, AsciiEllipse);
+                startDrawing(cell, AsciiEllipse, {}, [mouseEvent.shiftKey]);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
@@ -168,7 +168,7 @@ function setupEventBus() {
             case 'draw-rect':
             case 'draw-line':
             case 'draw-ellipse':
-                if (isNewCell) updateDrawing(cell);
+                if (isNewCell) updateDrawing(cell, [mouseEvent.shiftKey]);
                 break;
             case 'move-all':
                 if (isNewCell) updateMoveAll(cell, isNewCell);
@@ -208,6 +208,23 @@ function setupEventBus() {
                 return; // Ignore all other tools
         }
     });
+
+    eventBus.on(EVENTS.KEYBOARD.SHIFT_KEY, ({ shiftKey }) => {
+        if (!editorMousedown) return;
+        if (!prevCell) return;
+
+        const tool = state.getConfig('tool')
+
+        switch(tool) {
+            case 'draw-rect':
+            case 'draw-line':
+            case 'draw-ellipse':
+                // Immediately affects the drawing (e.g. for draw-line it could change the right-angle route) without
+                // waiting for another mousemove
+                updateDrawing(prevCell, [shiftKey]);
+                break;
+        }
+    })
 }
 
 
