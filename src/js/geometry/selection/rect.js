@@ -1,7 +1,7 @@
 import Cell from "../cell.js";
 import * as state from "../../state/index.js";
 import CellArea from "../cell_area.js";
-import SelectionPolygon from "./selection_polygon.js";
+import SelectionPolygon from "./polygon.js";
 
 /**
  * A selection of cells in a rectangular shape. Supports the following options:

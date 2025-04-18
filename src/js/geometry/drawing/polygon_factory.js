@@ -16,6 +16,9 @@ export default class PolygonFactory {
             case 'eraser':
             case 'paint-brush':
                 return new UniformFreeform(cell, options);
+
+            // TODO elbow
+
             default:
                 console.warn(`No Freeform drawing found for: ${options.drawType}`);
         }
@@ -55,6 +58,9 @@ export default class PolygonFactory {
             case 'current-char-outline':
             case 'current-char-filled':
                 return new UniformEllipse(cell, options);
+
+            // TODO adaptive
+
             default:
                 console.warn(`No Line drawing found for: ${options.drawType}`);
         }

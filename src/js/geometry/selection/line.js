@@ -1,4 +1,4 @@
-import SelectionPolygon from "./selection_polygon.js";
+import SelectionPolygon from "./polygon.js";
 
 /**
  * A selection of cells between a start/end cell using Bresenham line approximation (see Cell.lineTo).

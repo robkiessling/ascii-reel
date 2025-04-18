@@ -1,6 +1,6 @@
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
-import SelectionPolygon from "./selection_polygon.js";
+import SelectionPolygon from "./polygon.js";
 
 /**
  * A SelectionLasso starts off as just an array of Cells (_lassoCells) as the user clicks and drags the mouse. When

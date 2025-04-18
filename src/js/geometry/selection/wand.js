@@ -1,6 +1,6 @@
 import * as state from "../../state/index.js";
 import Cell from "../cell.js";
-import SelectionPolygon from "./selection_polygon.js";
+import SelectionPolygon from "./polygon.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 
 /**
