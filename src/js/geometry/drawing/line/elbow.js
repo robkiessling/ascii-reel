@@ -1,8 +1,6 @@
 import DrawingLine from "./base.js";
-import {create2dArray} from "../../../utils/arrays.js";
 import {isObject} from "../../../utils/objects.js";
 import Cell from "../../cell.js";
-import {isFunction} from "../../../utils/utilities.js";
 
 
 const RIGHT_ANGLE_CHARS = {
@@ -81,95 +79,67 @@ const RIGHT_ANGLE_CHARS = {
 
 export default class ElbowLine extends DrawingLine {
     recalculate(changeRoute) {
-        let charSheet = RIGHT_ANGLE_CHARS[this.options.drawType];
-        if (isFunction(charSheet)) charSheet = charSheet(this.options.char);
+        this._setCharSheet(RIGHT_ANGLE_CHARS);
+        this._initGlyphsToBoundingArea();
 
-        if (charSheet === undefined) {
-            console.error("Invalid char sheet for: ", this.options.drawType)
-            return;
-        }
-
-        const numRows = Math.abs(this.start.row - this.end.row) + 1
-        const numCols = Math.abs(this.start.col - this.end.col) + 1
-        this._glyphs = {
-            chars: create2dArray(numRows, numCols),
-            colors: create2dArray(numRows, numCols)
-        }
-
-        const getCharBetween = (type, ...cells) => {
-            const direction = getDirectionBetweenCells(...cells);
-            if (charSheet[type] === undefined) type = 'LINE';
-            return isObject(charSheet[type]) ? charSheet[type][direction] : charSheet[type];
-        }
-        const getDirectionBetweenCells = (...cells) => {
-            const directions = [];
-
-            for (let i = 1; i < cells.length; i++) {
-                const fromCell = cells[i - 1];
-                const toCell = cells[i];
-                if ((fromCell.row !== toCell.row) && (fromCell.col !== toCell.col)) {
-                    console.warn('Cell points must be along a horizontal or vertical line')
-                } else if (fromCell.row < toCell.row) {
-                    directions.push('DOWN')
-                } else if (fromCell.row > toCell.row) {
-                    directions.push('UP')
-                } else if (fromCell.col < toCell.col) {
-                    directions.push('RIGHT')
-                } else if (fromCell.col > toCell.col) {
-                    directions.push('LEFT')
-                } else {
-                    directions.push('DOWN') // No movement; just show DOWN icon
-                }
-            }
-
-            return directions.join('_')
-        }
-        const setGlyph = (row, col, char) => {
-            if (char !== undefined) {
-                this._glyphs.chars[row][col] = char;
-                this._glyphs.colors[row][col] = this.options.colorIndex;
-            }
-        }
-        const straightLineBetween = (fromCell, toCell, char) => {
-            if (fromCell.row === toCell.row) {
-                if (fromCell.col <= toCell.col) {
-                    for (let c = fromCell.col + 1; c < toCell.col; c++) setGlyph(fromCell.row, c, char);
-                }
-                else {
-                    for (let c = fromCell.col - 1; c > toCell.col; c--) setGlyph(fromCell.row, c, char);
-                }
-            }
-            else if (fromCell.col === toCell.col) {
-                if (fromCell.row <= toCell.row) {
-                    for (let r = fromCell.row + 1; r < toCell.row; r++) setGlyph(r, fromCell.col, char);
-                }
-                else {
-                    for (let r = fromCell.row - 1; r > toCell.row; r--) setGlyph(r, fromCell.col, char);
-                }
-            }
-            else {
-                console.warn(`Cannot draw straight line between ${fromCell} and ${toCell}`)
-            }
-        }
-
-        this._origin = new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col))
-        const relativeStart = this.start.relativeTo(this._origin);
-        const relativeEnd = this.end.relativeTo(this._origin);
-        let bend = changeRoute ? new Cell(relativeStart.row, relativeEnd.col) : new Cell(relativeEnd.row, relativeStart.col);
-
-        if (bend.equals(relativeStart) || bend.equals(relativeEnd)) {
-            // There is no bend
-            setGlyph(relativeStart.row, relativeStart.col, getCharBetween('START', relativeStart, relativeEnd));
-            straightLineBetween(relativeStart, relativeEnd, getCharBetween('LINE', relativeStart, relativeEnd));
-            setGlyph(relativeEnd.row, relativeEnd.col, getCharBetween('END', relativeStart, relativeEnd));
+        const bend = changeRoute ? new Cell(this.start.row, this.end.col) : new Cell(this.end.row, this.start.col);
+        
+        if (bend.equals(this.start) || bend.equals(this.end)) {
+            // There is no bend; just need start-->end
+            this._setGlyph(this.start, this._getChar('START', this.start, this.end));
+            this._setGlyphsAlongLine(this.start, this.end);
+            this._setGlyph(this.end, this._getChar('END', this.start, this.end));
         }
         else {
-            setGlyph(relativeStart.row, relativeStart.col, getCharBetween('START', relativeStart, bend));
-            straightLineBetween(relativeStart, bend, getCharBetween('LINE', relativeStart, bend));
-            setGlyph(bend.row, bend.col, getCharBetween('BEND', relativeStart, bend, relativeEnd));
-            straightLineBetween(bend, relativeEnd, getCharBetween('LINE', bend, relativeEnd));
-            setGlyph(relativeEnd.row, relativeEnd.col, getCharBetween('END', bend, relativeEnd));
+            // There is a bend; need start-->bend-->end
+            this._setGlyph(this.start, this._getChar('START', this.start, bend));
+            this._setGlyphsAlongLine(this.start, bend);
+            this._setGlyph(bend, this._getChar('BEND', this.start, bend, this.end));
+            this._setGlyphsAlongLine(bend, this.end);
+            this._setGlyph(this.end, this._getChar('END', bend, this.end));
         }
+    }
+
+    _setGlyph(cell, char) {
+        if (char !== undefined) {
+            super._setGlyph(cell.relativeTo(this.origin), char, this.options.colorIndex);
+        }
+    }
+
+    _setGlyphsAlongLine(fromCell, toCell) {
+        fromCell.lineTo(toCell, false).forEach(cell => {
+            this._setGlyph(cell, this._getChar('LINE', fromCell, toCell))
+        })
+    }
+
+    // Retrieves a char based on the direction between provided cells.
+    //   - if 2 cells are provided, direction will be something like DOWN or RIGHT
+    //   - if 3 cells are provided, direction will have a bend, e.g. DOWN_RIGHT or RIGHT_UP
+    _getChar(type, ...cells) {
+        if (this.charSheet[type] === undefined) type = 'LINE';
+        if (!isObject(this.charSheet[type])) return this.charSheet[type];
+
+        const directions = [];
+        for (let i = 1; i < cells.length; i++) {
+            const fromCell = cells[i - 1];
+            const toCell = cells[i];
+            if ((fromCell.row !== toCell.row) && (fromCell.col !== toCell.col)) {
+                console.warn('Cell points must be along a horizontal or vertical line')
+            } else if (fromCell.row < toCell.row) {
+                directions.push('DOWN')
+            } else if (fromCell.row > toCell.row) {
+                directions.push('UP')
+            } else if (fromCell.col < toCell.col) {
+                directions.push('RIGHT')
+            } else if (fromCell.col > toCell.col) {
+                directions.push('LEFT')
+            } else {
+                directions.push('DOWN') // No movement; just show DOWN icon
+            }
+        }
+
+        const direction = directions.join('_')
+        return this.charSheet[type][direction];
     }
 
 

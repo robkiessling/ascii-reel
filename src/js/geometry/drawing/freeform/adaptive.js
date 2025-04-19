@@ -1,8 +1,7 @@
-import DrawingPolygon from "../polygon.js";
-import {create2dArray} from "../../../utils/arrays.js";
 import Cell from "../../cell.js";
 import {roundToDecimal} from "../../../utils/numbers.js";
 import DrawingFreeform from "./base.js";
+import CellArea from "../../cell_area.js";
 
 const DEBUG = false;
 
@@ -13,7 +12,7 @@ const DEBUG = false;
  *
  * A char is chosen based on these two pixels (using the slope between them, etc.)
  */
-class FreeformChar {
+class AdaptiveChar {
     constructor(cell, startPixel) {
         this.cell = cell;
         this.startPixel = startPixel;
@@ -91,7 +90,7 @@ class FreeformChar {
 }
 
 /**
- * Creates FreeformChars between the fromCell and toCell. Uses Bresenham line approximation to calculate which cells
+ * Creates AdaptiveChars between the fromCell and toCell. Uses Bresenham line approximation to calculate which cells
  * are crossed, then calculates the slope of the line through each of the approximated cells.
  *
  * E.g. say we are drawing from [0,0] to [2,6]. The Bresenham line approximation would be:
@@ -113,7 +112,7 @@ class FreeformChar {
  * The lines that are drawn through each group are used to calculate the startPixel/endPixel of each cell within the
  * group (startPixel is the pixel where the line enters the cell, endPixel is the pixel where the line leaves the cell).
  */
-class FreeformInterpolator {
+class AdaptiveInterpolator {
     constructor(fromCell, toCell) {
         this.fromCell = fromCell;
         this.toCell = toCell;
@@ -247,103 +246,102 @@ class FreeformInterpolator {
 
 /**
  * Handles drawing a freeform line out of ASCII characters. The line can have many twists and turns as the user draws.
- * Chars will be chosen to best fit the line; see FreeformChar class for details on how chars are chosen.
+ * Chars will be chosen to best fit the line; see AdaptiveChar class for details on how chars are chosen.
  */
 export default class AdaptiveFreeform extends DrawingFreeform {
     constructor(...args) {
         super(...args);
 
-        this._freeformChars = [];
+        this._adaptiveChars = [];
         this.prevCell = null;
     }
 
-    get lastFreeformChar() {
-        if (this._freeformChars.length === 0) return null;
-        return this._freeformChars[this._freeformChars.length - 1];
+    get lastAdaptiveChar() {
+        if (this._adaptiveChars.length === 0) return null;
+        return this._adaptiveChars[this._adaptiveChars.length - 1];
     }
 
     recalculate(mouseEvent) {
         const cellPixel = this.options.canvas.cellPixelAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY, true);
 
-        // Start a new FreeformChar if we're entering a new cell:
-        if (!this.prevCell || !this.prevCell.equals(this.end)) this._newFreeformChar(cellPixel);
+        // Start a new AdaptiveChar if we're entering a new cell:
+        if (!this.prevCell || !this.prevCell.equals(this.end)) this._newAdaptiveChar(cellPixel);
 
-        // Update the latest FreeformChar as the mouse moves:
-        this.lastFreeformChar.update(cellPixel);
+        // Update the latest AdaptiveChar as the mouse moves:
+        this.lastAdaptiveChar.update(cellPixel);
 
-        // Convert _freeformChars array into glyphs/origin for rendering purposes:
+        // Convert _adaptiveChars array into glyphs/origin for rendering purposes:
         this._populateGlyphs();
 
         // Upkeep
         this.prevCell = this.end;
     }
 
-    _newFreeformChar(cellPixel) {
-        // If the last FreeformChar should be pruned, delete it (see FreeformChar.shouldPrune() for more details).
-        // Never prune the char if it's the only one in our _freeformChars array.
-        if (this._freeformChars.length > 1 && this.lastFreeformChar.shouldPrune()) {
-            this._freeformChars.pop();
+    _newAdaptiveChar(cellPixel) {
+        // If the last AdaptiveChar should be pruned, delete it (see AdaptiveChar.shouldPrune() for more details).
+        // Never prune the char if it's the only one in our _adaptiveChars array.
+        if (this._adaptiveChars.length > 1 && this.lastAdaptiveChar.shouldPrune()) {
+            this._adaptiveChars.pop();
         }
 
-        if (this.lastFreeformChar) {
-            // Check if we are "doubling back" to the previous cell. If so, we do not create a new FreeformChar;
+        if (this.lastAdaptiveChar) {
+            // Check if we are "doubling back" to the previous cell. If so, we do not create a new AdaptiveChar;
             // we go back to updating that previous cell.
-            if (this.lastFreeformChar.cell.equals(this.end)) return;
+            if (this.lastAdaptiveChar.cell.equals(this.end)) return;
 
             // If the new cell is not adjacent to the last cell, we must interpolate the missing cells. This can happen
             // if the user moves the mouse very fast across the canvas.
-            if (!this.lastFreeformChar.cell.isAdjacentTo(this.end)) {
-                this._interpolate(this.lastFreeformChar.cell, this.end)
+            if (!this.lastAdaptiveChar.cell.isAdjacentTo(this.end)) {
+                this._interpolate(this.lastAdaptiveChar.cell, this.end)
             }
         }
 
-        this._freeformChars.push(new FreeformChar(this.end, cellPixel));
+        this._adaptiveChars.push(new AdaptiveChar(this.end, cellPixel));
     }
 
     _interpolate(fromCell, toCell) {
-        const interpolator = new FreeformInterpolator(fromCell, toCell);
+        const interpolator = new AdaptiveInterpolator(fromCell, toCell);
 
         interpolator.interpolate((cell, startPixel, endPixel) => {
             if (DEBUG) { console.log('  interpolated: ', cell.row, cell.col, startPixel, endPixel); }
 
-            const freeformChar = new FreeformChar(cell, startPixel);
-            freeformChar.update(endPixel);
-            this._freeformChars.push(freeformChar);
+            const adaptiveChar = new AdaptiveChar(cell, startPixel);
+            adaptiveChar.update(endPixel);
+            this._adaptiveChars.push(adaptiveChar);
         })
     }
 
-    // Converts the array of FreeformChars (whose cells are using absolute positions for row/col) into a minimized
-    // 2d array of glyphs (located at a given origin) for easy rendering.
-    _populateGlyphs() {
-        let minRow, minCol, maxRow, maxCol;
-        this._iterateFreeformChars((freeformChar, absoluteR, absoluteC) => {
-            if (minRow === undefined || absoluteR < minRow) minRow = absoluteR;
-            if (minCol === undefined || absoluteC < minCol) minCol = absoluteC;
-            if (maxRow === undefined || absoluteR > maxRow) maxRow = absoluteR;
-            if (maxCol === undefined || absoluteC > maxCol) maxCol = absoluteC;
-        })
+    // boundingArea is based on the farthest top-left and farthest bottom-right cell of all the _adaptiveChars
+    get boundingArea() {
+        if (this._cachedBoundingArea === undefined) {
+            let minRow, minCol, maxRow, maxCol;
+            this._adaptiveChars.forEach(adaptiveChar => {
+                const cell = adaptiveChar.cell;
+                if (minRow === undefined || cell.row < minRow) minRow = cell.row;
+                if (minCol === undefined || cell.col < minCol) minCol = cell.col;
+                if (maxRow === undefined || cell.row > maxRow) maxRow = cell.row;
+                if (maxCol === undefined || cell.col > maxCol) maxCol = cell.col;
+            })
 
-        this._origin = new Cell(minRow, minCol);
-
-        const numRows = maxRow - minRow + 1;
-        const numCols = maxCol - minCol + 1;
-
-        this._glyphs = {
-            chars: create2dArray(numRows, numCols),
-            colors: create2dArray(numRows, numCols),
+            const topLeft = new Cell(minRow, minCol);
+            const bottomRight = new Cell(maxRow, maxCol);
+            this._cachedBoundingArea = new CellArea(topLeft, bottomRight);
         }
 
-        this._iterateFreeformChars((freeformChar, absoluteR, absoluteC) => {
-            this._glyphs.chars[absoluteR - minRow][absoluteC - minCol] = freeformChar.char;
-            this._glyphs.colors[absoluteR - minRow][absoluteC - minCol] = this.options.colorIndex;
-        })
+        return this._cachedBoundingArea;
     }
 
-    _iterateFreeformChars(callback) {
-        this._freeformChars.forEach(freeformChar => {
-            const absoluteR = freeformChar.cell.row;
-            const absoluteC = freeformChar.cell.col;
-            callback(freeformChar, absoluteR, absoluteC)
+    // Converts the AdaptiveChar array (whose cells are using absolute positions for row/col) into a minimized
+    // 2d array of glyphs (located at a given origin) for more performant rendering.
+    _populateGlyphs() {
+        this._initGlyphsToBoundingArea();
+
+        this._adaptiveChars.forEach(adaptiveChar => {
+            this._setGlyph(
+                adaptiveChar.cell.relativeTo(this.origin),
+                adaptiveChar.char,
+                this.options.colorIndex
+            );
         })
     }
 

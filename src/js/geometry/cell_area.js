@@ -57,9 +57,19 @@ export default class CellArea extends Rect {
         return this;
     }
 
+    // Iterates through each cell, using the absolute row/col value of the cell
     iterate(callback) {
         for (let r = this.topLeft.row; r <= this.bottomRight.row; r++) {
             for (let c = this.topLeft.col; c <= this.bottomRight.col; c++) {
+                callback(r, c);
+            }
+        }
+    }
+
+    // Iterates through each cell, using the row/col of the cell relative to the CellArea origin (e.g. topLeft cell will be 0,0)
+    iterateRelative(callback) {
+        for (let r = 0; r < this.numRows; r++) {
+            for (let c = 0; c < this.numCols; c++) {
                 callback(r, c);
             }
         }

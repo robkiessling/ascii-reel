@@ -1,8 +1,6 @@
-import DrawingPolygon from "../polygon.js";
-import {create2dArray} from "../../../utils/arrays.js";
 import Cell from "../../cell.js";
-import {isObject} from "../../../utils/objects.js";
 import DrawingLine from "./base.js";
+import CellArea from "../../cell_area.js";
 
 /**
  * A short segment of a line, used to draw a line of any length by repeating the template over and over.
@@ -309,8 +307,8 @@ export default class AdaptiveLine extends DrawingLine {
     recalculate(shiftKey) {
         // Short-circuit if line is only one single character long
         if (this.start.equals(this.end)) {
-            this._glyphs = { chars: [['-']], colors: [[this.options.colorIndex]] }
-            this._origin = this.start;
+            this._initGlyphs(1, 1);
+            this._setGlyph(new Cell(0,0), '-', this.options.colorIndex);
             return;
         }
 
@@ -319,26 +317,28 @@ export default class AdaptiveLine extends DrawingLine {
         const lineTemplate = findClosestLineTemplate(rise, run);
         const lineLength = Math.max(Math.abs(rise), Math.abs(run));
 
-        // See _convertObjToArray function for info on why we initially store _glyphs as an object
-        this._glyphs = { chars: {}, colors: {} };
+        // See _convertObjToArray function for info on why we initially store chars/colors as objects
+        this._charsObj = {}; this._colorsObj = {};
         lineTemplate.followLinePath(lineLength, (glyphR, glyphC, char) => {
-            this._setGlyph(glyphR, glyphC, char, this.options.colorIndex);
+            this._setGlyphObj(glyphR, glyphC, char, this.options.colorIndex);
         })
-        this._glyphs.chars = this._convertObjToArray(this._glyphs.chars);
-        this._glyphs.colors = this._convertObjToArray(this._glyphs.colors);
+        this.glyphs = {
+            chars: this._convertObjToArray(this._charsObj),
+            colors: this._convertObjToArray(this._colorsObj)
+        }
 
         this._recalculateOrigin(rise, run);
     }
 
-    _setGlyph(row, col, char, color) {
-        this._glyphs.chars[row] ||= {};
-        this._glyphs.chars[row][col] = char;
-        this._glyphs.colors[row] ||= {};
-        this._glyphs.colors[row][col] = color;
+    _setGlyphObj(row, col, char, color) {
+        this._charsObj[row] ||= {};
+        this._charsObj[row][col] = char;
+        this._colorsObj[row] ||= {};
+        this._colorsObj[row][col] = color;
     }
 
     /**
-     * Initially, we store _glyphs as an object (not array). In other words, instead of an array with indexes
+     * Initially, we store chars/colors as objects (not 2d arrays). In other words, instead of an array with indexes
      * 0, 1, 2, etc., we have an object with keys 0, 1, 2, etc. We do this so we can support negative indexes.
      *
      * This function turns that object back into an array.
@@ -364,16 +364,16 @@ export default class AdaptiveLine extends DrawingLine {
         return result;
     }
 
+    // boundingArea is not always a perfect rectangle between start/end cells; line can go outside
     _recalculateOrigin(rise, run) {
-        this._origin = this.start.clone();
-        if (rise < 0) {
-            const rowOffset = this._glyphs.chars.length - 1;
-            this._origin.translate(-1 * rowOffset, 0);
-        }
-        if (run < 0) {
-            const colOffset = Math.max(...this._glyphs.chars.map(row => row.length)) - 1;
-            this._origin.translate(0, -1 * colOffset);
-        }
+        const rowOffset = this.glyphs.chars.length - 1;
+        const colOffset = Math.max(...this.glyphs.chars.map(row => row.length)) - 1;
+        const topLeft = this.start.clone();
+        if (rise < 0) topLeft.translate(-1 * rowOffset, 0);
+        if (run < 0) topLeft.translate(0, -1 * colOffset);
+        const bottomRight = topLeft.clone().translate(rowOffset, colOffset);
+        this._cachedBoundingArea = new CellArea(topLeft, bottomRight);
     }
+
 }
 

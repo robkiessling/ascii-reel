@@ -1,46 +1,29 @@
-import Cell from "../../cell.js";
-import {create2dArray} from "../../../utils/arrays.js";
-import CellArea from "../../cell_area.js";
 import DrawingEllipse from "./base.js";
+import Cell from "../../cell.js";
 
 /**
  * Handles drawing an ellipse out of ASCII characters.
  */
 export default class MonocharEllipse extends DrawingEllipse {
     recalculate() {
-        const topLeft = new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col));
-        const bottomRight = new Cell(Math.max(this.start.row, this.end.row), Math.max(this.start.col, this.end.col));
-        const area = new CellArea(topLeft, bottomRight);
+        this._initGlyphsToBoundingArea();
 
-        this._glyphs = {
-            chars: create2dArray(area.numRows, area.numCols),
-            colors: create2dArray(area.numRows, area.numCols)
-        }
-        this._origin = topLeft;
+        const setGlyph = (row, col) => this._setGlyphToMonochar(new Cell(row, col));
 
-        const drawGlyph = (row, col) => {
-            this._glyphs.chars[row][col] = this.options.char;
-            this._glyphs.colors[row][col] = this.options.colorIndex;
-        }
-
-        if (area.numRows <= 2 || area.numCols <= 2) {
-            // Ellipse cannot have a hole; just fill entire rectangle
-            for (let row = 0; row < area.numRows; row++) {
-                for (let col = 0; col < area.numCols; col++) {
-                    drawGlyph(row, col);
-                }
-            }
+        if (this.boundingArea.numRows <= 2 || this.boundingArea.numCols <= 2) {
+            // Avoid drawing an ellipse with a hole; just fill entire rectangle
+            this.boundingArea.iterateRelative(setGlyph);
             return;
         }
 
         switch (this.options.drawType) {
             case 'outline-monochar':
-                drawEllipseSymmetric(area, { filled: false }, drawGlyph)
-                // drawEllipseFuzzy(area, { thickness: 1, filled: false }, drawGlyph)
+                drawEllipseSymmetric(this.boundingArea, { filled: false }, setGlyph)
+                // drawEllipseFuzzy(this.boundingArea, { thickness: 1, filled: false }, setGlyph)
                 break;
             case 'filled-monochar':
-                drawEllipseSymmetric(area, { filled: true }, drawGlyph)
-                // drawEllipseFuzzy(area, { thickness: 1, filled: true }, drawGlyph)
+                drawEllipseSymmetric(this.boundingArea, { filled: true }, setGlyph)
+                // drawEllipseFuzzy(this.boundingArea, { thickness: 1, filled: true }, setGlyph)
                 break;
             default:
                 console.warn(`unknown drawType: ${this.options.drawType}`);

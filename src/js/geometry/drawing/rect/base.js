@@ -1,7 +1,4 @@
 import DrawingPolygon from "../polygon.js";
-import Cell from "../../cell.js";
-import {create2dArray} from "../../../utils/arrays.js";
-import {isFunction} from "../../../utils/utilities.js";
 
 /**
  * Characters used to draw the different types of ascii rectangles. A rectangle is made up of 4 corners (TOP_LEFT,
@@ -71,54 +68,35 @@ const DRAW_RECT_CHARS = {
  */
 export default class DrawingRect extends DrawingPolygon {
     recalculate() {
-        const numRows = Math.abs(this.start.row - this.end.row) + 1
-        const numCols = Math.abs(this.start.col - this.end.col) + 1
+        this._initGlyphsToBoundingArea();
 
-        this._glyphs = {
-            chars: create2dArray(numRows, numCols),
-            colors: create2dArray(numRows, numCols)
-        }
+        this._setCharSheet(DRAW_RECT_CHARS);
 
-        let charSheet = DRAW_RECT_CHARS[this.options.drawType];
-        if (isFunction(charSheet)) charSheet = charSheet(this.options.char);
-
-        if (charSheet === undefined) {
-            console.error("Invalid char sheet for: ", this.options.drawType)
-            return;
-        }
-
-        const lastRow = numRows - 1
-        const lastCol = numCols - 1
+        const lastRow = this.boundingArea.numRows - 1
+        const lastCol = this.boundingArea.numCols - 1
 
         // draw 4 lines and 4 corners
         for (let row = 0; row <= lastRow; row++) {
             for (let col = 0; col <= lastCol; col++) {
                 let char;
                 if (col === 0) {
-                    if (row === 0) { char = charSheet.TOP_LEFT; }
-                    else if (row === lastRow) { char = charSheet.BOTTOM_LEFT; }
-                    else { char = charSheet.VERTICAL; }
+                    if (row === 0) { char = this.charSheet.TOP_LEFT; }
+                    else if (row === lastRow) { char = this.charSheet.BOTTOM_LEFT; }
+                    else { char = this.charSheet.VERTICAL; }
                 }
                 else if (col === lastCol) {
-                    if (row === 0) { char = charSheet.TOP_RIGHT; }
-                    else if (row === lastRow) { char = charSheet.BOTTOM_RIGHT; }
-                    else { char = charSheet.VERTICAL; }
+                    if (row === 0) { char = this.charSheet.TOP_RIGHT; }
+                    else if (row === lastRow) { char = this.charSheet.BOTTOM_RIGHT; }
+                    else { char = this.charSheet.VERTICAL; }
                 }
                 else {
-                    if (row === 0) { char = charSheet.HORIZONTAL; }
-                    else if (row === lastRow) { char = charSheet.HORIZONTAL; }
+                    if (row === 0) { char = this.charSheet.HORIZONTAL; }
+                    else if (row === lastRow) { char = this.charSheet.HORIZONTAL; }
+                    else if (this.charSheet.FILL !== undefined) { char = this.charSheet.FILL; }
                 }
 
-                if (charSheet.FILL !== undefined) char = charSheet.FILL;
-
-                if (char !== undefined) {
-                    this._glyphs.chars[row][col] = char;
-                    this._glyphs.colors[row][col] = this.options.colorIndex;
-                }
+                if (char !== undefined) this._setGlyph({row, col}, char, this.options.colorIndex);
             }
         }
-
-        // Set origin to top-left cell
-        this._origin = new Cell(Math.min(this.start.row, this.end.row), Math.min(this.start.col, this.end.col))
     }
 }
