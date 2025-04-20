@@ -29,7 +29,7 @@ export function sortedChars() {
 
 export function importChars(newChars) {
     unicodeCache = new Set(newChars); // Remove any dups
-    state.chars = [...unicodeCache];
+    state.chars = [...unicodeCache].filter(char => char.length === 1);
     eventBus.emit(EVENTS.UNICODE.CHANGED);
 }
 
@@ -49,6 +49,8 @@ export function getUnicodeSetting(key) {
 }
 
 export function addToCache(char) {
+    if (char.length !== 1) return;
+
     if (char.charCodeAt(0) < 128) {
         if (!state.autoAddAscii) return;
     }

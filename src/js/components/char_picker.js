@@ -71,6 +71,7 @@ export default class CharPicker {
      */
     constructor($well, options = {}) {
         this.$well = $well;
+        this.$border = $well.parent('.char-well-border');
         this.options = options;
 
         this._init();
@@ -82,15 +83,15 @@ export default class CharPicker {
 
         this._handleOutsideClick = e => {
             if (!this.$popup[0].contains(e.target) && !this.$well[0].contains(e.target)) {
-                this._close()
+                this.close()
             }
         };
 
-        this.$well.on('click', () => this._toggle())
+        this.$well.on('click', () => this.toggle())
 
         this.$popup.on('click', '.char', e => {
-            this.value($(e.currentTarget).data('char'))
-            this._close();
+            this.value($(e.currentTarget).attr('data-char'))
+            this.close();
         });
     }
 
@@ -146,7 +147,7 @@ export default class CharPicker {
         return this.$popup.is(':visible');
     }
 
-    _open() {
+    open() {
         window.addEventListener('click', this._handleOutsideClick, true);
 
         this.$popup.show().position({
@@ -157,15 +158,24 @@ export default class CharPicker {
 
         if (this.options.onOpen) this.options.onOpen();
     }
-    _close() {
+    close() {
         window.removeEventListener('click', this._handleOutsideClick, true);
 
         this.$popup.hide();
 
         if (this.options.onClose) this.options.onClose();
     }
-    _toggle() {
-        this.isOpen ? this._close() : this._open();
+    toggle(open) {
+        if (open === undefined) {
+            this.isOpen ? this.close() : this.open();
+        }
+        else {
+            open ? this.open() : this.close();
+        }
+    }
+
+    toggleBorder(animated) {
+        this.$border.toggleClass('animated-border', animated);
     }
 
     value(newValue) {

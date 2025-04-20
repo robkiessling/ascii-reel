@@ -14,29 +14,64 @@ $char-picker-arrow-border-size: $char-picker-arrow-size + 2px;
   position: relative;
   overflow: hidden;
 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
   &.ri-space {
     padding-top: 1rem;
   }
 }
-.char-well.empty {
-  &::before {
-    content: "";
-    position: absolute;
-    width: calc(($standard-tool-size - 2 * $well-border-size) * 1.41);
-    height: 3px;
-    //background-color: var(--color-well-bg);
-    background-color: var(--color-font-white);
-    transform: rotate(-45deg);
-    transform-origin: center;
-    pointer-events: none;
+
+@keyframes rotate {
+  from {
+    transform: rotate(0);
   }
 
-  //&:hover, &.picker-open {
-  //  &::before {
-  //    background-color: var(--color-well-hover);
-  //  }
-  //}
+  to {
+    transform: rotate(360deg);
+  }
 }
+
+.char-well-border {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+// Shows a glowing purple color circling the well
+// TODO This looks bad on light-mode
+.char-well-border.animated-border {
+  background: var(--color-surface);
+
+  .char-well {
+    border-color: transparent !important;
+    background-clip: padding-box !important;
+    box-shadow: inset 0 0 0 1px var(--color-primary) !important;
+  }
+
+  &::before {
+    content: "";
+    display: block;
+    background: linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    var(--color-primary) 50%,
+                    rgba(255, 255, 255, 0) 100%
+    );
+    height: 200px;
+    width: 40px;
+    position: absolute;
+    animation: rotate 3s linear forwards infinite;
+    z-index: 0;
+
+    top: 50%;
+    transform-origin: top center;
+  }
+}
+
 
 
 .char-picker-popup {

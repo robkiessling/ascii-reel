@@ -12,10 +12,10 @@ import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import tippy from 'tippy.js';
-import {setupTooltips, shouldModifyAction} from "../io/actions.js";
+import {getActionInfo, setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
 import {translateGlyphs} from "../utils/arrays.js";
-import {capitalizeFirstLetter} from "../utils/strings.js";
+import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {modifierAbbr} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Cell from "../geometry/cell.js";
@@ -43,8 +43,8 @@ export function init() {
 }
 
 function refresh() {
-    selectColor(state.getConfig('primaryColor'))
-    selectChar(state.getConfig('primaryChar'))
+    refreshCharPicker();
+    refreshColorPicker();
 
     $standardTools.find('.standard-tool').removeClass('selected');
     $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
@@ -57,6 +57,16 @@ export function changeTool(newTool) {
     state.setConfig('tool', newTool);
     selection.clear();
     refresh();
+}
+
+export function changeDrawType(toolKey, newDrawType) {
+    state.updateDrawType(toolKey, newDrawType);
+    if (state.getConfig('tool') === toolKey) {
+        refresh();
+    }
+    else {
+        changeTool(toolKey);
+    }
 }
 
 
@@ -490,14 +500,8 @@ function setupDrawSubMenu(toolKey) {
     const subMenu = new ToolSubMenu($(`#${typesKey}`), {
         visible: () => state.getConfig('tool') === toolKey,
         getValue: () => ({ type: state.getConfig('drawTypes')[toolKey] }),
-        onChange: (newValue) => {
-            state.updateDrawType(toolKey, newValue.type);
-            refresh();
-        },
-        icon: $tool => {
-            const type = $tool.data('type');
-            return getIconHTML(`tools.${typesKey}.${type}`);
-        },
+        onChange: newValue => changeDrawType(toolKey, newValue.type),
+        icon: $tool => getIconHTML(`tools.${typesKey}.${$tool.data('type')}`),
         tooltipContent: $tool => {
             const type = $tool.data('type');
             const name = STRINGS[`tools.${typesKey}.${type}.name`];
@@ -593,9 +597,33 @@ let charPicker, charPickerTooltip;
 function setupCharPicker() {
     const $charPicker = $('#current-char');
 
-    charPickerTooltip = standardTip($charPicker, 'tools.standard.char-picker', {
+    // charPickerTooltip = standardTip($charPicker, 'tools.standard.char-picker', {
+    //     placement: 'right',
+    // })
+    // const name = STRINGS[`${stringsKey}.name`];
+    // const description = STRINGS[`${stringsKey}.description`];
+
+    charPickerTooltip = tippy($charPicker.get(0), {
+        content: () => {
+            const pickerActionInfo = getActionInfo('tools.standard.current-char');
+            console.log(pickerActionInfo);
+
+            return `` +
+                `<div class="header">` +
+                    `<span class="title">${strToHTML(STRINGS['tools.standard.char-picker.name'])}</span>` +
+                    `<span class="shortcut">C</span>` +
+                `</div>` +
+                `<div class="description">${strToHTML(STRINGS['tools.standard.char-picker.description'])}</div>` +
+                `<br/>` +
+                `<div class="header">` +
+                    `<span class="title">${strToHTML(STRINGS['tools.standard.quick-pick.name'])}</span>` +
+                    `<span class="shortcut">Tab</span>` +
+                `</div>` +
+                `<div class="description">${strToHTML(STRINGS['tools.standard.quick-pick.description'])}</div>`;
+        },
         placement: 'right',
-    })
+        allowHTML: true,
+    });
 
     charPicker = new CharPicker($charPicker, {
         initialValue: 'A',
@@ -617,17 +645,39 @@ function setupCharPicker() {
             charPickerTooltip.enable();
         }
     })
+
+    actions.registerAction('tools.standard.current-char', {
+        callback: () => toggleCharPicker(true),
+    })
 }
 
+function refreshCharPicker() {
+    selectChar(state.getConfig('primaryChar'))
+
+    charPicker.toggleBorder(isQuickPickEnabled());
+}
+
+export function isCharPickerOpen() {
+    return charPicker.isOpen;
+}
+export function toggleCharPicker(open) {
+    charPicker.toggle(open);
+}
 export function selectChar(char) {
     charPicker.value(char);
 }
 
-export function canSelectChar() {
-    // return state.getConfig('tool') === 'draw-freeform' || state.getConfig('tool') === 'fill-char';
 
-    // Currently we are always updating the picked char, even if a char-related tool is not selected
-    return true;
+// "Quick pick" is a toggle that lets the user instantly update the char picker's selected value by pressing a keyboard key
+let quickPickEnabled = false;
+
+export function isQuickPickEnabled() {
+    return quickPickEnabled;
+}
+
+export function toggleQuickPick(enabled) {
+    quickPickEnabled = enabled === undefined ? !quickPickEnabled : !!enabled;
+    refresh();
 }
 
 
@@ -685,6 +735,10 @@ function setupColorPicker() {
         eventBus.emit(EVENTS.TOOLS.COLOR_ADDED);
         state.pushHistory();
     })
+}
+
+function refreshColorPicker() {
+    selectColor(state.getConfig('primaryColor'))
 }
 
 function refreshAddToPalette() {

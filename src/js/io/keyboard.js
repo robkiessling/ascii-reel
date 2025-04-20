@@ -4,6 +4,7 @@ import * as tools from "../features/tools.js";
 import * as actions from "./actions.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
+import {toggleQuickPick} from "../features/tools.js";
 
 const $document = $(document);
 
@@ -73,7 +74,7 @@ function setupKeydownListener() {
                 break;
             default:
                 if (char.length !== 1) return; // Unrecognized input; let browser handle as normal
-                handleSingleChar(char);
+                handleSingleCharKey(char);
         }
 
         e.preventDefault();
@@ -96,12 +97,19 @@ function handleEscapeKey() {
     state.endHistoryModification();
 
     selection.clear();
+
+    if (tools.isQuickPickEnabled()) tools.toggleQuickPick(false);
 }
 
 function handleTabKey(e) {
     state.endHistoryModification();
 
-    selection.handleTabKey(e.shiftKey);
+    if (selection.cursorCell()) {
+        selection.handleTabKey(e.shiftKey);
+    }
+    else {
+        tools.toggleQuickPick();
+    }
 }
 
 function handleEnterKey(e) {
@@ -109,14 +117,7 @@ function handleEnterKey(e) {
 }
 
 function handleBackspaceKey(char) {
-    selection.handleBackspaceKey(char === 'Delete')
-
-    if (tools.canSelectChar()) {
-        tools.selectChar(EMPTY_CHAR);
-    }
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory({ modifiable: 'backspace' });
+    handleChar(EMPTY_CHAR, () => selection.handleBackspaceKey(char === 'Delete'))
 }
 
 function handleArrowKey(e, arrowKey) {
@@ -160,10 +161,26 @@ function handleShiftKey(e) {
     eventBus.emit(EVENTS.KEYBOARD.SHIFT_KEY, { shiftKey: e.shiftKey });
 }
 
-function handleSingleChar(char, moveCursor = true) {
-    if (tools.canSelectChar()) tools.selectChar(char);
+function handleSingleCharKey(char, moveCursor = true) {
+    handleChar(char, () => selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCursor))
+}
 
-    selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCursor);
+function handleChar(char, selectionUpdater) {
+    if (tools.isCharPickerOpen()) {
+        tools.selectChar(char);
+        if (!isComposing) tools.toggleCharPicker(false);
+        return;
+    }
+
+    if (tools.isQuickPickEnabled()) tools.selectChar(char);
+
+    if (selection.cursorCell()) {
+        selectionUpdater()
+    } else if (tools.isQuickPickEnabled()) {
+        if (selection.hasSelection()) selectionUpdater()
+    } else {
+        actions.callActionByShortcut({ char: char })
+    }
 }
 
 function handleStandardKeyboard(char, e) {
@@ -262,11 +279,13 @@ function setupCompositionListener() {
         const char = str.charAt(str.length - 1)
 
         // When writing the char, do not move the cursor yet (moveCursor=false) because we might not be done composing
-        handleSingleChar(char, false);
+        handleSingleCharKey(char, false);
     });
 
     $document.on('compositionend', e => {
         isComposing = false;
+
+        if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
 
         // Since we didn't move the cursor in compositionupdate (moveCursor=false), we move the cursor now that
         // composition is finished

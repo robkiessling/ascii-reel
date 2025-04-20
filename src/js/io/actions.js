@@ -4,6 +4,7 @@ import {isFunction}from "../utils/utilities.js";
 import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {strToHTML} from "../utils/strings.js";
+import {isObject} from "../utils/objects.js";
 
 let actions;
 
@@ -41,6 +42,21 @@ let actionIdToShortcut = {
     'view.zoom-in': { displayChar: '+', char: '=', modifiers: [cmdKey] },
     'view.zoom-out': { displayChar: '-', char: '-', modifiers: [cmdKey] },
     'view.zoom-fit': { char: '0', modifiers: [cmdKey] },
+
+    'tools.standard.text-editor': { char: 't' },
+    'tools.standard.draw-freeform': { char: 'f' },
+    'tools.standard.eraser': { char: 'e' },
+    'tools.standard.draw-line': { char: 'l' },
+    'tools.standard.draw-rect': { char: 'r' },
+    'tools.standard.draw-ellipse': { char: 'o' },
+    'tools.standard.fill-char': { char: 'p' },
+    'tools.standard.selection-lasso': { char: 's' },
+    'tools.standard.selection-wand': { char: 'w' },
+    'tools.standard.pan': { char: 'h' },
+    'tools.standard.move-all': { char: 'm' },
+    'tools.standard.paint-brush': { char: 'b' },
+    'tools.standard.eyedropper': { char: 'y' },
+    'tools.standard.current-char': { char: 'c' },
 };
 
 let shortcutToActionId = {};
@@ -315,19 +331,12 @@ export function shouldModifyAction(modification, mouseEvent) {
 function shortcutAbbr(shortcut) {
     let result = '';
 
-    if (Array.isArray(shortcut)) {
-        shortcut = shortcut[0]; // Use first shortcut option as the abbreviation
-    }
+    // Use first shortcut option as the abbreviation
+    if (Array.isArray(shortcut)) shortcut = shortcut[0];
 
-    if ($.isPlainObject(shortcut)) {
-        shortcut.modifiers.forEach(modifier => result += modifierAbbr(modifier));
-
-        if (shortcut.displayChar) {
-            result += shortcut.displayChar.toUpperCase();
-        }
-        else {
-            result += shortcut.char.toUpperCase();
-        }
+    if (isObject(shortcut)) {
+        (shortcut.modifiers || []).forEach(modifier => result += modifierAbbr(modifier));
+        result += shortcut.displayChar ? shortcut.displayChar.toUpperCase() : shortcut.char.toUpperCase();
     }
     else {
         result += shortcut.toUpperCase();
@@ -339,7 +348,7 @@ function shortcutAbbr(shortcut) {
 function getShortcutKey(shortcut) {
     let char, modifiers;
 
-    if ($.isPlainObject(shortcut)) {
+    if (isObject(shortcut)) {
         char = shortcut.char.toLowerCase();
         modifiers = shortcut.modifiers;
     }

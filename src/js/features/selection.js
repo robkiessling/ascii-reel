@@ -524,6 +524,9 @@ export function handleBackspaceKey(isDelete) {
     else {
         empty();
     }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory({ modifiable: 'producesText' });
 }
 
 export function handleTabKey(shiftKey) {
