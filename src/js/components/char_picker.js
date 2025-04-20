@@ -62,16 +62,15 @@ const CHARS = [
  */
 export default class CharPicker {
     /**
-     * @param $well - jQuery element for the picker well
+     * @param $container - jQuery element for the picker container
      * @param {Object} options - Picker options
-     * @param {function} [options.initialValue] - Initial char value
+     * @param {string} [options.initialValue] - Initial char value
      * @param {function} [options.onOpen] - Callback when picker is opened
      * @param {function} [options.onClose] - Callback when picker is closed
      * @param {function} [options.onChange] - Callback when picker value changes. Will be called when initial value is set.
      */
-    constructor($well, options = {}) {
-        this.$well = $well;
-        this.$border = $well.parent('.char-well-border');
+    constructor($container, options = {}) {
+        this.$well = $container.find('.char-well');
         this.options = options;
 
         this._init();
@@ -172,10 +171,6 @@ export default class CharPicker {
         else {
             open ? this.open() : this.close();
         }
-    }
-
-    toggleBorder(animated) {
-        this.$border.toggleClass('animated-border', animated);
     }
 
     value(newValue) {

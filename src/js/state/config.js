@@ -24,7 +24,7 @@ export const DEFAULT_STATE = {
     minimizedComponents: {
         layers: true
     },
-    tool: 'draw-freeform',
+    tool: 'text-editor',
     primaryColor: DEFAULT_COLOR,
     primaryChar: 'A',
     brush: {

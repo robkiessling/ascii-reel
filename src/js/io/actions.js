@@ -3,7 +3,7 @@ import {STRINGS} from "../config/strings.js";
 import {isFunction}from "../utils/utilities.js";
 import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
-import {strToHTML} from "../utils/strings.js";
+import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {isObject} from "../utils/objects.js";
 
 let actions;
@@ -56,7 +56,8 @@ let actionIdToShortcut = {
     'tools.standard.move-all': { char: 'm' },
     'tools.standard.paint-brush': { char: 'b' },
     'tools.standard.eyedropper': { char: 'y' },
-    'tools.standard.current-char': { char: 'c' },
+    'tools.standard.char-picker': { char: 'c' },
+    'tools.standard.quick-swap-char': { char: 'Tab' },
 };
 
 let shortcutToActionId = {};
@@ -336,10 +337,10 @@ function shortcutAbbr(shortcut) {
 
     if (isObject(shortcut)) {
         (shortcut.modifiers || []).forEach(modifier => result += modifierAbbr(modifier));
-        result += shortcut.displayChar ? shortcut.displayChar.toUpperCase() : shortcut.char.toUpperCase();
+        result += capitalizeFirstLetter(shortcut.displayChar ? shortcut.displayChar : shortcut.char)
     }
     else {
-        result += shortcut.toUpperCase();
+        result += capitalizeFirstLetter(shortcut);
     }
 
     return result;

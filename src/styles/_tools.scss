@@ -21,7 +21,7 @@
     flex-direction: column;
   }
 
-  .standard-tool, #current-color, #current-char {
+  .standard-tool, #current-color, #current-char .char-well {
     width: $standard-tool-size;
     height: $standard-tool-size;
     display: flex;
@@ -46,7 +46,7 @@
     font-size: 2rem;
   }
 
-  #current-color, #current-char {
+  #current-color, #current-char .char-well {
     border: $well-border-size solid var(--color-well-bg);
     box-shadow: inset 0 0 0 1px var(--color-font-white);
 
@@ -127,7 +127,7 @@
   &.disabled {
     border-color: var(--color-disabled);
     pointer-events: none;
-    opacity: 0.75;
+    //opacity: 0.75;
 
     .sub-tool {
       color: var(--color-disabled) !important;

@@ -4,7 +4,7 @@ import * as tools from "../features/tools.js";
 import * as actions from "./actions.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
-import {toggleQuickPick} from "../features/tools.js";
+import {toggleQuickSwap} from "../features/tools.js";
 
 const $document = $(document);
 
@@ -98,7 +98,7 @@ function handleEscapeKey() {
 
     selection.clear();
 
-    if (tools.isQuickPickEnabled()) tools.toggleQuickPick(false);
+    if (tools.isQuickSwapEnabled()) tools.toggleQuickSwap(false);
 }
 
 function handleTabKey(e) {
@@ -108,7 +108,7 @@ function handleTabKey(e) {
         selection.handleTabKey(e.shiftKey);
     }
     else {
-        tools.toggleQuickPick();
+        actions.callActionByShortcut({ char: 'Tab' })
     }
 }
 
@@ -172,11 +172,11 @@ function handleChar(char, selectionUpdater) {
         return;
     }
 
-    if (tools.isQuickPickEnabled()) tools.selectChar(char);
+    if (tools.isQuickSwapEnabled()) tools.selectChar(char);
 
     if (selection.cursorCell()) {
         selectionUpdater()
-    } else if (tools.isQuickPickEnabled()) {
+    } else if (tools.isQuickSwapEnabled()) {
         if (selection.hasSelection()) selectionUpdater()
     } else {
         actions.callActionByShortcut({ char: char })

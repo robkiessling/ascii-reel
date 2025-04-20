@@ -249,17 +249,14 @@ function setupStandardTools() {
     const $leftTools = $standardTools.find('.standard-tool-column:first-child:not(:last-child) .standard-tool').toArray();
     const $centerTools = $standardTools.find('.standard-tool-column:first-child:last-child .standard-tool').toArray();
     const $rightTools = $standardTools.find('.standard-tool-column:last-child:not(:first-child) .standard-tool').toArray();
-    const TIP_X_OFFSET = 15; // Move the tip a bit to the right so it's over the canvas
-    const STANDARD_TOOL_SIZE = 42; // matches $standard-tool-size
-    const MARGIN_SIZE = 1;
     setupTooltips($leftTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE + MARGIN_SIZE]
+        offset: tooltipOffset('left')
     });
     setupTooltips($centerTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE / 2 + MARGIN_SIZE]
+        offset: tooltipOffset('center')
     });
     setupTooltips($rightTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: [0, TIP_X_OFFSET]
+        offset: tooltipOffset('right')
     });
 }
 
@@ -267,6 +264,24 @@ function actionIdForStandardTool(tool) {
     return `tools.standard.${tool}`;
 }
 
+const TIP_X_OFFSET = 15; // Move the tip a bit to the right so it's over the canvas
+const STANDARD_TOOL_SIZE = 42; // matches $standard-tool-size
+const MARGIN_SIZE = 1;
+
+function tooltipOffset(column) {
+    switch (column) {
+        case 'left':
+            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE + MARGIN_SIZE];
+        case 'center':
+            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE / 2 + MARGIN_SIZE];
+        case 'center-corner-button':
+            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE / 2 + MARGIN_SIZE - 6];
+        case 'right':
+            return [0, TIP_X_OFFSET];
+        default:
+            console.warn(`Invalid tooltipOffset column: ${column}`)
+    }
+}
 
 // -------------------------------------------------------------------------------- Selection Tools
 
@@ -592,38 +607,10 @@ function finishMoveAll() {
 
 // -------------------------------------------------------------------------------- Char Picker
 
-let charPicker, charPickerTooltip;
+let $charPicker, charPicker, charWellTooltip, charQuickSwapTooltip;
 
 function setupCharPicker() {
-    const $charPicker = $('#current-char');
-
-    // charPickerTooltip = standardTip($charPicker, 'tools.standard.char-picker', {
-    //     placement: 'right',
-    // })
-    // const name = STRINGS[`${stringsKey}.name`];
-    // const description = STRINGS[`${stringsKey}.description`];
-
-    charPickerTooltip = tippy($charPicker.get(0), {
-        content: () => {
-            const pickerActionInfo = getActionInfo('tools.standard.current-char');
-            console.log(pickerActionInfo);
-
-            return `` +
-                `<div class="header">` +
-                    `<span class="title">${strToHTML(STRINGS['tools.standard.char-picker.name'])}</span>` +
-                    `<span class="shortcut">C</span>` +
-                `</div>` +
-                `<div class="description">${strToHTML(STRINGS['tools.standard.char-picker.description'])}</div>` +
-                `<br/>` +
-                `<div class="header">` +
-                    `<span class="title">${strToHTML(STRINGS['tools.standard.quick-pick.name'])}</span>` +
-                    `<span class="shortcut">Tab</span>` +
-                `</div>` +
-                `<div class="description">${strToHTML(STRINGS['tools.standard.quick-pick.description'])}</div>`;
-        },
-        placement: 'right',
-        allowHTML: true,
-    });
+    $charPicker = $('#current-char');
 
     charPicker = new CharPicker($charPicker, {
         initialValue: 'A',
@@ -639,22 +626,37 @@ function setupCharPicker() {
             eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
         },
         onOpen: () => {
-            charPickerTooltip.disable();
+            charWellTooltip.disable();
+            charQuickSwapTooltip.disable();
         },
         onClose: () => {
-            charPickerTooltip.enable();
+            charWellTooltip.enable();
+            charQuickSwapTooltip.enable();
         }
     })
 
-    actions.registerAction('tools.standard.current-char', {
+    actions.registerAction('tools.standard.char-picker', {
         callback: () => toggleCharPicker(true),
     })
+    actions.registerAction('tools.standard.quick-swap-char', {
+        callback: () => toggleQuickSwap(),
+    })
+
+    const $quickSwap = $charPicker.find('.char-well-corner-button');
+    $quickSwap.off('click').on('click', () => actions.callAction('tools.standard.quick-swap-char'))
+
+    charWellTooltip = setupTooltips(charPicker.$well.toArray(), 'tools.standard.char-picker', {
+        offset: tooltipOffset('center')
+    }).tooltips[0];
+    charQuickSwapTooltip = setupTooltips($quickSwap.toArray(), 'tools.standard.quick-swap-char', {
+        offset: tooltipOffset('center-corner-button')
+    }).tooltips[0];
 }
 
 function refreshCharPicker() {
     selectChar(state.getConfig('primaryChar'))
 
-    charPicker.toggleBorder(isQuickPickEnabled());
+    $charPicker.toggleClass('animated-border', isQuickSwapEnabled());
 }
 
 export function isCharPickerOpen() {
@@ -668,15 +670,16 @@ export function selectChar(char) {
 }
 
 
-// "Quick pick" is a toggle that lets the user instantly update the char picker's selected value by pressing a keyboard key
-let quickPickEnabled = false;
+// "Quick Swap" is a toggle that lets the user instantly update the char picker's selected value by pressing a keyboard key
+let quickSwapEnabled = false;
 
-export function isQuickPickEnabled() {
-    return quickPickEnabled;
+export function isQuickSwapEnabled() {
+    if (selection.hasSelection() && !selection.cursorCell()) return true;
+    return quickSwapEnabled;
 }
 
-export function toggleQuickPick(enabled) {
-    quickPickEnabled = enabled === undefined ? !quickPickEnabled : !!enabled;
+export function toggleQuickSwap(enabled) {
+    quickSwapEnabled = enabled === undefined ? !quickSwapEnabled : !!enabled;
     refresh();
 }
 
@@ -691,10 +694,6 @@ export function selectColor(colorStr) {
 
 function setupColorPicker() {
     const $colorPicker = $('#current-color');
-
-    colorPickerTooltip = standardTip($colorPicker, 'tools.standard.color-picker', {
-        placement: 'right',
-    })
 
     colorPicker = new Picker({
         parent: $colorPicker.get(0),
@@ -735,6 +734,14 @@ function setupColorPicker() {
         eventBus.emit(EVENTS.TOOLS.COLOR_ADDED);
         state.pushHistory();
     })
+
+    actions.registerAction('tools.standard.color-picker', {
+        callback: () => toggleCharPicker(true),
+    })
+
+    colorPickerTooltip = setupTooltips($colorPicker.toArray(), 'tools.standard.color-picker', {
+        offset: tooltipOffset('center')
+    }).tooltips[0];
 }
 
 function refreshColorPicker() {

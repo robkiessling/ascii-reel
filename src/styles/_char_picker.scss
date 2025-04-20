@@ -8,21 +8,6 @@ $char-picker-char-border-size: 2px;
 $char-picker-arrow-size: 12px;
 $char-picker-arrow-border-size: $char-picker-arrow-size + 2px;
 
-.char-well {
-  font-size: 1.5rem;
-  font-family: $font-monospace;
-  position: relative;
-  overflow: hidden;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  &.ri-space {
-    padding-top: 1rem;
-  }
-}
-
 @keyframes rotate {
   from {
     transform: rotate(0);
@@ -30,6 +15,55 @@ $char-picker-arrow-border-size: $char-picker-arrow-size + 2px;
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+
+.char-picker-container {
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.char-well {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 1.5rem;
+  font-family: $font-monospace;
+  position: relative;
+  overflow: hidden;
+
+  &.ri-space {
+    padding-top: 1rem;
+  }
+}
+
+.char-well-corner-button {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+
+  z-index: 1;
+  background: var(--color-surface);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border: 1px solid white;
+  color: var(--color-font);
+
+  > span {
+    font-size: 1rem;
+  }
+
+  &:hover {
+    background: var(--color-surface-hover);
   }
 }
 
@@ -41,34 +75,66 @@ $char-picker-arrow-border-size: $char-picker-arrow-size + 2px;
   overflow: hidden;
 }
 
-// Shows a glowing purple color circling the well
-// TODO This looks bad on light-mode
-.char-well-border.animated-border {
-  background: var(--color-surface);
-
-  .char-well {
-    border-color: transparent !important;
-    background-clip: padding-box !important;
-    box-shadow: inset 0 0 0 1px var(--color-primary) !important;
+.char-picker-container.animated-border {
+  .char-well-corner-button {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
   }
 
-  &::before {
-    content: "";
-    display: block;
-    background: linear-gradient(
-                    90deg,
-                    rgba(255, 255, 255, 0) 0%,
-                    var(--color-primary) 50%,
-                    rgba(255, 255, 255, 0) 100%
-    );
-    height: 200px;
-    width: 40px;
-    position: absolute;
-    animation: rotate 3s linear forwards infinite;
-    z-index: 0;
+  // Shows a glowing purple color circling the well
+  .char-well-border {
+    background: var(--color-surface);
 
-    top: 50%;
-    transform-origin: top center;
+    .char-well {
+      border-color: transparent !important;
+      background-clip: padding-box !important;
+      box-shadow: inset 0 0 0 1px var(--color-primary) !important;
+    }
+
+    &::before {
+      content: "";
+      display: block;
+      background: linear-gradient(
+                      90deg,
+                      rgba(255, 255, 255, 0) 0%,
+                      var(--color-primary) 50%,
+                      rgba(255, 255, 255, 0) 100%
+      );
+      position: absolute;
+      z-index: 0;
+      animation: rotate 3s linear forwards infinite;
+
+      height: 200px;
+      width: 40px;
+
+      // Controls whether there should be one or two purple bars circling the well (commented out => two)
+      top: 50%;
+      transform-origin: top center;
+    }
+  }
+}
+
+[data-theme='light'] {
+  .char-well-corner-button {
+    border-color: var(--color-well-hover);
+    box-shadow: inset 0 0 0 1px var(--color-font-white);
+  }
+
+  .char-picker-container.animated-border {
+    .char-well-corner-button {
+      background: var(--color-background);
+    }
+
+    .char-well-border {
+
+      &::before {
+        height: 200px;
+        width: 80px;
+
+        top: initial;
+        transform-origin: initial;
+      }
+    }
   }
 }
 

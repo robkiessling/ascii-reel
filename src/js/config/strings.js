@@ -99,10 +99,10 @@ export const STRINGS = {
     'tools.standard.eyedropper.add-to-palette': 'Also add the color to the current palette.',
 
     'tools.standard.char-picker.name': 'Selected Character',
-    'tools.standard.char-picker.description': 'Opens the character picker. While open, press any key to select that character.',
-    'tools.standard.quick-pick.name': 'Quick-Pick Mode',
-    'tools.standard.quick-pick.description': 'When active, any key press selects that character instead switching tools. ' +
-        'If there\'s a canvas selection, it will also fill it with the chosen character.',
+    'tools.standard.char-picker.description': 'Click to open the character picker. While open, pressing a key will select that character.',
+    'tools.standard.quick-swap-char.name': 'Quick-Swap Mode',
+    'tools.standard.quick-swap-char.description': 'While active, pressing any key selects that character instead of switching tools.\n\n' +
+        "If a canvas selection is active, Quick-Swap Mode is automatically enabled&mdash;pressing a key will fill the selection with the chosen character.",
 
     'tools.standard.color-picker.name': 'Selected Color',
     'tools.standard.color-picker.description': 'Click to open the color picker.',
