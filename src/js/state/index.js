@@ -169,6 +169,7 @@ function migrateState(state, source) {
     if (state.version === 2) migrateToV3(state);
     if (state.version === 3) migrateToV4(state);
     if (state.version === 4) migrateToV5(state);
+    if (state.version === 5) migrateToV6(state);
 }
 
 function migrateToV2(state) {
@@ -231,6 +232,28 @@ function migrateToV5(state) {
     })
 
     delete state.metadata;
+
+    state.version = 5;
+}
+
+function migrateToV6(state) {
+    Object.keys(state.timeline).forEach(key => {
+        switch(key) {
+            case 'layers':
+                state.timeline.layerController = state.timeline.layers;
+                break;
+            case 'frames':
+                state.timeline.frameController = state.timeline.frames;
+                break;
+            case 'cels':
+                state.timeline.celController = state.timeline.cels;
+                break;
+        }
+    })
+
+    delete state.timeline.layers
+    delete state.timeline.frames
+    delete state.timeline.cels
 
     state.version = 5;
 }

@@ -5,48 +5,48 @@
  * - cels
  */
 
-import * as cels from './cels.js';
-import * as frames from './frames.js';
-import * as layers from './layers.js';
+import * as frameController from './frames.js';
+import * as layerController from './layers.js';
+import * as celController from './cels.js';
 import {create2dArray, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows, getConfig} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 
 
 export function load(data = {}) {
-    layers.load(data.layers);
-    frames.load(data.frames);
-    cels.load(data.cels); // must come after config load, since it depends on dimensions
+    layerController.load(data.layerController);
+    frameController.load(data.frameController);
+    celController.load(data.celController); // must come after config load, since it depends on dimensions
 }
 
 export function getState() {
     return {
-        layers: layers.getState(),
-        frames: frames.getState(),
-        cels: cels.getState(),
+        layerController: layerController.getState(),
+        frameController: frameController.getState(),
+        celController: celController.getState(),
     }
 }
 
 export function encodeState() {
     return {
-        layers: layers.getState(),
-        frames: frames.getState(),
-        cels: cels.encodeState()
+        layerController: layerController.getState(),
+        frameController: frameController.getState(),
+        celController: celController.encodeState()
     }
 }
 
 export function decodeState(encodedState, celRowLength) {
     return {
-        layers: encodedState.layers,
-        frames: encodedState.frames,
-        cels: cels.decodeState(encodedState.cels, celRowLength),
+        layerController: encodedState.layerController,
+        frameController: encodedState.frameController,
+        celController: celController.decodeState(encodedState.celController, celRowLength),
     }
 }
 
 export function replaceState(newState) {
-    layers.replaceState(newState.layers);
-    frames.replaceState(newState.frames);
-    cels.replaceState(newState.cels);
+    layerController.replaceState(newState.layerController);
+    frameController.replaceState(newState.frameController);
+    celController.replaceState(newState.celController);
 }
 
 
@@ -54,28 +54,28 @@ export function validate() {
     // Ensures all the cels referenced by frames/layers exist, and prunes any unused cels.
     // This should only be needed if the file was manually modified outside the app.
     const usedCelIds = new Set();
-    frames.frames().forEach(frame => {
-        layers.layers().forEach(layer => {
-            const celId = cels.getCelId(layer.id, frame.id);
-            if (!cels.cel(layer, frame)) {
+    frameController.frames().forEach(frame => {
+        layerController.layers().forEach(layer => {
+            const celId = celController.getCelId(layer.id, frame.id);
+            if (!celController.cel(layer, frame)) {
                 console.warn(`No cel found for (${celId}) -- inserting blank cel`)
-                cels.createCel(layer, frame);
+                celController.createCel(layer, frame);
             }
             usedCelIds.add(celId)
         })
     })
-    cels.iterateAllCelIds(celId => {
+    celController.iterateAllCelIds(celId => {
         if (!usedCelIds.has(celId)) {
             console.warn(`Cel (${celId}) is unused in frames/layers -- deleting cel`)
-            cels.deleteCel(celId)
+            celController.deleteCel(celId)
         }
     })
 
-    if (layers.layers().length === 0) {
+    if (layerController.layers().length === 0) {
         console.warn(`No layers found; creating new layer`)
         createLayer(0)
     }
-    if (frames.frames().length === 0) {
+    if (frameController.frames().length === 0) {
         console.warn(`No frames found; creating new frame`)
         createFrame(0)
     }
@@ -83,15 +83,15 @@ export function validate() {
 
 export function newBlankState() {
     return {
-        layers: {
+        layerController: {
             layers: [{ id: 1, name: 'Layer 1' }]
         },
-        frames: {
+        frameController: {
             frames: [{ id: 1 }]
         },
-        cels: {
+        celController: {
             cels: {
-                [cels.getCelId(1, 1)]: {}
+                [celController.getCelId(1, 1)]: {}
             }
         }
     }
@@ -104,27 +104,27 @@ export {
 } from './frames.js'
 
 export function createFrame(index, data) {
-    const frame = frames.createFrame(index, data);
+    const frame = frameController.createFrame(index, data);
 
     // create blank cels for all layers
-    layers.layers().forEach(layer => cels.createCel(layer, frame));
+    layerController.layers().forEach(layer => celController.createCel(layer, frame));
 }
 
 export function duplicateFrames(range) {
-    frames.duplicateFrames(range).forEach(({ originalFrame, dupFrame }) => {
-        layers.layers().forEach(layer => {
-            const originalCel = cels.cel(layer, originalFrame);
-            cels.createCel(layer, dupFrame, originalCel);
+    frameController.duplicateFrames(range).forEach(({ originalFrame, dupFrame }) => {
+        layerController.layers().forEach(layer => {
+            const originalCel = celController.cel(layer, originalFrame);
+            celController.createCel(layer, dupFrame, originalCel);
         });
     })
 }
 
 export function deleteFrames(range) {
     range.iterate(frameIndex => {
-        celIdsForFrame(frames.frameAt(frameIndex)).forEach(celId => cels.deleteCel(celId));
+        celIdsForFrame(frameController.frameAt(frameIndex)).forEach(celId => celController.deleteCel(celId));
     });
 
-    frames.deleteFrames(range)
+    frameController.deleteFrames(range)
 }
 
 
@@ -134,15 +134,15 @@ export {
 } from './layers.js'
 
 export function createLayer(index, data) {
-    const layer = layers.createLayer(index, data);
+    const layer = layerController.createLayer(index, data);
 
     // create blank cels for all frames
-    frames.frames().forEach(frame => cels.createCel(layer, frame));
+    frameController.frames().forEach(frame => celController.createCel(layer, frame));
 }
 
 export function deleteLayer(index) {
-    celIdsForLayer(layers.layerAt(index)).forEach(celId => cels.deleteCel(celId));
-    layers.deleteLayer(index);
+    celIdsForLayer(layerController.layerAt(index)).forEach(celId => celController.deleteCel(celId));
+    layerController.deleteLayer(index);
 }
 
 
@@ -155,23 +155,23 @@ export {
 } from './cels.js'
 
 function currentCel() {
-    return cels.cel(layers.currentLayer(), frames.currentFrame());
+    return celController.cel(layerController.currentLayer(), frameController.currentFrame());
 }
 
 function celIdsForLayer(layer) {
-    return frames.frames().map(frame => cels.getCelId(layer.id, frame.id));
+    return frameController.frames().map(frame => celController.getCelId(layer.id, frame.id));
 }
 
 export function iterateCelsForCurrentLayer(callback) {
-    celIdsForLayer(layers.currentLayer()).forEach(celId => callback(cels.cel(celId)));
+    celIdsForLayer(layerController.currentLayer()).forEach(celId => callback(celController.cel(celId)));
 }
 
 function celIdsForFrame(frame) {
-    return layers.layers().map(layer => cels.getCelId(layer.id, frame.id));
+    return layerController.layers().map(layer => celController.getCelId(layer.id, frame.id));
 }
 
 export function iterateCelsForCurrentFrame(callback) {
-    celIdsForFrame(frames.currentFrame()).forEach(celId => callback(cels.cel(celId)));
+    celIdsForFrame(frameController.currentFrame()).forEach(celId => callback(celController.cel(celId)));
 }
 
 /**
@@ -183,7 +183,7 @@ export function iterateCelsForCurrentFrame(callback) {
 export function iterateCels(allLayers, allFrames, celCallback) {
     if (allLayers && allFrames) {
         // Apply to all cels
-        cels.iterateAllCels(celCallback);
+        celController.iterateAllCels(celCallback);
     }
     else if (!allLayers && allFrames) {
         // Apply to all frames of a single layer
@@ -201,12 +201,12 @@ export function iterateCels(allLayers, allFrames, celCallback) {
 
 // This function returns the glyph as a 2d array: [char, color]
 export function getCurrentCelGlyph(row, col) {
-    return cels.charInBounds(row, col) ? [currentCel().chars[row][col], currentCel().colors[row][col]] : [];
+    return celController.charInBounds(row, col) ? [currentCel().chars[row][col], currentCel().colors[row][col]] : [];
 }
 
 // If the char or color parameter is undefined, that parameter will not be overridden
 export function setCurrentCelGlyph(row, col, char, color) {
-    cels.setCelGlyph(currentCel(), row, col, char, color);
+    celController.setCelGlyph(currentCel(), row, col, char, color);
 }
 
 /**
@@ -232,14 +232,14 @@ export function layeredGlyphs(frame, options = {}) {
 
     let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
 
-    for (l = 0; l < layers.layers().length; l++) {
-        layer = layers.layerAt(l);
-        isCurrentLayer = l === layers.layerIndex();
+    for (l = 0; l < layerController.layers().length; l++) {
+        layer = layerController.layerAt(l);
+        isCurrentLayer = l === layerController.layerIndex();
 
         if (layerIds && !layerIds.has(layer.id)) continue;
 
-        celChars = cels.cel(layer, frame).chars;
-        celColors = cels.cel(layer, frame).colors;
+        celChars = celController.cel(layer, frame).chars;
+        celColors = celController.cel(layer, frame).colors;
         const offset = options.offset && options.offset.amount;
 
         for (celR = 0; celR < celChars.length; celR++) {
@@ -250,8 +250,8 @@ export function layeredGlyphs(frame, options = {}) {
                 c = celC;
 
                 if (offset && (options.offset.modifiers.allLayers || isCurrentLayer)) {
-                    ({ r, c } = cels.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap));
-                    if (!cels.charInBounds(r, c)) continue;
+                    ({ r, c } = celController.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap));
+                    if (!celController.charInBounds(r, c)) continue;
                 }
 
                 chars[r][c] = celChars[celR][celC];
@@ -262,7 +262,7 @@ export function layeredGlyphs(frame, options = {}) {
         // If there is movableContent, show it on top of the rest of the layer
         if (options.movableContent && options.movableContent.glyphs && isCurrentLayer) {
             translateGlyphs(options.movableContent.glyphs, options.movableContent.origin, (r, c, char, color) => {
-                if (char !== undefined && char !== EMPTY_CHAR && cels.charInBounds(r, c)) {
+                if (char !== undefined && char !== EMPTY_CHAR && celController.charInBounds(r, c)) {
                     chars[r][c] = char;
                     colors[r][c] = color;
                 }
@@ -272,7 +272,7 @@ export function layeredGlyphs(frame, options = {}) {
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
         if (options.drawingContent && isCurrentLayer) {
             translateGlyphs(options.drawingContent.glyphs, options.drawingContent.origin, (r, c, char, color) => {
-                if (cels.charInBounds(r, c)) {
+                if (celController.charInBounds(r, c)) {
                     if (char !== undefined) chars[r][c] = char;
                     if (color !== undefined) colors[r][c] = color;
                 }
