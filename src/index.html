@@ -43,8 +43,6 @@
             <div id="tools-and-canvas">
                 <div id="standard-tools">
 
-                    <div class="spacer title">Edit</div>
-
                     <div class="standard-tool-row">
                         <div class="standard-tool-column">
                             <div class="standard-tool" data-tool="text-editor"><span class="ri ri-fw ri-text"></span></div>
@@ -69,7 +67,6 @@
                     </div>
 
                     <div class="spacer"></div>
-                    <div class="spacer title">Select</div>
 
                     <div class="standard-tool-row">
                         <div class="standard-tool-column">
@@ -83,7 +80,6 @@
                     </div>
 
                     <div class="spacer"></div>
-                    <div class="spacer title">Move</div>
 
                     <div class="standard-tool-row">
                         <div class="standard-tool-column">
@@ -94,10 +90,9 @@
                         </div>
                     </div>
 
-                    <div class="spacer"></div>
-                    <div class="spacer title">Color</div>
+                    <div class="spacer color-tools"></div>
 
-                    <div class="standard-tool-row">
+                    <div class="standard-tool-row color-tools">
                         <div class="standard-tool-column">
                             <div class="standard-tool" data-tool="paint-brush"><span class="ri ri-fw ri-brush-line"></span></div>
                             <div class="standard-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
@@ -122,8 +117,8 @@
                         </div>
                     </div>
 
-                    <div class="spacer"></div>
-                    <div class="standard-tool-row">
+                    <div class="spacer color-tools"></div>
+                    <div class="standard-tool-row color-tools">
                         <div class="standard-tool-column">
                             <div id="current-color"></div>
                         </div>
@@ -493,13 +488,27 @@
 
     <div id="new-file-dialog" title="New File" class="dialog-form">
         <div class="unsaved-warning-area"></div>
-        <div class="mb-2">
-            <b>Dimensions:</b>
-            <div class="dimensions-area mt-1 ml-1"></div>
-        </div>
-        <div>
-            <b>Background:</b>
-            <div class="background-area ml-1"></div>
+        <div class="flex-row">
+            <div class="flex-1 flex-col">
+                <div class="mb-2">
+                    <b>Project Type:</b>
+                    <div class="project-type-picker ml-1"></div>
+                </div>
+                <div>
+                    <b>Dimensions:</b>
+                    <div class="dimensions-area mt-1 ml-1"></div>
+                </div>
+            </div>
+            <div class="flex-1 flex-col">
+                <div class="mb-2">
+                    <b>Color Mode:</b>
+                    <div class="color-mode-picker ml-1"></div>
+                </div>
+                <div class="background-picker-container">
+                    <b>Background:</b>
+                    <div class="background-picker ml-1"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -509,7 +518,23 @@
 
     <div id="resize-dialog" title="Resize Canvas" class="dialog-form"></div>
 
-    <div id="background-dialog" title="Background Settings" class="dialog-form"></div>
+    <div id="background-dialog" title="Color / Background Settings" class="dialog-form">
+        <div>
+            <b>Color Mode:</b>
+            <div class="color-mode-picker ml-1"></div>
+        </div>
+        <div class="background-picker-container">
+            <b>Background:</b>
+            <div class="background-picker ml-1"></div>
+        </div>
+    </div>
+
+    <div id="project-settings-dialog" title="Project Settings" class="dialog-form">
+        <div>
+            <b>Project Type:</b>
+            <div class="project-type-picker ml-1"></div>
+        </div>
+    </div>
 
     <div id="grid-dialog" title="Grid Settings" class="dialog-form">
         <div id="major-grid-settings">

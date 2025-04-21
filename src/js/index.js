@@ -22,7 +22,8 @@ import { init as initLocalStorage, readState as readLocalStorage} from "./storag
 import {debounce, defer} from "./utils/utilities.js";
 import {eventBus, EVENTS} from './events/events.js'
 import {calculateFontRatio} from "./config/font.js";
-import {recalculateBGColors} from "./config/background.js";
+import {recalculateCanvasColors} from "./config/colors.js";
+import {applyThemeToDocument, recalculateTheme} from "./config/theme.js";
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
 initClipboard();
@@ -47,7 +48,7 @@ defer(() => loadInitialContent());
 function setupEventBus() {
     eventBus.on(EVENTS.STATE.LOADED, () => {
         calculateFontRatio();
-        recalculateBGColors();
+        recalculateCanvasColors();
 
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
     })
@@ -73,11 +74,11 @@ function setupEventBus() {
     })
     
     // History state-change listener:
-    eventBus.on(EVENTS.HISTORY.CHANGED, ({ requiresResize, recalculateFont, recalculateBackground }) => {
+    eventBus.on(EVENTS.HISTORY.CHANGED, ({ requiresResize, recalculateFont, recalculateColors }) => {
         syncTextEditorCursorPos();
 
         if (recalculateFont) calculateFontRatio()
-        if (recalculateBackground) recalculateBGColors()
+        if (recalculateColors) recalculateCanvasColors()
 
         if (requiresResize) {
             eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
@@ -85,6 +86,13 @@ function setupEventBus() {
         else {
             eventBus.emit(EVENTS.REFRESH.ALL);
         }
+    })
+
+    eventBus.on(EVENTS.THEME.CHANGED, () => {
+        recalculateTheme();
+        applyThemeToDocument();
+        recalculateCanvasColors();
+        eventBus.emit(EVENTS.REFRESH.ALL);
     })
 }
 

@@ -68,6 +68,7 @@ export function translateGlyphs(glyphs, cell, callback) {
 
 /**
  * A Range represents a subarray between two indices: startIndex and endIndex
+ * Indices are inclusive.
  */
 export default class ArrayRange {
     constructor(startIndex, endIndex) {

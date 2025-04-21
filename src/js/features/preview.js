@@ -7,17 +7,17 @@ import CanvasControl from "../components/canvas_control/index.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
 import {getCurrentViewRect} from "./main_canvas.js";
-import {getDynamicColor} from "../config/colors.js";
 import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {STRINGS} from "../config/strings.js";
 import * as tools from "./tools.js";
+import {getDynamicColor} from "../config/colors.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
 const POPUP_RESIZE_DEBOUNCE_LENGTH = 200;
 
-let $container, $fpsValue, $fpsSlider;
+let $container, $fpsValue, $fpsSlider, $previewControls;
 let previewCanvas;
 let previewInterval, previewIndex;
 let actionButtons;
@@ -34,6 +34,7 @@ export function init() {
         }
     });
 
+    $previewControls = $container.find('#preview-controls');
     $fpsValue = $('#preview-fps-value');
 
     $fpsSlider = $('#preview-fps-slider').slider({
@@ -50,6 +51,7 @@ export function init() {
 }
 
 export function resize() {
+    $previewControls.toggleClass('hidden', !state.isAnimationProject())
     refreshComponentVisibility($container, 'preview');
 
     previewCanvas.resize(true);
@@ -115,6 +117,7 @@ function setupActions() {
         name: () => state.getConfig('isPreviewPlaying') ? STRINGS['preview.pause.name'] : STRINGS['preview.play.name'],
         description: () => state.getConfig('isPreviewPlaying') ? STRINGS['preview.pause.description'] : STRINGS['preview.play.description'],
         icon: () => state.getConfig('isPreviewPlaying') ? 'ri-pause-circle-line' : 'ri-play-circle-line',
+        enabled: () => state.isAnimationProject(),
         callback: () => {
             state.setConfig('isPreviewPlaying', !state.getConfig('isPreviewPlaying'));
             reset();

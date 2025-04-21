@@ -57,6 +57,7 @@ const LEFT_MENU_BAR = [
     {
         name: "Tools",
         actions: [
+            'settings.open-project-settings-dialog',
             'settings.open-font-dialog',
             'settings.open-background-dialog',
             'settings.open-resize-dialog',
@@ -71,9 +72,9 @@ const RIGHT_MENU_BAR = [
     {
         nameClass: 'current-theme',
         actions: [
-            'theme.system',
-            'theme.light',
-            'theme.dark'
+            'themes.select-os',
+            'themes.select-light-mode',
+            'themes.select-dark-mode'
         ]
     }
 ]

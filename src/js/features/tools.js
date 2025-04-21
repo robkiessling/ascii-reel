@@ -45,10 +45,7 @@ export function init() {
 function refresh() {
     refreshCharPicker();
     refreshColorPicker();
-
-    $standardTools.find('.standard-tool').removeClass('selected');
-    $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
-
+    refreshStandardTools();
     refreshSelectionTools();
     subMenus.forEach(subMenu => subMenu.refresh());
 }
@@ -229,7 +226,10 @@ function setupStandardTools() {
     $standardTools.find('.standard-tool').each(function(i, element) {
         const $element = $(element);
         const tool = $element.data('tool');
-        const actionData = { callback: () => changeTool(tool) }
+        const actionData = {
+            callback: () => changeTool(tool),
+            enabled: () => state.isMultiColored() ? true : !state.MULTICOLOR_TOOLS.has(tool),
+        }
 
         // Some tools have custom shortcuts
         switch (tool) {
@@ -259,6 +259,14 @@ function setupStandardTools() {
         offset: tooltipOffset('right')
     });
 }
+
+function refreshStandardTools() {
+    $standardTools.find('.color-tools').toggleClass('hidden', !state.isMultiColored())
+
+    $standardTools.find('.standard-tool').removeClass('selected');
+    $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
+}
+
 
 function actionIdForStandardTool(tool) {
     return `tools.standard.${tool}`;

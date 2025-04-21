@@ -19,6 +19,8 @@ import {modifierAbbr} from "../../utils/os.js";
 import Toast from "../../components/toast.js";
 import {DEFAULT_CONFIG} from "../../state/index.js";
 import {eventBus, EVENTS} from "../../events/events.js";
+import ColorModePicker from "../../components/color_mode_picker.js";
+import ProjectTypePicker from "../../components/project_type_picker.js";
 
 export function init() {
     setupNew();
@@ -39,31 +41,30 @@ function setupNew() {
 
     createDialog($newFileDialog, () => {
         if (dimensionsPicker.validate()) {
-            const dim = dimensionsPicker.value;
-
             fileSystem.resetHandles();
 
-            const contrastColor = state.defaultContrastColor(backgroundPicker.value);
-
-            state.loadBlankState({
-                config: {
-                    dimensions: [dim.numCols, dim.numRows],
-                    background: backgroundPicker.value,
-                    primaryColor: contrastColor
-                },
-                palette: {
-                    colors: [contrastColor]
-                }
-            })
+            state.loadNewState(
+                projectTypePicker.value,
+                [dimensionsPicker.value.numCols, dimensionsPicker.value.numRows],
+                colorModePicker.value,
+                backgroundPicker.value
+            )
 
             $newFileDialog.dialog('close');
         }
     }, 'Create', {
-        minWidth: 520
+        minHeight: 500,
+        minWidth: 540
     });
 
+    const projectTypePicker = new ProjectTypePicker($newFileDialog.find('.project-type-picker'))
     const dimensionsPicker = new DimensionsPicker($newFileDialog.find('.dimensions-area'));
-    const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-area'));
+    const colorModePicker = new ColorModePicker($newFileDialog.find('.color-mode-picker'), {
+        onChange: value => {
+            $newFileDialog.find('.background-picker-container').toggle(value === 'multicolor')
+        }
+    })
+    const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-picker'));
     const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'), {
         showCloseButton: true,
         onSave: () => eventBus.emit(EVENTS.FILE.CHANGED)
@@ -71,11 +72,13 @@ function setupNew() {
 
     actions.registerAction('file.new', () => {
         unsavedWarning.toggle(state.hasCharContent());
+        projectTypePicker.value = DEFAULT_CONFIG.projectType
         dimensionsPicker.value = {
             numRows: DEFAULT_CONFIG.dimensions[1],
             numCols: DEFAULT_CONFIG.dimensions[0]
         }
-        backgroundPicker.value = false; // Transparent
+        colorModePicker.value = DEFAULT_CONFIG.colorMode
+        backgroundPicker.value = DEFAULT_CONFIG.background;
         $newFileDialog.dialog('open');
     });
 }

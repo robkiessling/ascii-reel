@@ -33,10 +33,6 @@ export function frames() {
     return state.frames;
 }
 
-export function frameAt(index) {
-    return state.frames[index];
-}
-
 export function frameIndex(newIndex) {
     if (newIndex !== undefined) state.currentIndex = newIndex;
     return state.currentIndex;

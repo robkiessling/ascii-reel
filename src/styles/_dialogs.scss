@@ -27,7 +27,7 @@
   }
 }
 
-#background-dialog, #new-file-dialog, .background-area, #open-file-dialog {
+#new-file-dialog, .background-picker, #open-file-dialog, .color-mode-picker, .project-type-picker {
   // Showing overflow so color picker / warning corner does not get constrained by dialog boundaries.
   // Dialog dimensions must be set so that normal content does not overflow, otherwise it will look bad.
   overflow: visible;

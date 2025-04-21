@@ -3,7 +3,7 @@ import {isObject, transformValues} from "../../utils/objects.js";
 import {numCols, numRows, getConfig, setConfig} from "../config.js";
 import {create2dArray, split1DArrayInto2D} from "../../utils/arrays.js";
 import {mod} from "../../utils/numbers.js";
-import {DEFAULT_COLOR} from "../palette.js";
+import {BLACK, DEFAULT_COLOR} from "../palette.js";
 import pako from "pako";
 import {addToCache} from "../unicode.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
@@ -264,6 +264,13 @@ export function colorIndex(colorStr) {
 
 export function primaryColorIndex() {
     return colorIndex(getConfig('primaryColor'));
+}
+
+export function convertToMonochrome() {
+    state.colorTable = [BLACK];
+    iterateAllCels(cel => {
+        cel.colors = create2dArray(numRows(), numCols(), 0);
+    })
 }
 
 // TODO would be better if this was smarter - what I really want is a way to detect if there are changes that require saving

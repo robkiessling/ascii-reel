@@ -150,7 +150,7 @@ function convertTextToGlyphs(text) {
 
         line.split('').forEach((char, c) => {
             chars[r][c] = char;
-            colors[r][c] = primaryColorIndex // todo could read color from rtf
+            colors[r][c] = primaryColorIndex // Not possible to read color (e.g. if copied from an RTF) so just use primary color
         })
     });
 

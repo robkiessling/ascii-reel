@@ -34,13 +34,14 @@ export const STRINGS = {
     'view.zoom-out.name': 'Zoom Out',
     'view.zoom-fit.name': 'Zoom Fit',
 
+    'settings.open-project-settings-dialog.name': 'Project Settings',
     'settings.open-font-dialog.name': 'Font Settings',
     'settings.open-resize-dialog.name': 'Resize Canvas',
-    'settings.open-background-dialog.name': 'Background Settings',
+    'settings.open-background-dialog.name': 'Color / Background Settings',
 
-    'theme.system.name': 'System Default',
-    'theme.light.name': 'Light',
-    'theme.dark.name': 'Dark',
+    'themes.select-os.name': 'System Default',
+    'themes.select-light-mode.name': 'Light',
+    'themes.select-dark-mode.name': 'Dark',
 
     'tools.standard.text-editor.name': 'Text Editor',
     'tools.standard.text-editor.description': 'Use this tool to edit text directly on the canvas.\n\n' +

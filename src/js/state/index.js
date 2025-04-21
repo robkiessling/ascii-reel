@@ -8,10 +8,11 @@ import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {BLACK, DEFAULT_COLOR} from "./palette.js";
 
 export {
     numRows, numCols, setConfig, getConfig, fontFamily, getName, isMinimized, updateDrawType,
-    DEFAULT_STATE as DEFAULT_CONFIG
+    isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {
     // layers
@@ -29,7 +30,7 @@ export {
     resize
 } from './timeline/index.js'
 export {
-    sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy, defaultContrastColor,
+    sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy,
     importPalette, COLOR_FORMAT, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
 } from './palette.js'
 export {
@@ -44,14 +45,39 @@ export function init() {
     history.setupActions();
 }
 
-export function loadBlankState(overrides) {
+export function loadBlankState() {
     try {
-        load($.extend(true, {
+        load({
             timeline: timeline.newBlankState()
-        }, overrides));
+        });
     } catch (error) {
         console.error("Failed to load blank state:", error);
         onLoadError({});
+    }
+}
+
+export function loadNewState(projectType, dimensions, colorMode, background) {
+    let primaryColor, paletteState;
+    if (background !== undefined) {
+        primaryColor = palette.defaultContrastColor(background);
+        paletteState = { colors: [primaryColor] }
+    }
+
+    try {
+        load({
+            config: {
+                projectType: projectType,
+                colorMode: colorMode,
+                dimensions: dimensions,
+                background: background,
+                primaryColor: primaryColor,
+            },
+            timeline: timeline.newBlankState(),
+            palette: paletteState
+        })
+    } catch (error) {
+        console.error("Failed to load new state:", error);
+        onLoadError({ projectType, dimensions, colorMode, background });
     }
 }
 
@@ -64,6 +90,9 @@ function load(data) {
     timeline.load(data.timeline);
     palette.load(data.palette);
     unicode.load(data.unicode);
+
+    validateProjectType();
+    validateColorMode();
 
     timeline.validate();
     timeline.vacuumColorTable();
@@ -256,6 +285,29 @@ function migrateToV6(state) {
     delete state.timeline.cels
 
     state.version = 5;
+}
+
+
+
+// --------------------------------------------------------------------------------
+
+export function validateColorMode() {
+    if (config.getConfig('colorMode') === 'monochrome') {
+        timeline.convertToMonochrome();
+        palette.convertToMonochrome();
+        if (!config.MULTICOLOR_TOOLS.has(config.getConfig('tool'))) {
+            config.setConfig('tool', 'text-editor'); // ensure tool is not one of the color-related ones
+        }
+        config.setConfig('primaryColor', BLACK)
+    }
+}
+
+export function validateProjectType() {
+    if (config.getConfig('projectType') === 'drawing') {
+        timeline.convertToDrawing();
+        config.setConfig('isPreviewPlaying', false);
+        config.setConfig('onion', false);
+    }
 }
 
 

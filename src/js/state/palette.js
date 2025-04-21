@@ -2,8 +2,8 @@ import Color from "@sphinxxxx/color-conversion";
 
 export const COLOR_FORMAT = 'hex'; // vanilla-picker format we use to store colors
 
-const BLACK = 'rgba(0,0,0,1)';
-const WHITE = 'rgba(255,255,255,1)';
+export const BLACK = 'rgba(0,0,0,1)';
+export const WHITE = 'rgba(255,255,255,1)';
 
 export const DEFAULT_COLOR = BLACK;
 
@@ -79,6 +79,10 @@ export function importPalette(newColors, replace = false) {
     state.colors = replace ? newColors : [...state.colors, ...newColors];
 
     recalculateSortedPalette();
+}
+
+export function convertToMonochrome() {
+    importPalette(DEFAULT_STATE.colors, true)
 }
 
 function recalculateSortedPalette() {

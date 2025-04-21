@@ -75,6 +75,7 @@ function setupEventBus() {
 }
 
 function refresh() {
+    $container.toggleClass('hidden', !state.isMultiColored());
     refreshComponentVisibility($container, 'palette');
 
     $colorList.empty();

@@ -26,6 +26,7 @@ export function init() {
 }
 
 export function resize() {
+    $container.toggleClass('hidden', !state.isAnimationProject());
     refreshComponentVisibility($container, 'frames');
 
     // Frames on left vs. bottom:
@@ -150,20 +151,26 @@ function setupSortable() {
 }
 
 function setupActions() {
-    actions.registerAction('frames.new-frame', () => {
-        const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
-        state.createFrame(frameIndex, {});
-        selectFrame(frameIndex);
+    actions.registerAction('frames.new-frame', {
+        enabled: () => state.isAnimationProject(),
+        callback: () => {
+            const frameIndex = state.frameIndex() + 1; // Add blank frame right after current frame
+            state.createFrame(frameIndex, {});
+            selectFrame(frameIndex);
+        }
     });
 
-    actions.registerAction('frames.duplicate-frame', () => {
-        const currentRange = state.frameRangeSelection();
-        state.duplicateFrames(currentRange);
+    actions.registerAction('frames.duplicate-frame', {
+        enabled: () => state.isAnimationProject(),
+        callback: () => {
+            const currentRange = state.frameRangeSelection();
+            state.duplicateFrames(currentRange);
 
-        selectFrameRange(
-            currentRange.clone().translate(currentRange.length),
-            state.frameIndex() + currentRange.length
-        )
+            selectFrameRange(
+                currentRange.clone().translate(currentRange.length),
+                state.frameIndex() + currentRange.length
+            )
+        }
     });
 
     actions.registerAction('frames.delete-frame', {
@@ -171,7 +178,7 @@ function setupActions() {
             state.deleteFrames(state.frameRangeSelection());
             selectFrame(Math.min(state.frameIndex(), state.frames().length - 1));
         },
-        enabled: () => state.frames() && state.frames().length > 1
+        enabled: () => state.isAnimationProject() && state.frames() && state.frames().length > 1
     });
 
     actions.registerAction('frames.reverse-frames', {
@@ -184,11 +191,12 @@ function setupActions() {
                 state.frameIndex()
             )
         },
-        enabled: () => state.frameRangeSelection().length > 1,
+        enabled: () => state.isAnimationProject() && state.frameRangeSelection().length > 1,
         icon: () => state.getConfig('frameOrientation') === 'bottom' ? 'ri-arrow-left-right-line' : 'ri-arrow-up-down-line',
     });
 
     actions.registerAction('frames.toggle-onion', {
+        enabled: () => state.isAnimationProject(),
         callback: () => {
             state.setConfig('onion', !state.getConfig('onion'));
             actionButtons.refreshContent();
@@ -235,17 +243,23 @@ function setupActions() {
         icon: () => 'ri ri-fw ri-layout-bottom-line'
     });
 
-    actions.registerAction('frames.previous-frame', () => {
-        let index = state.frameRangeSelection().startIndex;
-        index -= 1;
-        if (index < 0) index = state.frames().length - 1;
-        selectFrame(index, 'changeFrameSingle');
+    actions.registerAction('frames.previous-frame', {
+        enabled: () => state.isAnimationProject(),
+        callback: () => {
+            let index = state.frameRangeSelection().startIndex;
+            index -= 1;
+            if (index < 0) index = state.frames().length - 1;
+            selectFrame(index, 'changeFrameSingle');
+        }
     })
-    actions.registerAction('frames.next-frame', () => {
-        let index = state.frameRangeSelection().endIndex;
-        index += 1;
-        if (index >= state.frames().length) index = 0;
-        selectFrame(index, 'changeFrameSingle');
+    actions.registerAction('frames.next-frame', {
+        enabled: () => state.isAnimationProject(),
+        callback: () => {
+            let index = state.frameRangeSelection().endIndex;
+            index += 1;
+            if (index >= state.frames().length) index = 0;
+            selectFrame(index, 'changeFrameSingle');
+        }
     })
 
     actionButtons = actions.setupActionButtons($container);

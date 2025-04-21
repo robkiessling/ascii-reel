@@ -2,8 +2,12 @@ import {getFormattedDateTime} from "../utils/strings.js";
 import {DEFAULT_COLOR} from "./palette.js";
 import {pick} from "../utils/objects.js";
 
+// TODO There are a lot of strings that should be constants
+// TODO Organize this better? E.g. projectSettings could contain certain keys
 export const DEFAULT_STATE = {
     name: '',
+    projectType: 'animation',
+    colorMode: 'multicolor',
     createdAt: undefined,
     dimensions: [30, 15], // [numCols, numRows]
     background: false,
@@ -22,7 +26,7 @@ export const DEFAULT_STATE = {
     lockLayerVisibility: true,
     frameOrientation: 'left',
     minimizedComponents: {
-        layers: true
+        // layers: true
     },
     tool: 'text-editor',
     primaryColor: DEFAULT_COLOR,
@@ -43,8 +47,11 @@ export const DEFAULT_STATE = {
 
 // Only the following config keys are saved to history; undo/redo will not affect the other config
 const CONFIG_KEYS_SAVED_TO_HISTORY = [
-    'font', 'dimensions', 'background', 'cursorPosition'
+    'font', 'dimensions', 'background', 'cursorPosition', 'projectType', 'colorMode'
 ]
+
+// These tools are only available if colorMode is multicolor
+export const MULTICOLOR_TOOLS = new Set(['paint-brush', 'color-swap', 'fill-color', 'eyedropper'])
 
 
 let state = {};
@@ -109,4 +116,12 @@ export function isMinimized(componentKey) {
 
 export function updateDrawType(toolKey, newType) {
     state.drawTypes[toolKey] = newType;
+}
+
+export function isAnimationProject() {
+    return this.getConfig('projectType') === 'animation';
+}
+
+export function isMultiColored() {
+    return this.getConfig('colorMode') === 'multicolor';
 }

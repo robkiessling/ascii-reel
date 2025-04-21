@@ -29,13 +29,21 @@ const ICON_DATA = {
 
     'tools.draw-ellipse-types.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
     'tools.draw-ellipse-types.filled-monochar': { type: PRE, content: " AAA \nAAAAA\n AAA " },
+
+    'themes.dark-mode': { type: REMIXICON, class: 'ri-moon-line' },
+    'themes.light-mode': { type: REMIXICON, class: 'ri-sun-line' },
+    'themes.os': { type: REMIXICON, class: 'ri-contrast-line' },
 }
 
-
+export function getIconClass(key) {
+    const iconData = ICON_DATA[key];
+    if (!iconData) return undefined;
+    return iconData.class;
+}
 
 export function getIconHTML(key) {
     const iconData = ICON_DATA[key];
-    if (!iconData) return undefined;
+    if (!iconData) return `<span>?</span>`;
 
     const style = iconData.style ? iconData.style : ''
 
@@ -45,9 +53,9 @@ export function getIconHTML(key) {
         case CHAR:
             return `<span class="char-icon" style="${style}">${iconData.content}</span>`
         case REMIXICON:
-            return `<span class="ri ri-fw ${iconData.content}" style="${style}"></span>`
+            return `<span class="ri ri-fw ${iconData.class}" style="${style}"></span>`
         case ICOMOON:
-            return `<span class="${iconData.content}" style="${style}"></span>`
+            return `<span class="${iconData.class}" style="${style}"></span>`
         default:
             console.warn(`Invalid icon type: ${iconData.type}`);
             return undefined;

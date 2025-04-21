@@ -4,15 +4,18 @@ import * as actions from "../../io/actions.js";
 import {calculateFontRatio} from "../../config/font.js";
 import {AVAILABLE_FONTS} from "../../config/font.js";
 import {createDialog} from "../../utils/dialogs.js";
-import {recalculateBGColors} from "../../config/background.js";
+import {recalculateCanvasColors} from "../../config/colors.js";
 import BackgroundPicker from "../../components/background_picker.js";
 import DimensionsPicker from "../../components/dimensions_picker.js";
 import {eventBus, EVENTS} from "../../events/events.js";
+import ProjectTypePicker from "../../components/project_type_picker.js";
+import ColorModePicker from "../../components/color_mode_picker.js";
 
 export function init() {
     setupFontDialog();
     setupResizeDialog();
     setupBackgroundDialog();
+    setupProjectSettingsDialog();
 
     // TODO
     actions.registerAction('preferences', {
@@ -119,17 +122,58 @@ function setupBackgroundDialog() {
     const $backgroundDialog = $('#background-dialog');
 
     createDialog($backgroundDialog, () => {
-        state.setConfig('background', backgroundPicker.value);
-        recalculateBGColors();
+        const newColorMode = colorModePicker.value;
+        if (newColorMode !== state.getConfig('colorMode')) {
+            state.setConfig('colorMode', newColorMode);
+            state.validateColorMode()
+        }
+
+        if (colorModePicker.value === 'multicolor') {
+            // Background is only updated for multicolor animations
+            state.setConfig('background', backgroundPicker.value);
+        }
+
+        recalculateCanvasColors();
         eventBus.emit(EVENTS.REFRESH.ALL);
-        state.pushHistory({ recalculateBackground: true });
+        state.pushHistory({ recalculateColors: true });
         $backgroundDialog.dialog('close');
     }, 'Save');
 
-    const backgroundPicker = new BackgroundPicker($backgroundDialog);
+    const colorModePicker = new ColorModePicker($backgroundDialog.find('.color-mode-picker'), {
+        onChange: value => {
+            $backgroundDialog.find('.background-picker-container').toggle(value === 'multicolor')
+        }
+    })
+    const backgroundPicker = new BackgroundPicker($backgroundDialog.find('.background-picker'));
 
     actions.registerAction('settings.open-background-dialog', () => {
+        colorModePicker.value = state.getConfig('colorMode');
         backgroundPicker.value = state.getConfig('background');
         $backgroundDialog.dialog('open');
+    });
+}
+
+// --------------------------------------------------------------- Project Settings
+
+function setupProjectSettingsDialog() {
+    const $projectSettingsDialog = $('#project-settings-dialog');
+
+    createDialog($projectSettingsDialog, () => {
+        const newProjectType = projectTypePicker.value;
+        if (newProjectType !== state.getConfig('projectType')) {
+            state.setConfig('projectType', newProjectType);
+            state.validateProjectType()
+        }
+
+        eventBus.emit(EVENTS.RESIZE.ALL);
+        state.pushHistory({ requiresResize: true });
+        $projectSettingsDialog.dialog('close');
+    })
+
+    const projectTypePicker = new ProjectTypePicker($projectSettingsDialog.find('.project-type-picker'))
+
+    actions.registerAction('settings.open-project-settings-dialog', () => {
+        projectTypePicker.value = state.getConfig('projectType');
+        $projectSettingsDialog.dialog('open');
     });
 }

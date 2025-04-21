@@ -15,7 +15,7 @@ import CanvasControl from "../components/canvas_control/index.js";
 import * as selection from "./selection.js";
 import {hoveredCells} from "./tools.js";
 import * as state from "../state/index.js";
-import {getMajorGridColor, getMinorGridColor} from "../config/background.js";
+import {majorGridColor, minorGridColor} from "../config/colors.js";
 import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
@@ -216,8 +216,8 @@ function redrawCharCanvas() {
     // 6. Draw grid
     const grid = state.getConfig('grid');
     if (grid.show) {
-        if (grid.minorGridEnabled) charCanvas.drawGrid(1, grid.minorGridSpacing, getMinorGridColor());
-        if (grid.majorGridEnabled) charCanvas.drawGrid(1, grid.majorGridSpacing, getMajorGridColor());
+        if (grid.minorGridEnabled) charCanvas.drawGrid(1, grid.minorGridSpacing, minorGridColor);
+        if (grid.majorGridEnabled) charCanvas.drawGrid(1, grid.majorGridSpacing, majorGridColor);
     }
 }
 

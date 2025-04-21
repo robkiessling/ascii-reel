@@ -8,7 +8,7 @@
 import * as frameController from './frames.js';
 import * as layerController from './layers.js';
 import * as celController from './cels.js';
-import {create2dArray, translateGlyphs} from "../../utils/arrays.js";
+import ArrayRange, {create2dArray, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows, getConfig} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 
@@ -97,6 +97,15 @@ export function newBlankState() {
     }
 }
 
+export function convertToDrawing() {
+    // Delete all but the first frame
+    const numFrames = frameController.frames().length;
+    if (numFrames > 1) deleteFrames(new ArrayRange(1, numFrames - 1))
+
+    frameController.frameRangeSelection(null);
+    frameController.frameIndex(0);
+}
+
 // --------------------------------------------------------------------------- Frames API
 export {
     frames as frames, frameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame,
@@ -121,7 +130,7 @@ export function duplicateFrames(range) {
 
 export function deleteFrames(range) {
     range.iterate(frameIndex => {
-        celIdsForFrame(frameController.frameAt(frameIndex)).forEach(celId => celController.deleteCel(celId));
+        celIdsForFrame(frameController.frames()[frameIndex]).forEach(celId => celController.deleteCel(celId));
     });
 
     frameController.deleteFrames(range)
@@ -151,7 +160,7 @@ export function deleteLayer(index) {
 export {
     hasCharContent, iterateCellsForCel, setCelGlyph, charInBounds, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
-    resize
+    resize, convertToMonochrome
 } from './cels.js'
 
 function currentCel() {

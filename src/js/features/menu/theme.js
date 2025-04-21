@@ -1,63 +1,35 @@
 import {registerAction} from "../../io/actions.js";
-import {currentTheme, THEMES} from "../../config/theme.js";
-import {recalculateBGColors} from "../../config/background.js";
+import {applyThemeToDocument, recalculateTheme, selectedTheme, setupOSPreference, THEMES} from "../../config/theme.js";
 import {saveGlobalSetting} from "../../storage/local_storage.js";
 import {eventBus, EVENTS} from "../../events/events.js";
+import {getIconClass, getIconHTML} from "../../config/icons.js";
 
 export function init() {
-    registerThemeAction('theme.system', 'system');
-    registerThemeAction('theme.light', 'light');
-    registerThemeAction('theme.dark', 'dark');
+    registerThemeAction('themes.select-os', THEMES.OS);
+    registerThemeAction('themes.select-light-mode', THEMES.LIGHT_MODE);
+    registerThemeAction('themes.select-dark-mode', THEMES.DARK_MODE);
 
     setupOSPreference();
     setupEventBus();
 
-    refresh(false); // Initial theme css (no need to redraw canvas, it will be loaded later)
+    recalculateTheme();
+    applyThemeToDocument();
 }
 
-function registerThemeAction(actionName, themeName) {
+function registerThemeAction(actionName, theme) {
     registerAction(actionName, {
-        icon: THEMES[themeName].remixicon,
+        icon: getIconClass(theme),
         callback: () => {
-            saveGlobalSetting('theme', themeName);
-            refresh(true);
+            saveGlobalSetting('theme', theme);
+            eventBus.emit(EVENTS.THEME.CHANGED);
         }
     });
 }
 
-let prefersDarkMode;
-
-function setupOSPreference() {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    // Detect changes if user changes preference on OS
-    mediaQuery.addEventListener('change', e => {
-        prefersDarkMode = e.matches;
-        refresh(true);
-    });
-
-    // Initial preference
-    prefersDarkMode = mediaQuery.matches;
-}
-
-function refresh(redrawCanvas = false) {
-    const theme = currentTheme(true);
-
-    let resolvedTheme = theme.name;
-    if (resolvedTheme === THEMES.system.name) resolvedTheme = prefersDarkMode ? THEMES.dark.name : THEMES.light.name;
-    document.documentElement.setAttribute("data-theme", resolvedTheme);
-
-    $('#right-menu').find('.current-theme')
-        .removeClass(Object.values(THEMES).map(theme => theme.remixicon).join(' '))
-        .addClass(theme.remixicon)
-
-    if (redrawCanvas) {
-        // checkerboard background may have changed, so refresh canvas & grid
-        recalculateBGColors();
-        eventBus.emit(EVENTS.REFRESH.ALL);
-    }
+function refresh() {
+    $('#right-menu').find('.current-theme').html(getIconHTML(selectedTheme))
 }
 
 function setupEventBus() {
-    eventBus.on(EVENTS.THEME.CHANGED, () => refresh(true))
+    eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
 }

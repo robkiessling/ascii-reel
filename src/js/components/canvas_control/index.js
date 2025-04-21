@@ -1,12 +1,17 @@
 import {setIntervalUsingRAF} from "../../utils/utilities.js";
-import {colorStr, numCols, numRows, fontFamily} from "../../state/index.js";
+import {numCols, numRows, fontFamily} from "../../state/index.js";
 import {fontHeight, fontWidth} from "../../config/font.js";
 import Rect from "../../geometry/rect.js";
 import Cell from "../../geometry/cell.js";
 import CellArea from "../../geometry/cell_area.js";
 import {roundForComparison} from "../../utils/numbers.js";
-import {PRIMARY_COLOR, SELECTION_COLOR} from "../../config/colors.js";
-import {drawCheckerboard, getHoverColor, HOVER_CELL_OPACITY} from "../../config/background.js";
+import {
+    hoverColor,
+    HOVER_CELL_OPACITY,
+    bgColor,
+    getColorStr,
+    PRIMARY_COLOR, SELECTION_COLOR, checkerboardColors
+} from "../../config/colors.js";
 import {setupHoverEvents, setupPanEvents, setupRawMouseEvents, setupZoomEvents} from "./events.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 
@@ -24,6 +29,9 @@ const CURSOR_WIDTH = 0.5;
 
 const DASH_OUTLINE_LENGTH = 5;
 const DASH_OUTLINE_FPS = 60;
+
+const CHECKER_SIZE = 10;
+const USE_CHECKERBOARD = true;
 
 // Static threshold value limiting how far you can zoom in
 const ZOOM_IN_THRESHOLD_VALUE = 30;
@@ -116,12 +124,14 @@ export default class CanvasControl {
         });
     }
 
+    // TODO Think about whether color should be passed in from outside, or just always use bgColor
+    //      E.g. for exporting gifs in monochrome, etc.
     drawBackground(color) {
-        if (color === false) {
+        if (bgColor === false) {
             this._fillCheckerboard();
         }
         else {
-            this.context.fillStyle = color;
+            this.context.fillStyle = bgColor;
             this.context.fillRect(...CellArea.drawableArea().xywh);
         }
     }
@@ -175,7 +185,9 @@ export default class CanvasControl {
             if (line) { lines.push(line); }
         }
         lines.forEach(line => {
-            this.context.fillStyle = line.colorIndex === VISIBLE_WHITESPACE_COLOR_INDEX ? VISIBLE_WHITESPACE_COLOR : colorStr(line.colorIndex)
+            this.context.fillStyle = line.colorIndex === VISIBLE_WHITESPACE_COLOR_INDEX ?
+                VISIBLE_WHITESPACE_COLOR :
+                getColorStr(line.colorIndex)
 
             // For y value, increase row by 0.5 so it is centered in cell
             this.context.fillText(line.text, Cell.x(line.col), Cell.y(line.row + 0.5));
@@ -230,7 +242,7 @@ export default class CanvasControl {
     }
 
     highlightCell(cell) {
-        this.context.fillStyle = getHoverColor();
+        this.context.fillStyle = hoverColor;
         this.context.globalAlpha = HOVER_CELL_OPACITY;
         this.context.fillRect(...cell.xywh);
     }
@@ -301,7 +313,7 @@ export default class CanvasControl {
     _fillCheckerboard() {
         // First, draw a checkerboard over full area (checkerboard does not change depending on zoom; this way we have
         // a static number of checkers and performance is consistent).
-        this._usingFullArea(fullArea => drawCheckerboard(this.context, fullArea));
+        this._usingFullArea(fullArea => this._drawCheckerboard(fullArea));
 
         // Clear the 4 edges between the drawable area and the full area
         const drawableArea = CellArea.drawableArea();
@@ -319,6 +331,35 @@ export default class CanvasControl {
         );
     }
 
+    _drawCheckerboard(area) {
+        const [colorA, colorB] = checkerboardColors();
+
+        // First, fill entire area with checkerboard-A color
+        this.context.beginPath();
+        this.context.fillStyle = colorA;
+        this.context.rect(...area.xywh);
+        this.context.fill();
+
+        if (!USE_CHECKERBOARD) return;
+
+        // Then draw many little squares for checkerboard-B color
+        this.context.beginPath();
+        this.context.fillStyle = colorB;
+        let x, y;
+        let maxX = roundForComparison(area.x + area.width);
+        let maxY = roundForComparison(area.y + area.height);
+        let colStartsOnB = false;
+
+        for (x = area.x; roundForComparison(x) < maxX; x += CHECKER_SIZE) {
+            let isCheckered = colStartsOnB;
+            for (y = area.y; roundForComparison(y) < maxY; y += CHECKER_SIZE) {
+                if (isCheckered) this.context.rect(x, y, CHECKER_SIZE, CHECKER_SIZE);
+                isCheckered = !isCheckered;
+            }
+            colStartsOnB = !colStartsOnB;
+        }
+        this.context.fill();
+    }
 
     // -------------------------------------------------------------- Helpers
 
