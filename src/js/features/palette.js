@@ -7,11 +7,11 @@ import * as state from '../state/index.js';
 import * as tools from './tools.js';
 import * as actions from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
-import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import Minimizer from "../components/minimizer.js";
 
 
-let $container, $colorList, $actions, actionButtons;
+let $container, $colorList, $actions, actionButtons, minimizer;
 
 export function init() {
     $container = $('#palette-controller');
@@ -29,13 +29,15 @@ export function init() {
         tools.selectColor($color.data('color'));
     });
 
+    minimizer = new Minimizer($container, 'palette')
+
     setupActions();
     setupEventBus();
 }
 
 function setupActions() {
     actions.registerAction('palette.toggle-component', () => {
-        toggleComponent('palette');
+        minimizer.toggle();
         refresh();
     })
 
@@ -76,7 +78,7 @@ function setupEventBus() {
 
 function refresh() {
     $container.toggleClass('hidden', !state.isMultiColored());
-    refreshComponentVisibility($container, 'palette');
+    minimizer.refresh();
 
     $colorList.empty();
 

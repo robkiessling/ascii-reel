@@ -78,23 +78,29 @@ function onAnotherTabStateUpdate(msgData) {
 
 // ------------------------------------------------------------------------- Storing Global Settings
 const GLOBAL_SETTINGS_KEY = 'ascii-reel-global';
+let cachedGlobalSettings; // Cache settings so we don't have to parse localstorage json every read
 
 export function readGlobalSetting(key) {
-    const settings = getLocalStorage(GLOBAL_SETTINGS_KEY) || {};
-    return settings[key];
+    if (!cachedGlobalSettings) cachedGlobalSettings = getLocalStorage(GLOBAL_SETTINGS_KEY) || {};
+    return cachedGlobalSettings[key];
 }
 
 export function saveGlobalSetting(key, value) {
-    const settings = getLocalStorage(GLOBAL_SETTINGS_KEY) || {};
-    settings[key] = value;
-
-    setLocalStorage(GLOBAL_SETTINGS_KEY, settings, { setting: key });
+    cachedGlobalSettings = getLocalStorage(GLOBAL_SETTINGS_KEY) || {};
+    cachedGlobalSettings[key] = value;
+    setLocalStorage(GLOBAL_SETTINGS_KEY, cachedGlobalSettings, { setting: key });
 }
 
 function onAnotherTabGlobalSettingsUpdate(msgData) {
+    cachedGlobalSettings = undefined; // Clear cache
+
     switch(msgData.setting) {
         case 'theme':
             eventBus.emit(EVENTS.THEME.CHANGED);
+            break;
+        case 'frameOrientation':
+        case 'minimizedComponents':
+            eventBus.emit(EVENTS.RESIZE.ALL);
             break;
     }
 }

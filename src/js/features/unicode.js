@@ -8,12 +8,12 @@ import * as state from "../state/index.js";
 import * as tools from "./tools.js";
 import {copyChar} from "../io/clipboard.js";
 import * as selection from "./selection.js";
-import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {createDialog} from "../utils/dialogs.js";
 import {STRINGS} from "../config/strings.js";
+import Minimizer from "../components/minimizer.js";
 
-let $container, $charList, $actions, actionButtons, $unicodeDialog;
+let $container, $charList, $actions, actionButtons, $unicodeDialog, minimizer;
 
 export function init() {
     $container = $('#unicode-controller');
@@ -35,6 +35,8 @@ export function init() {
         selection.setSelectionToSingleChar(char, selection.cursorCell() ? state.primaryColorIndex() : undefined);
         tools.selectChar(char);
     });
+
+    minimizer = new Minimizer($container, 'unicode')
 
     setupSettings();
     setupActions();
@@ -58,7 +60,7 @@ function setupSettings() {
 
 function setupActions() {
     actions.registerAction('unicode.toggle-component', () => {
-        toggleComponent('unicode');
+        minimizer.toggle();
         refresh();
     })
 
@@ -85,7 +87,7 @@ function setupEventBus() {
 }
 
 function refresh() {
-    refreshComponentVisibility($container, 'unicode');
+    minimizer.refresh();
 
     $charList.empty();
 

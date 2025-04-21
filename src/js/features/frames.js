@@ -7,19 +7,22 @@ import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 import CanvasControl from "../components/canvas_control/index.js";
 import ArrayRange from "../utils/arrays.js";
-import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import * as tools from "./tools.js";
 import {hideAll as hideAllTooltips} from "tippy.js";
+import {readGlobalSetting, saveGlobalSetting} from "../storage/local_storage.js";
+import Minimizer from "../components/minimizer.js";
 
 let $container, $template, $list;
 let simpleBar, frameComponents, actionButtons;
+let minimizer;
 
 export function init() {
     $container = $('#frame-controller');
     $template = $container.find('.frame-template');
 
+    minimizer = new Minimizer($container, 'frames')
     setupList();
     setupActions();
     setupEventBus();
@@ -27,20 +30,17 @@ export function init() {
 
 export function resize() {
     $container.toggleClass('hidden', !state.isAnimationProject());
-    refreshComponentVisibility($container, 'frames');
-
-    // Frames on left vs. bottom:
-    const orientation = state.getConfig('frameOrientation');
+    minimizer.refresh();
 
     $('#frames-and-canvas')
-        .toggleClass('frames-on-left', orientation === 'left')
-        .toggleClass('frames-on-bottom', orientation === 'bottom');
+        .toggleClass('frames-on-left', alignFramesLeft())
+        .toggleClass('frames-on-bottom', !alignFramesLeft());
 
-    $list.sortable('option', 'axis', orientation === 'left' ? 'y' : 'x');
+    $list.sortable('option', 'axis', alignFramesLeft() ? 'y' : 'x');
 
     actionButtons.tooltips.forEach(tooltip => {
         tooltip.setProps({
-            placement: orientation === 'left' ? 'right' : 'top'
+            placement: alignFramesLeft() ? 'right' : 'top'
         });
     });
 
@@ -79,6 +79,10 @@ function refresh() {
     });
 
     actionButtons.refreshContent();
+}
+
+function alignFramesLeft() {
+    return readGlobalSetting('frameOrientation') !== 'bottom';
 }
 
 function currentFrameComponent() {
@@ -192,7 +196,7 @@ function setupActions() {
             )
         },
         enabled: () => state.isAnimationProject() && state.frameRangeSelection().length > 1,
-        icon: () => state.getConfig('frameOrientation') === 'bottom' ? 'ri-arrow-left-right-line' : 'ri-arrow-up-down-line',
+        icon: () => alignFramesLeft() ? 'ri-arrow-up-down-line' : 'ri-arrow-left-right-line',
     });
 
     actions.registerAction('frames.toggle-onion', {
@@ -206,40 +210,40 @@ function setupActions() {
     });
 
     actions.registerAction('frames.toggle-component', {
-        name: () => STRINGS[state.isMinimized('frames') ? 'frames.show-component.name' : 'frames.hide-component.name'],
-        description: () => STRINGS[state.isMinimized('frames') ? 'frames.show-component.description' : 'frames.hide-component.description'],
+        name: () => STRINGS[minimizer.isMinimized ? 'frames.show-component.name' : 'frames.hide-component.name'],
+        description: () => STRINGS[minimizer.isMinimized ? 'frames.show-component.description' : 'frames.hide-component.description'],
         callback: () => {
-            toggleComponent('frames');
+            minimizer.toggle();
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
         icon: () => {
             let icon = 'ri ri-fw ';
-            icon += state.isMinimized('frames') ? 'ri-sidebar-unfold-line active ' : 'ri-sidebar-fold-line ';
-            if (state.getConfig('frameOrientation') === 'bottom') icon += 'rotate270 ';
+            icon += minimizer.isMinimized ? 'ri-sidebar-unfold-line active ' : 'ri-sidebar-fold-line ';
+            if (!alignFramesLeft()) icon += 'rotate270 ';
             return icon;
         }
     });
 
     actions.registerAction('frames.align-left', {
         callback: () => {
-            if (state.getConfig('frameOrientation') === 'left') toggleComponent('frames', false);
-            state.setConfig('frameOrientation', 'left');
+            if (alignFramesLeft()) minimizer.toggle(false);
+            saveGlobalSetting('frameOrientation', 'left');
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
-        visible: () => state.getConfig('frameOrientation') !== 'left' && !state.isMinimized('frames'),
+        visible: () => !alignFramesLeft() && !minimizer.isMinimized,
         icon: () => 'ri ri-fw ri-layout-left-line'
     });
 
     actions.registerAction('frames.align-bottom', {
         callback: () => {
-            if (state.getConfig('frameOrientation') === 'bottom') toggleComponent('frames', false);
-            state.setConfig('frameOrientation', 'bottom');
+            if (!alignFramesLeft()) minimizer.toggle(false);
+            saveGlobalSetting('frameOrientation', 'bottom');
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
-        visible: () => state.getConfig('frameOrientation') !== 'bottom' && !state.isMinimized('frames'),
+        visible: () => alignFramesLeft() && !minimizer.isMinimized,
         icon: () => 'ri ri-fw ri-layout-bottom-line'
     });
 

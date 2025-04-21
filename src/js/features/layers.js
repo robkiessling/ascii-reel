@@ -8,23 +8,24 @@ import * as actions from "../io/actions.js";
 import {hideCanvasMessage, showCanvasMessage} from "./main_canvas.js";
 import {createDialog} from "../utils/dialogs.js";
 import {STRINGS} from "../config/strings.js";
-import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import Minimizer from "../components/minimizer.js";
 
 let $container, $template, $list, $editDialog, $editName;
-let simpleBar, layerComponents;
+let simpleBar, layerComponents, minimizer;
 
 export function init() {
     $container = $('#layer-controller');
     $template = $container.find('.layer-template');
 
+    minimizer = new Minimizer($container, 'layers')
     setupList();
     setupActions();
     setupEventBus();
 }
 
 function refresh() {
-    refreshComponentVisibility($container, 'layers');
+    minimizer.refresh();
 
     const scrollElement = simpleBar.getScrollElement();
     const scrollTop = scrollElement.scrollTop;
@@ -90,7 +91,7 @@ function setupSortable() {
 
 function setupActions() {
     actions.registerAction('layers.toggle-component', () => {
-        toggleComponent('layers');
+        minimizer.toggle();
         eventBus.emit(EVENTS.REFRESH.ALL);
     })
 

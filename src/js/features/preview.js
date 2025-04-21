@@ -7,11 +7,11 @@ import CanvasControl from "../components/canvas_control/index.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
 import {getCurrentViewRect} from "./main_canvas.js";
-import {refreshComponentVisibility, toggleComponent} from "../utils/components.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {STRINGS} from "../config/strings.js";
 import * as tools from "./tools.js";
 import {getDynamicColor} from "../config/colors.js";
+import Minimizer from "../components/minimizer.js";
 
 const MAX_FPS = 24;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
@@ -22,6 +22,7 @@ let previewCanvas;
 let previewInterval, previewIndex;
 let actionButtons;
 let popup, popupCanvas;
+let minimizer;
 
 export function init() {
     $container = $('#preview-container');
@@ -46,13 +47,15 @@ export function init() {
         }
     });
 
+    minimizer = new Minimizer($container, 'preview')
+
     setupActions();
     setupEventBus();
 }
 
 export function resize() {
     $previewControls.toggleClass('hidden', !state.isAnimationProject())
-    refreshComponentVisibility($container, 'preview');
+    minimizer.refresh();
 
     previewCanvas.resize(true);
     previewCanvas.zoomToFit();
@@ -105,7 +108,7 @@ function reset() {
 
 function setupActions() {
     actions.registerAction('preview.toggle-component', () => {
-        toggleComponent('preview');
+        minimizer.toggle();
         resize();
     })
 

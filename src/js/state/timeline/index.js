@@ -240,6 +240,7 @@ export function layeredGlyphs(frame, options = {}) {
     const colors = create2dArray(numRows(), numCols(), 0);
 
     let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
+    const isCurrentFrame = frame === frameController.currentFrame();
 
     for (l = 0; l < layerController.layers().length; l++) {
         layer = layerController.layerAt(l);
@@ -269,7 +270,7 @@ export function layeredGlyphs(frame, options = {}) {
         }
 
         // If there is movableContent, show it on top of the rest of the layer
-        if (options.movableContent && options.movableContent.glyphs && isCurrentLayer) {
+        if (options.movableContent && options.movableContent.glyphs && isCurrentLayer && isCurrentFrame) {
             translateGlyphs(options.movableContent.glyphs, options.movableContent.origin, (r, c, char, color) => {
                 if (char !== undefined && char !== EMPTY_CHAR && celController.charInBounds(r, c)) {
                     chars[r][c] = char;
@@ -279,7 +280,7 @@ export function layeredGlyphs(frame, options = {}) {
         }
 
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
-        if (options.drawingContent && isCurrentLayer) {
+        if (options.drawingContent && isCurrentLayer && isCurrentFrame) {
             translateGlyphs(options.drawingContent.glyphs, options.drawingContent.origin, (r, c, char, color) => {
                 if (celController.charInBounds(r, c)) {
                     if (char !== undefined) chars[r][c] = char;

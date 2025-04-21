@@ -11,7 +11,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {BLACK, DEFAULT_COLOR} from "./palette.js";
 
 export {
-    numRows, numCols, setConfig, getConfig, fontFamily, getName, isMinimized, updateDrawType,
+    numRows, numCols, setConfig, getConfig, fontFamily, getName, updateDrawType,
     isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {

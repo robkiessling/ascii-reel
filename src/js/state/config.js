@@ -24,10 +24,6 @@ export const DEFAULT_STATE = {
     whitespace: false,
     onion: false,
     lockLayerVisibility: true,
-    frameOrientation: 'left',
-    minimizedComponents: {
-        // layers: true
-    },
     tool: 'text-editor',
     primaryColor: DEFAULT_COLOR,
     primaryChar: 'A',
@@ -106,12 +102,15 @@ export function getName(includeDefaultTimestamp = true) {
         return name;
     }
     else {
-        return 'Untitled animation'
+        switch (getConfig('projectType')) {
+            case 'animation':
+                return 'Untitled animation';
+            case 'drawing':
+                return 'Untitled drawing';
+            default:
+                return 'Untitled';
+        }
     }
-}
-
-export function isMinimized(componentKey) {
-    return !!(getConfig('minimizedComponents') || {})[componentKey];
 }
 
 export function updateDrawType(toolKey, newType) {
