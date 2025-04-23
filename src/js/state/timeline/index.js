@@ -241,7 +241,7 @@ export function layeredGlyphs(frame, options = {}) {
     const colors = create2dArray(numRows(), numCols(), 0);
 
     let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
-    const isCurrentFrame = frame === frameController.currentFrame();
+    const isCurrentFrame = frame.id === frameController.currentFrame().id;
 
     for (l = 0; l < layerController.layers().length; l++) {
         layer = layerController.layerAt(l);
