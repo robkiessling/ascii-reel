@@ -27,13 +27,18 @@ export const HOVER_CELL_OPACITY = 0.25;
 export let bgColor, getColorStr, minorGridColor, majorGridColor, hoverColor;
 
 export function recalculateCanvasColors() {
+    bgColor = state.getConfig('background')
+
     if (state.isMultiColored()) {
-        bgColor = state.getConfig('background')
+        // Char color is based on colorIndex
         getColorStr = colorIndex => state.colorStr(colorIndex);
     }
     else {
-        bgColor = computedTheme === THEMES.LIGHT_MODE ? WHITE : BLACK;
-        const charColor = computedTheme === THEMES.LIGHT_MODE ? BLACK : WHITE
+        // Char color is static and based on bgColor:
+        // - If bgColor is transparent, chars are black
+        // - If bgColor is white, chars are black. If bgColor is black, chars are white.
+        let charColor = BLACK;
+        if (bgColor === BLACK) charColor = WHITE;
         getColorStr = () => charColor;
     }
 
@@ -72,8 +77,8 @@ const CHECKERBOARD_DARK_A = '#4c4c4c';
 const CHECKERBOARD_DARK_B = '#555';
 
 // Light mode checkerboard
-const CHECKERBOARD_LIGHT_A = '#ddd';
-const CHECKERBOARD_LIGHT_B = '#eee';
+const CHECKERBOARD_LIGHT_A = '#eee';
+const CHECKERBOARD_LIGHT_B = '#fafafa';
 
 export function checkerboardColors() {
     if (computedTheme === THEMES.LIGHT_MODE) {

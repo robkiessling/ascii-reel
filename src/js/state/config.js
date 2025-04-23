@@ -25,7 +25,7 @@ export const DEFAULT_STATE = {
     showOnion: false,
     showTicks: false,
     lockLayerVisibility: true,
-    tool: 'text-editor',
+    tool: 'draw-freeform',
     primaryColor: DEFAULT_COLOR,
     primaryChar: 'A',
     brush: {

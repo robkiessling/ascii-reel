@@ -60,9 +60,7 @@ function setupNew() {
     const projectTypePicker = new ProjectTypePicker($newFileDialog.find('.project-type-picker'))
     const dimensionsPicker = new DimensionsPicker($newFileDialog.find('.dimensions-area'));
     const colorModePicker = new ColorModePicker($newFileDialog.find('.color-mode-picker'), {
-        onChange: value => {
-            $newFileDialog.find('.background-picker-container').toggle(value === 'multicolor')
-        }
+        onChange: value => backgroundPicker.mode = value
     })
     const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-picker'));
     const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'), {
@@ -78,6 +76,7 @@ function setupNew() {
             numCols: DEFAULT_CONFIG.dimensions[0]
         }
         colorModePicker.value = DEFAULT_CONFIG.colorMode
+        backgroundPicker.mode = DEFAULT_CONFIG.colorMode;
         backgroundPicker.value = DEFAULT_CONFIG.background;
         $newFileDialog.dialog('open');
     });

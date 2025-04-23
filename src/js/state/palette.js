@@ -2,8 +2,8 @@ import Color from "@sphinxxxx/color-conversion";
 
 export const COLOR_FORMAT = 'hex'; // vanilla-picker format we use to store colors
 
-export const BLACK = 'rgba(0,0,0,1)';
-export const WHITE = 'rgba(255,255,255,1)';
+export const BLACK = new Color('rgba(0,0,0,1)')[COLOR_FORMAT];
+export const WHITE = new Color('rgba(255,255,255,1)')[COLOR_FORMAT];
 
 export const DEFAULT_COLOR = BLACK;
 

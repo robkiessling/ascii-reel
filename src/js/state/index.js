@@ -296,7 +296,7 @@ export function validateColorMode() {
     if (config.getConfig('colorMode') === 'monochrome') {
         timeline.convertToMonochrome();
         palette.convertToMonochrome();
-        if (!config.MULTICOLOR_TOOLS.has(config.getConfig('tool'))) {
+        if (config.MULTICOLOR_TOOLS.has(config.getConfig('tool'))) {
             config.setConfig('tool', 'text-editor'); // ensure tool is not one of the color-related ones
         }
         config.setConfig('primaryColor', BLACK)

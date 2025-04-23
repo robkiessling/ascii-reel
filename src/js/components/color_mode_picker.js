@@ -4,8 +4,8 @@ export default class ColorModePicker extends RadioButtons {
     constructor($container, options = {}) {
         super($container, $.extend({}, {
             inputData: [
-                { text: 'Monochrome', value: 'monochrome' },
-                { text: 'Multicolor', value: 'multicolor' },
+                { text: 'Black and White', value: 'monochrome' },
+                { text: 'Colored', value: 'multicolor' },
             ],
         }, options));
     }

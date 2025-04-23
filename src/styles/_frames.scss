@@ -32,7 +32,7 @@
     max-height: $frame-size;
 
     cursor: pointer;
-    border: $frame-border-size solid var(--color-contrast);
+    border: $frame-border-size solid var(--color-frame-border);
     background: var(--color-canvas-bg);
 
     .frame-index, .frame-ticks {
@@ -41,7 +41,7 @@
       z-index: 2;
       justify-content: center;
       align-items: center;
-      background: var(--color-contrast);
+      background: var(--color-frame-border);
       color: var(--color-font-white);
     }
     .frame-index {

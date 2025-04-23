@@ -128,10 +128,7 @@ function setupBackgroundDialog() {
             state.validateColorMode()
         }
 
-        if (colorModePicker.value === 'multicolor') {
-            // Background is only updated for multicolor animations
-            state.setConfig('background', backgroundPicker.value);
-        }
+        state.setConfig('background', backgroundPicker.value);
 
         recalculateCanvasColors();
         eventBus.emit(EVENTS.REFRESH.ALL);
@@ -142,14 +139,13 @@ function setupBackgroundDialog() {
     });
 
     const colorModePicker = new ColorModePicker($backgroundDialog.find('.color-mode-picker'), {
-        onChange: value => {
-            $backgroundDialog.find('.background-picker-container').toggle(value === 'multicolor')
-        }
+        onChange: value => backgroundPicker.mode = value
     })
     const backgroundPicker = new BackgroundPicker($backgroundDialog.find('.background-picker'));
 
     actions.registerAction('settings.open-background-dialog', () => {
         colorModePicker.value = state.getConfig('colorMode');
+        backgroundPicker.mode = state.getConfig('colorMode');
         backgroundPicker.value = state.getConfig('background');
         $backgroundDialog.dialog('open');
     });
