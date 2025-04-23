@@ -138,9 +138,9 @@ class GridSettings {
 
 function setupWhitespaceToggle() {
     actions.registerAction('view.toggle-whitespace', {
-        name: () => state.getConfig('whitespace') ? STRINGS['view.hide-whitespace.name'] : STRINGS['view.show-whitespace.name'],
+        name: () => state.getConfig('showWhitespace') ? STRINGS['view.hide-whitespace.name'] : STRINGS['view.show-whitespace.name'],
         callback: () => {
-            state.setConfig('whitespace', !state.getConfig('whitespace'));
+            state.setConfig('showWhitespace', !state.getConfig('showWhitespace'));
             eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
         }
     });

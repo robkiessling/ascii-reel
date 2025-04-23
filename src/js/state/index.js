@@ -306,8 +306,9 @@ export function validateColorMode() {
 export function validateProjectType() {
     if (config.getConfig('projectType') === 'drawing') {
         timeline.convertToDrawing();
-        config.setConfig('isPreviewPlaying', false);
-        config.setConfig('onion', false);
+        config.setConfig('playPreview', false);
+        config.setConfig('showOnion', false);
+        config.setConfig('showTicks', false);
     }
 }
 

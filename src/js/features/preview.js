@@ -82,7 +82,7 @@ function reset() {
     if (previewInterval) { previewInterval.stop(); }
 
     const fps = state.getConfig('fps');
-    const usableFps = state.getConfig('isPreviewPlaying') ? state.getConfig('fps') : 0;
+    const usableFps = state.getConfig('playPreview') ? state.getConfig('fps') : 0;
 
     $fpsSlider.slider('value', fps);
     $fpsValue.html(`${fps} FPS`);
@@ -121,12 +121,12 @@ function setupActions() {
     });
 
     actions.registerAction('preview.toggle-play', {
-        name: () => state.getConfig('isPreviewPlaying') ? STRINGS['preview.pause.name'] : STRINGS['preview.play.name'],
-        description: () => state.getConfig('isPreviewPlaying') ? STRINGS['preview.pause.description'] : STRINGS['preview.play.description'],
-        icon: () => state.getConfig('isPreviewPlaying') ? 'ri-pause-circle-line' : 'ri-play-circle-line',
+        name: () => state.getConfig('playPreview') ? STRINGS['preview.pause.name'] : STRINGS['preview.play.name'],
+        description: () => state.getConfig('playPreview') ? STRINGS['preview.pause.description'] : STRINGS['preview.play.description'],
+        icon: () => state.getConfig('playPreview') ? 'ri-pause-circle-line' : 'ri-play-circle-line',
         enabled: () => state.isAnimationProject(),
         callback: () => {
-            state.setConfig('isPreviewPlaying', !state.getConfig('isPreviewPlaying'));
+            state.setConfig('playPreview', !state.getConfig('playPreview'));
             reset();
         }
     });

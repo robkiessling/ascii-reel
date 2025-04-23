@@ -253,11 +253,21 @@ function setupActions() {
     actions.registerAction('frames.toggle-onion', {
         enabled: () => state.isAnimationProject(),
         callback: () => {
-            state.setConfig('onion', !state.getConfig('onion'));
+            state.setConfig('showOnion', !state.getConfig('showOnion'));
             actionButtons.refreshContent();
             eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
         },
-        icon: () => state.getConfig('onion') ? 'ri-stack-line active' : 'ri-stack-line'
+        icon: () => state.getConfig('showOnion') ? 'ri-stack-line active' : 'ri-stack-line'
+    });
+
+    actions.registerAction('frames.toggle-ticks', {
+        enabled: () => state.isAnimationProject(),
+        callback: () => {
+            state.setConfig('showTicks', !state.getConfig('showTicks'));
+            actionButtons.refreshContent();
+            eventBus.emit(EVENTS.REFRESH.ALL);
+        },
+        icon: () => state.getConfig('showTicks') ? 'ri-timer-line active' : 'ri-timer-line'
     });
 
     actions.registerAction('frames.toggle-component', {
@@ -344,9 +354,9 @@ class FrameComponent {
         this._$container = $(`
             <div class="frame ${state.frameRangeSelection().includes(index) ? 'selected' : ''}" data-id="${frame.id}">
                 <span class="frame-index">${index + 1}</span>
-                <span class="frame-ticks" data-ticks="${frame.ticks}">
-                    ${frame.ticks !== 1 ? `<span>×${frame.ticks}</span>` : ''}
-                    ${frame.ticks === 1 ? `<span class="ri ri-timer-line"></span>` : ''}
+                <span class="frame-ticks ${state.getConfig('showTicks') ? '' : 'hidden'} ${frame.ticks === 1 ? '' : 'dirty'}" 
+                      data-ticks="${frame.ticks}">
+                    <span>×${frame.ticks}</span>
                 </span>
                 <canvas class="absolute-center full"></canvas>
             </div>

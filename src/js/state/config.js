@@ -13,7 +13,7 @@ export const DEFAULT_STATE = {
     background: false,
     font: 'monospace',
     fps: 6,
-    isPreviewPlaying: true,
+    playPreview: true,
     grid: {
         show: true,
         minorGridEnabled: true,
@@ -21,8 +21,9 @@ export const DEFAULT_STATE = {
         majorGridEnabled: false,
         majorGridSpacing: 5,
     },
-    whitespace: false,
-    onion: false, // todo call this showOnion, showWhitespace, etc.?
+    showWhitespace: false,
+    showOnion: false,
+    showTicks: false,
     lockLayerVisibility: true,
     tool: 'text-editor',
     primaryColor: DEFAULT_COLOR,

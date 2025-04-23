@@ -175,7 +175,7 @@ function redrawCharCanvas() {
 
     // 2. If there are any layers below current layer, draw them at lower opacity
     charCanvas.drawGlyphs(belowGlyphs, {
-        showWhitespace: state.getConfig('whitespace'),
+        showWhitespace: state.getConfig('showWhitespace'),
         opacity: NON_CURRENT_LAYER_OPACITY,
         mask: (row, col) => {
             // Don't include chars that will be covered by canvases above
@@ -187,7 +187,7 @@ function redrawCharCanvas() {
 
     // 3. Draw current layer at normal opacity
     charCanvas.drawGlyphs(currentGlyphs, {
-        showWhitespace: state.getConfig('whitespace'),
+        showWhitespace: state.getConfig('showWhitespace'),
 
         // The following is commented out because I think it looks better if we DO draw current-layer chars, even if
         // they will be covered by canvases above
@@ -198,12 +198,12 @@ function redrawCharCanvas() {
 
     // 4. If there are any layers above current layer, draw them at lower opacity
     charCanvas.drawGlyphs(aboveGlyphs, {
-        showWhitespace: state.getConfig('whitespace'),
+        showWhitespace: state.getConfig('showWhitespace'),
         opacity: NON_CURRENT_LAYER_OPACITY
     });
 
     // 5. Draw onion at lower opacity
-    if (state.getConfig('onion') && state.previousFrame() !== currentFrame()) {
+    if (state.getConfig('showOnion') && state.previousFrame() !== currentFrame()) {
         // TODO Add an option in case user wants onion to apply to all layers?
         const onionGlyphs = state.layeredGlyphs(state.previousFrame(), {
             layers: [state.currentLayer()],

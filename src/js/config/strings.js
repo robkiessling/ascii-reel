@@ -176,6 +176,10 @@ export const STRINGS = {
     'frames.reverse-frames.description': 'Reverses the order of the currently selected frames.',
     'frames.toggle-onion.name': 'Toggle Onion',
     'frames.toggle-onion.description': 'When enabled, the previous frame will be faintly displayed.',
+    'frames.toggle-ticks.name': 'Show Frame Ticks',
+    'frames.toggle-ticks.description': 'Displays tick controls to customize how long each frame appears.\n\n' +
+        'Tick counts are shown in the bottom-right corner of each frame and can be edited by clicking them. ' +
+        'When multiple frames are selected, the change is applied to all.',
     'frames.show-component.name': 'Maximize Frames View',
     'frames.show-component.description': 'Shows the frames component.',
     'frames.hide-component.name': 'Minimize Frames View',
