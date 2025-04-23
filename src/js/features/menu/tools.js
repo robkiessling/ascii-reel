@@ -137,7 +137,9 @@ function setupBackgroundDialog() {
         eventBus.emit(EVENTS.REFRESH.ALL);
         state.pushHistory({ recalculateColors: true });
         $backgroundDialog.dialog('close');
-    }, 'Save');
+    }, 'Save', {
+        minHeight: 400,
+    });
 
     const colorModePicker = new ColorModePicker($backgroundDialog.find('.color-mode-picker'), {
         onChange: value => {

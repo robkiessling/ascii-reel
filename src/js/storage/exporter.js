@@ -228,11 +228,12 @@ function buildRtfFile(content, options) {
     const fontTable = `{\\fonttbl {\\f0\\fmodern ${state.getConfig('font')};}}`;
 
     const rtfColors = [
-        // First color (black) reserved for frameSeparators
-        _encodeRtfColor('rgba(0,0,0,1)'),
+        // First color reserved for default color (e.g. in TextEdit will be black for light-mode, white for dark-mode)
+        // Will be used by frame separators.
+        '',
 
         // Second color reserved for background
-        _encodeRtfColor(state.getConfig('background') ? state.getConfig('background') : 'rgba(0,0,0,1)'),
+        state.getConfig('background') ? _encodeRtfColor(state.getConfig('background')) : '',
 
         // Then merge in all colors used in the drawing
         ...state.colorTable().map(colorStr => _encodeRtfColor(colorStr))
@@ -260,7 +261,9 @@ function frameToRtf(frame, options) {
             .replace(/[\u8000-\uFFFF]/g, match => `\\uc1\\u${match.charCodeAt(0)-0xFFFF}*`)
 
         // For foreground color, add 2 to colorIndex since we prepended 2 colors to the color table
-        return `{\\cf${line.colorIndex + 2}${charBg} ${escapedText}}`;
+        const colorTableIndex = state.isMultiColored() ? line.colorIndex + 2 : 0;
+        
+        return `{\\cf${colorTableIndex}${charBg} ${escapedText}}`;
     })
 }
 

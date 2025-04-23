@@ -157,11 +157,16 @@ function setupActions() {
 function setupEventBus() {
     eventBus.on(
         [
-            EVENTS.REFRESH.CURRENT_FRAME,
             EVENTS.CANVAS.ZOOM_DELTA, EVENTS.CANVAS.ZOOM_TO_FIT, EVENTS.CANVAS.PAN_DELTA, EVENTS.CANVAS.PAN_TO_TARGET
         ],
         () => redraw()
     )
+
+    eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => {
+        // current frame changed -> clear cache for that frame and redraw
+        previewGlyphsCache.delete(state.currentFrame().id);
+        redraw();
+    })
 
     eventBus.on([EVENTS.REFRESH.ALL], () => reset())
 }

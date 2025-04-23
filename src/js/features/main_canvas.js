@@ -179,7 +179,7 @@ function redrawCharCanvas() {
         opacity: NON_CURRENT_LAYER_OPACITY,
         mask: (row, col) => {
             // Don't include chars that will be covered by canvases above
-            if (currentGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
+            if (currentGlyphs && currentGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
             if (aboveGlyphs && aboveGlyphs.chars[row][col] !== EMPTY_CHAR) return false;
             return true;
         }
