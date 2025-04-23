@@ -109,7 +109,8 @@ export function convertToDrawing() {
 // --------------------------------------------------------------------------- Frames API
 export {
     frames as frames, frameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame,
-    previousFrame, reorderFrames, reverseFrames
+    previousFrame, reorderFrames, reverseFrames, updateFrame, expandedFrames,
+    TICKS_OPTIONS
 } from './frames.js'
 
 export function createFrame(index, data) {

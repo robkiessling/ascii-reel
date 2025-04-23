@@ -80,7 +80,7 @@ async function exportJson(options = {}, exportToActiveFile) {
             frames: []
         }
 
-        state.frames().forEach((frame, i) => {
+        state.expandedFrames().forEach((frame, i) => {
             const glyphs = state.layeredGlyphs(frame, { convertEmptyStrToSpace: true });
             let jsonFrame;
             switch (options.frameStructure) {
@@ -138,7 +138,7 @@ async function exportTxt(options = {}, exportToActiveFile) {
         case 'spritesheet':
             blobPromise = lazyBlobPromise(async () => {
                 let txtContent = '';
-                for (const [index, frame] of state.frames().entries()) {
+                for (const [index, frame] of state.expandedFrames().entries()) {
                     txtContent += buildFrameSeparator(options, index, '\n');
                     txtContent += frameToTxt(frame, options);
                 }
@@ -150,7 +150,7 @@ async function exportTxt(options = {}, exportToActiveFile) {
                 const JSZip = await importJSZip();
                 const zip = new JSZip();
 
-                for (const [index, frame] of state.frames().entries()) {
+                for (const [index, frame] of state.expandedFrames().entries()) {
                     zip.file(`${index}.txt`, frameToTxt(frame, options));
                 }
                 return zip.generateAsync({type:"blob"});
@@ -191,7 +191,7 @@ async function exportRtf(options, exportToActiveFile) {
         case 'spritesheet':
             blobPromise = lazyBlobPromise(async () => {
                 let rtfContent = '';
-                for (const [index, frame] of state.frames().entries()) {
+                for (const [index, frame] of state.expandedFrames().entries()) {
                     rtfContent += `{\\cf0 ${buildFrameSeparator(options, index, '\\line ')}}`; // use index 0 of color table
                     rtfContent += frameToRtf(frame, options);
                 }
@@ -204,7 +204,7 @@ async function exportRtf(options, exportToActiveFile) {
                 const JSZip = await importJSZip();
                 const zip = new JSZip();
 
-                for (const [index, frame] of state.frames().entries()) {
+                for (const [index, frame] of state.expandedFrames().entries()) {
                     const rtfFrame = frameToRtf(frame, options);
                     const rtfFile = buildRtfFile(rtfFrame, options);
                     zip.file(`${index}.rtf`, rtfFile);
@@ -277,7 +277,7 @@ function frameToRtf(frame, options) {
  */
 async function exportHtml(options, exportToActiveFile) {
     const blobPromise = lazyBlobPromise(async () => {
-        const frames = state.frames().map(frame => {
+        const frames = state.expandedFrames().map(frame => {
             return exportableFrameString(frame, '<br>', line => `<span style="color:${state.colorStr(line.colorIndex)};">${line.text}</span>`)
         });
 
@@ -293,12 +293,8 @@ async function exportHtml(options, exportToActiveFile) {
                 function draw() {
                     sprite.innerHTML = frames[frameIndex];
                     frameIndex++;
-                    if (frameIndex >= frames.length) { 
-                        frameIndex = 0;
-                    }
-                    if (fps !== 0 && (loop || frameIndex !== 0)) { 
-                        setTimeout(draw, 1000 / fps); 
-                    }
+                    if (frameIndex >= frames.length) frameIndex = 0;
+                    if (fps !== 0 && (loop || frameIndex !== 0)) setTimeout(draw, 1000 / fps); 
                 }
                 
                 draw();
@@ -362,7 +358,7 @@ async function exportPng(options, exportToActiveFile) {
                 const JSZip = await importJSZip();
                 const zip = new JSZip();
 
-                for (const [index, frame] of state.frames().entries()) {
+                for (const [index, frame] of state.expandedFrames().entries()) {
                     renderExportFrame(frame, options);
                     zip.file(`${index}.png`, canvasToBlob(exportCanvas.canvas));
                 }
@@ -408,7 +404,7 @@ async function exportGif(options, exportToActiveFile) {
             animatedGif.setDelay(1000 / options.fps);
             animatedGif.setRepeat(0); // loop forever
 
-            state.frames().forEach(frame => {
+            state.expandedFrames().forEach(frame => {
                 renderExportFrame(frame, options);
                 animatedGif.addFrameImageData(exportCanvas.context.getImageData(0, 0, options.width, options.height));
             });
@@ -440,13 +436,14 @@ async function exportWebm(options, exportToActiveFile) {
     // We also wrap all asynchronous callbacks in try/catch so that we can reject the promise correctly.
     const blobPromise = new Promise((resolve, reject) => {
         const numLoops = 1;
-        const videoLength = options.fps === 0 ? 1000 : state.frames().length / options.fps * 1000 * numLoops;
+        const numFrames = state.expandedFrames().length;
+        const videoLength = options.fps === 0 ? 1000 : numFrames / options.fps * 1000 * numLoops;
 
         let frameIndex = 0;
         setIntervalUsingRAF(() => {
             try {
-                renderExportFrame(state.frames()[frameIndex], options);
-                frameIndex = (frameIndex + 1) % state.frames().length;
+                renderExportFrame(state.expandedFrames()[frameIndex], options);
+                frameIndex = (frameIndex + 1) % numFrames;
             } catch (error) {
                 reject(error);
             }

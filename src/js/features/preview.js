@@ -13,7 +13,7 @@ import * as tools from "./tools.js";
 import {getDynamicColor} from "../config/colors.js";
 import Minimizer from "../components/minimizer.js";
 
-const MAX_FPS = 24;
+const MAX_FPS = 30;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
 const POPUP_RESIZE_DEBOUNCE_LENGTH = 200;
 
@@ -63,15 +63,17 @@ export function resize() {
 
 // Just redraw the current preview frame (e.g. if chars got updated)
 function redraw() {
+    let expandedFrame = state.expandedFrames()[previewIndex];
+
     previewCanvas.clear();
     previewCanvas.drawBackground(state.getConfig('background'));
-    previewCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex], { drawingContent: tools.drawingContent }));
+    previewCanvas.drawGlyphs(state.layeredGlyphs(expandedFrame, { drawingContent: tools.drawingContent }));
     previewCanvas.drawWindow(getCurrentViewRect());
 
     if (popup && !popup.closed && popupCanvas) {
         popupCanvas.clear();
         popupCanvas.drawBackground(state.getConfig('background'));
-        popupCanvas.drawGlyphs(state.layeredGlyphs(state.frames()[previewIndex]));
+        popupCanvas.drawGlyphs(state.layeredGlyphs(expandedFrame));
     }
 }
 
@@ -86,7 +88,10 @@ function reset() {
     $fpsValue.html(`${fps} FPS`);
     actionButtons.refreshContent();
 
-    previewIndex = state.frameIndex();
+    // Start preview on current frame (in the expanded frames list)
+    const currentFrameId = state.currentFrame().id;
+    previewIndex = state.expandedFrames().findIndex(frame => frame.id === currentFrameId);
+
     redraw();
 
     if (usableFps === 0) {
@@ -96,11 +101,10 @@ function reset() {
         }, 1000);
     }
     else {
+        const numFrames = state.expandedFrames().length;
         previewInterval = setIntervalUsingRAF(() => {
             previewIndex += 1;
-            if (previewIndex >= state.frames().length) {
-                previewIndex = 0;
-            }
+            if (previewIndex >= numFrames) previewIndex = 0;
             redraw();
         }, 1000 / usableFps);
     }

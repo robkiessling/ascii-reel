@@ -6,7 +6,13 @@ const DEFAULT_STATE = {
     rangeSelection: null
 };
 
-const FRAME_DEFAULTS = {}
+const FRAME_DEFAULTS = {
+    // id: value will be set on frame initialization
+
+    ticks: 1
+}
+
+export const TICKS_OPTIONS = [0, 1, 2, 3, 4, 5, 10];
 
 let state = {};
 let idSequence = 0;
@@ -36,6 +42,22 @@ export function frames() {
 export function frameIndex(newIndex) {
     if (newIndex !== undefined) state.currentIndex = newIndex;
     return state.currentIndex;
+}
+
+/**
+ * Expands the frames array based on each frame's 'ticks' count (frame is repeated based on number of ticks).
+ * @returns {Array} - A new array where each frame appears once per tick.
+ */
+export function expandedFrames() {
+    const expanded = state.frames.flatMap(frame =>
+        Array(frame.ticks).fill().map(() => {
+            const { ticks, ...rest } = frame;
+            return { ...rest }; // Remove 'ticks' attribute since it is no longer applicable
+        })
+    );
+
+    // In the rare case all frame ticks are set to 0, return the current frame so that there is always at least 1 frame.
+    return expanded.length ? expanded : [currentFrame()]
 }
 
 /**
@@ -72,6 +94,10 @@ export function createFrame(index, data) {
     state.frames.splice(index, 0, frame);
 
     return frame;
+}
+
+export function updateFrame(frame, updates) {
+    $.extend(frame, updates);
 }
 
 export function duplicateFrames(range) {

@@ -22,7 +22,7 @@ export const DEFAULT_STATE = {
         majorGridSpacing: 5,
     },
     whitespace: false,
-    onion: false,
+    onion: false, // todo call this showOnion, showWhitespace, etc.?
     lockLayerVisibility: true,
     tool: 'text-editor',
     primaryColor: DEFAULT_COLOR,

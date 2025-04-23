@@ -10,17 +10,17 @@ import ArrayRange from "../utils/arrays.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import * as tools from "./tools.js";
-import {hideAll as hideAllTooltips} from "tippy.js";
+import {delegate, hideAll as hideAllTooltips} from "tippy.js";
 import {readGlobalSetting, saveGlobalSetting} from "../storage/local_storage.js";
 import Minimizer from "../components/minimizer.js";
 
-let $container, $template, $list;
+let $container, $list;
 let simpleBar, frameComponents, actionButtons;
 let minimizer;
+let ticksTooltips;
 
 export function init() {
     $container = $('#frame-controller');
-    $template = $container.find('.frame-template');
 
     minimizer = new Minimizer($container, 'frames')
     setupList();
@@ -33,14 +33,14 @@ export function resize() {
     minimizer.refresh();
 
     $('#frames-and-canvas')
-        .toggleClass('frames-on-left', alignFramesLeft())
-        .toggleClass('frames-on-bottom', !alignFramesLeft());
+        .toggleClass('frames-on-left', isLeftAligned())
+        .toggleClass('frames-on-bottom', !isLeftAligned());
 
-    $list.sortable('option', 'axis', alignFramesLeft() ? 'y' : 'x');
+    $list.sortable('option', 'axis', isLeftAligned() ? 'y' : 'x');
 
     actionButtons.tooltips.forEach(tooltip => {
         tooltip.setProps({
-            placement: alignFramesLeft() ? 'right' : 'top'
+            placement: isLeftAligned() ? 'right' : 'top'
         });
     });
 
@@ -55,7 +55,7 @@ function refresh() {
 
     $list.empty();
     frameComponents = state.frames().map((frame, i) => {
-        return new FrameComponent($template, $list, frame, i);
+        return new FrameComponent($list, frame, i);
     });
 
     // Restore to previous scroll position since content was wiped & re-added
@@ -81,7 +81,7 @@ function refresh() {
     actionButtons.refreshContent();
 }
 
-function alignFramesLeft() {
+function isLeftAligned() {
     return readGlobalSetting('frameOrientation') !== 'bottom';
 }
 
@@ -103,6 +103,9 @@ function setupList() {
     setupSortable();
 
     $list.off('click', '.frame').on('click', '.frame', evt => {
+        // Do not select the frame if clicking on the .frame-ticks area
+        if ($(evt.target).closest('.frame-ticks').length) return;
+
         const newIndex = $(evt.currentTarget).index();
 
         if (evt.shiftKey) {
@@ -114,6 +117,8 @@ function setupList() {
             selectFrame(newIndex, 'changeFrameSingle');
         }
     });
+
+    setupTicksTooltips();
 }
 
 // Adding functionality on top of jquery-ui `sortable` to handle dragging multiple frames
@@ -152,6 +157,52 @@ function setupSortable() {
             ui.item.siblings('.range-selection-sibling').removeClass('range-selection-sibling');
         }
     });
+}
+
+function setupTicksTooltips() {
+    ticksTooltips = delegate($container.get(0), {
+        target: '.frame-ticks',
+        allowHTML: true,
+        interactive: true,
+        appendTo: () => document.body, // So not cropped by frame container
+        trigger: 'click', // Only open the tip if icon is clicked
+        onShow(instance) {
+            const $reference = $(instance.reference);
+            const currentTicks = $reference.data('ticks');
+            const affectedFrameId = $reference.closest('.frame').data('id');
+            const affectedFrameIndex = state.frames().findIndex(frame => frame.id === affectedFrameId);
+
+            instance.setProps({ placement: isLeftAligned() ? 'right' : 'top' });
+
+            const selectOptions = state.TICKS_OPTIONS.map(ticks => {
+                const selected = currentTicks === ticks ? 'selected="selected"' : '';
+                return `<option value="${ticks}" ${selected}>${ticks}x</option>`;
+            }).join('');
+
+            instance.setContent(`
+                <div class="ticks-tooltip">
+                    Frame lasts <select>${selectOptions}</select> as long as a normal frame.
+                </div>
+            `);
+
+            $(instance.popper).find('select').off('change').on('change', function () {
+                const selectedValue = parseInt($(this).val());
+                const update = index => state.updateFrame(state.frames()[index], { ticks: selectedValue })
+
+                if (state.frameRangeSelection().includes(affectedFrameIndex)) {
+                    // apply update to entire range
+                    state.frameRangeSelection().iterate(index => update(index))
+                }
+                else {
+                    // apply update to affected frame (note: this may be different from current frameIndex)
+                    update(affectedFrameIndex)
+                }
+
+                eventBus.emit(EVENTS.REFRESH.ALL);
+                instance.hide();
+            });
+        },
+    })
 }
 
 function setupActions() {
@@ -196,7 +247,7 @@ function setupActions() {
             )
         },
         enabled: () => state.isAnimationProject() && state.frameRangeSelection().length > 1,
-        icon: () => alignFramesLeft() ? 'ri-arrow-up-down-line' : 'ri-arrow-left-right-line',
+        icon: () => isLeftAligned() ? 'ri-arrow-up-down-line' : 'ri-arrow-left-right-line',
     });
 
     actions.registerAction('frames.toggle-onion', {
@@ -220,30 +271,30 @@ function setupActions() {
         icon: () => {
             let icon = 'ri ri-fw ';
             icon += minimizer.isMinimized ? 'ri-sidebar-unfold-line active ' : 'ri-sidebar-fold-line ';
-            if (!alignFramesLeft()) icon += 'rotate270 ';
+            if (!isLeftAligned()) icon += 'rotate270 ';
             return icon;
         }
     });
 
     actions.registerAction('frames.align-left', {
         callback: () => {
-            if (alignFramesLeft()) minimizer.toggle(false);
+            if (isLeftAligned()) minimizer.toggle(false);
             saveGlobalSetting('frameOrientation', 'left');
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
-        visible: () => !alignFramesLeft() && !minimizer.isMinimized,
+        visible: () => !isLeftAligned() && !minimizer.isMinimized,
         icon: () => 'ri ri-fw ri-layout-left-line'
     });
 
     actions.registerAction('frames.align-bottom', {
         callback: () => {
-            if (!alignFramesLeft()) minimizer.toggle(false);
+            if (!isLeftAligned()) minimizer.toggle(false);
             saveGlobalSetting('frameOrientation', 'bottom');
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
-        visible: () => alignFramesLeft() && !minimizer.isMinimized,
+        visible: () => isLeftAligned() && !minimizer.isMinimized,
         icon: () => 'ri ri-fw ri-layout-bottom-line'
     });
 
@@ -289,13 +340,17 @@ function selectFrameRange(newRange, newFrameIndex) {
 }
 
 class FrameComponent {
-    constructor($template, $parent, frame, index) {
-        this._$container = $template.clone().removeClass('frame-template');
-        this._$container.appendTo($parent);
-        this._$container.show();
-
-        this._$container.toggleClass('selected', state.frameRangeSelection().includes(index));
-        this._$container.find('.frame-index').html(index + 1);
+    constructor($parent, frame, index) {
+        this._$container = $(`
+            <div class="frame ${state.frameRangeSelection().includes(index) ? 'selected' : ''}" data-id="${frame.id}">
+                <span class="frame-index">${index + 1}</span>
+                <span class="frame-ticks" data-ticks="${frame.ticks}">
+                    ${frame.ticks !== 1 ? `<span>×${frame.ticks}</span>` : ''}
+                    ${frame.ticks === 1 ? `<span class="ri ri-timer-line"></span>` : ''}
+                </span>
+                <canvas class="absolute-center full"></canvas>
+            </div>
+        `).appendTo($parent);
 
         this._canvasController = new CanvasControl(this._$container.find('canvas'), {});
         this._canvasController.resize();
