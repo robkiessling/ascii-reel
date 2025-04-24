@@ -124,14 +124,12 @@ export default class CanvasControl {
         });
     }
 
-    // TODO Think about whether color should be passed in from outside, or just always use bgColor
-    //      E.g. for exporting gifs in monochrome, etc.
     drawBackground(color) {
-        if (bgColor === false) {
+        if (color === false) {
             this._fillCheckerboard();
         }
         else {
-            this.context.fillStyle = bgColor;
+            this.context.fillStyle = color;
             this.context.fillRect(...CellArea.drawableArea().xywh);
         }
     }

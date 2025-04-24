@@ -24,10 +24,10 @@ const MAJOR_GRID_LIGHTNESS_DELTA = 0.4;
 const HOVER_LIGHTNESS_DELTA = 0.5;
 export const HOVER_CELL_OPACITY = 0.25;
 
-export let bgColor, getColorStr, minorGridColor, majorGridColor, hoverColor;
+export let getColorStr, minorGridColor, majorGridColor, hoverColor;
 
 export function recalculateCanvasColors() {
-    bgColor = state.getConfig('background')
+    const bgColor = state.getConfig('background')
 
     if (state.isMultiColored()) {
         // Char color is based on colorIndex

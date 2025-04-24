@@ -7,7 +7,7 @@ import {pick} from "../utils/objects.js";
 export const DEFAULT_STATE = {
     name: '',
     projectType: 'animation',
-    colorMode: 'multicolor',
+    colorMode: 'monochrome',
     createdAt: undefined,
     dimensions: [30, 15], // [numCols, numRows]
     background: false,
