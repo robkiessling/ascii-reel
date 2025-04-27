@@ -1,6 +1,7 @@
 import {getFormattedDateTime} from "../utils/strings.js";
-import {DEFAULT_COLOR} from "./palette.js";
+import {COLOR_FORMAT, DEFAULT_COLOR} from "./palette.js";
 import {pick} from "../utils/objects.js";
+import Color from "@sphinxxxx/color-conversion";
 
 // TODO There are a lot of strings that should be constants
 // TODO Organize this better? E.g. projectSettings could contain certain keys
@@ -10,7 +11,7 @@ export const DEFAULT_STATE = {
     colorMode: 'monochrome',
     createdAt: undefined,
     dimensions: [30, 15], // [numCols, numRows]
-    background: false,
+    background: new Color('rgba(255,255,255,1)')[COLOR_FORMAT],
     font: 'monospace',
     fps: 6,
     playPreview: true,
@@ -119,9 +120,9 @@ export function updateDrawType(toolKey, newType) {
 }
 
 export function isAnimationProject() {
-    return this.getConfig('projectType') === 'animation';
+    return getConfig('projectType') === 'animation';
 }
 
 export function isMultiColored() {
-    return this.getConfig('colorMode') === 'multicolor';
+    return getConfig('colorMode') === 'multicolor';
 }

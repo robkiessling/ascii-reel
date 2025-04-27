@@ -1,5 +1,6 @@
 import Color from "@sphinxxxx/color-conversion";
 
+// TODO Should this be moved to state index? It is used by a lot of outside code
 export const COLOR_FORMAT = 'hex'; // vanilla-picker format we use to store colors
 
 export const BLACK = new Color('rgba(0,0,0,1)')[COLOR_FORMAT];
