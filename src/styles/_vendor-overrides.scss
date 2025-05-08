@@ -139,8 +139,33 @@
   }
 }
 
+.ri-2x {
+  font-size: 2.5rem;
+}
+
+.ri-stack {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .ri {
+    position: absolute;
+  }
+}
+
 .icon-line-dashed, .icon-line-solid {
   transform: rotate(-45deg);
+}
+
+.ri-paint-fill-no-droplet {
+  // clip off the droplet coming out of the paint bucket (it will be replaced with a char)
+  clip-path: polygon(0% 0%, 100% 0%, 100% 45%, 45% 100%, 0% 100%)
+}
+
+.ri-forbid-line-no-border {
+  // clip off the surrounding border
+  clip-path: circle(27% at 50% 50%);
 }
 
 // ---------------------------------------------------------------------- simplebar (custom scrollbar)

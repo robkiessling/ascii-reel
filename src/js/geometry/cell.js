@@ -92,4 +92,8 @@ export default class Cell extends Rect {
     relativeTo(cell) {
         return new Cell(this.row - cell.row, this.col - cell.col)
     }
+
+    toString() {
+        return `[R:${this.row}, C:${this.col}]`
+    }
 }

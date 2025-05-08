@@ -67,13 +67,6 @@
       font-size: 0.875rem;
     }
   }
-
-  &[data-tool="fill-char"] {
-    > .ri-paint-fill {
-      // clip off the droplet coming out of the paint bucket (it will be replaced with a char)
-      clip-path: polygon(0% 0%, 100% 0%, 100% 45%, 45% 100%, 0% 100%)
-    }
-  }
 }
 
 #context-tools {

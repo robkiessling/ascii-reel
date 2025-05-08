@@ -60,7 +60,7 @@
                             <div class="standard-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
 
                             <div class="standard-tool" data-tool="fill-char">
-                                <span class="ri ri-fw ri-paint-fill"></span>
+                                <span class="ri ri-fw ri-paint-fill ri-paint-fill-no-droplet"></span>
                                 <span class="picked-char">A</span>
                             </div>
                         </div>
@@ -90,9 +90,9 @@
                         </div>
                     </div>
 
-                    <div class="spacer color-tools"></div>
+                    <div class="spacer color-tool"></div>
 
-                    <div class="standard-tool-row color-tools">
+                    <div class="standard-tool-row color-tool">
                         <div class="standard-tool-column">
                             <div class="standard-tool" data-tool="paint-brush"><span class="ri ri-fw ri-brush-line"></span></div>
                             <div class="standard-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
@@ -117,8 +117,8 @@
                         </div>
                     </div>
 
-                    <div class="spacer color-tools"></div>
-                    <div class="standard-tool-row color-tools">
+                    <div class="spacer color-tool"></div>
+                    <div class="standard-tool-row color-tool">
                         <div class="standard-tool-column">
                             <div id="current-color"></div>
                         </div>
@@ -128,17 +128,16 @@
                 </div>
                 <div id="context-tools">
                     <div id="selection-tools" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-tool="move"><span class="ri ri-fw ri-drag-move-2-fill"></span></div>
-                        <div class="sub-tool" data-tool="flip-v"><span class="ri ri-fw ri-flip-vertical-fill"></span></div>
-                        <div class="sub-tool" data-tool="flip-h"><span class="ri ri-fw ri-flip-horizontal-fill"></span></div>
-                        <div class="sub-tool" data-tool="clone"><span class="ri ri-fw ri-file-copy-2-line"></span></div>
-                        <div class="sub-tool" data-tool="fill-char">
-                            <span class="ri ri-fw ri-paint-fill"></span>
-                            <span class="picked-char">A</span>
-                        </div>
-                        <div class="sub-tool" data-tool="fill-color"><span class="ri ri-fw ri-paint-fill"></span></div>
-                        <div class="sub-tool" data-tool="resize"><span class="ri ri-fw ri-crop-line"></span></div>
-                        <div class="sub-tool" data-tool="close"><span class="ri ri-fw ri-close-line"></span></div>
+                        <div class="sub-tool" data-tool="move"></div>
+                        <div class="sub-tool" data-tool="flip-v"></div>
+                        <div class="sub-tool" data-tool="flip-h"></div>
+                        <div class="sub-tool" data-tool="clone"></div>
+                        <div class="sub-tool" data-tool="fill-char"></div>
+                        <div class="sub-tool color-tool" data-tool="fill-color"></div>
+                        <div class="sub-tool" data-tool="convert-to-whitespace"></div>
+                        <div class="sub-tool" data-tool="convert-to-empty"></div>
+                        <div class="sub-tool" data-tool="resize"></div>
+                        <div class="sub-tool" data-tool="close"></div>
                     </div>
                     <div id="draw-freeform-types" class="sub-tool-menu" style="display: none;">
                         <div class="sub-tool" data-type="irregular-adaptive"></div>

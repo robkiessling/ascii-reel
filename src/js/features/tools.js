@@ -27,7 +27,7 @@ import PolygonFactory from "../geometry/drawing/polygon_factory.js";
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $standardTools, $selectionTools, $canvasContainer, subMenus;
+let $standardTools, $selectionTools, selectionTooltips, $canvasContainer, subMenus;
 
 export function init() {
     $canvasContainer = $('#canvas-container');
@@ -261,7 +261,7 @@ function setupStandardTools() {
 }
 
 function refreshStandardTools() {
-    $standardTools.find('.color-tools').toggleClass('hidden', !state.isMultiColored())
+    $standardTools.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
 
     $standardTools.find('.standard-tool').removeClass('selected');
     $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
@@ -313,6 +313,8 @@ function setupSelectionTools() {
     registerAction('clone', () => selection.cloneToAllFrames());
     registerAction('fill-char', () => fillSelection(state.getConfig('primaryChar'), undefined));
     registerAction('fill-color', () => fillSelection(undefined, state.primaryColorIndex()));
+    registerAction('convert-to-whitespace', () => replaceInSelection(EMPTY_CHAR, WHITESPACE_CHAR));
+    registerAction('convert-to-empty', () => replaceInSelection(WHITESPACE_CHAR, EMPTY_CHAR));
     registerAction('resize', () => resizeToSelection());
     registerAction('close', () => selection.clear(), true, 'Esc');
 
@@ -321,7 +323,7 @@ function setupSelectionTools() {
         actions.callAction(actionIdForSelectionTool($element.data('tool')), evt);
     });
 
-    setupTooltips($selectionTools.find('.sub-tool').toArray(), element => actionIdForSelectionTool($(element).data('tool')));
+    selectionTooltips = setupTooltips($selectionTools.find('.sub-tool').toArray(), element => actionIdForSelectionTool($(element).data('tool')));
 }
 
 function actionIdForSelectionTool(tool) {
@@ -329,19 +331,36 @@ function actionIdForSelectionTool(tool) {
 }
 
 function refreshSelectionTools() {
-    $selectionTools.toggle(selection.hasSelection() && !selection.cursorCell());
+    const isVisible = selection.hasSelection() && !selection.cursorCell();
+    $selectionTools.toggle(isVisible);
+    if (!isVisible) selectionTooltips.tooltips.forEach(tooltip => tooltip.hide())
 
     $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
 
     $selectionTools.find('.sub-tool').each((i, element) => {
         const $element = $(element);
-        $element.toggleClass('disabled', !actions.isActionEnabled(actionIdForSelectionTool($element.data('tool'))));
+        const actionId = actionIdForSelectionTool($element.data('tool'));
+        $element.html(getIconHTML(actionId))
+        $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
     });
+
+    $selectionTools.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
 }
 
 function fillSelection(char, color) {
     selection.getSelectedCells().forEach(cell => {
         state.setCurrentCelGlyph(cell.row, cell.col, char, color);
+    });
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
+}
+
+function replaceInSelection(findChar, replaceChar) {
+    selection.getSelectedCells().forEach(cell => {
+        if (state.getCurrentCelGlyph(cell.row, cell.col)[0] === findChar) {
+            state.setCurrentCelGlyph(cell.row, cell.col, replaceChar);
+        }
     });
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);

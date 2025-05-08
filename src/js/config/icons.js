@@ -3,6 +3,7 @@ const PRE = 'pre'
 const CHAR = 'char'
 const REMIXICON = 'remixicon'
 const ICOMOON = 'icomoon'
+const CUSTOM = 'custom'
 
 const ICON_DATA = {
     // 'tools.draw-freeform-types.irregular-adaptive': { type: REMIXICON, content: 'ri-brush-line' },
@@ -30,15 +31,39 @@ const ICON_DATA = {
     'tools.draw-ellipse-types.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
     'tools.draw-ellipse-types.filled-monochar': { type: PRE, content: " AAA \nAAAAA\n AAA " },
 
-    'themes.dark-mode': { type: REMIXICON, class: 'ri-moon-line' },
-    'themes.light-mode': { type: REMIXICON, class: 'ri-sun-line' },
-    'themes.os': { type: REMIXICON, class: 'ri-contrast-line' },
+    'tools.selection.move': { type: REMIXICON, content: 'ri-drag-move-2-fill' },
+    'tools.selection.flip-v': { type: REMIXICON, content: 'ri-flip-vertical-fill' },
+    'tools.selection.flip-h': { type: REMIXICON, content: 'ri-flip-horizontal-fill' },
+    'tools.selection.clone': { type: REMIXICON, content: 'ri-file-copy-2-line' },
+    'tools.selection.fill-char': {
+        type: CUSTOM,
+        content: '<span class="ri ri-fw ri-paint-fill ri-paint-fill-no-droplet"></span><span class="picked-char">A</span>'
+    },
+    'tools.selection.fill-color': { type: REMIXICON, content: 'ri-paint-fill' },
+    'tools.selection.convert-to-whitespace': { type: REMIXICON, content: 'ri-space' },
+    'tools.selection.convert-to-empty': {
+        type: CUSTOM,
+        content: '<span class="ri-stack"><span class="ri ri-fw ri-space"></span>' +
+            '<span class="ri ri-fw ri-2x ri-forbid-line ri-forbid-line-no-border"></span></span>'
+    },
+    'tools.selection.resize': { type: REMIXICON, content: 'ri-crop-line' },
+    'tools.selection.close': { type: REMIXICON, content: 'ri-close-line' },
+
+    'themes.dark-mode': { type: REMIXICON, content: 'ri-moon-line' },
+    'themes.light-mode': { type: REMIXICON, content: 'ri-sun-line' },
+    'themes.os': { type: REMIXICON, content: 'ri-contrast-line' },
 }
 
 export function getIconClass(key) {
     const iconData = ICON_DATA[key];
     if (!iconData) return undefined;
-    return iconData.class;
+
+    switch(iconData.type) {
+        case REMIXICON:
+            return iconData.content;
+        default:
+            return undefined;
+    }
 }
 
 export function getIconHTML(key) {
@@ -53,9 +78,11 @@ export function getIconHTML(key) {
         case CHAR:
             return `<span class="char-icon" style="${style}">${iconData.content}</span>`
         case REMIXICON:
-            return `<span class="ri ri-fw ${iconData.class}" style="${style}"></span>`
+            return `<span class="ri ri-fw ${iconData.content}" style="${style}"></span>`
         case ICOMOON:
-            return `<span class="${iconData.class}" style="${style}"></span>`
+            return `<span class="${iconData.content}" style="${style}"></span>`
+        case CUSTOM:
+            return iconData.content;
         default:
             console.warn(`Invalid icon type: ${iconData.type}`);
             return undefined;

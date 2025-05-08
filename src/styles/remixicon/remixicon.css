@@ -8,7 +8,7 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1745280855502") format("woff2");
+    src: url("remixicon/remixicon.woff2?t=1746746563496") format("woff2");
     font-display: swap;
 }
 
@@ -93,3 +93,4 @@
 .ri-space:before { content: "\f167"; }
 .ri-keyboard-line:before { content: "\ee75"; }
 .ri-timer-line:before { content: "\f215"; }
+.ri-forbid-line:before { content: "\ed95"; }

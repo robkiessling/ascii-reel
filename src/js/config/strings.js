@@ -121,9 +121,16 @@ export const STRINGS = {
     'tools.selection.clone.name': 'Clone Selection',
     'tools.selection.clone.description': 'Clones the current selection to all frames.',
     'tools.selection.fill-char.name': 'Fill Selection With Character',
-    'tools.selection.fill-char.description': 'Paints the selected area with the selected character',
+    'tools.selection.fill-char.description': 'Fills the selected area with the selected character. \n\n' +
+        'Alternatively, press any key on your keyboard to fill the selection with that character.',
     'tools.selection.fill-color.name': 'Fill Selection With Color',
     'tools.selection.fill-color.description': 'Paints the selected area with the selected color.',
+    'tools.selection.convert-to-whitespace.name': 'Fill Blank Cells with Whitespace',
+    'tools.selection.convert-to-whitespace.description': 'Replaces all blank cells with whitespace. ' +
+        'Whitespace blocks lower layers when multiple layers are visible.',
+    'tools.selection.convert-to-empty.name': 'Remove Whitespace',
+    'tools.selection.convert-to-empty.description': 'Replaces all whitespace cells with empty cells. ' +
+        'Empty cells allow lower layers to show through.',
     'tools.selection.resize.name': 'Resize Canvas',
     'tools.selection.resize.description': 'Resizes the canvas to match the selected area.',
     'tools.selection.close.name': 'Close',
