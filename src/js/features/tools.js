@@ -76,9 +76,10 @@ function setupEventBus() {
     let editorMousedown = false; // Used to keep track of whether the mousedown started in the editor canvas
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
-        if (mouseEvent.which !== 1) return; // Only apply to left-click
+        $canvasContainer.css('cursor', cursorStyle(mouseEvent, cell));
 
-        const tool = state.getConfig('tool')
+        const tool = toolForMouseButton(mouseEvent.which);
+        if (!tool) return;
 
         editorMousedown = true;
         prevCell = undefined;
@@ -139,12 +140,12 @@ function setupEventBus() {
     });
 
     eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell }) => {
-        const tool = state.getConfig('tool')
+        $canvasContainer.css('cursor', cursorStyle(mouseEvent, cell));
 
-        $canvasContainer.css('cursor', cursorStyle(mouseEvent, cell, tool));
+        const tool = toolForMouseButton(mouseEvent.which);
+        if (!tool) return;
 
         if (!editorMousedown) return;
-        if (mouseEvent.which !== 1) return; // Only apply to left-click
         if (mouseEvent.buttons === 0) return; // Catch firefox mousemove bug where mouseEvent.which is 1 when no buttons pressed
 
         // Keep track of whether the mousemove has reached a new cell (helps with performance, so we can just redraw
@@ -174,12 +175,11 @@ function setupEventBus() {
     });
 
     eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent }) => {
-        if (mouseEvent.which !== 1) return; // Only apply to left-click
+        const tool = toolForMouseButton(mouseEvent.which);
+        if (!tool) return;
         if (!editorMousedown) return;
 
         editorMousedown = false;
-
-        const tool = state.getConfig('tool')
 
         switch(tool) {
             case 'eraser':
@@ -217,6 +217,19 @@ function setupEventBus() {
 }
 
 
+function toolForMouseButton(mouseButton) {
+    switch(mouseButton) {
+        case 1:
+            return state.getConfig('tool');
+        case 2:
+            return 'pan';
+        case 3:
+            return 'eraser';
+        default:
+            return null;
+    }
+}
+
 
 // -------------------------------------------------------------------------------- Standard Tools
 
@@ -234,7 +247,10 @@ function setupStandardTools() {
         // Some tools have custom shortcuts
         switch (tool) {
             case 'pan':
-                actionData.shortcutAbbr = 'Right Click'
+                actionData.shortcutAbbr = 'H, Middle Click'
+                break;
+            case 'eraser':
+                actionData.shortcutAbbr = 'E, Right Click'
                 break;
         }
 
@@ -802,7 +818,10 @@ function refreshAddToPalette() {
 
 // -------------------------------------------------------------------------------- Misc.
 
-function cursorStyle(mouseEvent, cell, tool) {
+function cursorStyle(mouseEvent, cell) {
+    let tool = toolForMouseButton(mouseEvent.which);
+    if (!tool) tool = state.getConfig('tool')
+
     switch (tool) {
         case 'text-editor':
             return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? 'grab' : 'text';

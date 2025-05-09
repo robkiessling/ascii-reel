@@ -75,11 +75,8 @@ export function init() {
 
         },
         onDragMove: ({originalPoint, target, mouseButton}) => {
-            const shouldPan =
-                (mouseButton === 2) ||
-                (state.getConfig('tool') === 'pan' && mouseButton === 1) ||
-                (mouseButton === 3) // todo remove
-            if (shouldPan) {
+            // Note: mouseButton:3 is handled by tools.js as an eraser
+            if (mouseButton === 2 || (state.getConfig('tool') === 'pan' && mouseButton === 1)) {
                 eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
                     delta: [target.x - originalPoint.x, target.y - originalPoint.y]
                 })

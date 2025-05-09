@@ -78,7 +78,7 @@ export const STRINGS = {
     'tools.standard.selection-wand.description': 'Select a connected area of matching colors. ',
     'tools.standard.selection-wand.diagonal': 'Include diagonally connected cells',
     'tools.standard.selection-wand.colorblind': 'Include connected cells regardless of color',
-    'tools.standard.pan.name': 'Pan',
+    'tools.standard.pan.name': 'Hand (Panning Tool)',
     'tools.standard.pan.description': 'Click and drag to pan the view.',
     'tools.standard.move-all.name': 'Move All Content',
     'tools.standard.move-all.description': 'Click and drag to move all canvas content.',

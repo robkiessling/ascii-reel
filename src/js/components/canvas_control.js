@@ -660,12 +660,6 @@ export default class CanvasControl {
                 const zoomY = this._zoomFactor(deltaY);
 
                 this.options.onScroll({ panX, panY, zoomX, zoomY, target, evt })
-
-                // TODO This is too jerky, need a way to hide hover while panning?
-                // if (this.options.onHoverMove) {
-                //     const cell = this.cellAtExternalXY(evt.offsetX, evt.offsetY);
-                //     this.options.onHoverMove({cell})
-                // }
             });
         }
     }
