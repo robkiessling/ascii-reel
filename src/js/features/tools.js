@@ -73,15 +73,11 @@ function setupEventBus() {
     eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED], () => refresh())
 
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
-    let editorMousedown = false; // Used to keep track of whether the mousedown started in the editor canvas
 
-    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
-        $canvasContainer.css('cursor', cursorStyle(mouseEvent, cell));
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl, mouseDownButton }) => {
+        const tool = toolForMouseButton(mouseDownButton);
+        $canvasContainer.css('cursor', cursorStyle(tool, true, mouseEvent, cell));
 
-        const tool = toolForMouseButton(mouseEvent.which);
-        if (!tool) return;
-
-        editorMousedown = true;
         prevCell = undefined;
 
         switch(tool) {
@@ -128,9 +124,6 @@ function setupEventBus() {
                     addToPalette: shouldModifyAction('tools.standard.eyedropper.add-to-palette', mouseEvent)
                 });
                 break;
-            case 'pan':
-                // Pan tool is already handled by main_canvas.js
-                break;
             case 'move-all':
                 startMoveAll(cell, mouseEvent);
                 break;
@@ -139,13 +132,11 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell }) => {
-        $canvasContainer.css('cursor', cursorStyle(mouseEvent, cell));
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, isDragging, originalPoint, currentPoint, mouseDownButton }) => {
+        const tool = toolForMouseButton(mouseDownButton);
+        $canvasContainer.css('cursor', cursorStyle(tool, isDragging, mouseEvent, cell));
 
-        const tool = toolForMouseButton(mouseEvent.which);
-        if (!tool) return;
-
-        if (!editorMousedown) return;
+        if (!isDragging) return;
         if (mouseEvent.buttons === 0) return; // Catch firefox mousemove bug where mouseEvent.which is 1 when no buttons pressed
 
         // Keep track of whether the mousemove has reached a new cell (helps with performance, so we can just redraw
@@ -166,6 +157,11 @@ function setupEventBus() {
             case 'draw-ellipse':
                 if (isNewCell) updateDrawing(cell, [mouseEvent.shiftKey]);
                 break;
+            case 'pan':
+                eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
+                    delta: [currentPoint.x - originalPoint.x, currentPoint.y - originalPoint.y]
+                })
+                break;
             case 'move-all':
                 if (isNewCell) updateMoveAll(cell, isNewCell);
                 break;
@@ -174,12 +170,11 @@ function setupEventBus() {
         prevCell = cell;
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent }) => {
-        const tool = toolForMouseButton(mouseEvent.which);
-        if (!tool) return;
-        if (!editorMousedown) return;
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, isDragging, mouseDownButton }) => {
+        const tool = toolForMouseButton(mouseDownButton);
+        $canvasContainer.css('cursor', cursorStyle(state.getConfig('tool'), false, mouseEvent, cell));
 
-        editorMousedown = false;
+        if (!isDragging) return;
 
         switch(tool) {
             case 'eraser':
@@ -199,9 +194,6 @@ function setupEventBus() {
     });
 
     eventBus.on(EVENTS.KEYBOARD.SHIFT_KEY, ({ shiftKey }) => {
-        if (!editorMousedown) return;
-        if (!prevCell) return;
-
         const tool = state.getConfig('tool')
 
         switch(tool) {
@@ -219,14 +211,12 @@ function setupEventBus() {
 
 function toolForMouseButton(mouseButton) {
     switch(mouseButton) {
-        case 1:
-            return state.getConfig('tool');
         case 2:
-            return 'pan';
+            return 'pan'; // Middle-click
         case 3:
-            return 'eraser';
+            return 'eraser'; // Right-click
         default:
-            return null;
+            return state.getConfig('tool')
     }
 }
 
@@ -818,18 +808,17 @@ function refreshAddToPalette() {
 
 // -------------------------------------------------------------------------------- Misc.
 
-function cursorStyle(mouseEvent, cell) {
-    let tool = toolForMouseButton(mouseEvent.which);
-    if (!tool) tool = state.getConfig('tool')
+function cursorStyle(tool, isDragging, mouseEvent, cell) {
+    const grab = isDragging ? 'grabbing' : 'grab'
 
     switch (tool) {
         case 'text-editor':
-            return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? 'grab' : 'text';
+            return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? grab : 'text';
         case 'selection-rect':
         case 'selection-line':
         case 'selection-lasso':
         case 'selection-wand':
-            return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? 'grab' : 'cell';
+            return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? grab : 'cell';
         case 'draw-freeform':
         case 'draw-rect':
         case 'draw-line':
@@ -840,10 +829,10 @@ function cursorStyle(mouseEvent, cell) {
         case 'fill-color':
         case 'color-swap':
         case 'eyedropper':
-            return 'cell';
+            return 'crosshair';
         case 'pan':
         case 'move-all':
-            return 'grab';
+            return grab;
         default:
             return 'default';
     }

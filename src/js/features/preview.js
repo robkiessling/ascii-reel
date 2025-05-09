@@ -26,18 +26,18 @@ let minimizer;
 export function init() {
     $container = $('#preview-container');
     previewCanvas = new CanvasControl($('#preview-canvas'), {
-        onScroll: ({zoomY, evt}) => {
+        onWheel: ({zoomY, evt}) => {
             if (evt.shiftKey) return;
             eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: zoomY })
         },
-        onDragStart: ({originalPoint, mouseButton}) => {
-            if (mouseButton === 1 || mouseButton === 2) {
-                eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target: originalPoint })
+        onMouseDown: ({currentPoint, mouseDownButton}) => {
+            if (mouseDownButton === 1 || mouseDownButton === 2) {
+                eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target: currentPoint })
             }
         },
-        onDragMove: ({target, mouseButton}) => {
-            if (mouseButton === 1 || mouseButton === 2) {
-                eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target })
+        onMouseMove: ({currentPoint, mouseDownButton, isDragging}) => {
+            if (isDragging && (mouseDownButton === 1 || mouseDownButton === 2)) {
+                eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target: currentPoint })
             }
         }
     });

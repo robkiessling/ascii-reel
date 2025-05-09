@@ -59,8 +59,7 @@ export default class CanvasControl {
         });
 
         this._setupMouseEvents();
-        this._setupScrollEvents();
-        this._setupDragEvents();
+        this._setupWheelEvents();
     }
 
     /**
@@ -624,23 +623,58 @@ export default class CanvasControl {
     // -------------------------------------------------------------- Event handlers
 
     _setupMouseEvents() {
-        const mouseCallback = (callback, evt) => {
+        // The following variables are included in mousedown/mousemove/mouseup events:
+        let isDragging; // Will be true if mousedown started in the canvas, turns false once mouseup event occurs
+        let originalPoint; // Point at mousedown event
+        let mouseDownButton; // The mouse button pressed for the mousedown event (1=left, 2=middle, 3=right)
+
+        const runCallback = (callback, evt, includeMouseDownArgs = false) => {
             if (!this.initialized) return;
             const cell = this.cellAtExternalXY(evt.offsetX, evt.offsetY);
-            callback({evt, cell});
+            const currentPoint = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
+
+            const callbackArgs = {evt, cell, currentPoint};
+            if (includeMouseDownArgs) $.extend(callbackArgs, {isDragging, originalPoint, mouseDownButton})
+            callback(callbackArgs);
         }
 
-        if (this.options.onMouseDown) this.$canvas.on('mousedown', evt => mouseCallback(this.options.onMouseDown, evt))
-        if (this.options.onMouseMove) this.$canvas.on('mousemove', evt => mouseCallback(this.options.onMouseMove, evt))
-        if (this.options.onMouseUp) $(document).on('mouseup', evt => mouseCallback(this.options.onMouseUp, evt))
-        if (this.options.onDblClick) this.$canvas.on('dblclick', evt => mouseCallback(this.options.onDblClick, evt))
+        if (this.options.onMouseDown || this.options.onMouseMove || this.options.onMouseUp) {
+            this.$canvas.on('mousedown', evt => {
+                if (isDragging) return; // Ignore multiple mouse buttons being pressed at the same time
 
-        if (this.options.onMouseEnter) this.$canvas.on('mouseenter', evt => mouseCallback(this.options.onMouseEnter, evt))
-        if (this.options.onMouseLeave) this.$canvas.on('mouseleave', evt => mouseCallback(this.options.onMouseEnter, evt))
+                isDragging = true;
+                originalPoint = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
+                mouseDownButton = evt.which;
+
+                if (this.options.onMouseDown) runCallback(this.options.onMouseDown, evt, true)
+            })
+
+            if (this.options.onMouseMove) {
+                this.$canvas.on('mousemove', evt => runCallback(this.options.onMouseMove, evt, true))
+            }
+
+            $(document).on('mouseup', evt => {
+                if (evt.which !== mouseDownButton) return; // Ignore multiple mouse buttons being pressed at the same time
+
+                if (this.options.onMouseUp) runCallback(this.options.onMouseUp, evt, true)
+
+                // Clearing mouse variables AFTER callback runs, so callback can tell if mouse was dragging, etc.
+                isDragging = false;
+                originalPoint = undefined;
+                mouseDownButton = undefined;
+            })
+        }
+
+        if (this.options.onDblClick) this.$canvas.on('dblclick', evt => runCallback(this.options.onDblClick, evt))
+        if (this.options.onMouseEnter) this.$canvas.on('mouseenter', evt => runCallback(this.options.onMouseEnter, evt))
+        if (this.options.onMouseLeave) this.$canvas.on('mouseleave', evt => runCallback(this.options.onMouseEnter, evt))
+
+        // Prevent standard right click
+        this.$canvas.off('contextmenu.canvas').on('contextmenu.canvas', () => false);
     }
 
-    _setupScrollEvents() {
-        if (this.options.onScroll) {
+    _setupWheelEvents() {
+        if (this.options.onWheel) {
             this.$canvas.off('wheel.zoom').on('wheel.zoom', evt => {
                 evt.preventDefault();
 
@@ -659,51 +693,9 @@ export default class CanvasControl {
                 const zoomX = this._zoomFactor(deltaX);
                 const zoomY = this._zoomFactor(deltaY);
 
-                this.options.onScroll({ panX, panY, zoomX, zoomY, target, evt })
+                this.options.onWheel({ panX, panY, zoomX, zoomY, target, evt })
             });
         }
-    }
-
-    _setupDragEvents() {
-        if (!this.options.onDragStart && !this.options.onDragMove && !this.options.onDragEnd) return;
-
-        // Put each canvas listener into its own namespace
-        if (!this.$canvas.attr('id')) {
-            console.warn("<canvas> needs an `id` attr for mouse panning to function correctly")
-            return;
-        }
-        const jQueryNS = `drag-${this.$canvas.attr('id')}`;
-
-        let isDragging;
-        let originalPoint;
-        let mouseButton;
-
-        // Prevent standard right click
-        this.$canvas.off('contextmenu.canvas').on('contextmenu.canvas', evt => {
-            return false;
-        });
-
-        this.$canvas.off(`mousedown.${jQueryNS}`).on(`mousedown.${jQueryNS}`, evt => {
-            if (isDragging) return; // Ignore the case where multiple mouse buttons get pressed at the same time (rare)
-
-            isDragging = true;
-            originalPoint = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
-            mouseButton = evt.which; // Snapshot mouse button at time of mousedown
-
-            if (this.options.onDragStart) this.options.onDragStart({originalPoint, mouseButton})
-        });
-
-        this.$canvas.off(`mousemove.${jQueryNS}`).on(`mousemove.${jQueryNS}`, evt => {
-            if (!isDragging) return;
-
-            const target = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
-            if (this.options.onDragMove) this.options.onDragMove({originalPoint, target, mouseButton})
-        });
-
-        $(document).off(`mouseup.${jQueryNS}`).on(`mouseup.${jQueryNS}`, () => {
-            isDragging = false;
-            if (this.options.onDragEnd) this.options.onDragEnd({originalPoint, mouseButton})
-        });
     }
 
 }

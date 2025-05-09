@@ -37,16 +37,23 @@ export function init() {
 
     // selection-canvas is on the top of the canvas stack, so it handles all the mouse events
     selectionCanvas = new CanvasControl($('#selection-canvas'), {
-        onMouseDown: ({evt, cell}) => {
-            eventBus.emit(EVENTS.CANVAS.MOUSEDOWN, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
+        onMouseDown: ({evt, cell, currentPoint, mouseDownButton}) => {
+            eventBus.emit(EVENTS.CANVAS.MOUSEDOWN, {
+                mouseEvent: evt, canvasControl: selectionCanvas, cell, currentPoint, mouseDownButton
+            })
         },
-        onMouseMove: ({evt, cell}) => {
-            eventBus.emit(EVENTS.CANVAS.MOUSEMOVE, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
+        onMouseMove: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton}) => {
+            eventBus.emit(EVENTS.CANVAS.MOUSEMOVE, {
+                mouseEvent: evt, canvasControl: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton
+            })
             eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
         },
-        onMouseUp: ({evt, cell}) => {
-            eventBus.emit(EVENTS.CANVAS.MOUSEUP, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
+        onMouseUp: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton}) => {
+            eventBus.emit(EVENTS.CANVAS.MOUSEUP, {
+                mouseEvent: evt, canvasControl: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton
+            })
         },
+
         onDblClick: ({evt, cell}) => {
             eventBus.emit(EVENTS.CANVAS.DBLCLICK, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
         },
@@ -57,7 +64,7 @@ export function init() {
             eventBus.emit(EVENTS.CANVAS.HOVER_END)
         },
 
-        onScroll: ({panX, panY, zoomX, zoomY, target, evt}) => {
+        onWheel: ({panX, panY, zoomX, zoomY, target, evt}) => {
             if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey) return;
 
             if (evt.ctrlKey || evt.metaKey) {
@@ -70,22 +77,6 @@ export function init() {
                 })
             }
         },
-
-        onDragStart: ({originalPoint, mouseButton}) => {
-
-        },
-        onDragMove: ({originalPoint, target, mouseButton}) => {
-            // Note: mouseButton:3 is handled by tools.js as an eraser
-            if (mouseButton === 2 || (state.getConfig('tool') === 'pan' && mouseButton === 1)) {
-                eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
-                    delta: [target.x - originalPoint.x, target.y - originalPoint.y]
-                })
-            }
-        },
-        onDragEnd: () => {
-
-        },
-
     });
 
     $canvasMessage = $('#canvas-message');
