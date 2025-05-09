@@ -3,7 +3,7 @@
  */
 
 import * as state from "../state/index.js";
-import CanvasControl from "../components/canvas_control/index.js";
+import CanvasControl from "../components/canvas_control.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
 import {getCurrentViewRect} from "./main_canvas.js";
@@ -26,11 +26,19 @@ let minimizer;
 export function init() {
     $container = $('#preview-container');
     previewCanvas = new CanvasControl($('#preview-canvas'), {
-        emitZoomEvents: {
-            targeted: false
+        onScroll: ({zoomY, evt}) => {
+            if (evt.shiftKey) return;
+            eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: zoomY })
         },
-        emitPanEvents: {
-            snapToCenter: true
+        onDragStart: ({originalPoint, mouseButton}) => {
+            if (mouseButton === 1 || mouseButton === 2) {
+                eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target: originalPoint })
+            }
+        },
+        onDragMove: ({target, mouseButton}) => {
+            if (mouseButton === 1 || mouseButton === 2) {
+                eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target })
+            }
         }
     });
 

@@ -11,7 +11,7 @@
  *   selection polygons that would have been on the selectionCanvas but that needed full opacity.
  */
 
-import CanvasControl from "../components/canvas_control/index.js";
+import CanvasControl from "../components/canvas_control.js";
 import * as selection from "./selection.js";
 import {hoveredCells} from "./tools.js";
 import * as state from "../state/index.js";
@@ -20,6 +20,7 @@ import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
 import {EMPTY_CHAR} from "../config/chars.js";
+import {roundToDecimal} from "../utils/numbers.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -34,17 +35,60 @@ export function init() {
     selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
     hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
 
-    // selection-canvas is on the top so it handles all the mouse events
+    // selection-canvas is on the top of the canvas stack, so it handles all the mouse events
     selectionCanvas = new CanvasControl($('#selection-canvas'), {
-        emitRawMouseEvents: true,
-        emitZoomEvents: {
-            targeted: true
+        onMouseDown: ({evt, cell}) => {
+            eventBus.emit(EVENTS.CANVAS.MOUSEDOWN, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
         },
-        emitPanEvents: {
-            snapToCenter: false,
-            mouseButtons: () => state.getConfig('tool') === 'pan' ? [1, 3] : [3]
+        onMouseMove: ({evt, cell}) => {
+            eventBus.emit(EVENTS.CANVAS.MOUSEMOVE, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
+            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
         },
-        emitHoverEvents: true,
+        onMouseUp: ({evt, cell}) => {
+            eventBus.emit(EVENTS.CANVAS.MOUSEUP, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
+        },
+        onDblClick: ({evt, cell}) => {
+            eventBus.emit(EVENTS.CANVAS.DBLCLICK, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
+        },
+        onMouseEnter: ({cell}) => {
+            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
+        },
+        onMouseLeave: () => {
+            eventBus.emit(EVENTS.CANVAS.HOVER_END)
+        },
+
+        onScroll: ({panX, panY, zoomX, zoomY, target, evt}) => {
+            if ((evt.ctrlKey || evt.metaKey) && evt.shiftKey) return;
+
+            if (evt.ctrlKey || evt.metaKey) {
+                eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: zoomY, target })
+            }
+            else {
+                eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
+                    // Divide pan values to slow pan down a tiny bit
+                    delta: [-panX / 1.25, -panY / 1.25]
+                })
+            }
+        },
+
+        onDragStart: ({originalPoint, mouseButton}) => {
+
+        },
+        onDragMove: ({originalPoint, target, mouseButton}) => {
+            const shouldPan =
+                (mouseButton === 2) ||
+                (state.getConfig('tool') === 'pan' && mouseButton === 1) ||
+                (mouseButton === 3) // todo remove
+            if (shouldPan) {
+                eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
+                    delta: [target.x - originalPoint.x, target.y - originalPoint.y]
+                })
+            }
+        },
+        onDragEnd: () => {
+
+        },
+
     });
 
     $canvasMessage = $('#canvas-message');

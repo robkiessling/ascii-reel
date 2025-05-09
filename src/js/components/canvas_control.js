@@ -1,19 +1,17 @@
-import {setIntervalUsingRAF} from "../../utils/utilities.js";
-import {numCols, numRows, fontFamily} from "../../state/index.js";
-import {fontHeight, fontWidth} from "../../config/font.js";
-import Rect from "../../geometry/rect.js";
-import Cell from "../../geometry/cell.js";
-import CellArea from "../../geometry/cell_area.js";
-import {roundForComparison} from "../../utils/numbers.js";
+import {setIntervalUsingRAF} from "../utils/utilities.js";
+import {numCols, numRows, fontFamily} from "../state/index.js";
+import {fontHeight, fontWidth} from "../config/font.js";
+import Rect from "../geometry/rect.js";
+import Cell from "../geometry/cell.js";
+import CellArea from "../geometry/cell_area.js";
+import {roundForComparison} from "../utils/numbers.js";
 import {
     hoverColor,
     HOVER_CELL_OPACITY,
-    bgColor,
     getColorStr,
     PRIMARY_COLOR, SELECTION_COLOR, checkerboardColors
-} from "../../config/colors.js";
-import {setupHoverEvents, setupPanEvents, setupRawMouseEvents, setupZoomEvents} from "./events.js";
-import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
+} from "../config/colors.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 4;
@@ -40,6 +38,13 @@ const ZOOM_IN_THRESHOLD_VALUE = 30;
 // E.g. ratio of 1.25 means show 125% more than the largest axis
 const ZOOM_OUT_THRESHOLD_RATIO = 1.25;
 
+// Base zoom multiplier per scroll step (e.g., 1.1 = 10% zoom change per unit)
+const ZOOM_SCROLL_FACTOR = 1.3;
+
+const ZOOM_BOOST_FACTOR = 3; // How aggressively small zoom values are boosted
+const ZOOM_BOOST_THRESHOLD = 10; // Maximum delta where boosting applies
+
+
 /**
  * Handles all the setup around a <canvas> element, drawing to the canvas, and zooming/translating the canvas view.
  */
@@ -52,11 +57,10 @@ export default class CanvasControl {
         this.context = this.canvas.getContext("2d", {
             willReadFrequently: options.willReadFrequently
         });
-        
-        if (this.options.emitRawMouseEvents) setupRawMouseEvents(this);
-        if (this.options.emitZoomEvents) setupZoomEvents(this, this.options.emitZoomEvents);
-        if (this.options.emitPanEvents) setupPanEvents(this, this.options.emitPanEvents);
-        if (this.options.emitHoverEvents) setupHoverEvents(this);
+
+        this._setupMouseEvents();
+        this._setupScrollEvents();
+        this._setupDragEvents();
     }
 
     /**
@@ -573,6 +577,22 @@ export default class CanvasControl {
         return Math.min(xZoom, yZoom);
     }
 
+    // Converts a linear delta value into a multiplicative zoom factor
+    _zoomFactor(delta) {
+        const abs = Math.abs(delta);
+        const sign = Math.sign(delta);
+
+        // Boosts small scroll delta values (typically from trackpads) to make zoom feel responsive.
+        // Ensures small deltas are boosted smoothly without exceeding larger deltas.
+        if (abs < ZOOM_BOOST_THRESHOLD) {
+            // Smooth nonlinear boost curve: stronger near 0, fades out as abs approaches threshold
+            delta = sign * (abs + ZOOM_BOOST_FACTOR * Math.pow(1 - abs / ZOOM_BOOST_THRESHOLD, 2));
+        }
+
+        // Compute zoom multiplier using exponential scaling for smooth, consistent zoom steps
+        return Math.pow(ZOOM_SCROLL_FACTOR, -1 * delta / 100);
+    }
+
     // Lock zoom-out to a set of boundaries
     _applyPanBoundaries() {
         if (this._panBoundaries) {
@@ -598,6 +618,98 @@ export default class CanvasControl {
         current.e /= this.originalTransform.a;
         current.f /= this.originalTransform.d;
         return current;
+    }
+
+
+    // -------------------------------------------------------------- Event handlers
+
+    _setupMouseEvents() {
+        const mouseCallback = (callback, evt) => {
+            if (!this.initialized) return;
+            const cell = this.cellAtExternalXY(evt.offsetX, evt.offsetY);
+            callback({evt, cell});
+        }
+
+        if (this.options.onMouseDown) this.$canvas.on('mousedown', evt => mouseCallback(this.options.onMouseDown, evt))
+        if (this.options.onMouseMove) this.$canvas.on('mousemove', evt => mouseCallback(this.options.onMouseMove, evt))
+        if (this.options.onMouseUp) $(document).on('mouseup', evt => mouseCallback(this.options.onMouseUp, evt))
+        if (this.options.onDblClick) this.$canvas.on('dblclick', evt => mouseCallback(this.options.onDblClick, evt))
+
+        if (this.options.onMouseEnter) this.$canvas.on('mouseenter', evt => mouseCallback(this.options.onMouseEnter, evt))
+        if (this.options.onMouseLeave) this.$canvas.on('mouseleave', evt => mouseCallback(this.options.onMouseEnter, evt))
+    }
+
+    _setupScrollEvents() {
+        if (this.options.onScroll) {
+            this.$canvas.off('wheel.zoom').on('wheel.zoom', evt => {
+                evt.preventDefault();
+
+                let deltaX = evt.originalEvent.deltaX;
+                let deltaY = evt.originalEvent.deltaY;
+                if (deltaX === 0 && deltaY === 0) return;
+                const target = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
+
+                // Adjust pan distance based on the current zoom level. Without this, panning while zoomed in moves too
+                // quickly (each screen pixel covers less world space)
+                const zoom = this._currentZoom();
+                const panX = deltaX / zoom;
+                const panY = deltaY / zoom;
+
+                // Convert linear delta amount to a multiplicative zoom factor
+                const zoomX = this._zoomFactor(deltaX);
+                const zoomY = this._zoomFactor(deltaY);
+
+                this.options.onScroll({ panX, panY, zoomX, zoomY, target, evt })
+
+                // TODO This is too jerky, need a way to hide hover while panning?
+                // if (this.options.onHoverMove) {
+                //     const cell = this.cellAtExternalXY(evt.offsetX, evt.offsetY);
+                //     this.options.onHoverMove({cell})
+                // }
+            });
+        }
+    }
+
+    _setupDragEvents() {
+        if (!this.options.onDragStart && !this.options.onDragMove && !this.options.onDragEnd) return;
+
+        // Put each canvas listener into its own namespace
+        if (!this.$canvas.attr('id')) {
+            console.warn("<canvas> needs an `id` attr for mouse panning to function correctly")
+            return;
+        }
+        const jQueryNS = `drag-${this.$canvas.attr('id')}`;
+
+        let isDragging;
+        let originalPoint;
+        let mouseButton;
+
+        // Prevent standard right click
+        this.$canvas.off('contextmenu.canvas').on('contextmenu.canvas', evt => {
+            return false;
+        });
+
+        this.$canvas.off(`mousedown.${jQueryNS}`).on(`mousedown.${jQueryNS}`, evt => {
+            if (isDragging) return; // Ignore the case where multiple mouse buttons get pressed at the same time (rare)
+
+            isDragging = true;
+            originalPoint = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
+            mouseButton = evt.which; // Snapshot mouse button at time of mousedown
+
+            if (this.options.onDragStart) this.options.onDragStart({originalPoint, mouseButton})
+        });
+
+        this.$canvas.off(`mousemove.${jQueryNS}`).on(`mousemove.${jQueryNS}`, evt => {
+            if (!isDragging) return;
+
+            const target = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
+            if (this.options.onDragMove) this.options.onDragMove({originalPoint, target, mouseButton})
+        });
+
+        $(document).off(`mouseup.${jQueryNS}`).on(`mouseup.${jQueryNS}`, () => {
+            isDragging = false;
+            if (this.options.onDragEnd) this.options.onDragEnd({originalPoint, mouseButton})
+        });
     }
 
 }
