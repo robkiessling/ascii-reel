@@ -24,7 +24,7 @@ export default class MonocharFreeform extends DrawingFreeform {
         return this._cachedBoundingArea;
     }
 
-    recalculate(mouseEvent) {
+    recalculate(modifiers, mouseEvent) {
         // If we haven't moved to a new cell, return
         if (this.prevCell && this.prevCell.equals(this.end)) return;
 

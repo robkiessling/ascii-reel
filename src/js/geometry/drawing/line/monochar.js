@@ -1,7 +1,7 @@
 import DrawingLine from "./base.js";
 
 export default class MonocharLine extends DrawingLine {
-    recalculate(shiftKey) {
+    recalculate() {
         this._initGlyphsToBoundingArea();
 
         this.start.lineTo(this.end).forEach(cell => {

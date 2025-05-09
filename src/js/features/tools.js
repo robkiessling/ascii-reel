@@ -16,7 +16,7 @@ import {getActionInfo, setupTooltips, shouldModifyAction} from "../io/actions.js
 import {STRINGS} from "../config/strings.js";
 import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
-import {modifierAbbr} from "../utils/os.js";
+import {modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Cell from "../geometry/cell.js";
 import CharPicker from "../components/char_picker.js";
@@ -24,6 +24,18 @@ import {standardTip} from "../components/tooltips.js";
 import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
+
+
+const DRAWING_MODIFIERS = {
+    'draw-line': {
+        'elbow-line-ascii': { 'shiftKey': 'change-route' },
+        'elbow-arrow-ascii': { 'shiftKey': 'change-route' },
+        'elbow-line-unicode': { 'shiftKey': 'change-route' },
+        'elbow-arrow-unicode': { 'shiftKey': 'change-route' },
+        'elbow-line-monochar': { 'shiftKey': 'change-route' },
+    }
+}
+
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -82,22 +94,22 @@ function setupEventBus() {
 
         switch(tool) {
             case 'eraser':
-                startDrawing(PolygonFactory.createFreeform, cell, { drawType: 'eraser' })
+                startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'eraser' })
                 break;
             case 'paint-brush':
-                startDrawing(PolygonFactory.createFreeform, cell, { drawType: 'paint-brush' })
+                startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'paint-brush' })
                 break;
             case 'draw-freeform':
-                startDrawing(PolygonFactory.createFreeform, cell, { canvas: canvasControl }, [mouseEvent])
+                startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { canvas: canvasControl })
                 break;
             case 'draw-rect':
-                startDrawing(PolygonFactory.createRect, cell, {}, [mouseEvent.shiftKey]);
+                startDrawing(PolygonFactory.createRect, cell, mouseEvent);
                 break;
             case 'draw-line':
-                startDrawing(PolygonFactory.createLine, cell, {}, [mouseEvent.shiftKey]);
+                startDrawing(PolygonFactory.createLine, cell, mouseEvent);
                 break;
             case 'draw-ellipse':
-                startDrawing(PolygonFactory.createEllipse, cell, {}, [mouseEvent.shiftKey]);
+                startDrawing(PolygonFactory.createEllipse, cell, mouseEvent);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
@@ -146,16 +158,16 @@ function setupEventBus() {
         switch(tool) {
             case 'eraser':
             case 'paint-brush':
-                if (isNewCell) updateDrawing(cell);
+                if (isNewCell) updateDrawing(cell, mouseEvent);
                 break;
             case 'draw-freeform':
                 // Intentionally not checking if isNewCell; we update the char based on pixels not cells
-                updateDrawing(cell, [mouseEvent]);
+                updateDrawing(cell, mouseEvent);
                 break;
             case 'draw-rect':
             case 'draw-line':
             case 'draw-ellipse':
-                if (isNewCell) updateDrawing(cell, [mouseEvent.shiftKey]);
+                if (isNewCell) updateDrawing(cell, mouseEvent);
                 break;
             case 'pan':
                 eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
@@ -202,7 +214,7 @@ function setupEventBus() {
             case 'draw-ellipse':
                 // Immediately affects the drawing (e.g. for draw-line it could change the right-angle route) without
                 // waiting for another mousemove
-                updateDrawing(prevCell, [shiftKey]);
+                updateDrawing(prevCell, { shiftKey: shiftKey });
                 break;
         }
     })
@@ -534,6 +546,7 @@ function eyedropper(cell, options) {
 
 
 // -------------------------------------------------------------------------------- Drawing
+export let drawingContent = null;
 
 function setupDrawSubMenus() {
     setupDrawSubMenu('draw-freeform');
@@ -554,16 +567,49 @@ function setupDrawSubMenu(toolKey) {
             const type = $tool.data('type');
             const name = STRINGS[`tools.${typesKey}.${type}.name`];
             const description = STRINGS[`tools.${typesKey}.${type}.description`];
-            return `<span class="title">${name}</span><br><span>${description}</span>`;
+            return `<div class="header">` +
+                `<span class="title">${name}</span>` +
+                `</div>` +
+                `<div class="description">${description}</div>` +
+            getDrawingModifiersTooltip(toolKey, type);
         }
     })
 
     subMenus.push(subMenu);
 }
 
-export let drawingContent = null;
+function getDrawingModifiers(mouseEvent) {
+    const result = {}
+    const tool = state.getConfig('tool');
+    const drawType = state.getConfig('drawTypes')[tool]
 
-function startDrawing(factory, cell, options = {}, recalculateArgs = []) {
+    if (!DRAWING_MODIFIERS[tool] || !DRAWING_MODIFIERS[tool][drawType]) return result;
+
+    for (const [modKey, modifier] of Object.entries(DRAWING_MODIFIERS[tool][drawType])) {
+        if (mouseEvent[modKey]) result[modifier] = true;
+    }
+
+    return result;
+}
+
+function getDrawingModifiersTooltip(tool, drawType) {
+    let result = ''
+    if (!DRAWING_MODIFIERS[tool] || !DRAWING_MODIFIERS[tool][drawType]) return result;
+
+    for (const [modKey, modifier] of Object.entries(DRAWING_MODIFIERS[tool][drawType])) {
+        const modifierKey = modifierWord(modKey);
+        const modifierDesc = STRINGS[`tools.${tool}-types.${drawType}.${modifier}`];
+        if (modifierDesc) {
+            result += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
+        }
+        else {
+            console.warn(`No modifier description found for: [${tool}, ${drawType}]`)
+        }
+    }
+    return result;
+}
+
+function startDrawing(factory, cell, mouseEvent, options = {}) {
     drawingContent = factory(cell, $.extend({
         drawType: state.getConfig('drawTypes')[state.getConfig('tool')],
         colorIndex: state.primaryColorIndex(),
@@ -572,15 +618,15 @@ function startDrawing(factory, cell, options = {}, recalculateArgs = []) {
         canvasDimensions: state.getConfig('dimensions'),
     }, options));
 
-    updateDrawing(cell, recalculateArgs);
+    updateDrawing(cell, mouseEvent);
 }
 
-function updateDrawing(cell, recalculateArgs = []) {
+function updateDrawing(cell, mouseEvent) {
     if (!drawingContent) return;
     if (!cell) return;
 
     drawingContent.end = cell;
-    drawingContent.recalculate(...recalculateArgs);
+    drawingContent.recalculate(getDrawingModifiers(mouseEvent), mouseEvent);
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }

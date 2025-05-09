@@ -13,7 +13,7 @@ export default class DrawingPolygon {
         this.options = options;
     }
 
-    recalculate() {
+    recalculate(/* modifiers, mouseEvent */) {
         console.warn("`recalculate` must be overridden by DrawingPolygon subclass")
     }
 

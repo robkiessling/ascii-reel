@@ -78,11 +78,11 @@ const RIGHT_ANGLE_CHARS = {
 }
 
 export default class ElbowLine extends DrawingLine {
-    recalculate(changeRoute) {
+    recalculate(modifiers) {
         this._setCharSheet(RIGHT_ANGLE_CHARS);
         this._initGlyphsToBoundingArea();
 
-        const bend = changeRoute ? new Cell(this.start.row, this.end.col) : new Cell(this.end.row, this.start.col);
+        const bend = modifiers['change-route'] ? new Cell(this.start.row, this.end.col) : new Cell(this.end.row, this.start.col);
         
         if (bend.equals(this.start) || bend.equals(this.end)) {
             // There is no bend; just need start-->end

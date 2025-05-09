@@ -304,7 +304,7 @@ function isHorizontalSlope(slope) {
  * to approximate an actual straight line out of many characters
  */
 export default class AdaptiveLine extends DrawingLine {
-    recalculate(shiftKey) {
+    recalculate() {
         // Short-circuit if line is only one single character long
         if (this.start.equals(this.end)) {
             this._initGlyphs(1, 1);
