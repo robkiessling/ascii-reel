@@ -14,7 +14,10 @@ import { init as initPreview, resize as resizePreview } from "./features/preview
 import { init as initUnicode } from "./features/unicode.js";
 import { init as initMainCanvas, resize as resizeMainCanvas } from './features/main_canvas.js';
 import { init as initSelection, clear as performClearSelection, syncTextEditorCursorPos } from './features/selection.js';
-import { init as initState, isValid as isStateValid, loadFromLocalStorage, loadBlankState } from "./state/index.js";
+import {
+    init as initState, isValid as isStateValid,
+    loadFromLocalStorage, loadBlankState, markClean
+} from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./features/frames.js";
 import { init as initLayers } from "./features/layers.js";
 import { init as initSidebar, resize as resizeSidebar } from "./features/sidebar.js";
@@ -87,6 +90,8 @@ function setupEventBus() {
             eventBus.emit(EVENTS.REFRESH.ALL);
         }
     })
+
+    eventBus.on(EVENTS.FILE.SAVED, () => markClean());
 
     eventBus.on(EVENTS.THEME.CHANGED, () => {
         recalculateTheme();

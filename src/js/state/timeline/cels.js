@@ -273,7 +273,6 @@ export function convertToMonochrome() {
     })
 }
 
-// TODO would be better if this was smarter - what I really want is a way to detect if there are changes that require saving
 export function hasCharContent() {
     return Object.values(state.cels).some(cel => {
         return cel.chars.some(row => row.some(char => char !== EMPTY_CHAR && char !== WHITESPACE_CHAR));

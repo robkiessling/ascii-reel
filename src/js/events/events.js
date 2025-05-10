@@ -116,7 +116,7 @@ export const EVENTS = {
         CHANGED: 'menu:changed'
     },
     FILE: {
-        CHANGED: 'file:changed'
+        SAVED: 'file:saved'
     },
     HISTORY: {
         BEFORE_CHANGE: 'history:before-change',

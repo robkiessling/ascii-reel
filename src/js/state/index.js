@@ -25,7 +25,7 @@ export {
     TICKS_OPTIONS,
 
     // cels
-    hasCharContent, iterateCelsForCurrentLayer, iterateCels, iterateCellsForCel,
+    iterateCelsForCurrentLayer, iterateCels, iterateCellsForCel,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph, charInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize
@@ -38,7 +38,7 @@ export {
     sortedChars, importChars, setUnicodeSetting, getUnicodeSetting
 } from './unicode.js'
 export {
-    hasHistory, pushHistory, endHistoryModification, modifyHistory
+    pushHistory, endHistoryModification, modifyHistory, isDirty, markClean
 } from './history.js'
 
 

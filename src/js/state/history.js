@@ -1,6 +1,6 @@
 import * as actions from "../io/actions.js";
 import {getStateForHistory as getConfigState, updateStateFromHistory as updateConfigState} from "./config.js";
-import {getState as getTimelineState, replaceState as replaceTimelineState} from "./timeline/index.js";
+import {getState as getTimelineState, replaceState as replaceTimelineState, hasCharContent} from "./timeline/index.js";
 import {getState as getPaletteState, replaceState as replacePaletteState} from "./palette.js";
 import {getState as getUnicodeState, replaceState as replaceUnicodeState} from "./unicode.js";
 import {eventBus, EVENTS} from '../events/events.js'
@@ -9,17 +9,14 @@ import {eventBus, EVENTS} from '../events/events.js'
 // -------------------------------------------------------------------------------- History (undo / redo)
 // Implementing undo/redo using the memento pattern https://en.wikipedia.org/wiki/Memento_pattern
 
-let history;
-let historyIndex;
+let history; // History stack (of state snapshots)
+let historyIndex; // Current index in history stack
+
 const MAX_HISTORY = 30; // Max number of states to remember in the history. Increasing this value will use more memory.
 
 export function reset() {
     history = [];
     historyIndex = undefined;
-}
-
-export function hasHistory() {
-    return history.length > 1;
 }
 
 export function setupActions() {
@@ -133,4 +130,20 @@ export function modifyHistory(callback) {
     if (history.length) {
         callback(history[historyIndex].state)
     }
+}
+
+// -------------------------------------------------------------------------------- Dirty / Clean
+// Tracks whether the document has unsaved edits. If dirty, a warning is shown before opening a new file.
+// After reload, the document is dirty by default since history is wiped. Blank documents are always considered clean.
+
+// Returns true if there are unsaved changes
+export function isDirty() {
+    return !history[historyIndex].isSavedMarker && hasCharContent();
+}
+
+export function markClean() {
+    history.forEach(slice => {
+        slice.isSavedMarker = false;
+    })
+    history[historyIndex].isSavedMarker = true;
 }

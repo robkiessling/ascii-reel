@@ -66,11 +66,11 @@ function setupNew() {
     const backgroundPicker = new BackgroundPicker($newFileDialog.find('.background-picker'));
     const unsavedWarning = new UnsavedWarning($newFileDialog.find('.unsaved-warning-area'), {
         showCloseButton: true,
-        onSave: () => eventBus.emit(EVENTS.FILE.CHANGED)
+        onSave: () => eventBus.emit(EVENTS.FILE.SAVED)
     })
 
     actions.registerAction('file.new', () => {
-        unsavedWarning.toggle(state.hasCharContent());
+        unsavedWarning.toggle(state.isDirty());
         projectTypePicker.value = DEFAULT_CONFIG.projectType
         dimensionsPicker.value = {
             numRows: DEFAULT_CONFIG.dimensions[1],
@@ -98,11 +98,11 @@ function setupOpen() {
 
     const unsavedWarning = new UnsavedWarning($openFileDialog.find('.unsaved-warning-area'), {
         successStringId: 'file.save-warning-cleared', // show a message since otherwise the dialog is completely blank
-        onSave: () => eventBus.emit(EVENTS.FILE.CHANGED)
+        onSave: () => eventBus.emit(EVENTS.FILE.SAVED)
     })
 
     actions.registerAction('file.open', () => {
-        if (state.hasCharContent()) {
+        if (state.isDirty()) {
             unsavedWarning.toggle(true);
             $openFileDialog.dialog('open');
         } else {
@@ -136,7 +136,7 @@ function setupSave() {
 
         fileSystem.saveFile()
             .then(() => {
-                eventBus.emit(EVENTS.FILE.CHANGED);
+                eventBus.emit(EVENTS.FILE.SAVED);
 
                 $saveFileDialog.dialog('close')
             })
@@ -173,7 +173,7 @@ function setupSave() {
 function saveAs() {
     if (isFileSystemAPISupported) {
         fileSystem.saveFile()
-            .then(() => eventBus.emit(EVENTS.FILE.CHANGED))
+            .then(() => eventBus.emit(EVENTS.FILE.SAVED))
             .catch(err => {
                 if (!fileSystem.isPickerCanceledError(err)) unhandledError('Failed to save file', err);
             });
@@ -188,7 +188,7 @@ function saveAs() {
 function saveActive() {
     fileSystem.saveFile(true)
         .then(() => {
-            eventBus.emit(EVENTS.FILE.CHANGED);
+            eventBus.emit(EVENTS.FILE.SAVED);
 
             new Toast({
                 key: 'save-active-file',
