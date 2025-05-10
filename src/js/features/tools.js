@@ -238,7 +238,7 @@ function toolForMouseButton(mouseButton) {
 function setupStandardTools() {
     $standardTools = $('#standard-tools');
 
-    $standardTools.find('.standard-tool').each(function(i, element) {
+    $standardTools.find('.standard-tool').each((i, element) => {
         const $element = $(element);
         const tool = $element.data('tool');
         const actionData = {

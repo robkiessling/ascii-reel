@@ -1,13 +1,7 @@
-import dedent from "dedent-js";
-import Color from "@sphinxxxx/color-conversion";
-
 import * as state from "../../state/index.js";
 import * as actions from "../../io/actions.js";
 import {defer} from "../../utils/utilities.js";
-import {fontRatio} from "../../config/font.js";
 import {createDialog} from "../../utils/dialogs.js";
-import exampleExportImg from "../../../images/example-export.png";
-import SimpleBar from "simplebar";
 import { supported as isFileSystemAPISupported } from 'browser-fs-access';
 import * as fileSystem from "../../storage/file_system.js";
 import {ValidationError} from "../../utils/errors.js";
@@ -21,6 +15,7 @@ import {DEFAULT_CONFIG} from "../../state/index.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 import ColorModePicker from "../../components/color_mode_picker.js";
 import ProjectTypePicker from "../../components/project_type_picker.js";
+import ExportForm from "../../components/export_form.js";
 
 export function init() {
     setupNew();
@@ -31,8 +26,14 @@ export function init() {
 }
 
 function setupEventBus() {
-    eventBus.on(EVENTS.STATE.LOADED, () => initFormWithSavedExportOptions())
+    eventBus.on(EVENTS.STATE.LOADED, () => exportForm.loadFromLastExport())
 }
+
+function unhandledError(alertMessage = 'An error occurred', error) {
+    console.error(error);
+    alert(`${alertMessage}: ${error.message}`);
+}
+
 
 // --------------------------------------------------------------------------------- New File
 
@@ -204,44 +205,12 @@ function saveActive() {
 
 // --------------------------------------------------------------- Export
 
-const DEFAULT_FONT_SIZE = 16;
-
-const EXPORT_OPTIONS = {
-    png: ['width', 'height', 'background', 'frames', 'spritesheetColumns', 'spritesheetRows'],
-    txt: ['frames', 'frameSeparator'],
-    rtf: ['fontSize', 'background', 'frames', 'frameSeparator'],
-    html: ['fontSize', 'fps', 'background', 'loop'],
-    gif: ['width', 'height', 'fps', 'background'],
-    json: ['frameStructure', 'colorFormat', 'mergeCharRows'],
-    webm: ['width', 'height', 'fps', 'background']
-}
-
-const SHOW_EXPORT_PREVIEW_FOR = ['json']
-
-// The following options are visible only if 'frames' is set to the given value
-const EXPORT_FRAMES_DEPENDENCIES = {
-    spritesheetColumns: 'spritesheet',
-    spritesheetRows: 'spritesheet',
-    frameSeparator: 'spritesheet'
-}
-
-const EXPORT_OPTION_VALIDATORS = {
-    fontSize: { type: 'float' },
-    width: { type: 'integer' },
-    height: { type: 'integer' },
-    fps: { type: 'integer' }, // todo if > 1
-    spritesheetColumns: { type: 'integer' },
-    spritesheetRows: { type: 'integer' }
-}
-
-let $exportFileDialog, $exportFormat, $exportOptions, $exportPreview;
-let exportTextSimpleBar;
+let $exportFileDialog, exportForm;
 
 function setupExport() {
     $exportFileDialog = $('#export-file-dialog');
-    $exportFormat = $exportFileDialog.find('#export-file-format');
-    $exportOptions = $exportFileDialog.find('#export-options');
-    $exportPreview = $exportFileDialog.find('#example-container');
+
+    exportForm = new ExportForm($exportFileDialog)
 
     createDialog($exportFileDialog, () => {
         exportFromForm();
@@ -252,176 +221,21 @@ function setupExport() {
         maxHeight: 600
     });
 
-    $exportFormat.on('change', evt => {
-        const format = $(evt.currentTarget).val();
-        $exportOptions.find('label').hide();
-
-        EXPORT_OPTIONS[format].forEach(option => {
-            $exportOptions.find(`[name="${option}"]`).closest('label').show();
-        });
-
-        toggleExportPreview(format);
-
-        if (!state.getConfig('background')) $exportOptions.find(`[name="background"]`).closest('label').hide();
-        $('#spritesheet-png-warning').toggle(showPngSpritesheetWarning());
-
-        if (EXPORT_OPTIONS[format].includes('frames')) {
-            $exportOptions.find('[name="frames"]').trigger('change');
-        }
+    actions.registerAction('file.export-as', () => {
+        exportForm.loadFromState();
+        $exportFileDialog.dialog('open');
     });
-
-    $exportOptions.find('[name="frames"]').on('change', evt => {
-        const framesValue = $(evt.currentTarget).val();
-        for (let [option, dependency] of Object.entries(EXPORT_FRAMES_DEPENDENCIES)) {
-            $exportOptions.find(`[name="${option}"]`).closest('label').toggle(
-                EXPORT_OPTIONS[$exportFormat.val()].includes(option) && framesValue === dependency
-            );
-        }
-
-        $('#spritesheet-png-warning').toggle(showPngSpritesheetWarning());
-    });
-
-    $exportOptions.find('[name="width"]').on('input', evt => {
-        const width = $(evt.currentTarget).val();
-        const height = Math.round(width / state.numCols() * state.numRows() / fontRatio);
-        $exportOptions.find('[name="height"]').val(height);
-        refreshSetDefaultDimensions();
-    });
-    $exportOptions.find('[name="height"]').on('input', evt => {
-        const height = $(evt.currentTarget).val();
-        const width = Math.round(height / state.numRows() * state.numCols() * fontRatio);
-        $exportOptions.find('[name="width"]').val(width);
-        refreshSetDefaultDimensions();
-    });
-
-    $exportOptions.find('.set-default-dimensions').on('click', () => {
-        $exportOptions.find(`[name="width"]`).val(defaultWidth()).trigger('input');
-    })
-
-    actions.registerAction('file.export-as', () => openExportDialog());
 
     actions.registerAction('file.export-active', {
         enabled: () => fileSystem.hasActiveExport() && state.getConfig('lastExportOptions'),
         callback: () => exportActive()
     })
-
-    exportTextSimpleBar = new SimpleBar($('#example-text').get(0), {
-        autoHide: false,
-        forceVisible: true
-    });
-}
-
-function initFormWithSavedExportOptions() {
-    if (state.getConfig('lastExportOptions')) {
-        // If there are export settings from a previous save, initialize the export form with those settings
-
-        // TODO format should be part of the options
-        $exportFormat.val(state.getConfig('lastExportOptions').format);
-        if (!$exportFormat.val()) $exportFormat.val($exportFormat.find('option:first').val()); // Failsafe
-
-        for (const [key, value] of Object.entries(state.getConfig('lastExportOptions'))) {
-            const $input = $exportOptions.find(`[name="${key}"]`);
-            $input.is(':checkbox') ? $input.prop('checked', !!value) : $input.val(value);
-        }
-    }
-    else {
-        // No saved options found -> blank out any fields relevant to specific animations:
-        $exportOptions.find(`[name="width"]`).val('');
-    }
-}
-
-function toggleExportPreview(format) {
-    const showPreview = SHOW_EXPORT_PREVIEW_FOR.includes(format);
-    $exportPreview.toggle(showPreview);
-    $exportOptions.find('input, select').off('change.example-text');
-
-    if (showPreview) {
-        $exportOptions.find('input, select').on('change.example-text', () => refreshPreview());
-        refreshPreview();
-    }
-
-    function refreshPreview() {
-        $exportPreview.find('#example-img').attr('src', exampleExportImg);
-        let options;
-
-        try {
-            options = validateExportOptions();
-        } catch (err) {
-            if (err instanceof ValidationError) {
-                $exportPreview.find('#example-text pre').html('Invalid options selected above.');
-                return;
-            } else {
-                throw err;
-            }
-        }
-
-        switch(format) {
-            case 'json':
-                return refreshJsonExportPreview(options);
-            default:
-                console.warn(`No preview handler for ${format}`)
-        }
-    }
-}
-
-function openExportDialog() {
-    $exportFileDialog.dialog('open');
-
-    $exportOptions.find(`[name="fps"]`).val(state.getConfig('fps'));
-
-    const $width = $exportOptions.find(`[name="width"]`);
-    if (!$width.val()) $width.val(defaultWidth());
-    $width.trigger('input');
-
-    const $fontSize = $exportOptions.find(`[name="fontSize"]`);
-    if (!$fontSize.val()) {
-        $fontSize.val(DEFAULT_FONT_SIZE);
-    }
-
-    const $spritesheetRows = $exportOptions.find(`[name="spritesheetRows"]`);
-    const $spritesheetCols = $exportOptions.find(`[name="spritesheetColumns"]`);
-    if (!$spritesheetRows.val() && !$spritesheetCols.val()) {
-        const { rows, cols } = optimalSpritesheetLayout();
-        $spritesheetRows.val(rows);
-        $spritesheetCols.val(cols);
-    }
-
-    $exportFormat.trigger('change');
-}
-
-
-function defaultWidth() {
-    // Default dimensions should be multiplied by the devicePixelRatio so that they don't appear
-    // blurry when downloaded. Reducing the image size smaller can actually increase blurriness
-    // due to rastering. https://stackoverflow.com/questions/55237929/ has a similar problem I faced.
-    // return state.numCols() * DEFAULT_FONT_SIZE * window.devicePixelRatio
-
-    // UPDATE: I am no longer multiplying by devicePixelRatio -- blur seems to be limited to small gifs
-    // TODO Maybe multiply by window.devicePixelRatio if width is below some threshold?
-    return state.numCols() * DEFAULT_FONT_SIZE;
-}
-
-function refreshSetDefaultDimensions() {
-    const $width = $exportOptions.find(`[name="width"]`);
-
-    $exportOptions.find('.set-default-dimensions').toggle(parseInt($width.val()) !== defaultWidth())
-}
-
-function optimalSpritesheetLayout() {
-    const frameCount = state.frames().length;
-
-    if (frameCount <= 0) return { rows: 0, cols: 0 };
-
-    const rows = Math.ceil(Math.sqrt(frameCount));
-    const cols = Math.ceil(frameCount / rows);
-
-    return { rows, cols };
 }
 
 function exportFromForm() {
     let options;
     try {
-        options = validateExportOptions();
+        options = exportForm.validateOptions();
     } catch (err) {
         if (err instanceof ValidationError) return; // Form errors will be highlighted in red so user can try again
         unhandledError('Failed to parse form', err);
@@ -453,173 +267,3 @@ function exportActive() {
         })
 }
 
-// TODO Special case: do not allow spritesheet export with png
-function showPngSpritesheetWarning() {
-    return $exportFormat.val() === 'png' && $exportOptions.find(`[name="frames"]`).val() === 'spritesheet';
-}
-
-function validateExportOptions() {
-    $exportOptions.find('.error').removeClass('error');
-
-    let options = {
-        format: $exportFormat.val()
-    };
-    let isValid = true;
-
-    if (showPngSpritesheetWarning()) {
-        isValid = false;
-    }
-
-    EXPORT_OPTIONS[options.format].forEach(option => {
-        // Special case: skip option if it is dependent on a different 'frames' value
-        if (EXPORT_FRAMES_DEPENDENCIES[option] !== undefined) {
-            const framesValue = $exportOptions.find(`[name="frames"]`).val();
-            if (EXPORT_FRAMES_DEPENDENCIES[option] !== framesValue) {
-                return;
-            }
-        }
-
-        const $input = $exportOptions.find(`[name="${option}"]`);
-        let value = $input.val();
-        if ($input.is(':checkbox')) value = $input.is(':checked');
-
-        if (EXPORT_OPTION_VALIDATORS[option]) {
-            switch(EXPORT_OPTION_VALIDATORS[option].type) {
-                case 'integer':
-                    value = parseInt(value);
-                    if (isNaN(value)) {
-                        $input.addClass('error');
-                        isValid = false;
-                    }
-                    break;
-                case 'float':
-                    value = parseFloat(value);
-                    if (isNaN(value)) {
-                        $input.addClass('error');
-                        isValid = false;
-                    }
-                    break;
-                default:
-                    console.warn(`No validator found for: ${EXPORT_OPTION_VALIDATORS[option].type}`);
-            }
-        }
-
-        options[option] = value;
-    });
-
-    if (!isValid) throw new ValidationError("Form is invalid");
-
-    return options;
-}
-
-function refreshJsonExportPreview(options) {
-    let frameExample = '';
-
-    const getColor = (colorStr) => {
-        const color = new Color(colorStr);
-        switch (options.colorFormat) {
-            case 'hex-str':
-                return `'${color.hex}'`
-            case 'rgba-str':
-                return `'${color.rgbaString}'`
-            case 'rgba-array':
-                return `[${color.rgba.join(',')}]`
-            default:
-                return 'Invalid'
-        }
-    }
-    const getCharRow = (str) => {
-        return options.mergeCharRows ? `'${str}'` : `[${str.split('').map(char => `'${char}'`).join(', ')}]`
-    }
-
-    switch(options.frameStructure) {
-        case 'array-chars':
-            frameExample = dedent`
-            {
-                fps: 0,
-                background: null,
-                frames: [
-                    ${getCharRow('aa')},
-                    ${getCharRow('bb')},
-                    ${getCharRow('%!')},
-                ]
-            }
-            `;
-            break;
-        case 'obj-chars':
-            frameExample = dedent`
-            {
-                fps: 0,
-                background: null,
-                frames: [
-                    {
-                        chars: [
-                            ${getCharRow('aa')},
-                            ${getCharRow('bb')},
-                            ${getCharRow('%!')},
-                        ]
-                    }
-                ]
-            }`
-            break;
-        case 'obj-chars-colors':
-            frameExample = dedent`
-            {
-                fps: 0,
-                background: null,
-                frames: [
-                    {
-                        chars: [
-                            ${getCharRow('aa')},
-                            ${getCharRow('bb')},
-                            ${getCharRow('%!')},
-                        ],
-                        colors: [
-                            [ ${getColor('#000000ff')}, ${getColor('#ff0000ff')} ],
-                            [ ${getColor('#0000ffff')}, ${getColor('#ff0000ff')} ],
-                            [ ${getColor('#00ff00ff')}, ${getColor('#ff0000ff')} ]
-                        ]
-                    }
-                ]
-            }`
-            break;
-        case 'obj-chars-colors-colorTable':
-            frameExample = dedent`
-            {
-                fps: 0,
-                background: null,
-                frames: [
-                    {
-                        chars: [
-                            ${getCharRow('aa')},
-                            ${getCharRow('bb')},
-                            ${getCharRow('%!')},
-                        ],
-                        colors: [
-                            [ 0, 1 ],
-                            [ 2, 1 ],
-                            [ 3, 1 ]
-                        ]
-                    }
-                ],
-                colorTable: [
-                    ${getColor('#000000ff')},
-                    ${getColor('#ff0000ff')},
-                    ${getColor('#0000ffff')},
-                    ${getColor('#00ff00ff')}
-                ]
-            }`
-            break;
-        default:
-            console.warn(`Unknown frameStructure: ${options.frameStructure}`);
-    }
-
-    $exportPreview.find('#example-text pre').html(frameExample);
-    exportTextSimpleBar.recalculate();
-}
-
-
-function unhandledError(alertMessage = 'An error occurred', error) {
-    console.error(error);
-    alert(`${alertMessage}: ${error.message}`);
-}
