@@ -36,6 +36,8 @@ const DRAWING_MODIFIERS = {
     }
 }
 
+const SUB_TOOL_MENU_TOOLTIP_OFFSET = [0, 15];
+
 
 // -------------------------------------------------------------------------------- Main External API
 
@@ -341,7 +343,13 @@ function setupSelectionTools() {
         actions.callAction(actionIdForSelectionTool($element.data('tool')), evt);
     });
 
-    selectionTooltips = setupTooltips($selectionTools.find('.sub-tool').toArray(), element => actionIdForSelectionTool($(element).data('tool')));
+    selectionTooltips = setupTooltips(
+        $selectionTools.find('.sub-tool').toArray(),
+        element => actionIdForSelectionTool($(element).data('tool')),
+        {
+            offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
+        }
+    );
 }
 
 function actionIdForSelectionTool(tool) {
@@ -920,6 +928,7 @@ class ToolSubMenu {
             tippy(this.$menu.find('.sub-tool').toArray(), {
                 content: element => this.options.tooltipContent($(element)),
                 placement: 'right',
+                offset: SUB_TOOL_MENU_TOOLTIP_OFFSET,
                 hideOnClick: false,
                 allowHTML: true
             })

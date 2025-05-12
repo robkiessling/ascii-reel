@@ -13,7 +13,7 @@ export const STRINGS = {
     'file.cannot-rename-active-file.description': 'This file exists on your computer and cannot be renamed from the browser. ' +
         'To rename it, save a copy with a new name and manually delete the original file.',
     'file.active-file-info.name': 'Linked to Disk File',
-    'file.active-file-info.description': 'Saving will directly update the linked file on your computer.',
+    'file.active-file-info.description': 'This page can write to a local file on your computer. Saving will directly update that file — no need to re-download.',
 
     'clipboard.cut.name': 'Cut',
     'clipboard.copy.name': 'Copy',
@@ -126,11 +126,11 @@ export const STRINGS = {
     'tools.selection.fill-color.name': 'Fill Selection With Color',
     'tools.selection.fill-color.description': 'Paints the selected area with the selected color.',
     'tools.selection.convert-to-whitespace.name': 'Fill Blank Cells with Whitespace',
-    'tools.selection.convert-to-whitespace.description': 'Replaces all blank cells with whitespace. ' +
+    'tools.selection.convert-to-whitespace.description': 'Replaces all blank cells with whitespace cells. ' +
         'Whitespace blocks lower layers when multiple layers are visible.',
     'tools.selection.convert-to-empty.name': 'Remove Whitespace',
-    'tools.selection.convert-to-empty.description': 'Replaces all whitespace cells with empty cells. ' +
-        'Empty cells allow lower layers to show through.',
+    'tools.selection.convert-to-empty.description': 'Replaces all whitespace cells with blank cells. ' +
+        'Blank cells allow lower layers to show through.',
     'tools.selection.resize.name': 'Resize Canvas',
     'tools.selection.resize.description': 'Resizes the canvas to match the selected area.',
     'tools.selection.close.name': 'Close',

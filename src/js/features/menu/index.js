@@ -115,6 +115,7 @@ function setupActiveFileIcon() {
 
     standardTip($activeFileIcon, 'file.active-file-info', {
         placement: 'bottom',
+        offset: [0, 28]
     })
 }
 
