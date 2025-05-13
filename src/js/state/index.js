@@ -8,7 +8,6 @@ import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 import {eventBus, EVENTS} from "../events/events.js";
-import {BLACK, DEFAULT_COLOR} from "./palette.js";
 
 export {
     numRows, numCols, setConfig, getConfig, fontFamily, getName, updateDrawType,
@@ -32,7 +31,7 @@ export {
 } from './timeline/index.js'
 export {
     sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy,
-    importPalette, COLOR_FORMAT, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
+    importPalette, COLOR_FORMAT, BLACK, WHITE, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
 } from './palette.js'
 export {
     sortedChars, importChars, setUnicodeSetting, getUnicodeSetting
@@ -294,12 +293,14 @@ function migrateToV6(state) {
 
 export function validateColorMode() {
     if (config.getConfig('colorMode') === 'monochrome') {
-        timeline.convertToMonochrome();
-        palette.convertToMonochrome();
+        const charColor = config.getConfig('background') === palette.BLACK ? palette.WHITE : palette.BLACK;
+
+        timeline.convertToMonochrome(charColor);
+        palette.convertToMonochrome(charColor);
         if (config.MULTICOLOR_TOOLS.has(config.getConfig('tool'))) {
             config.setConfig('tool', 'text-editor'); // ensure tool is not one of the color-related ones
         }
-        config.setConfig('primaryColor', BLACK)
+        config.setConfig('primaryColor', charColor)
     }
 }
 

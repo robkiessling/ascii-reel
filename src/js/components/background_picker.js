@@ -1,13 +1,11 @@
 import Picker from "vanilla-picker";
-import {COLOR_FORMAT} from "../state/index.js";
+import {COLOR_FORMAT, BLACK, WHITE} from "../state/index.js";
 import Color from "@sphinxxxx/color-conversion";
 
 // TODO Move these constants elsewhere and combine with color_mode_picker.js etc.
 const BLACK_AND_WHITE_MODE = 'monochrome';
 const COLORED_MODE = 'multicolor';
 
-const BLACK = new Color('rgba(0,0,0,1)')[COLOR_FORMAT];
-const WHITE = new Color('rgba(255,255,255,1)')[COLOR_FORMAT];
 const DEFAULT_COLORED_BACKGROUND = new Color('rgba(160,208,230,1)')[COLOR_FORMAT];
 const TRANSPARENT = 'transparent';
 const CUSTOM = 'colored';

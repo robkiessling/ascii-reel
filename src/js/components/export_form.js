@@ -254,7 +254,7 @@ export default class ExportForm {
      * Refreshes the visibility of various form components, and updates the example if applicable.
      */
     _refresh() {
-        $('[data-show-if]:not([data-show-if=""])').each((i, element) => {
+        this.$container.find('[data-show-if]:not([data-show-if=""])').each((i, element) => {
             const $element = $(element);
 
             const conditions = $element.data('show-if'); // e.g. "format=txt,rtf;frames=spritesheet;"

@@ -18,7 +18,7 @@ export const SORT_BY_OPTIONS = {
 }
 
 const DEFAULT_STATE = {
-    colors: [BLACK],
+    colors: [DEFAULT_COLOR],
     sortBy: null,
     sortedColors: []
 }
@@ -82,8 +82,8 @@ export function importPalette(newColors, replace = false) {
     recalculateSortedPalette();
 }
 
-export function convertToMonochrome() {
-    importPalette(DEFAULT_STATE.colors, true)
+export function convertToMonochrome(charColor) {
+    importPalette([charColor], true)
 }
 
 function recalculateSortedPalette() {

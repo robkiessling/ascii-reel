@@ -1,8 +1,6 @@
 import * as state from "../state/index.js";
 import Color from "@sphinxxxx/color-conversion";
 import {computedTheme, THEMES} from "./theme.js";
-import {BLACK, WHITE} from "../state/palette.js";
-
 
 // ------------------------------------------------------------- CSS Variables
 
@@ -24,23 +22,10 @@ const MAJOR_GRID_LIGHTNESS_DELTA = 0.4;
 const HOVER_LIGHTNESS_DELTA = 0.5;
 export const HOVER_CELL_OPACITY = 0.25;
 
-export let getColorStr, minorGridColor, majorGridColor, hoverColor;
+export let minorGridColor, majorGridColor, hoverColor;
 
 export function recalculateCanvasColors() {
     const bgColor = state.getConfig('background')
-
-    if (state.isMultiColored()) {
-        // Char color is based on colorIndex
-        getColorStr = colorIndex => state.colorStr(colorIndex);
-    }
-    else {
-        // Char color is static and based on bgColor:
-        // - If bgColor is transparent, chars are black
-        // - If bgColor is white, chars are black. If bgColor is black, chars are white.
-        let charColor = BLACK;
-        if (bgColor === BLACK) charColor = WHITE;
-        getColorStr = () => charColor;
-    }
 
     // The color used for grids/hover effects changes depending on the canvas background. If the background is light we
     // use a darker shade; if the background is dark we use a lighter shade.

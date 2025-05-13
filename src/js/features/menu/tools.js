@@ -122,13 +122,9 @@ function setupBackgroundDialog() {
     const $backgroundDialog = $('#background-dialog');
 
     createDialog($backgroundDialog, () => {
-        const newColorMode = colorModePicker.value;
-        if (newColorMode !== state.getConfig('colorMode')) {
-            state.setConfig('colorMode', newColorMode);
-            state.validateColorMode()
-        }
-
+        state.setConfig('colorMode', colorModePicker.value);
         state.setConfig('background', backgroundPicker.value);
+        state.validateColorMode()
 
         recalculateCanvasColors();
         eventBus.emit(EVENTS.REFRESH.ALL);

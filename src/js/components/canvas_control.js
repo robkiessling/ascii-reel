@@ -1,16 +1,11 @@
 import {setIntervalUsingRAF} from "../utils/utilities.js";
-import {numCols, numRows, fontFamily} from "../state/index.js";
+import {numCols, numRows, fontFamily, colorStr} from "../state/index.js";
 import {fontHeight, fontWidth} from "../config/font.js";
 import Rect from "../geometry/rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
-import {
-    hoverColor,
-    HOVER_CELL_OPACITY,
-    getColorStr,
-    PRIMARY_COLOR, SELECTION_COLOR, checkerboardColors
-} from "../config/colors.js";
+import {hoverColor, HOVER_CELL_OPACITY, PRIMARY_COLOR, SELECTION_COLOR, checkerboardColors} from "../config/colors.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
@@ -188,7 +183,7 @@ export default class CanvasControl {
         lines.forEach(line => {
             this.context.fillStyle = line.colorIndex === VISIBLE_WHITESPACE_COLOR_INDEX ?
                 VISIBLE_WHITESPACE_COLOR :
-                getColorStr(line.colorIndex)
+                colorStr(line.colorIndex)
 
             // For y value, increase row by 0.5 so it is centered in cell
             this.context.fillText(line.text, Cell.x(line.col), Cell.y(line.row + 0.5));
