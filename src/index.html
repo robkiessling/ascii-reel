@@ -358,10 +358,9 @@
 
     <div id="confirm-dialog"><p></p></div>
 
-    <div id="save-file-dialog" title="Save To...">
+    <div id="save-file-dialog" title="Save To..." class="dialog-form">
         <label>
-            File Name<br>
-            <input type="text" class="name highlight"><span class="extension"></span>
+            <input type="text" class="name highlight long"><span class="extension"></span>
         </label>
     </div>
 
@@ -375,7 +374,7 @@
         <label>
             Canvas Font: <select id="font-select"></select>
         </label>
-        <div>
+        <div class="label-header">
             Examples:
         </div>
         <div>
@@ -394,22 +393,22 @@
         <div class="flex-row">
             <div class="flex-1 flex-col">
                 <div class="mb-2">
-                    <b>Project Type:</b>
-                    <div class="project-type-picker ml-1"></div>
+                    <div class="label-header">Project Type:</div>
+                    <div class="project-type-picker"></div>
                 </div>
                 <div>
-                    <b>Dimensions:</b>
-                    <div class="dimensions-area mt-1 ml-1"></div>
+                    <div class="label-header">Dimensions:</div>
+                    <div class="dimensions-area"></div>
                 </div>
             </div>
             <div class="flex-1 flex-col">
                 <div class="mb-2">
-                    <b>Color Mode:</b>
-                    <div class="color-mode-picker ml-1"></div>
+                    <div class="label-header">Color Mode:</div>
+                    <div class="color-mode-picker"></div>
                 </div>
                 <div class="background-picker-container">
-                    <b>Background:</b>
-                    <div class="background-picker ml-1"></div>
+                    <div class="label-header">Background:</div>
+                    <div class="background-picker"></div>
                 </div>
             </div>
         </div>
@@ -422,20 +421,21 @@
     <div id="resize-dialog" title="Resize Canvas" class="dialog-form"></div>
 
     <div id="background-dialog" title="Color / Background Settings" class="dialog-form">
-        <div>
-            <b>Color Mode:</b>
-            <div class="color-mode-picker ml-1"></div>
+        <div class="mb-1">
+            <div class="label-header">Color Mode:</div>
+            <div class="color-mode-picker"></div>
         </div>
-        <div class="background-picker-container">
-            <b>Background:</b>
-            <div class="background-picker ml-1"></div>
+        <div class="background-picker-container mb-1">
+            <div class="label-header">Background:</div>
+            <div class="background-picker"></div>
         </div>
+        <div class="invert-char-colors"></div>
     </div>
 
     <div id="project-settings-dialog" title="Project Settings" class="dialog-form">
         <div>
             <b>Project Type:</b>
-            <div class="project-type-picker ml-1"></div>
+            <div class="project-type-picker"></div>
         </div>
     </div>
 

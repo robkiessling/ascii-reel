@@ -39,6 +39,11 @@ export const STRINGS = {
     'settings.open-resize-dialog.name': 'Resize Canvas',
     'settings.open-background-dialog.name': 'Color / Background Settings',
 
+    'settings.change-background.invert-white.warning': "Your canvas contains white text, which won't be visible against a white background.",
+    'settings.change-background.invert-white.checkbox': "Convert all white text to black",
+    'settings.change-background.invert-black.warning': "Your canvas contains black text, which won't be visible against a black background.",
+    'settings.change-background.invert-black.checkbox': "Convert all black text to white",
+
     'themes.select-os.name': 'System Default',
     'themes.select-light-mode.name': 'Light',
     'themes.select-dark-mode.name': 'Dark',

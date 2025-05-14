@@ -27,7 +27,7 @@ export {
     iterateCelsForCurrentLayer, iterateCels, iterateCellsForCel,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph, charInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
-    resize
+    resize, colorSwap, hasCharContent
 } from './timeline/index.js'
 export {
     sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy,
@@ -301,6 +301,33 @@ export function validateColorMode() {
             config.setConfig('tool', 'text-editor'); // ensure tool is not one of the color-related ones
         }
         config.setConfig('primaryColor', charColor)
+    }
+    else {
+        // Ensure primaryColor does not clash with background
+        if (config.getConfig('primaryColor') === config.getConfig('background')) {
+            config.setConfig('primaryColor', config.getConfig('background') === palette.BLACK ? palette.WHITE : palette.BLACK);
+        }
+    }
+}
+
+export function invertInvisibleChars() {
+    let oldColor, newColor;
+
+    if (config.getConfig('background') === palette.BLACK) {
+        // convert all black text to white
+        oldColor = palette.BLACK;
+        newColor = palette.WHITE;
+    }
+    else if (config.getConfig('background') === palette.WHITE) {
+        // convert all white text to black
+        oldColor = palette.WHITE;
+        newColor = palette.BLACK;
+    }
+
+    if (oldColor && newColor) {
+        timeline.colorSwap(timeline.colorIndex(oldColor), timeline.colorIndex(newColor), {
+            allLayers: true, allFrames: true
+        })
     }
 }
 

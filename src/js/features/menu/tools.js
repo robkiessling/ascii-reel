@@ -10,6 +10,7 @@ import DimensionsPicker from "../../components/dimensions_picker.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 import ProjectTypePicker from "../../components/project_type_picker.js";
 import ColorModePicker from "../../components/color_mode_picker.js";
+import ColorInversionCheckbox from "../../components/color_inversion_checkbox.js";
 
 export function init() {
     setupFontDialog();
@@ -125,24 +126,38 @@ function setupBackgroundDialog() {
         state.setConfig('colorMode', colorModePicker.value);
         state.setConfig('background', backgroundPicker.value);
         state.validateColorMode()
+        if (inversionCheckbox.shouldInvert()) state.invertInvisibleChars();
 
         recalculateCanvasColors();
         eventBus.emit(EVENTS.REFRESH.ALL);
         state.pushHistory({ recalculateColors: true });
         $backgroundDialog.dialog('close');
     }, 'Save', {
-        minHeight: 400,
+        minHeight: 500,
     });
 
     const colorModePicker = new ColorModePicker($backgroundDialog.find('.color-mode-picker'), {
-        onChange: value => backgroundPicker.mode = value
-    })
-    const backgroundPicker = new BackgroundPicker($backgroundDialog.find('.background-picker'));
+        onChange: value => {
+            backgroundPicker.mode = value;
+            inversionCheckbox.refresh(value, backgroundPicker.value);
+        }
+    });
+
+    const backgroundPicker = new BackgroundPicker($backgroundDialog.find('.background-picker'), {
+        onChange: value => inversionCheckbox.refresh(colorModePicker.value, value)
+    });
+
+    const inversionCheckbox = new ColorInversionCheckbox($backgroundDialog.find('.invert-char-colors'));
 
     actions.registerAction('settings.open-background-dialog', () => {
         colorModePicker.value = state.getConfig('colorMode');
         backgroundPicker.mode = state.getConfig('colorMode');
         backgroundPicker.value = state.getConfig('background');
+
+        inversionCheckbox.analyzeCanvas();
+        inversionCheckbox.setDefaultCbState();
+        inversionCheckbox.refresh(colorModePicker.value, backgroundPicker.value)
+
         $backgroundDialog.dialog('open');
     });
 }

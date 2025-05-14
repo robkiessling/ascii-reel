@@ -10,7 +10,9 @@ const DEFAULT_COLORED_BACKGROUND = new Color('rgba(160,208,230,1)')[COLOR_FORMAT
 const TRANSPARENT = 'transparent';
 const CUSTOM = 'colored';
 
-const DEFAULT_OPTIONS = {}
+const DEFAULT_OPTIONS = {
+    onChange: () => {} // Callback when value is changed by user interaction (not programmatically)
+}
 
 export default class BackgroundPicker {
     static idSequence = 0;
@@ -51,6 +53,7 @@ export default class BackgroundPicker {
         else {
             // All other colors
             this.$types.filter(`[value="${CUSTOM}"]`).prop('checked', true);
+            this._ignoreNextOnChange();
             this.colorPicker.setColor(newValue, false);
         }
     }
@@ -74,9 +77,11 @@ export default class BackgroundPicker {
         this._createHTML();
 
         this.$types = this.$container.find(`input[name="${this._radioInputName()}"]`);
+        this.$types.on('change', () => this._onChange());
 
         const $colorWell = this.$container.find(`.color-well`);
 
+        this._ignoreNextOnChange(); // Required since vanilla-picker's initial `color` property triggers its onChange
         this.colorPicker = new Picker({
             parent: $colorWell.get(0),
             popup: 'right',
@@ -87,6 +92,7 @@ export default class BackgroundPicker {
             onChange: (color) => {
                 this.pickerValue = color[COLOR_FORMAT];
                 $colorWell.css('background', this.pickerValue);
+                this._onChange();
             },
         });
     }
@@ -109,6 +115,21 @@ export default class BackgroundPicker {
         // <label class="conditional-field" data-show-if="mode=${BLACK_AND_WHITE_MODE},${COLORED_MODE}">
         //     <input type="radio" name="${this._radioInputName()}" value="${TRANSPARENT}"> Transparency Grid
         // </label>
+    }
+
+    // Workaround for when we need the vanilla-picker's onChange to fire, but don't want it to
+    // trigger the background-picker's onChange
+    _ignoreNextOnChange() {
+        this._nextOnChangeIgnored = true;
+    }
+
+    _onChange() {
+        if (this._nextOnChangeIgnored) {
+            this._nextOnChangeIgnored = false;
+            return;
+        }
+
+        this.options.onChange(this.value);
     }
 
     _refreshVisibility() {

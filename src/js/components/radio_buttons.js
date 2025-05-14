@@ -1,7 +1,7 @@
 
 const DEFAULT_OPTIONS = {
     inputData: [], // Array of inputs, where each input is of format: { text: 'Hello', value: 'hello' }
-    onChange: () => {}
+    onChange: () => {} // Callback when value is changed by user interaction (not programmatically)
 }
 
 export default class RadioButtons {

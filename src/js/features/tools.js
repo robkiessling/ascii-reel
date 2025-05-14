@@ -527,13 +527,7 @@ function colorSwap(cell, options) {
     const [targetChar, targetColor] = state.getCurrentCelGlyph(cell.row, cell.col);
     if (targetChar === EMPTY_CHAR) return;
 
-    const primaryColorIndex = state.primaryColorIndex();
-
-    state.iterateCels(options.allLayers, options.allFrames, cel => {
-        state.iterateCellsForCel(cel, (row, col, char, color) => {
-            if (color === targetColor) state.setCelGlyph(cel, row, col, char, primaryColorIndex);
-        });
-    })
+    state.colorSwap(targetColor, state.primaryColorIndex(), options);
 
     // Need full refresh if multiple frames in sidebar need updating
     eventBus.emit(options.allFrames ? EVENTS.REFRESH.ALL : EVENTS.REFRESH.CURRENT_FRAME)

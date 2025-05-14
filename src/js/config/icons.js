@@ -43,8 +43,10 @@ const ICON_DATA = {
     'tools.selection.convert-to-whitespace': { type: REMIXICON, content: 'ri-space' },
     'tools.selection.convert-to-empty': {
         type: CUSTOM,
-        content: '<span class="ri-stack"><span class="ri ri-fw ri-space"></span>' +
-            '<span class="ri ri-fw ri-2x ri-forbid-line ri-forbid-line-no-border"></span></span>'
+        content: '<span class="ri-stack">' +
+            '<span class="ri ri-fw ri-space"></span>' +
+            '<span class="ri ri-fw ri-forbid-line ri-forbid-line-no-border" style="font-size: 36px;"></span>' +
+            '</span>'
     },
     'tools.selection.resize': { type: REMIXICON, content: 'ri-crop-line' },
     'tools.selection.close': { type: REMIXICON, content: 'ri-close-line' },

@@ -262,6 +262,10 @@ export function colorIndex(colorStr) {
     return index;
 }
 
+function hasColor(colorStr) {
+    return state.colorTable.indexOf(colorStr) !== -1;
+}
+
 export function primaryColorIndex() {
     return colorIndex(getConfig('primaryColor'));
 }
@@ -273,10 +277,35 @@ export function convertToMonochrome(color) {
     })
 }
 
-export function hasCharContent() {
-    return Object.values(state.cels).some(cel => {
-        return cel.chars.some(row => row.some(char => char !== EMPTY_CHAR && char !== WHITESPACE_CHAR));
-    })
+/**
+ * Returns true if any cels have non-blank characters
+ * @param {string} [matchingColor=undefined] If provided, the non-blank character has to also match this color value
+ * @returns {boolean}
+ */
+export function hasCharContent(matchingColor) {
+    let matchingColorIndex;
+    if (matchingColor !== undefined) {
+        matchingColorIndex = hasColor(matchingColor) ? colorIndex(matchingColor) : -1;
+    }
+
+    // Not using iterateAllCels or iterateCellsForCel so we can terminate early
+    for (const cel of Object.values(state.cels)) {
+        let row, col, char, color, rowLength = numRows(), colLength = numCols();
+
+        for (row = 0; row < rowLength; row++) {
+            for (col = 0; col < colLength; col++) {
+                char = cel.chars[row][col];
+                color = cel.colors[row][col];
+
+                if (
+                    (char !== EMPTY_CHAR && char !== WHITESPACE_CHAR) &&
+                    (matchingColorIndex === undefined || matchingColorIndex === color)
+                ) return true
+            }
+        }
+    }
+
+    return false;
 }
 
 

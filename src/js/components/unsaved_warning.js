@@ -46,11 +46,11 @@ export default class UnsavedWarning {
 
     _createHTML(warningMessage, successMessage) {
         this.$warning = $(`
-            <div class="unsaved-warning warning-popup">
-                <span class="ri ri-fw ri-error-warning-line warning flex-shrink"></span>
+            <div class="unsaved-warning warning-popup mb-1">
+                <span class="ri ri-fw ri-xl ri-error-warning-line warning"></span>
                 <div>${strToHTML(warningMessage)}</div>
-                <div class="flex-shrink">
-                    <button class="save flex-shrink">
+                <div>
+                    <button class="save">
                         <span class="ri ri-fw ri-save-3-line"></span> Save
                     </button>
                 </div>

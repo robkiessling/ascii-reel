@@ -304,3 +304,11 @@ export function layeredGlyphs(frame, options = {}) {
 
     return { chars, colors }
 }
+
+export function colorSwap(oldColorIndex, newColorIndex, options = {}) {
+    iterateCels(options.allLayers, options.allFrames, cel => {
+        celController.iterateCellsForCel(cel, (row, col, char, colorIndex) => {
+            if (colorIndex === oldColorIndex) celController.setCelGlyph(cel, row, col, char, newColorIndex);
+        });
+    });
+}

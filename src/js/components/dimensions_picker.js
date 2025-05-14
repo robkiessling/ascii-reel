@@ -95,7 +95,7 @@ export default class DimensionsPicker {
         if (this.options.anchorTool) {
             this.$container.append(`
                 <div class="mt-2">
-                    Anchor:
+                    <div class="label-header">Anchor:</div>
                     <div class="anchor-options">
                         <div>
                             <div class="anchor-option" data-row-anchor="top" data-col-anchor="left"></div>

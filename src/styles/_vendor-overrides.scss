@@ -139,10 +139,6 @@
   }
 }
 
-.ri-2x {
-  font-size: 2.5rem;
-}
-
 .ri-stack {
   position: relative;
   display: flex;
@@ -166,6 +162,9 @@
 .ri-forbid-line-no-border {
   // clip off the surrounding border
   clip-path: circle(27% at 50% 50%);
+
+  // OR, reduce surrounding border width (note: this seems to vary between browsers... hard to get exactly right)
+  //clip-path: circle(33.334% at 50% 50%);
 }
 
 // ---------------------------------------------------------------------- simplebar (custom scrollbar)
@@ -242,14 +241,6 @@
   .ui-dialog-content {
     color: var(--color-font);
     padding: 0.5rem 0;
-
-    > label {
-      display: block;
-      margin-bottom: 1rem;
-    }
-    > div {
-      margin-bottom: 1rem;
-    }
   }
   .ui-dialog-buttonpane {
     background: none;
