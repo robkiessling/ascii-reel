@@ -81,7 +81,7 @@ export function validate() {
     }
 }
 
-export function newBlankState() {
+export function newSingleCelTimeline(celContent = {}) {
     return {
         layerController: {
             layers: [{ id: 1, name: 'Layer 1' }]
@@ -91,7 +91,7 @@ export function newBlankState() {
         },
         celController: {
             cels: {
-                [celController.getCelId(1, 1)]: {}
+                [celController.getCelId(1, 1)]: celContent
             }
         }
     }

@@ -41,7 +41,7 @@ replace the existing file in this directory.
 You don't need any of the other formats since I don't care about supporting older browsers
 and I just use font-based classes.
 8. In the `remixicon.css` file, update the `@font-face`:
-  - In `src`, delete all urls except for the `.woff` one.
+  - In `src`, delete all urls except for the `.woff2` one.
   - Prepend `remixicon/` to the kept urls because our build uses absolute urls. 
   - The final result should look like:
 

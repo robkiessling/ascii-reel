@@ -97,6 +97,7 @@
   --color-canvas-bg: var(--clr-surface-a40); // looks better on white/black bg
   //--color-canvas-bg: var(--clr-surface-a20); // looks better with transparency grid
   //--color-canvas-bg: var(--clr-surface-a10);
+  --color-canvas-border: var(--clr-surface-a20);
   --color-tooltip-bg: var(--clr-surface-a20);
   --color-tooltip-accent: var(--clr-surface-a30);
   --color-dialog-bg: var(--clr-surface-a10);
@@ -135,6 +136,7 @@
 
   --color-canvas-bg: var(--clr-surface-a30);
   //--color-canvas-bg: var(--clr-surface-a10);
+  --color-canvas-border: var(--clr-surface-a20);
   --color-tooltip-bg: var(--clr-surface-a0);
   --color-tooltip-accent: var(--clr-surface-a10);
   --color-dialog-bg: var(--clr-surface-a0);

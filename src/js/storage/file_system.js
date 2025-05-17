@@ -19,18 +19,24 @@ export function hasActiveFile() {
 export async function openFile() {
     const file = await fileOpen({
         description: "AsciiReel File",
-        extensions: [`.${FILE_EXTENSION}`],
-        mimeTypes: [MIME_TYPE],
+        extensions: [`.${FILE_EXTENSION}`, '.txt'],
+        mimeTypes: [MIME_TYPE, 'text/plain'],
         excludeAcceptAllOption: true
     });
 
     fileHandle = file.handle; // Will be undefined if File System API is not supported
     exportHandle = undefined; // Clear any existing export handles since we are looking at a new file now
 
+    // Note: file.name will be defined even if File System API is not supported.
+    const ext = file.name.split('.').pop().toLowerCase();
+    const type = file.type;
     const fileText = await file.text();
 
-    // Note: file.name will be defined even if File System API is not supported.
-    state.loadFromDisk(JSON.parse(fileText), fileNameWithoutExtension(file.name, FILE_EXTENSION));
+    if (type === 'text/plain' || ext === 'txt') {
+        state.loadFromTxt(fileText, fileNameWithoutExtension(file.name, 'txt'));
+    } else {
+        state.loadFromDisk(JSON.parse(fileText), fileNameWithoutExtension(file.name, FILE_EXTENSION));
+    }
 }
 
 /**

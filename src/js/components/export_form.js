@@ -132,8 +132,8 @@ export default class ExportForm {
                     <option value="json">JSON</option>
                     <option value="gif">GIF</option>
                     <option value="png">PNG</option>
-                    <option value="txt">Plain Text</option>
-                    <option value="rtf">Rich Text</option>
+                    <option value="txt">TXT</option>
+                    <option value="rtf">RTF</option>
                     <option value="html">HTML</option>
                     <option value="webm">WebM</option>
                 </select>

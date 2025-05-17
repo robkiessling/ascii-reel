@@ -2,6 +2,8 @@
 
 #canvas-container {
   background: var(--color-canvas-bg);
+  outline: 1px solid var(--color-canvas-border);
+
   flex: 1;
 
   position: relative;

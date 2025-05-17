@@ -48,7 +48,7 @@ export function init() {
 export function loadBlankState() {
     try {
         load({
-            timeline: timeline.newBlankState()
+            timeline: timeline.newSingleCelTimeline()
         });
     } catch (error) {
         console.error("Failed to load blank state:", error);
@@ -72,7 +72,7 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
                 background: background,
                 primaryColor: primaryColor,
             },
-            timeline: timeline.newBlankState(),
+            timeline: timeline.newSingleCelTimeline(),
             palette: paletteState
         })
     } catch (error) {
@@ -86,7 +86,7 @@ function load(data) {
 
     history.reset();
 
-    config.load(data.config);
+    config.load(data.config); // Load this first so dimensions and other config data is available to loaders
     timeline.load(data.timeline);
     palette.load(data.palette);
     unicode.load(data.unicode);
@@ -177,6 +177,29 @@ export function loadFromDisk(diskState, fileName) {
     }
 }
 
+export function loadFromTxt(txtContent, fileName) {
+    try {
+        const chars = txtContent.split(/\r?\n/).map(row => row.split(''));
+        let cel = {}, dimensions;
+
+        if (chars.some(row => row.length > 0)) {
+            cel = { chars: chars }
+            dimensions = [Math.max(...chars.map(row => row.length)), chars.length]
+        }
+
+        load({
+            config: {
+                colorMode: 'monochrome',
+                dimensions: dimensions,
+                name: fileName
+            },
+            timeline: timeline.newSingleCelTimeline(cel),
+        })
+    } catch (error) {
+        console.error("Failed to load txt file from disk:", error);
+        onLoadError(txtContent);
+    }
+}
 
 
 // --------------------------------------------------------------------------------
