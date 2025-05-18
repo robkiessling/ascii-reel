@@ -9,14 +9,14 @@ import * as frameController from './frames.js';
 import * as layerController from './layers.js';
 import * as celController from './cels.js';
 import ArrayRange, {create2dArray, translateGlyphs} from "../../utils/arrays.js";
-import {numCols, numRows, getConfig} from "../config.js";
+import {numCols, numRows} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 
 
 export function load(data = {}) {
     layerController.load(data.layerController);
     frameController.load(data.frameController);
-    celController.load(data.celController); // must come after config load, since it depends on dimensions
+    celController.load(data.celController); // note: must come after config load, since it depends on dimensions
 }
 
 export function getState() {

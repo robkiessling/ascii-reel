@@ -395,7 +395,7 @@ function replaceInSelection(findChar, replaceChar) {
 
 function resizeToSelection() {
     const area = selection.getSelectedCellArea().bindToDrawableArea();
-    state.resize([area.numCols, area.numRows], area.topLeft.row, area.topLeft.col);
+    state.resize([area.numRows, area.numCols], area.topLeft.row, area.topLeft.col);
     eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
     state.pushHistory({ requiresResize: true });
 }

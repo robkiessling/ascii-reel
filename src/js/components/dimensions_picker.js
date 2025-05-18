@@ -148,8 +148,8 @@ export default class DimensionsPicker {
     _fixInvalidData() {
         const currentValue = this.value;
 
-        if (isNaN(currentValue.numRows) || currentValue.numRows <= 0) this.$rows.val(DEFAULT_CONFIG.dimensions[1]);
-        if (isNaN(currentValue.numCols) || currentValue.numCols <= 0) this.$columns.val(DEFAULT_CONFIG.dimensions[0]);
+        if (isNaN(currentValue.numRows) || currentValue.numRows <= 0) this.$rows.val(DEFAULT_CONFIG.dimensions[0]);
+        if (isNaN(currentValue.numCols) || currentValue.numCols <= 0) this.$columns.val(DEFAULT_CONFIG.dimensions[1]);
     }
 
     _hideErrors() {

@@ -15,7 +15,7 @@ export default class MonocharFreeform extends DrawingFreeform {
     // canvas and deal with absolute coordinates. This is less efficient but simpler to code.
     get boundingArea() {
         if (this._cachedBoundingArea === undefined) {
-            const [numCols, numRows] = this.options.canvasDimensions;
+            const [numRows, numCols] = this.options.canvasDimensions;
             const topLeft = new Cell(0, 0);
             const bottomRight = new Cell(numRows - 1, numCols - 1);
             this._cachedBoundingArea = new CellArea(topLeft, bottomRight);

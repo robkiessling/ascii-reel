@@ -91,7 +91,7 @@ function setupResizeDialog() {
     createDialog($resizeDialog, () => {
         if (dimensionsPicker.validate()) {
             const dim = dimensionsPicker.value;
-            state.resize([dim.numCols, dim.numRows], dim.anchor.row, dim.anchor.col);
+            state.resize([dim.numRows, dim.numCols], dim.anchor.row, dim.anchor.col);
             eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
             state.pushHistory({ requiresResize: true });
             $resizeDialog.dialog('close');

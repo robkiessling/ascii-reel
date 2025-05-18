@@ -164,7 +164,7 @@ export function loadFromDisk(diskState, fileName) {
         migrateState(diskState, 'disk');
 
         // Decode timeline
-        diskState.timeline = timeline.decodeState(diskState.timeline, diskState?.config?.dimensions?.[0])
+        diskState.timeline = timeline.decodeState(diskState.timeline, diskState?.config?.dimensions?.[1])
 
         // Always prefer the file's name over the name property stored in the json.
         if (!diskState.config) diskState.config = {};
@@ -184,7 +184,7 @@ export function loadFromTxt(txtContent, fileName) {
 
         if (chars.some(row => row.length > 0)) {
             cel = { chars: chars }
-            dimensions = [Math.max(...chars.map(row => row.length)), chars.length]
+            dimensions = [chars.length, Math.max(...chars.map(row => row.length))]
         }
 
         load({
@@ -206,7 +206,7 @@ export function loadFromTxt(txtContent, fileName) {
 
 // When making breaking state changes, increment this version and provide migrations so that files loaded from local
 // storage or disk still work.
-const CURRENT_VERSION = 5;
+const CURRENT_VERSION = 7;
 
 /**
  * Migrates a state object to the latest version. A state object might be out-of-date if it was saved from an earlier
@@ -222,6 +222,9 @@ function migrateState(state, source) {
     if (state.version === 3) migrateToV4(state);
     if (state.version === 4) migrateToV5(state);
     if (state.version === 5) migrateToV6(state);
+    if (state.version === 6) migrateToV7(state);
+
+    if (state.version !== CURRENT_VERSION) console.error("Version error in state migration: ", state.version);
 }
 
 function migrateToV2(state) {
@@ -307,7 +310,15 @@ function migrateToV6(state) {
     delete state.timeline.frames
     delete state.timeline.cels
 
-    state.version = 5;
+    state.version = 6;
+}
+
+function migrateToV7(state) {
+    if (state.config && state.config.dimensions) {
+        state.config.dimensions = [state.config.dimensions[1], state.config.dimensions[0]]
+    }
+
+    state.version = 7
 }
 
 

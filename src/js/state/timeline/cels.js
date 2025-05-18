@@ -314,7 +314,7 @@ export function hasCharContent(matchingColor) {
 
 /**
  * Resizes the canvas dimensions. If the canvas shrinks, all content outside of the new dimensions will be truncated.
- * @param {[number, number]} newDimensions - A tuple representing [num columns, num rows] of the new dimensions
+ * @param {[number, number]} newDimensions - An array representing [num rows, num cols] of the new dimensions
  * @param {number|'top'|'middle'|'bottom'} rowOffset - If an integer is provided, it will determine the starting row
  *   for the content in the new dimensions. Alternatively, a string 'top'/'middle'/'bottom' can be given to anchor the
  *   content to the top, middle, or bottom row in the new dimensions.
@@ -327,12 +327,12 @@ export function resize(newDimensions, rowOffset, colOffset) {
             break;
         case 'middle':
             // Use ceil when growing and floor when shrinking, so content stays in the same place if you do one after the other
-            rowOffset = newDimensions[1] > numRows() ?
-                Math.ceil((numRows() - newDimensions[1]) / 2) :
-                Math.floor((numRows() - newDimensions[1]) / 2)
+            rowOffset = newDimensions[0] > numRows() ?
+                Math.ceil((numRows() - newDimensions[0]) / 2) :
+                Math.floor((numRows() - newDimensions[0]) / 2)
             break;
         case 'bottom':
-            rowOffset = numRows() - newDimensions[1];
+            rowOffset = numRows() - newDimensions[0];
             break;
     }
 
@@ -342,12 +342,12 @@ export function resize(newDimensions, rowOffset, colOffset) {
             break;
         case 'middle':
             // Use ceil when growing and floor when shrinking, so content stays in the same place if you do one after the other
-            colOffset = newDimensions[0] > numCols() ?
-                Math.ceil((numCols() - newDimensions[0]) / 2) :
-                Math.floor((numCols() - newDimensions[0]) / 2)
+            colOffset = newDimensions[1] > numCols() ?
+                Math.ceil((numCols() - newDimensions[1]) / 2) :
+                Math.floor((numCols() - newDimensions[1]) / 2)
             break;
         case 'right':
-            colOffset = numCols() - newDimensions[0];
+            colOffset = numCols() - newDimensions[1];
             break;
     }
 
@@ -355,8 +355,8 @@ export function resize(newDimensions, rowOffset, colOffset) {
         let resizedChars = [];
         let resizedColors = [];
 
-        for (let r = 0; r < newDimensions[1]; r++) {
-            for (let c = 0; c < newDimensions[0]; c++) {
+        for (let r = 0; r < newDimensions[0]; r++) {
+            for (let c = 0; c < newDimensions[1]; c++) {
                 if (resizedChars[r] === undefined) { resizedChars[r] = []; }
                 if (resizedColors[r] === undefined) { resizedColors[r] = []; }
 

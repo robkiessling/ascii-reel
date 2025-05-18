@@ -10,7 +10,7 @@ export const DEFAULT_STATE = {
     projectType: 'animation',
     colorMode: 'monochrome',
     createdAt: undefined,
-    dimensions: [30, 15], // [numCols, numRows]
+    dimensions: [15, 30], // [numRows, numCols]
     background: new Color('rgba(255,255,255,1)')[COLOR_FORMAT],
     font: 'monospace',
     fps: 6,
@@ -75,10 +75,10 @@ export function updateStateFromHistory(updates) {
 }
 
 export function numRows() {
-    return state.dimensions[1];
+    return state.dimensions[0];
 }
 export function numCols() {
-    return state.dimensions[0];
+    return state.dimensions[1];
 }
 
 export function setConfig(key, newValue) {

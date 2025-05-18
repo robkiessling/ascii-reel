@@ -46,7 +46,7 @@ function setupNew() {
 
             state.loadNewState(
                 projectTypePicker.value,
-                [dimensionsPicker.value.numCols, dimensionsPicker.value.numRows],
+                [dimensionsPicker.value.numRows, dimensionsPicker.value.numCols],
                 colorModePicker.value,
                 backgroundPicker.value
             )
@@ -73,8 +73,8 @@ function setupNew() {
         unsavedWarning.toggle(state.isDirty());
         projectTypePicker.value = DEFAULT_CONFIG.projectType
         dimensionsPicker.value = {
-            numRows: DEFAULT_CONFIG.dimensions[1],
-            numCols: DEFAULT_CONFIG.dimensions[0]
+            numRows: DEFAULT_CONFIG.dimensions[0],
+            numCols: DEFAULT_CONFIG.dimensions[1]
         }
         colorModePicker.value = DEFAULT_CONFIG.colorMode
         backgroundPicker.mode = DEFAULT_CONFIG.colorMode;
