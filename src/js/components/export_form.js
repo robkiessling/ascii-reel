@@ -17,6 +17,8 @@ const VALIDATORS = {
     spritesheetRows: { type: 'integer' }
 }
 
+const SHOW_IF_CONFIG = 'config'; // See _createHTML for details
+
 export default class ExportForm {
     constructor($container, options = {}) {
         this.$container = $container;
@@ -118,11 +120,13 @@ export default class ExportForm {
      *
      * Elements can be conditionally displayed using the `data-show-if` attribute.
      * Example:
-     *     data-show-if="format=png,json;frames=spritesheet"
+     *     data-show-if="format=png,json;frames=spritesheet;${SHOW_IF_CONFIG}.projectType=animation"
      *
      * This means the element will be shown if:
      * - The input with name 'format' has the value 'png' or 'json', AND
      * - The input with name 'frames' has the value 'spritesheet'.
+     * - SHOW_IF_CONFIG is a special string indicating that the field should be shown based on some config value.
+     *   In this case, the project's 'projectType' would have to be 'animation'
      */
     _createHTML() {
         this.$container.append(`
@@ -167,16 +171,16 @@ export default class ExportForm {
                 <input type="text" name="height" placeholder="height">
                 <a class="set-default-dimensions ml-1">Set to default</a>
             </div>
-            <label data-show-if="format=html,gif,webm">
+            <label data-show-if="format=html,gif,webm;${SHOW_IF_CONFIG}.projectType=animation">
                 FPS: <input type="text" name="fps">
             </label>
             <label data-show-if="format=png,rtf,html,gif,webm">
                 <input type="checkbox" name="background" checked="checked"> Include Background
             </label>
-            <label data-show-if="format=html">
+            <label data-show-if="format=html;${SHOW_IF_CONFIG}.projectType=animation">
                 <input type="checkbox" name="loop" checked="checked"> Loop
             </label>
-            <label data-show-if="format=png,txt,rtf">
+            <label data-show-if="format=png,txt,rtf;${SHOW_IF_CONFIG}.projectType=animation">
                 Frames:
                 <select name="frames">
                     <option value="current">Current Frame</option>
@@ -184,12 +188,12 @@ export default class ExportForm {
                     <option value="spritesheet">Spritesheet</option>
                 </select>
             </label>
-            <label data-show-if="format=png;frames=spritesheet">
+            <label data-show-if="format=png;frames=spritesheet;${SHOW_IF_CONFIG}.projectType=animation">
                 Spritesheet layout:
                 <input type="number" name="spritesheetColumns"> columns,
                 <input type="number" name="spritesheetRows"> rows
             </label>
-            <label data-show-if="format=txt,rtf;frames=spritesheet">
+            <label data-show-if="format=txt,rtf;frames=spritesheet;${SHOW_IF_CONFIG}.projectType=animation">
                 Frame Separator:
                 <select name="frameSeparator">
                     <option value="none">None</option>
@@ -208,7 +212,8 @@ export default class ExportForm {
                     <div id="example-text"><pre></pre></div>
                 </div>
             </div>
-            <div class="export-warning" data-show-if="format=png;frames=spritesheet" data-prevent-export="true">
+            <div class="export-warning" data-show-if="format=png;frames=spritesheet;${SHOW_IF_CONFIG}.projectType=animation" 
+                 data-prevent-export="true">
                 <div>
                     <span class="ri ri-fw ri-error-warning-line"></span>
                     Spritesheet PNG export is not yet supported.
@@ -264,8 +269,15 @@ export default class ExportForm {
                 .forEach(condition => {
                     const [name, allowedValuesStr] = condition.split('=');
                     const allowedValues = allowedValuesStr.split(',');
-                    const actualValue = this._getOptionVal(name);
-                    if (!actualValue || !allowedValues.includes(actualValue)) conditionsMet = false;
+                    if (name.startsWith(SHOW_IF_CONFIG)) {
+                        const configKey = name.split('.')[1];
+                        const actualValue = state.getConfig(configKey);
+                        if (!actualValue || !allowedValues.includes(actualValue)) conditionsMet = false;
+                    }
+                    else {
+                        const actualValue = this._getOptionVal(name);
+                        if (!actualValue || !allowedValues.includes(actualValue)) conditionsMet = false;
+                    }
                 })
 
             $element.toggleClass('hidden', !conditionsMet);

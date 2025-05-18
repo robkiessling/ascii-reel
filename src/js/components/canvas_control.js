@@ -204,12 +204,6 @@ export default class CanvasControl {
         }, 1000 / 5, true);
     }
 
-    preventStandardRightClick() {
-        this.$canvas.off('contextmenu.canvas').on('contextmenu.canvas', evt => {
-            return false;
-        });
-    }
-
     _drawCursor(cell) {
         const now = new Date();
 
