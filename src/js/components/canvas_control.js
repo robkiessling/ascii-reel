@@ -151,48 +151,51 @@ export default class CanvasControl {
             needsRestore = true;
         }
 
-        // Convert individual glyphs into lines of text (of matching color), so we can call fillText as few times as possible
-        let lines = [];
-        let row, col, rowLength = glyphs.chars.length, colLength = glyphs.chars[0].length;
+        // Group consecutive glyphs with identical styles into text runs, minimizing the number of fillText calls
+        const runs = [];
+        const rowLength = glyphs.chars.length;
+        const colLength = glyphs.chars[0].length;
 
-        for (row = 0; row < rowLength; row++) {
-            let line, colorIndex, char, prevChar;
-            for (col = 0; col < colLength; col++) {
-                char = glyphs.chars[row][col];
-                colorIndex = glyphs.colors[row][col];
-                prevChar = col === 0 ? undefined : glyphs.chars[row][col - 1];
+        for (let row = 0; row < rowLength; row++) {
+            let run = null;
+
+            for (let col = 0; col < colLength; col++) {
+                let char = glyphs.chars[row][col];
+                let colorIndex = glyphs.colors[row][col];
+                const prevChar = col === 0 ? undefined : glyphs.chars[row][col - 1];
 
                 if (options.mask && !options.mask(row, col)) char = EMPTY_CHAR;
                 if (options.showWhitespace && glyphs.chars[row][col] === WHITESPACE_CHAR) {
                     char = VISIBLE_WHITESPACE_CHAR;
                     colorIndex = VISIBLE_WHITESPACE_COLOR_INDEX;
                 }
-                if (char === EMPTY_CHAR) char = WHITESPACE_CHAR; // Every char needs to have width
+                if (char === EMPTY_CHAR) char = WHITESPACE_CHAR; // Ensure all chars take up space
 
-                // Under some circumstances, we need to start a new line in the same row:
+                // Under some circumstances, we need to start a new run in the same row:
                 // - if the new char has a different color (and it's not just whitespace)
                 // - if the previous char has longer width than a normal monospaced char
-                if (line && (
-                    (colorIndex !== line.colorIndex && char !== WHITESPACE_CHAR) ||
+                if (run && (
+                    (colorIndex !== run.colorIndex && char !== WHITESPACE_CHAR) ||
                     (prevChar && isMonospaceUnsafeChar(prevChar))
                 )) {
-                    lines.push(line);
-                    line = null;
+                    runs.push(run);
+                    run = null;
                 }
 
-                if (!line) line = { row, col, colorIndex: colorIndex, text: '' }
+                if (!run) run = { row, col, colorIndex: colorIndex, text: '' }
 
-                line.text += char;
+                run.text += char;
             }
-            if (line) { lines.push(line); }
+
+            if (run) runs.push(run);
         }
-        lines.forEach(line => {
-            this.context.fillStyle = line.colorIndex === VISIBLE_WHITESPACE_COLOR_INDEX ?
+        runs.forEach(run => {
+            this.context.fillStyle = run.colorIndex === VISIBLE_WHITESPACE_COLOR_INDEX ?
                 VISIBLE_WHITESPACE_COLOR :
-                colorStr(line.colorIndex)
+                colorStr(run.colorIndex)
 
             // For y value, increase row by 0.5 so it is centered in cell
-            this.context.fillText(line.text, Cell.x(line.col), Cell.y(line.row + 0.5));
+            this.context.fillText(run.text, Cell.x(run.col), Cell.y(run.row + 0.5));
         });
 
         if (needsRestore) this.context.restore();
