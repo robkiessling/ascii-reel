@@ -6,7 +6,7 @@ import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
 import {hoverColor, HOVER_CELL_OPACITY, PRIMARY_COLOR, SELECTION_COLOR, checkerboardColors} from "../config/colors.js";
-import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR, isMonospaceUnsafeChar} from "../config/chars.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 4;
@@ -156,10 +156,11 @@ export default class CanvasControl {
         let row, col, rowLength = glyphs.chars.length, colLength = glyphs.chars[0].length;
 
         for (row = 0; row < rowLength; row++) {
-            let line, colorIndex, char;
+            let line, colorIndex, char, prevChar;
             for (col = 0; col < colLength; col++) {
                 char = glyphs.chars[row][col];
                 colorIndex = glyphs.colors[row][col];
+                prevChar = col === 0 ? undefined : glyphs.chars[row][col - 1];
 
                 if (options.mask && !options.mask(row, col)) char = EMPTY_CHAR;
                 if (options.showWhitespace && glyphs.chars[row][col] === WHITESPACE_CHAR) {
@@ -168,8 +169,13 @@ export default class CanvasControl {
                 }
                 if (char === EMPTY_CHAR) char = WHITESPACE_CHAR; // Every char needs to have width
 
-                // If current char is different from current line's color (and is not WHITESPACE_CHAR), need to make a new line
-                if (line && colorIndex !== line.colorIndex && char !== WHITESPACE_CHAR) {
+                // Under some circumstances, we need to start a new line in the same row:
+                // - if the new char has a different color (and it's not just whitespace)
+                // - if the previous char has longer width than a normal monospaced char
+                if (line && (
+                    (colorIndex !== line.colorIndex && char !== WHITESPACE_CHAR) ||
+                    (prevChar && isMonospaceUnsafeChar(prevChar))
+                )) {
                     lines.push(line);
                     line = null;
                 }
