@@ -26,7 +26,7 @@ export const DEFAULT_STATE = {
     showOnion: false,
     showTicks: false,
     lockLayerVisibility: true,
-    tool: 'draw-freeform',
+    tool: 'text-editor',
     primaryColor: DEFAULT_COLOR,
     primaryChar: 'A',
     brush: {
@@ -41,6 +41,7 @@ export const DEFAULT_STATE = {
     },
     lastExportOptions: null,
     cursorPosition: {},
+    cursorMode: 'I-beam' // vs. block
 }
 
 // Only the following config keys are saved to history; undo/redo will not affect the other config

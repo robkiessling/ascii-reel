@@ -40,7 +40,7 @@ export function recalculateCanvasColors() {
         majorGridColor = colorFromHslaArray([h, s, l + MAJOR_GRID_LIGHTNESS_DELTA, 1]);
     }
     else {
-        hoverColor = colorFromHslaArray([h, s, l - HOVER_LIGHTNESS_DELTA, 1])[state.COLOR_FORMAT];
+        hoverColor = colorFromHslaArray([h, s, l - HOVER_LIGHTNESS_DELTA, 1]);
 
         // minor grid is a little darker, major grid is a lot darker
         minorGridColor = colorFromHslaArray([h, s, l - MINOR_GRID_LIGHTNESS_DELTA, 1]);
@@ -49,7 +49,8 @@ export function recalculateCanvasColors() {
 }
 
 function colorFromHslaArray(hsla) {
-    const [h, s, l, a] = hsla;
+    let [h, s, l, a] = hsla;
+    l = Math.min(1.0, Math.max(0.0, l));
     return new Color(`hsla(${h * 360},${s * 100}%,${l * 100}%,1)`)[state.COLOR_FORMAT]
 }
 

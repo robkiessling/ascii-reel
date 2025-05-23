@@ -17,8 +17,10 @@ const VISIBLE_WHITESPACE_COLOR_INDEX = -1;
 
 const OUTLINE_WIDTH = 0.5;
 
-const CURSOR_CELL_COLOR = SELECTION_COLOR;
-const CURSOR_WIDTH = 0.5;
+const CURSOR_BLOCK_COLOR = SELECTION_COLOR;
+const CURSOR_BLOCK_LINE_WIDTH = 0.5;
+const CURSOR_I_BEAM_WIDTH = 1;
+const CURSOR_BLINK_CYCLE = 800;
 
 const DASH_OUTLINE_LENGTH = 5;
 const DASH_OUTLINE_FPS = 60;
@@ -207,13 +209,21 @@ export default class CanvasControl {
         polygons.forEach(polygon => polygon.draw(this.context));
     }
 
-    drawCursorCell(cell) {
+    /**
+     * Draws a blinking cursor at the given cell
+     * @param cell - Cell to draw cursor in
+     * @param cursorMode - Either I-beam or block mode. I-beam renders the cursor as a skinny blinking I-shaped bar.
+     *   block renders the cursor as a blinking block the size of the cell.
+     * @param getCursorColor - Function that returns the color to use for the I-beam cursor. The block cursor color is
+     *   not affected.
+     */
+    drawCursorCell(cell, cursorMode, getCursorColor) {
         this._cursorInterval = setIntervalUsingRAF(() => {
-            this._drawCursor(cell);
-        }, 1000 / 5, true);
+            this._drawCursor(cell, cursorMode, getCursorColor());
+        }, 50, true);
     }
 
-    _drawCursor(cell) {
+    _drawCursor(cell, cursorMode, cursorColor) {
         const now = new Date();
 
         // If a new cell is being targeted, we want to immediately show the cursor
@@ -223,16 +233,41 @@ export default class CanvasControl {
         }
 
         const elapsed = now - this._textCursorCellStart;
+        const showCursor = elapsed % CURSOR_BLINK_CYCLE < CURSOR_BLINK_CYCLE / 2;
 
-        // Alternate cursor every 500ms
-        if (elapsed % 1000 <= 500) {
-            this.context.strokeStyle = CURSOR_CELL_COLOR;
-            this.context.fillStyle = CURSOR_CELL_COLOR;
-            this.context.lineWidth = CURSOR_WIDTH;
+        if (cursorMode === 'I-beam') {
+            this._toggleCursorIBeam(showCursor, cell, cursorColor);
+        } else {
+            this._toggleCursorBlock(showCursor, cell);
+        }
+    }
+
+    _toggleCursorIBeam(show, cell, cursorColor) {
+        if (show) {
+            this.context.strokeStyle = cursorColor;
+            this.context.lineWidth = CURSOR_I_BEAM_WIDTH;
+
+            this.context.beginPath();
+            cell = cell.clone();
+            this.context.moveTo(cell.x + OUTLINE_WIDTH + CURSOR_I_BEAM_WIDTH, cell.y + OUTLINE_WIDTH);
+            cell.translate(1, 0);
+            this.context.lineTo(cell.x + OUTLINE_WIDTH + CURSOR_I_BEAM_WIDTH, cell.y - OUTLINE_WIDTH);
+            this.context.stroke();
+        } else {
+            // Reduce rect size by half an outline width
+            const innerRect = new Rect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
+            this.context.clearRect(...innerRect.xywh);
+        }
+    }
+
+    _toggleCursorBlock(show, cell) {
+        if (show) {
+            this.context.strokeStyle = CURSOR_BLOCK_COLOR;
+            this.context.fillStyle = CURSOR_BLOCK_COLOR;
+            this.context.lineWidth = CURSOR_BLOCK_LINE_WIDTH;
 
             this.context.fillRect(...cell.xywh);
-        }
-        else {
+        } else {
             // Clearing a rect that is a little larger than the cell -- for some reason there are sometimes stray pixels
             // right along the cell edge at certain zoom levels
             const outerRect = new Rect(cell.x - OUTLINE_WIDTH / 2, cell.y - OUTLINE_WIDTH / 2, cell.width + OUTLINE_WIDTH, cell.height + OUTLINE_WIDTH);
@@ -446,6 +481,16 @@ export default class CanvasControl {
         const point = this.pointAtExternalXY(x, y);
         const row = Math.floor(point.y / fontHeight);
         const col = Math.floor(point.x / fontWidth);
+        return new Cell(row, col);
+    }
+
+    // Getting the "cursor" positioning is slightly different than just getting the corresponding cell; we round the x
+    // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
+    // click on the right half of a character, it will round up to the next character
+    cursorAtExternalXY(x, y) {
+        const point = this.pointAtExternalXY(x, y);
+        const row = Math.floor(point.y / fontHeight);
+        const col = Math.round(point.x / fontWidth);
         return new Cell(row, col);
     }
 

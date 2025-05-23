@@ -264,22 +264,32 @@ function redrawSelection() {
     }
 
     if (selection.cursorCell()) {
-        selectionCanvas.drawCursorCell(selection.cursorCell());
+        const cursorCanvas = state.getConfig('cursorMode') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
+        cursorCanvas.drawCursorCell(selection.cursorCell(), state.getConfig('cursorMode'), () => state.getConfig('primaryColor'));
     }
 
     refreshCanvasDetails();
 }
 
-const HIDE_HOVER_EFFECT_FOR_TOOLS = new Set([
-    // Not showing hover cell for these tools since they affect entire canvas, not one cell
-    'pan',
-    'move-all'
-])
+function showHoverForTool() {
+    switch(state.getConfig('tool')) {
+        case 'text-editor':
+            // If text-editor is in I-beam mode, not showing hover because clicking on a cell does not necessarily
+            // go to that cell (it gets rounded up/down -- see cursorAtExternalXY)
+            return state.getConfig('cursorMode') !== 'I-beam';
+        case 'pan':
+        case 'move-all':
+            // Not showing hover cell for these tools since they affect entire canvas, not one cell
+            return false;
+        default:
+            return true;
+    }
+}
 
 function redrawHover() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell && !selection.isDrawing && !selection.isMoving && !HIDE_HOVER_EFFECT_FOR_TOOLS.has(state.getConfig('tool'))) {
+    if (hoveredCell && !selection.isDrawing && !selection.isMoving && showHoverForTool()) {
         hoveredCells(hoveredCell).forEach(cell => {
             if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
         })

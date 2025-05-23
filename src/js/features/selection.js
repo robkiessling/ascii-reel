@@ -8,6 +8,7 @@ import SelectionRect from "../geometry/selection/rect.js";
 import SelectionWand from "../geometry/selection/wand.js";
 import SelectionLine from "../geometry/selection/line.js";
 import SelectionLasso from "../geometry/selection/lasso.js";
+import SelectionText from "../geometry/selection/text.js";
 import {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -29,8 +30,13 @@ export function init() {
     clearCaches();
 }
 
-// Returns true if there is any area selected
+// Returns true if there is any amount of area selected
 export function hasSelection() {
+    return polygons.some(polygon => polygon.hasArea);
+}
+
+// Returns true if there is a selection target: any selected area or an I-beam cursor
+export function hasTarget() {
     return polygons.length > 0;
 }
 
@@ -315,6 +321,10 @@ function setupEventBus() {
                     polygons.push(wand);
                     break;
                 case 'text-editor':
+                    if (state.getConfig('cursorMode') === 'I-beam') {
+                        cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+                    }
+
                     if (polygons.length === 0) {
                         moveCursorTo(cell)
                     }
@@ -330,10 +340,13 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ cell }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvasControl }) => {
         // TODO This could be more efficient, could just trigger refreshes if cell is different than last?
 
         if (isDrawing) {
+            if (state.getConfig('cursorMode') === 'I-beam') {
+                cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+            }
             lastPolygon().end = cell;
             eventBus.emit(EVENTS.SELECTION.CHANGED);
         }
@@ -424,10 +437,17 @@ let cursorCellOrigin; // Where to move from on return key
 // We show a blinking cursor cell if using the text-editor tool and a single 1x1 square is selected
 export function cursorCell() {
     if (state.getConfig('tool') !== 'text-editor') return null;
-    if (!hasSelection()) return null;
     if (movableContent) return null;
-    if (!polygons[0].topLeft.equals(polygons[0].bottomRight)) return null;
-    return polygons[0].topLeft;
+
+    if (state.getConfig('cursorMode') === 'I-beam') {
+        if (!hasTarget()) return null;
+        if (hasSelection()) return null;
+        return polygons[0].topLeft;
+    } else {
+        if (!hasSelection()) return null;
+        if (!polygons[0].topLeft.equals(polygons[0].bottomRight)) return null;
+        return polygons[0].topLeft;
+    }
 }
 
 export function moveCursorTo(cell, updateOrigin = true) {
@@ -438,7 +458,12 @@ export function moveCursorTo(cell, updateOrigin = true) {
 
     if (movableContent) { finishMovingContent(); } // Cannot move content and show cursor at the same time
 
-    polygons = [new SelectionRect(cell)];
+    if (state.getConfig('cursorMode') === 'I-beam') {
+        polygons = [new SelectionText(cell)]
+    } else {
+        polygons = [new SelectionRect(cell)];
+    }
+
     state.setConfig('cursorPosition', cell.serialize());
 
     if (updateOrigin) {
@@ -486,17 +511,22 @@ export function handleArrowKey(direction, shiftKey) {
         return;
     }
 
+    // If in text-editor and there is a selection, jump cursor to start/end of the selection area
     if (state.getConfig('tool') === 'text-editor' && !cursorCell() && !movableContent) {
-        // Jump cursor to start/end of the selection area
         switch(direction) {
             case 'left':
-            case 'up':
                 moveCursorTo(polygons[0].topLeft);
                 break;
+            case 'up':
+                moveCursorTo(nextCursorPosition(polygons[0].topLeft, 'up', 1, false));
+                break;
             case 'right':
-            case 'down':
                 // Cursor actually needs to go one cell to the right of the selection end
-                moveCursorTo(nextCursorPosition(polygons[0].bottomRight, 'right', 1));
+                moveCursorTo(nextCursorPosition(polygons[0].bottomRight, 'right', 1, false));
+                break;
+            case 'down':
+                const right = nextCursorPosition(polygons[0].bottomRight, 'right', 1, false);
+                moveCursorTo(nextCursorPosition(right, 'down', 1, false));
                 break;
             default:
                 console.warn(`Invalid direction: ${direction}`);
@@ -590,7 +620,7 @@ export function moveInDirection(direction, options = {}) {
     const updateCursorOrigin = options.updateCursorOrigin === undefined ? true : options.updateCursorOrigin;
     const wrapCursorPosition = options.wrapCursorPosition === undefined ? true : options.wrapCursorPosition;
 
-    if (!hasSelection()) return;
+    if (!hasTarget()) return;
 
     if (cursorCell()) {
         moveCursorTo(nextCursorPosition(cursorCell(), direction, amount, wrapCursorPosition), updateCursorOrigin);
@@ -619,7 +649,7 @@ export function moveInDirection(direction, options = {}) {
 }
 
 export function extendInDirection(direction, amount = 1) {
-    if (!hasSelection()) return;
+    if (!hasTarget()) return;
     if (movableContent) return; // Cannot extend while moving content
 
     switch(direction) {

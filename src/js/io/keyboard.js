@@ -123,7 +123,7 @@ function handleBackspaceKey(char) {
 function handleArrowKey(e, arrowKey) {
     const direction = arrowKeyToDirection(arrowKey);
 
-    if (selection.hasSelection()) {
+    if (selection.hasTarget()) {
         state.endHistoryModification();
 
         selection.handleArrowKey(direction, e.shiftKey);

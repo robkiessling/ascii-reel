@@ -64,4 +64,10 @@ export default class SelectionPolygon {
         this.start.col = flipCol(this.start.col);
         this.end.col = flipCol(this.end.col);
     }
+
+    // Return true if the polygon has visible area. By default, even the smallest polygon occupies a 1x1 cell and is
+    // visible. Some subclasses override this.
+    hasArea() {
+        return true;
+    }
 }
