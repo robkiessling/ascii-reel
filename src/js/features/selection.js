@@ -35,7 +35,7 @@ export function hasSelection() {
     return polygons.some(polygon => polygon.hasArea);
 }
 
-// Returns true if there is a selection target: any selected area or an I-beam cursor
+// Returns true if there is a selection target: any selected area or an I-beam caret
 export function hasTarget() {
     return polygons.length > 0;
 }
@@ -79,15 +79,15 @@ export function allowMovement(tool, mouseEvent) {
     return true;
 }
 
-export function setSelectionToSingleChar(char, color, moveCursor = true) {
+export function setSelectionToSingleChar(char, color, moveCaret = true) {
     if (movableContent) {
         // Update entire movable content
         updateMovableContent(char, color);
     }
-    else if (cursorCell()) {
-        // Update cursor cell and then move to next cell
-        state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, char, color);
-        if (moveCursor) moveInDirection('right', { updateCursorOrigin: false });
+    else if (caretCell()) {
+        // Update caret cell and then move to next cell
+        state.setCurrentCelGlyph(caretCell().row, caretCell().col, char, color);
+        if (moveCaret) moveInDirection('right', { updateCaretOrigin: false });
     }
     else if (hasSelection()) {
         // Update entire selection
@@ -321,12 +321,12 @@ function setupEventBus() {
                     polygons.push(wand);
                     break;
                 case 'text-editor':
-                    if (state.getConfig('cursorMode') === 'I-beam') {
-                        cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+                    if (state.getConfig('caretStyle') === 'I-beam') {
+                        cell = canvasControl.caretAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
                     }
 
                     if (polygons.length === 0) {
-                        moveCursorTo(cell)
+                        moveCaretTo(cell)
                     }
                     else {
                         // This case only happens if there is already a selection and the user holds shift and clicks on a
@@ -344,8 +344,8 @@ function setupEventBus() {
         // TODO This could be more efficient, could just trigger refreshes if cell is different than last?
 
         if (isDrawing) {
-            if (state.getConfig('cursorMode') === 'I-beam') {
-                cell = canvasControl.cursorAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+            if (state.getConfig('caretStyle') === 'I-beam') {
+                cell = canvasControl.caretAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
             }
             lastPolygon().end = cell;
             eventBus.emit(EVENTS.SELECTION.CHANGED);
@@ -373,10 +373,10 @@ function setupEventBus() {
             isMoving = false;
 
             // For text-editor, if you click somewhere in the selected area (and we're not trying to move the underlying
-            // content or the selected area) it will immediately place the cursor into that spot, removing the selection.
+            // content or the selected area) it will immediately place the caret into that spot, removing the selection.
             if (tool === 'text-editor' && !movableContent && !hasMoved) {
                 clear();
-                moveCursorTo(cell);
+                moveCaretTo(cell);
             }
             else {
                 eventBus.emit(EVENTS.SELECTION.CHANGED)
@@ -431,15 +431,15 @@ export function updateMovableContent(char, color) {
 }
 
 
-// -------------------------------------------------------------------------------- Cursor
-let cursorCellOrigin; // Where to move from on return key
+// -------------------------------------------------------------------------------- Caret
+let caretOrigin; // Where to move from on return key
 
-// We show a blinking cursor cell if using the text-editor tool and a single 1x1 square is selected
-export function cursorCell() {
+// We show a blinking caret if using the text-editor tool and a single 1x1 square is selected
+export function caretCell() {
     if (state.getConfig('tool') !== 'text-editor') return null;
     if (movableContent) return null;
 
-    if (state.getConfig('cursorMode') === 'I-beam') {
+    if (state.getConfig('caretStyle') === 'I-beam') {
         if (!hasTarget()) return null;
         if (hasSelection()) return null;
         return polygons[0].topLeft;
@@ -450,38 +450,38 @@ export function cursorCell() {
     }
 }
 
-export function moveCursorTo(cell, updateOrigin = true) {
+export function moveCaretTo(cell, updateOrigin = true) {
     if (state.getConfig('tool') !== 'text-editor') {
-        console.warn('Can only call moveCursorTo if tool is text-editor')
+        console.warn('Can only call moveCaretTo if tool is text-editor')
         return;
     }
 
-    if (movableContent) { finishMovingContent(); } // Cannot move content and show cursor at the same time
+    if (movableContent) { finishMovingContent(); } // Cannot move content and show caret at the same time
 
-    if (state.getConfig('cursorMode') === 'I-beam') {
+    if (state.getConfig('caretStyle') === 'I-beam') {
         polygons = [new SelectionText(cell)]
     } else {
         polygons = [new SelectionRect(cell)];
     }
 
-    state.setConfig('cursorPosition', cell.serialize());
+    state.setConfig('caretPosition', cell.serialize());
 
     if (updateOrigin) {
-        cursorCellOrigin = cell;
+        caretOrigin = cell;
 
-        // Update the current history slice so that if you undo to the slice, the cursor will be at the most recent position
+        // Update the current history slice so that if you undo to the slice, the caret will be at the most recent position
         // TODO Is there a way to do this using state's setConfig somehow?
-        state.modifyHistory(historySlice => historySlice.config.cursorPosition = cell.serialize())
+        state.modifyHistory(historySlice => historySlice.config.caretPosition = cell.serialize())
     }
 
     eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
-export function syncTextEditorCursorPos() {
+export function syncTextEditorCaretPosition() {
     if (state.getConfig('tool') !== 'text-editor') return;
 
-    const deserializedCell = Cell.deserialize(state.getConfig('cursorPosition'));
-    if (deserializedCell) moveCursorTo(deserializedCell, false);
+    const deserializedCell = Cell.deserialize(state.getConfig('caretPosition'));
+    if (deserializedCell) moveCaretTo(deserializedCell, false);
 }
 
 
@@ -511,22 +511,21 @@ export function handleArrowKey(direction, shiftKey) {
         return;
     }
 
-    // If in text-editor and there is a selection, jump cursor to start/end of the selection area
-    if (state.getConfig('tool') === 'text-editor' && !cursorCell() && !movableContent) {
+    // If in text-editor and there is a selection, jump caret to start/end of the selection area
+    if (state.getConfig('tool') === 'text-editor' && !caretCell() && !movableContent) {
         switch(direction) {
             case 'left':
-                moveCursorTo(polygons[0].topLeft);
+                moveCaretTo(polygons[0].topLeft);
                 break;
             case 'up':
-                moveCursorTo(nextCursorPosition(polygons[0].topLeft, 'up', 1, false));
+                moveCaretTo(nextCaretPosition(polygons[0].topLeft, 'up', 1, false));
                 break;
             case 'right':
-                // Cursor actually needs to go one cell to the right of the selection end
-                moveCursorTo(nextCursorPosition(polygons[0].bottomRight, 'right', 1, false));
+                moveCaretTo(nextCaretPosition(polygons[0].bottomRight, 'right', 1, false));
                 break;
             case 'down':
-                const right = nextCursorPosition(polygons[0].bottomRight, 'right', 1, false);
-                moveCursorTo(nextCursorPosition(right, 'down', 1, false));
+                const right = nextCaretPosition(polygons[0].bottomRight, 'right', 1, false);
+                moveCaretTo(nextCaretPosition(right, 'down', 1, false));
                 break;
             default:
                 console.warn(`Invalid direction: ${direction}`);
@@ -541,14 +540,14 @@ export function handleBackspaceKey(isDelete) {
     if (movableContent) {
         updateMovableContent(EMPTY_CHAR, 0);
     }
-    else if (cursorCell()) {
+    else if (caretCell()) {
         if (isDelete) {
-            state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, EMPTY_CHAR, 0);
-            moveInDirection('right', { updateCursorOrigin: false });
+            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
+            moveInDirection('right', { updateCaretOrigin: false });
         }
         else {
-            moveInDirection('left', { updateCursorOrigin: false });
-            state.setCurrentCelGlyph(cursorCell().row, cursorCell().col, EMPTY_CHAR, 0);
+            moveInDirection('left', { updateCaretOrigin: false });
+            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
         }
     }
     else {
@@ -562,9 +561,9 @@ export function handleBackspaceKey(isDelete) {
 export function handleTabKey(shiftKey) {
     if (shiftKey) {
         // If shift key is pressed, we move in opposite direction
-        moveInDirection('left', { updateCursorOrigin: false });
+        moveInDirection('left', { updateCaretOrigin: false });
     } else {
-        moveInDirection('right', { updateCursorOrigin: false })
+        moveInDirection('right', { updateCaretOrigin: false })
     }
 }
 
@@ -573,19 +572,19 @@ export function handleEnterKey(shiftKey) {
         finishMovingContent();
     }
     else {
-        // Push a state to the history where the cursor is at the end of the current line -- that way when
-        // you undo, the first undo just jumps back to the previous line with cursor at end.
-        if (cursorCell()) state.pushHistory();
+        // Push a state to the history where the caret is at the end of the current line -- that way when
+        // you undo, the first undo just jumps back to the previous line with caret at end.
+        if (caretCell()) state.pushHistory();
 
         if (shiftKey) {
             // If shift key is pressed, we move in opposite direction
             moveInDirection('up')
-        } else if (cursorCell()) {
-            // 'Enter' key differs from 'ArrowDown' in that the cursor will go to the start of the next line (like Excel)
-            let col = cursorCellOrigin.col,
-                row = cursorCell().row + 1;
+        } else if (caretCell()) {
+            // 'Enter' key differs from 'ArrowDown' in that the caret will go to the start of the next line (like Excel)
+            let col = caretOrigin.col,
+                row = caretCell().row + 1;
             if (row >= state.numRows()) row = 0
-            moveCursorTo(new Cell(row, col));
+            moveCaretTo(new Cell(row, col));
         } else {
             moveInDirection('down')
         }
@@ -612,18 +611,18 @@ function moveDelta(rowDelta, colDelta) {
  * @param {string} direction - Direction to move selection ('left'/'up'/'right'/'down')
  * @param {Object} [options={}] - move options
  * @param {number} [options.amount=1] - Number of cells to move the selection
- * @param {boolean} [options.updateCursorOrigin=true] - Whether to update the cursorCellOrigin (where carriage return takes you)
- * @param {boolean} [options.wrapCursorPosition=true] - Whether to wrap the cursor if it goes out of bounds
+ * @param {boolean} [options.updateCaretOrigin=true] - Whether to update the caretOrigin (where carriage return takes you)
+ * @param {boolean} [options.wrapCaretPosition=true] - Whether to wrap the caret if it goes out of bounds
  */
 export function moveInDirection(direction, options = {}) {
     const amount = options.amount === undefined ? 1 : options.amount;
-    const updateCursorOrigin = options.updateCursorOrigin === undefined ? true : options.updateCursorOrigin;
-    const wrapCursorPosition = options.wrapCursorPosition === undefined ? true : options.wrapCursorPosition;
+    const updateCaretOrigin = options.updateCaretOrigin === undefined ? true : options.updateCaretOrigin;
+    const wrapCaretPosition = options.wrapCaretPosition === undefined ? true : options.wrapCaretPosition;
 
     if (!hasTarget()) return;
 
-    if (cursorCell()) {
-        moveCursorTo(nextCursorPosition(cursorCell(), direction, amount, wrapCursorPosition), updateCursorOrigin);
+    if (caretCell()) {
+        moveCaretTo(nextCaretPosition(caretCell(), direction, amount, wrapCaretPosition), updateCaretOrigin);
         return;
     }
 
@@ -673,7 +672,7 @@ export function extendInDirection(direction, amount = 1) {
     if (movableContent) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
 }
 
-function nextCursorPosition(currentPosition, direction, amount, wrapCursorPosition = true) {
+function nextCaretPosition(currentPosition, direction, amount, wrapCaretPosition = true) {
     let col = currentPosition.col, row = currentPosition.row;
 
     switch (direction) {
@@ -693,7 +692,7 @@ function nextCursorPosition(currentPosition, direction, amount, wrapCursorPositi
             console.warn(`Invalid direction: ${direction}`);
     }
 
-    if (wrapCursorPosition) {
+    if (wrapCaretPosition) {
         // Wrap around canvas
         if (col >= state.numCols()) {
             col = 0

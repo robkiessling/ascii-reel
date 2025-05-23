@@ -98,13 +98,14 @@ function handleEscapeKey() {
 
     selection.clear();
 
+    if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
     if (tools.isQuickSwapEnabled()) tools.toggleQuickSwap(false);
 }
 
 function handleTabKey(e) {
     state.endHistoryModification();
 
-    if (selection.cursorCell()) {
+    if (selection.caretCell()) {
         selection.handleTabKey(e.shiftKey);
     }
     else {
@@ -161,8 +162,8 @@ function handleShiftKey(e) {
     eventBus.emit(EVENTS.KEYBOARD.SHIFT_KEY, { shiftKey: e.shiftKey });
 }
 
-function handleSingleCharKey(char, moveCursor = true) {
-    handleChar(char, () => selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCursor))
+function handleSingleCharKey(char, moveCaret = true) {
+    handleChar(char, () => selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCaret))
 }
 
 function handleChar(char, selectionUpdater) {
@@ -174,7 +175,7 @@ function handleChar(char, selectionUpdater) {
 
     if (tools.isQuickSwapEnabled()) tools.selectChar(char);
 
-    if (selection.cursorCell()) {
+    if (selection.caretCell()) {
         selectionUpdater()
     } else if (tools.isQuickSwapEnabled()) {
         if (selection.hasSelection()) selectionUpdater()
@@ -278,7 +279,7 @@ function setupCompositionListener() {
         // We always take the last character, so even if composition failed we still print the failing char (e.g. "x")
         const char = str.charAt(str.length - 1)
 
-        // When writing the char, do not move the cursor yet (moveCursor=false) because we might not be done composing
+        // When writing the char, do not move the caret yet (moveCaret=false) because we might not be done composing
         handleSingleCharKey(char, false);
     });
 
@@ -287,8 +288,8 @@ function setupCompositionListener() {
 
         if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
 
-        // Since we didn't move the cursor in compositionupdate (moveCursor=false), we move the cursor now that
+        // Since we didn't move the caret in compositionupdate (moveCaret=false), we move the caret now that
         // composition is finished
-        selection.moveInDirection('right', { updateCursorOrigin: false })
+        selection.moveInDirection('right', { updateCaretOrigin: false })
     })
 }

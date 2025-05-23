@@ -3,7 +3,7 @@ import SelectionRect from "./rect.js";
 
 /**
  * SelectionText is similar to SelectionRect, but it can occupy 0 width. Similar to selecting text in a text editor,
- * when you first click-and-drag, your cursor highlights a single line between two characters (no chars are selected).
+ * when you first mousedown your caret appears as a single line between two characters (no chars are selected yet).
  * As you drag in a particular direction, you will highlight 0 or more characters. To achieve this effect, we can simply
  * subtract 1 from the end column once the user highlights more than 1 cell.
  */

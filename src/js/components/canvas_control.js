@@ -17,10 +17,10 @@ const VISIBLE_WHITESPACE_COLOR_INDEX = -1;
 
 const OUTLINE_WIDTH = 0.5;
 
-const CURSOR_BLOCK_COLOR = SELECTION_COLOR;
-const CURSOR_BLOCK_LINE_WIDTH = 0.5;
-const CURSOR_I_BEAM_WIDTH = 1;
-const CURSOR_BLINK_CYCLE = 800;
+const CARET_BLOCK_COLOR = SELECTION_COLOR;
+const CARET_BLOCK_LINE_WIDTH = 0.5;
+const CARET_I_BEAM_WIDTH = 1;
+const CARET_BLINK_CYCLE_DURATION = 800;
 
 const DASH_OUTLINE_LENGTH = 5;
 const DASH_OUTLINE_FPS = 60;
@@ -116,7 +116,7 @@ export default class CanvasControl {
     clear() {
         // Clear any animation intervals
         if (this._outlineInterval) { this._outlineInterval.stop(); }
-        if (this._cursorInterval) { this._cursorInterval.stop(); }
+        if (this._caretInterval) { this._caretInterval.stop(); }
 
         // Clear entire canvas
         this._usingFullArea((fullArea) => {
@@ -210,48 +210,48 @@ export default class CanvasControl {
     }
 
     /**
-     * Draws a blinking cursor at the given cell
-     * @param cell - Cell to draw cursor in
-     * @param cursorMode - Either I-beam or block mode. I-beam renders the cursor as a skinny blinking I-shaped bar.
-     *   block renders the cursor as a blinking block the size of the cell.
-     * @param getCursorColor - Function that returns the color to use for the I-beam cursor. The block cursor color is
-     *   not affected.
+     * Draws a blinking caret at the given cell
+     * @param {Cell} cell - Cell to draw caret in
+     * @param {string} caretStyle - Either I-beam or block mode. I-beam renders the caret as a skinny blinking I-shaped bar.
+     *   block renders the caret as a blinking block the size of the cell.
+     * @param {() => string} getCaretColor - Function that returns the color to use for the I-beam caret. The block caret
+     *   color is not affected.
      */
-    drawCursorCell(cell, cursorMode, getCursorColor) {
-        this._cursorInterval = setIntervalUsingRAF(() => {
-            this._drawCursor(cell, cursorMode, getCursorColor());
+    startCaretAnimation(cell, caretStyle, getCaretColor) {
+        this._caretInterval = setIntervalUsingRAF(() => {
+            this._drawCaret(cell, caretStyle, getCaretColor());
         }, 50, true);
     }
 
-    _drawCursor(cell, cursorMode, cursorColor) {
+    _drawCaret(cell, caretStyle, caretColor) {
         const now = new Date();
 
-        // If a new cell is being targeted, we want to immediately show the cursor
-        if (this._textCursorCell === undefined || !this._textCursorCell.equals(cell)) {
-            this._textCursorCell = cell;
-            this._textCursorCellStart = now;
+        // If a new cell is being targeted, we want to immediately show the caret
+        if (this._caretCell === undefined || !this._caretCell.equals(cell)) {
+            this._caretCell = cell;
+            this._caretCellStart = now;
         }
 
-        const elapsed = now - this._textCursorCellStart;
-        const showCursor = elapsed % CURSOR_BLINK_CYCLE < CURSOR_BLINK_CYCLE / 2;
+        const elapsed = now - this._caretCellStart;
+        const showCaret = elapsed % CARET_BLINK_CYCLE_DURATION < CARET_BLINK_CYCLE_DURATION / 2;
 
-        if (cursorMode === 'I-beam') {
-            this._toggleCursorIBeam(showCursor, cell, cursorColor);
+        if (caretStyle === 'I-beam') {
+            this._toggleCaretIBeam(showCaret, cell, caretColor);
         } else {
-            this._toggleCursorBlock(showCursor, cell);
+            this._toggleCaretBlock(showCaret, cell);
         }
     }
 
-    _toggleCursorIBeam(show, cell, cursorColor) {
+    _toggleCaretIBeam(show, cell, caretColor) {
         if (show) {
-            this.context.strokeStyle = cursorColor;
-            this.context.lineWidth = CURSOR_I_BEAM_WIDTH;
+            this.context.strokeStyle = caretColor;
+            this.context.lineWidth = CARET_I_BEAM_WIDTH;
 
             this.context.beginPath();
             cell = cell.clone();
-            this.context.moveTo(cell.x + OUTLINE_WIDTH + CURSOR_I_BEAM_WIDTH, cell.y + OUTLINE_WIDTH);
+            this.context.moveTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y + OUTLINE_WIDTH);
             cell.translate(1, 0);
-            this.context.lineTo(cell.x + OUTLINE_WIDTH + CURSOR_I_BEAM_WIDTH, cell.y - OUTLINE_WIDTH);
+            this.context.lineTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y - OUTLINE_WIDTH);
             this.context.stroke();
         } else {
             // Reduce rect size by half an outline width
@@ -260,11 +260,11 @@ export default class CanvasControl {
         }
     }
 
-    _toggleCursorBlock(show, cell) {
+    _toggleCaretBlock(show, cell) {
         if (show) {
-            this.context.strokeStyle = CURSOR_BLOCK_COLOR;
-            this.context.fillStyle = CURSOR_BLOCK_COLOR;
-            this.context.lineWidth = CURSOR_BLOCK_LINE_WIDTH;
+            this.context.strokeStyle = CARET_BLOCK_COLOR;
+            this.context.fillStyle = CARET_BLOCK_COLOR;
+            this.context.lineWidth = CARET_BLOCK_LINE_WIDTH;
 
             this.context.fillRect(...cell.xywh);
         } else {
@@ -484,10 +484,10 @@ export default class CanvasControl {
         return new Cell(row, col);
     }
 
-    // Getting the "cursor" positioning is slightly different than just getting the corresponding cell; we round the x
+    // Getting the caret positioning is slightly different than just getting the corresponding cell; we round the x
     // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
     // click on the right half of a character, it will round up to the next character
-    cursorAtExternalXY(x, y) {
+    caretAtExternalXY(x, y) {
         const point = this.pointAtExternalXY(x, y);
         const row = Math.floor(point.y / fontHeight);
         const col = Math.round(point.x / fontWidth);

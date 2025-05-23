@@ -13,7 +13,7 @@ import { init as initPalette } from "./features/palette.js";
 import { init as initPreview, resize as resizePreview } from "./features/preview.js";
 import { init as initUnicode } from "./features/unicode.js";
 import { init as initMainCanvas, resize as resizeMainCanvas } from './features/main_canvas.js';
-import { init as initSelection, clear as performClearSelection, syncTextEditorCursorPos } from './features/selection.js';
+import { init as initSelection, clear as performClearSelection, syncTextEditorCaretPosition } from './features/selection.js';
 import {
     init as initState, isValid as isStateValid,
     loadFromLocalStorage, loadBlankState, markClean
@@ -78,7 +78,7 @@ function setupEventBus() {
     
     // History state-change listener:
     eventBus.on(EVENTS.HISTORY.CHANGED, ({ requiresResize, recalculateFont, recalculateColors }) => {
-        syncTextEditorCursorPos();
+        syncTextEditorCaretPosition();
 
         if (recalculateFont) calculateFontRatio()
         if (recalculateColors) recalculateCanvasColors()

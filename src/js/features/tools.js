@@ -357,7 +357,7 @@ function actionIdForSelectionTool(tool) {
 }
 
 function refreshSelectionTools() {
-    const isVisible = selection.hasSelection() && !selection.cursorCell();
+    const isVisible = selection.hasSelection() && !selection.caretCell();
     $selectionTools.toggle(isVisible);
     if (!isVisible) selectionTooltips.tooltips.forEach(tooltip => tooltip.hide())
 
@@ -755,7 +755,7 @@ export function selectChar(char) {
 let quickSwapEnabled = false;
 
 export function isQuickSwapEnabled() {
-    if (selection.hasSelection() && !selection.cursorCell()) return true;
+    if (selection.hasSelection() && !selection.caretCell()) return true;
     return quickSwapEnabled;
 }
 

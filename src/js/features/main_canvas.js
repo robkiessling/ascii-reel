@@ -259,13 +259,13 @@ function redrawSelection() {
 
     selectionCanvas.highlightPolygons(selection.polygons);
 
-    if (selection.hasSelection() && !selection.isDrawing && !selection.cursorCell()) {
+    if (selection.hasSelection() && !selection.isDrawing && !selection.caretCell()) {
         selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
     }
 
-    if (selection.cursorCell()) {
-        const cursorCanvas = state.getConfig('cursorMode') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        cursorCanvas.drawCursorCell(selection.cursorCell(), state.getConfig('cursorMode'), () => state.getConfig('primaryColor'));
+    if (selection.caretCell()) {
+        const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
+        caretCanvas.startCaretAnimation(selection.caretCell(), state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
     }
 
     refreshCanvasDetails();
@@ -275,8 +275,8 @@ function showHoverForTool() {
     switch(state.getConfig('tool')) {
         case 'text-editor':
             // If text-editor is in I-beam mode, not showing hover because clicking on a cell does not necessarily
-            // go to that cell (it gets rounded up/down -- see cursorAtExternalXY)
-            return state.getConfig('cursorMode') !== 'I-beam';
+            // go to that cell (it gets rounded up/down -- see caretAtExternalXY)
+            return state.getConfig('caretStyle') !== 'I-beam';
         case 'pan':
         case 'move-all':
             // Not showing hover cell for these tools since they affect entire canvas, not one cell
