@@ -24,7 +24,7 @@ export {
     TICKS_OPTIONS,
 
     // cels
-    iterateCelsForCurrentLayer, iterateCels, iterateCellsForCel,
+    iterateCelsForCurrentLayer, iterateCels,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph, charInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, colorSwap, hasCharContent
@@ -48,7 +48,7 @@ export function init() {
 export function loadBlankState() {
     try {
         load({
-            timeline: timeline.newSingleCelTimeline()
+            timeline: timeline.newRasterCelTimeline()
         });
     } catch (error) {
         console.error("Failed to load blank state:", error);
@@ -72,7 +72,7 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
                 background: background,
                 primaryColor: primaryColor,
             },
-            timeline: timeline.newSingleCelTimeline(),
+            timeline: timeline.newRasterCelTimeline(),
             palette: paletteState
         })
     } catch (error) {
@@ -91,11 +91,10 @@ function load(data) {
     palette.load(data.palette);
     unicode.load(data.unicode);
 
-    validateProjectType();
-    validateColorMode();
-
     timeline.validate();
     timeline.vacuumColorTable();
+    validateProjectType();
+    validateColorMode();
 
     valid = true; // State is now fully loaded
 
@@ -193,7 +192,7 @@ export function loadFromTxt(txtContent, fileName) {
                 dimensions: dimensions,
                 name: fileName
             },
-            timeline: timeline.newSingleCelTimeline(cel),
+            timeline: timeline.newRasterCelTimeline(cel),
         })
     } catch (error) {
         console.error("Failed to load txt file from disk:", error);

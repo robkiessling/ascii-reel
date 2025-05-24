@@ -23,6 +23,13 @@ export function create2dArray(numRows, numCols, defaultValue) {
     return array;
 }
 
+export function freeze2dArray(arr) {
+    for (const row of arr) {
+        Object.freeze(row);
+    }
+    return Object.freeze(arr);
+}
+
 /**
  * Given an array such as [1, 2, 3, 4, 5, 6, 7, 8, 9] and a rowLength such as 3, will return a result:
  *

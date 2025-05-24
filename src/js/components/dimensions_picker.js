@@ -10,7 +10,7 @@ const MAX_COLUMNS = 500;
 export default class DimensionsPicker {
     constructor($container, options = {}) {
         this.$container = $container;
-        this.options = $.extend({}, DEFAULT_OPTIONS, options);
+        this.options = $.extend(true, {}, DEFAULT_OPTIONS, options);
         this._init();
     }
 

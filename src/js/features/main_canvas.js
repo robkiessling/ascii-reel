@@ -180,7 +180,7 @@ function redrawCharCanvas() {
     }
 
     // Build glyphs for current layer
-    const currentGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend({}, layeredGlyphsOptions, {
+    const currentGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend(true, {}, layeredGlyphsOptions, {
         layers: [state.currentLayer()],
         movableContent: {
             glyphs: selection.movableContent,
@@ -192,10 +192,10 @@ function redrawCharCanvas() {
     // If showing all layers, build glyphs for all-layers-below-current and all-layers-above-current.:
     let belowGlyphs, aboveGlyphs;
     if (!state.getConfig('lockLayerVisibility')) {
-        belowGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend({}, layeredGlyphsOptions, {
+        belowGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend(true, {}, layeredGlyphsOptions, {
             layers: state.layers().slice(0, state.layerIndex())
         }));
-        aboveGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend({}, layeredGlyphsOptions, {
+        aboveGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend(true, {}, layeredGlyphsOptions, {
             layers: state.layers().slice(state.layerIndex() + 1)
         }));
     }

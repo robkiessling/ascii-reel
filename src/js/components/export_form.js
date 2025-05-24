@@ -22,7 +22,7 @@ const SHOW_IF_CONFIG = 'config'; // See _createHTML for details
 export default class ExportForm {
     constructor($container, options = {}) {
         this.$container = $container;
-        this.options = $.extend({}, options);
+        this.options = $.extend(true, {}, options);
         this._init();
     }
 

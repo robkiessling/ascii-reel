@@ -87,7 +87,7 @@ export function previousFrame() {
 }
 
 export function createFrame(index, data) {
-    const frame = $.extend({}, FRAME_DEFAULTS, {
+    const frame = $.extend(true, {}, FRAME_DEFAULTS, {
         id: ++idSequence
     }, data);
 
@@ -104,7 +104,7 @@ export function duplicateFrames(range) {
     const mappings = [];
     range.iterate(frameIndex => {
         const originalFrame = state.frames[frameIndex];
-        const dupFrame = $.extend({}, originalFrame, {
+        const dupFrame = $.extend(true, {}, originalFrame, {
             id: ++idSequence
         });
         mappings.push({ originalFrame, dupFrame })

@@ -11,6 +11,7 @@ import * as celController from './cels.js';
 import ArrayRange, {create2dArray, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
+import {colorSwapCel} from "./cels.js";
 
 
 export function load(data = {}) {
@@ -81,17 +82,20 @@ export function validate() {
     }
 }
 
-export function newSingleCelTimeline(celContent = {}) {
+export function newRasterCelTimeline(celContent = {}) {
     return {
         layerController: {
-            layers: [{ id: 1, name: 'Layer 1' }]
+            layers: [{ id: 1, name: 'Layer 1', type: 'raster' }]
         },
         frameController: {
             frames: [{ id: 1 }]
         },
         celController: {
             cels: {
-                [celController.getCelId(1, 1)]: celContent
+                [celController.getCelId(1, 1)]: $.extend({}, {
+                    id: celController.getCelId(1, 1),
+                    layerType: 'raster'
+                }, celContent)
             }
         }
     }
@@ -124,7 +128,7 @@ export function duplicateFrames(range) {
     frameController.duplicateFrames(range).forEach(({ originalFrame, dupFrame }) => {
         layerController.layers().forEach(layer => {
             const originalCel = celController.cel(layer, originalFrame);
-            celController.createCel(layer, dupFrame, originalCel);
+            celController.createCel(layer, dupFrame, structuredClone(originalCel));
         });
     })
 }
@@ -159,7 +163,7 @@ export function deleteLayer(index) {
 // --------------------------------------------------------------------------- Cels API
 
 export {
-    hasCharContent, iterateCellsForCel, setCelGlyph, charInBounds, translateCel,
+    hasCharContent, setCelGlyph, charInBounds, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, convertToMonochrome
 } from './cels.js'
@@ -188,7 +192,7 @@ export function iterateCelsForCurrentFrame(callback) {
  * Iterates through cels. Which cels are iterated over depends on the allLayers and allFrames params.
  * @param {Boolean} allLayers - If true, will include cels across all layers. If false, just includes cels for current layer.
  * @param {Boolean} allFrames - If true, will include cels across all frames. If false, just includes cels for current frame.
- * @param {function(cel)} celCallback - Callback called for each cel being iterated over
+ * @param {function(Object)} celCallback - Callback called for each cel being iterated over
  */
 export function iterateCels(allLayers, allFrames, celCallback) {
     if (allLayers && allFrames) {
@@ -211,7 +215,10 @@ export function iterateCels(allLayers, allFrames, celCallback) {
 
 // This function returns the glyph as a 2d array: [char, color]
 export function getCurrentCelGlyph(row, col) {
-    return celController.charInBounds(row, col) ? [currentCel().chars[row][col], currentCel().colors[row][col]] : [];
+    if (!celController.charInBounds(row, col)) return [];
+
+    const celGlyphs = celController.getCelGlyphs(currentCel());
+    return [celGlyphs.chars[row][col], celGlyphs.colors[row][col]];
 }
 
 // If the char or color parameter is undefined, that parameter will not be overridden
@@ -249,8 +256,9 @@ export function layeredGlyphs(frame, options = {}) {
 
         if (layerIds && !layerIds.has(layer.id)) continue;
 
-        celChars = celController.cel(layer, frame).chars;
-        celColors = celController.cel(layer, frame).colors;
+        const glyphs = celController.getCelGlyphs(celController.cel(layer, frame));
+        celChars = glyphs.chars;
+        celColors = glyphs.colors;
         const offset = options.offset && options.offset.amount;
 
         for (celR = 0; celR < celChars.length; celR++) {
@@ -307,8 +315,6 @@ export function layeredGlyphs(frame, options = {}) {
 
 export function colorSwap(oldColorIndex, newColorIndex, options = {}) {
     iterateCels(options.allLayers, options.allFrames, cel => {
-        celController.iterateCellsForCel(cel, (row, col, char, colorIndex) => {
-            if (colorIndex === oldColorIndex) celController.setCelGlyph(cel, row, col, char, newColorIndex);
-        });
+        celController.colorSwapCel(cel, oldColorIndex, newColorIndex);
     });
 }

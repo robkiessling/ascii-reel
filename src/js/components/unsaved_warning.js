@@ -11,7 +11,7 @@ const DEFAULT_OPTIONS = {
 export default class UnsavedWarning {
     constructor($container, options = {}) {
         this.$container = $container;
-        this.options = $.extend({}, DEFAULT_OPTIONS, options);
+        this.options = $.extend(true, {}, DEFAULT_OPTIONS, options);
         
         this._createHTML(
             STRINGS['file.save-warning'],

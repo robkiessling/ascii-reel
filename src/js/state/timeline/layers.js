@@ -6,7 +6,8 @@ const DEFAULT_STATE = {
 
 const LAYER_DEFAULTS = {
     name: 'Layer',
-    visible: true
+    visible: true,
+    type: 'raster'
 }
 
 let state = {};
@@ -58,7 +59,7 @@ export function createLayer(index, data) {
         }
     });
 
-    const layer = $.extend({}, LAYER_DEFAULTS, {
+    const layer = $.extend(true, {}, LAYER_DEFAULTS, {
         id: ++idSequence,
         name: `Layer ${max + 1}`
     }, data);

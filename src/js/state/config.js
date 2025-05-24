@@ -8,6 +8,7 @@ import Color from "@sphinxxxx/color-conversion";
 export const DEFAULT_STATE = {
     name: '',
     projectType: 'animation',
+    layerType: 'raster', // or 'vector'
     colorMode: 'monochrome',
     createdAt: undefined,
     dimensions: [15, 30], // [numRows, numCols]
