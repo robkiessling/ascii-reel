@@ -49,6 +49,7 @@ export function loadBlankState() {
     try {
         load({
             timeline: timeline.newRasterCelTimeline()
+            // timeline: timeline.newVectorCelTimeline()
         });
     } catch (error) {
         console.error("Failed to load blank state:", error);

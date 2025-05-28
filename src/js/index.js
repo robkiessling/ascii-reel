@@ -106,6 +106,9 @@ function loadInitialContent() {
     $('body').css('opacity', 1);
 
     // Load from local storage if possible, otherwise load blank state
-    const storedState = readLocalStorage();
-    storedState ? loadFromLocalStorage(storedState) : loadBlankState();
+    // const storedState = readLocalStorage();
+    // storedState ? loadFromLocalStorage(storedState) : loadBlankState();
+
+    // Debug helper - starting from scratch
+    loadBlankState();
 }

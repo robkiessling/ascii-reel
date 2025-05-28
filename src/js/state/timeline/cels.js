@@ -1,12 +1,17 @@
 
 import {isObject, transformValues} from "../../utils/objects.js";
 import {numCols, numRows, getConfig, setConfig} from "../config.js";
-import {create2dArray, split1DArrayInto2D} from "../../utils/arrays.js";
 import {mod} from "../../utils/numbers.js";
 import {DEFAULT_COLOR} from "../palette.js";
-import pako from "pako";
-import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
-import {CelOps, clearCachedCel, clearAllCachedCels} from "./cel/index.js";
+import {
+    celHasContent, convertCelToMonochrome, decodeCel, encodeCel,
+    normalizeCel, resizeCel, updateCelColorIndexes
+} from "./cel/index.js";
+
+export {
+    translateCel, setCelGlyph, getCelGlyphs, colorSwapCel,
+    addCelShape, updateCelShape, deleteCelShape,
+} from './cel/index.js'
 
 const DEFAULT_STATE = {
     cels: {},
@@ -16,16 +21,13 @@ const DEFAULT_STATE = {
 let state = {};
 
 export function load(newState = {}) {
-    clearAllCachedCels();
-
     state = $.extend(true, {}, DEFAULT_STATE);
 
     if (newState.colorTable) state.colorTable = [...newState.colorTable];
-    if (newState.cels) state.cels = transformValues(newState.cels, (celId, cel) => CelOps.normalize(cel))
+    if (newState.cels) state.cels = transformValues(newState.cels, (celId, cel) => normalizeCel(cel))
 }
 
 export function replaceState(newState) {
-    clearAllCachedCels();
     state = newState;
 }
 
@@ -35,12 +37,10 @@ export function getState() {
 
 export function createCel(layer, frame, data = {}) {
     const celId = getCelId(layer.id, frame.id);
-    state.cels[celId] = CelOps.normalize(data, layer, frame);
+    state.cels[celId] = normalizeCel(data, layer, frame);
 }
 
 export function deleteCel(celId) {
-    clearCachedCel(cel(celId));
-
     delete state.cels[celId]
 }
 
@@ -84,29 +84,6 @@ export function charInBounds(row, col) {
     return row >= 0 && row < numRows() && col >= 0 && col < numCols();
 }
 
-/**
- * Shifts all the contents (chars/colors) of a cel.
- * @param {cel} cel - The cel to affect
- * @param {number} rowOffset - How many rows to shift (can be negative)
- * @param {number} colOffset - How many columns to shift content (can be negative)
- * @param {boolean} [wrap=false] - If true, shifting content past the cel boundaries will wrap it around to the other side
- */
-export function translateCel(cel, rowOffset, colOffset, wrap = false) {
-    CelOps.translate(cel, rowOffset, colOffset, wrap);
-}
-
-export function setCelGlyph(cel, row, col, char, color) {
-    CelOps.setGlyph(cel, row, col, char, color);
-}
-
-export function getCelGlyphs(cel) {
-    return CelOps.rasterizedGlyphs(cel)
-}
-
-export function colorSwapCel(cel, oldColorIndex, newColorIndex) {
-    CelOps.colorSwap(cel, oldColorIndex, newColorIndex)
-}
-
 export function getOffsetPosition(r, c, rowOffset, colOffset, wrap) {
     r += rowOffset;
     c += colOffset;
@@ -143,7 +120,7 @@ export function vacuumColorTable() {
     const dupUpdateMap = getDupColorUpdateMap(); // keeps track of any duplicate colorTable values
 
     iterateAllCels(cel => {
-        CelOps.updateColorIndexes(cel, (colorIndex, updater) => {
+        updateCelColorIndexes(cel, (colorIndex, updater) => {
             // If colorTable does not have a value for the current colorIndex, we set the colorIndex to 0
             if (!state.colorTable[colorIndex]) colorIndex = 0;
 
@@ -205,7 +182,7 @@ export function primaryColorIndex() {
 
 export function convertToMonochrome(color) {
     state.colorTable = [color]
-    iterateAllCels(cel => CelOps.convertToMonochrome(cel))
+    iterateAllCels(cel => convertCelToMonochrome(cel))
 }
 
 /**
@@ -221,7 +198,7 @@ export function hasCharContent(matchingColor) {
 
     // Not using iterateAllCels so we can terminate early
     for (const cel of Object.values(state.cels)) {
-        if (CelOps.hasContent(cel, matchingColorIndex)) return true;
+        if (celHasContent(cel, matchingColorIndex)) return true;
     }
 
     return false;
@@ -270,7 +247,7 @@ export function resize(newDimensions, rowOffset, colOffset) {
             break;
     }
 
-    iterateAllCels(cel => CelOps.resize(cel, newDimensions, rowOffset, colOffset));
+    iterateAllCels(cel => resizeCel(cel, newDimensions, rowOffset, colOffset));
 
     setConfig('dimensions', newDimensions);
 }
@@ -284,7 +261,7 @@ export function encodeState() {
 
     return {
         colorTable: state.colorTable,
-        cels: transformValues(state.cels, (celId, cel) => CelOps.encode(cel, req16BitColors)),
+        cels: transformValues(state.cels, (celId, cel) => encodeCel(cel, req16BitColors)),
     }
 }
 
@@ -293,6 +270,6 @@ export function decodeState(encodedState, celRowLength) {
 
     return {
         colorTable: encodedState.colorTable,
-        cels: transformValues(encodedState.cels, (celId, cel) => CelOps.decode(cel, celRowLength, req16BitColors))
+        cels: transformValues(encodedState.cels, (celId, cel) => decodeCel(cel, celRowLength, req16BitColors))
     }
 }

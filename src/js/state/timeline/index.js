@@ -100,6 +100,24 @@ export function newRasterCelTimeline(celContent = {}) {
         }
     }
 }
+export function newVectorCelTimeline(celContent = {}) {
+    return {
+        layerController: {
+            layers: [{ id: 1, name: 'Layer 1', type: 'vector' }]
+        },
+        frameController: {
+            frames: [{ id: 1 }]
+        },
+        celController: {
+            cels: {
+                [celController.getCelId(1, 1)]: $.extend({}, {
+                    id: celController.getCelId(1, 1),
+                    layerType: 'vector'
+                }, celContent)
+            }
+        }
+    }
+}
 
 export function convertToDrawing() {
     // Delete all but the first frame

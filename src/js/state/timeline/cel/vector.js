@@ -13,17 +13,18 @@ import {EMPTY_CHAR} from "../../../config/chars.js";
 
 const VECTOR_CEL_DEFAULTS = {
     layerType: 'vector',
-    shapes: []
+    shapesById: {},
+    shapesOrder: []
 }
 
 export const VectorCelOps = {
     normalize: cel => {
         const normalizedCel = $.extend(true, {}, VECTOR_CEL_DEFAULTS);
 
-        // Copy over everything except for shapes
-        Object.keys(cel).filter(key => key !== 'shapes').forEach(key => normalizedCel[key] = cel[key]);
+        // Copy over everything except for shapesById
+        Object.keys(cel).filter(key => key !== 'shapesById').forEach(key => normalizedCel[key] = cel[key]);
 
-        normalizedCel.shapes = cel.shapes;
+        normalizedCel.shapesById = cel.shapesById;
 
         return normalizedCel;
     },
@@ -36,13 +37,13 @@ export const VectorCelOps = {
     },
     hasContent: (cel, matchingColorIndex) => {
         let result = false;
-        cel.shapes.forEach(shape => {
+        VectorCelOps.shapes(cel).forEach(shape => {
             // todo check if shape uses color index
         })
         return result;
     },
     translate(cel, rowOffset, colOffset) {
-        cel.shapes.forEach(shape => {
+        VectorCelOps.shapes(cel).forEach(shape => {
             shape.translate(rowOffset, colOffset);
         })
     },
@@ -54,17 +55,26 @@ export const VectorCelOps = {
         // todo
     },
     updateColorIndexes: (cel, callback) => {
-        cel.shapes.forEach(shape => {
+        VectorCelOps.shapes(cel).forEach(shape => {
             shape.updateColorIndexes(callback)
         })
     },
     colorSwap: (cel, oldColorIndex, newColorIndex) => {
-        cel.shapes.forEach(shape => {
+        VectorCelOps.shapes(cel).forEach(shape => {
             shape.colorSwap(newColorIndex, newColorIndex);
         })
     },
 
-    setGlyph: (cel, row, col, char, color) => {
-        // No effect
+    addShape: (cel, shapeData) => {
+
     },
+    updateShape: (cel, shapeId, shapeData) => {
+
+    },
+    deleteShape: (cel, shapeId) => {
+
+    },
+    shapes: (cel) => {
+        return cel.shapesOrder.map(shapeId => cel.shapesById[shapeId])
+    }
 }

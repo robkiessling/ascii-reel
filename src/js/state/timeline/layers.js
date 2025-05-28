@@ -7,7 +7,7 @@ const DEFAULT_STATE = {
 const LAYER_DEFAULTS = {
     name: 'Layer',
     visible: true,
-    type: 'raster'
+    type: 'vector'
 }
 
 let state = {};
