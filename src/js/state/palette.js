@@ -25,14 +25,17 @@ const DEFAULT_STATE = {
 
 let state = {};
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE, newState);
-    importPalette(newState.colors || DEFAULT_STATE.colors, true); // Re-import current colors array to ensure proper format and sorting
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        state = data;
+        return;
+    }
+
+    state = $.extend(true, {}, DEFAULT_STATE, data);
+    importPalette(data.colors || DEFAULT_STATE.colors, true); // Re-import current colors array to ensure proper format and sorting
 }
-export function replaceState(newState) {
-    state = newState;
-}
-export function getState() {
+
+export function serialize() {
     return state;
 }
 

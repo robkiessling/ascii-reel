@@ -11,15 +11,18 @@ const SETTINGS = new Set(['autoAddAscii', 'autoAddUnicode'])
 let state = {};
 let unicodeCache = new Set();
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE, newState);
-    importChars(newState.chars || [])
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        state = data;
+        unicodeCache = new Set(state.chars);
+        return;
+    }
+
+    state = $.extend(true, {}, DEFAULT_STATE, data);
+    importChars(data.chars || [])
 }
-export function replaceState(newState) {
-    state = newState;
-    unicodeCache = new Set(state.chars);
-}
-export function getState() {
+
+export function serialize() {
     return state;
 }
 

@@ -3,15 +3,15 @@ import {isObject, transformValues} from "../../utils/objects.js";
 import {numCols, numRows, getConfig, setConfig} from "../config.js";
 import {mod} from "../../utils/numbers.js";
 import {DEFAULT_COLOR} from "../palette.js";
-import {
-    celHasContent, convertCelToMonochrome, decodeCel, encodeCel,
-    normalizeCel, resizeCel, updateCelColorIndexes
-} from "./cel/index.js";
+import CelFactory from "./cel/factory.js";
 
-export {
-    translateCel, setCelGlyph, getCelGlyphs, colorSwapCel,
-    addCelShape, updateCelShape, deleteCelShape,
-} from './cel/index.js'
+export function translateCel(cel, ...args) { return cel.translate(...args) }
+export function setCelGlyph(cel, ...args) { return cel.setGlyph(...args) }
+export function getCelGlyphs(cel, ...args) { return cel.glyphs(...args) }
+export function colorSwapCel(cel, ...args) { return cel.colorSwap(...args) }
+export function addCelShape(cel, ...args) { return cel.addShape(...args) }
+export function updateCelShape(cel, ...args) { return cel.updateShape(...args) }
+export function deleteCelShape(cel, ...args) { return cel.deleteShape(...args) }
 
 const DEFAULT_STATE = {
     cels: {},
@@ -20,24 +20,53 @@ const DEFAULT_STATE = {
 
 let state = {};
 
-export function load(newState = {}) {
+export const COLOR_DEPTH_8_BIT = '8bit';
+export const COLOR_DEPTH_16_BIT = '16bit';
+
+export function deserialize(data = {}, options = {}) {
+    // Not using options.replace short circuit here -- we cannot replace state by reference; we always need to
+    // deserialize each Cel. However, options.replace does get passed to CelFactory.deserialize to skip normalization.
+
+    const celOptions = celSerializationOptions(options, data);
+
     state = $.extend(true, {}, DEFAULT_STATE);
 
-    if (newState.colorTable) state.colorTable = [...newState.colorTable];
-    if (newState.cels) state.cels = transformValues(newState.cels, (celId, cel) => normalizeCel(cel))
+    if (data.colorTable) state.colorTable = [...data.colorTable];
+    if (data.cels) state.cels = transformValues(data.cels, (celId, cel) => CelFactory.deserialize(cel, celOptions))
 }
 
-export function replaceState(newState) {
-    state = newState;
+export function serialize(options = {}) {
+    if (options.compress) {
+        vacuumColorTable();
+    }
+
+    const celOptions = celSerializationOptions(options, state);
+
+    return {
+        cels: transformValues(state.cels, (celId, cel) => cel.serialize(celOptions)),
+        colorTable: state.colorTable,
+    }
 }
 
-export function getState() {
-    return state;
+function celSerializationOptions(options, data) {
+    if (options.compress || options.decompress) {
+        options = $.extend(true, {}, options, {
+            colorDepth: data.colorTable.length > 0xFF ? COLOR_DEPTH_16_BIT : COLOR_DEPTH_8_BIT,
+            rowLength: numCols()
+        });
+    }
+
+    return options;
 }
 
-export function createCel(layer, frame, data = {}) {
+export function createCel(layer, frame) {
     const celId = getCelId(layer.id, frame.id);
-    state.cels[celId] = normalizeCel(data, layer, frame);
+    state.cels[celId] = CelFactory.blank(layer.type);
+}
+
+export function duplicateCel(toLayer, toFrame, originalCel) {
+    const celId = getCelId(toLayer.id, toFrame.id);
+    state.cels[celId] = CelFactory.deserialize(structuredClone(originalCel.serialize()));
 }
 
 export function deleteCel(celId) {
@@ -119,21 +148,19 @@ export function vacuumColorTable() {
     const vacuumMap = new Map(); // maps original colorIndexes to their new vacuumed colorIndex
     const dupUpdateMap = getDupColorUpdateMap(); // keeps track of any duplicate colorTable values
 
-    iterateAllCels(cel => {
-        updateCelColorIndexes(cel, (colorIndex, updater) => {
-            // If colorTable does not have a value for the current colorIndex, we set the colorIndex to 0
-            if (!state.colorTable[colorIndex]) colorIndex = 0;
+    iterateAllCels(cel => cel.updateColorIndexes((colorIndex, updater) => {
+        // If colorTable does not have a value for the current colorIndex, we set the colorIndex to 0
+        if (!state.colorTable[colorIndex]) colorIndex = 0;
 
-            // If the color value of a colorIndex is duplicated by an earlier colorIndex, we use that earlier colorIndex
-            if (dupUpdateMap.has(colorIndex)) colorIndex = dupUpdateMap.get(colorIndex);
+        // If the color value of a colorIndex is duplicated by an earlier colorIndex, we use that earlier colorIndex
+        if (dupUpdateMap.has(colorIndex)) colorIndex = dupUpdateMap.get(colorIndex);
 
-            // Add any new color indexes to the vacuum map
-            if (!vacuumMap.has(colorIndex)) vacuumMap.set(colorIndex, newIndex++)
+        // Add any new color indexes to the vacuum map
+        if (!vacuumMap.has(colorIndex)) vacuumMap.set(colorIndex, newIndex++)
 
-            // Update the cel color to use the vacuumed index
-            updater(vacuumMap.get(colorIndex));
-        })
-    })
+        // Update the cel color to use the vacuumed index
+        updater(vacuumMap.get(colorIndex));
+    }))
 
     const vacuumedColorTable = [];
     for (const [oldIndex, newIndex] of vacuumMap.entries()) {
@@ -182,7 +209,7 @@ export function primaryColorIndex() {
 
 export function convertToMonochrome(color) {
     state.colorTable = [color]
-    iterateAllCels(cel => convertCelToMonochrome(cel))
+    iterateAllCels(cel => cel.convertToMonochrome())
 }
 
 /**
@@ -198,7 +225,7 @@ export function hasCharContent(matchingColor) {
 
     // Not using iterateAllCels so we can terminate early
     for (const cel of Object.values(state.cels)) {
-        if (celHasContent(cel, matchingColorIndex)) return true;
+        if (cel.hasContent(matchingColorIndex)) return true;
     }
 
     return false;
@@ -247,29 +274,8 @@ export function resize(newDimensions, rowOffset, colOffset) {
             break;
     }
 
-    iterateAllCels(cel => resizeCel(cel, newDimensions, rowOffset, colOffset));
+    iterateAllCels(cel => cel.resize(newDimensions, rowOffset, colOffset));
 
     setConfig('dimensions', newDimensions);
 }
 
-
-// -------------------------------------------------------------------------------- Encoding
-
-export function encodeState() {
-    vacuumColorTable();
-    const req16BitColors = state.colorTable.length > 0xFF;
-
-    return {
-        colorTable: state.colorTable,
-        cels: transformValues(state.cels, (celId, cel) => encodeCel(cel, req16BitColors)),
-    }
-}
-
-export function decodeState(encodedState, celRowLength) {
-    const req16BitColors = (encodedState.colorTable.length || 0) > 0xFF;
-
-    return {
-        colorTable: encodedState.colorTable,
-        cels: transformValues(encodedState.cels, (celId, cel) => decodeCel(cel, celRowLength, req16BitColors))
-    }
-}

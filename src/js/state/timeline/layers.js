@@ -13,21 +13,23 @@ const LAYER_DEFAULTS = {
 let state = {};
 let idSequence = 0;
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE);
-
-    if (newState.layers) {
-        state.layers = newState.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer));
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        state = data;
+        return;
     }
 
-    state.currentIndex = 0; // Do not import from newState; always start at 0
+    state = $.extend(true, {}, DEFAULT_STATE);
+    if (data.layers) {
+        state.layers = data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer));
+    }
+
+    state.currentIndex = 0; // Do not import from data; always start at 0
 
     idSequence = Math.max(...state.layers.map(layer => layer.id), 0);
 }
-export function replaceState(newState) {
-    state = newState;
-}
-export function getState() {
+
+export function serialize() {
     return state;
 }
 

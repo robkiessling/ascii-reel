@@ -11,47 +11,26 @@ import * as celController from './cels.js';
 import ArrayRange, {create2dArray, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
-import {colorSwapCel} from "./cels.js";
 
+export function deserialize(data = {}, options = {}) {
+    layerController.deserialize(data.layerController, options);
+    frameController.deserialize(data.frameController, options);
+    celController.deserialize(data.celController, options); // note: must come after config load, since it depends on dimensions
 
-export function load(data = {}) {
-    layerController.load(data.layerController);
-    frameController.load(data.frameController);
-    celController.load(data.celController); // note: must come after config load, since it depends on dimensions
+    if (!options.replace) {
+        validate();
+        celController.vacuumColorTable();
+    }
 }
-
-export function getState() {
+export function serialize(options = {}) {
     return {
-        layerController: layerController.getState(),
-        frameController: frameController.getState(),
-        celController: celController.getState(),
+        layerController: layerController.serialize(options),
+        frameController: frameController.serialize(options),
+        celController: celController.serialize(options),
     }
 }
 
-export function encodeState() {
-    return {
-        layerController: layerController.getState(),
-        frameController: frameController.getState(),
-        celController: celController.encodeState()
-    }
-}
-
-export function decodeState(encodedState, celRowLength) {
-    return {
-        layerController: encodedState.layerController,
-        frameController: encodedState.frameController,
-        celController: celController.decodeState(encodedState.celController, celRowLength),
-    }
-}
-
-export function replaceState(newState) {
-    layerController.replaceState(newState.layerController);
-    frameController.replaceState(newState.frameController);
-    celController.replaceState(newState.celController);
-}
-
-
-export function validate() {
+function validate() {
     // Ensures all the cels referenced by frames/layers exist, and prunes any unused cels.
     // This should only be needed if the file was manually modified outside the app.
     const usedCelIds = new Set();
@@ -146,7 +125,7 @@ export function duplicateFrames(range) {
     frameController.duplicateFrames(range).forEach(({ originalFrame, dupFrame }) => {
         layerController.layers().forEach(layer => {
             const originalCel = celController.cel(layer, originalFrame);
-            celController.createCel(layer, dupFrame, structuredClone(originalCel));
+            celController.duplicateCel(layer, dupFrame, originalCel);
         });
     })
 }

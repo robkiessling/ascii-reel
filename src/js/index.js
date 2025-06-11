@@ -16,7 +16,7 @@ import { init as initMainCanvas, resize as resizeMainCanvas } from './features/m
 import { init as initSelection, clear as performClearSelection, syncTextEditorCaretPosition } from './features/selection.js';
 import {
     init as initState, isValid as isStateValid,
-    loadFromLocalStorage, loadBlankState, markClean
+    loadFromStorage, markClean, loadNewState
 } from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./features/frames.js";
 import { init as initLayers } from "./features/layers.js";
@@ -106,9 +106,9 @@ function loadInitialContent() {
     $('body').css('opacity', 1);
 
     // Load from local storage if possible, otherwise load blank state
-    // const storedState = readLocalStorage();
-    // storedState ? loadFromLocalStorage(storedState) : loadBlankState();
+    const storedState = readLocalStorage();
+    storedState ? loadFromStorage(storedState) : loadNewState();
 
     // Debug helper - starting from scratch
-    loadBlankState();
+    // loadNewState();
 }

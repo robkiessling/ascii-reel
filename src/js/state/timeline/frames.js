@@ -17,21 +17,24 @@ export const TICKS_OPTIONS = [0, 1, 2, 3, 4, 5, 10];
 let state = {};
 let idSequence = 0;
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE);
-
-    if (newState.frames) {
-        state.frames = newState.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame));
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        state = data;
+        return;
     }
 
-    state.currentIndex = 0; // Do not import from newState; always start at 0
+    state = $.extend(true, {}, DEFAULT_STATE);
+
+    if (data.frames) {
+        state.frames = data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame));
+    }
+
+    state.currentIndex = 0; // Do not import from data; always start at 0
 
     idSequence = Math.max(...state.frames.map(frame => frame.id), 0);
 }
-export function replaceState(newState) {
-    state = newState;
-}
-export function getState() {
+
+export function serialize() {
     return state;
 }
 

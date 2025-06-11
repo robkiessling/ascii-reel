@@ -1,9 +1,7 @@
 import * as actions from "../io/actions.js";
-import {getStateForHistory as getConfigState, updateStateFromHistory as updateConfigState} from "./config.js";
-import {getState as getTimelineState, replaceState as replaceTimelineState, hasCharContent} from "./timeline/index.js";
-import {getState as getPaletteState, replaceState as replacePaletteState} from "./palette.js";
-import {getState as getUnicodeState, replaceState as replaceUnicodeState} from "./unicode.js";
+import {hasCharContent} from "./timeline/index.js";
 import {eventBus, EVENTS} from '../events/events.js'
+import {deserialize, serialize} from "./index.js";
 
 
 // -------------------------------------------------------------------------------- History (undo / redo)
@@ -47,12 +45,7 @@ export function pushHistory(options = {}) {
 
     // Build the snapshot to be saved in the history
     const snapshot = {
-        state: $.extend(true, {},
-            { config: getConfigState() },
-            { timeline: getTimelineState() },
-            { palette: getPaletteState() },
-            { unicode: getUnicodeState() },
-        ),
+        state: $.extend(true, {}, serialize({ history: true })),
         options: options,
     };
 
@@ -80,10 +73,7 @@ function loadStateFromHistory(newIndex, oldIndex) {
     const newState = history[newIndex];
     const oldState = history[oldIndex];
 
-    updateConfigState(structuredClone(newState.state.config));
-    replaceTimelineState(structuredClone(newState.state.timeline));
-    replacePaletteState(structuredClone(newState.state.palette));
-    replaceUnicodeState(structuredClone(newState.state.unicode));
+    deserialize(structuredClone(newState.state), { replace: true, history: true })
 
     // When emitting, include any options that were true in either the newState or the oldState:
     const trueOptions = Object.fromEntries(

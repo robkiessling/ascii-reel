@@ -45,18 +45,6 @@ export function init() {
     history.setupActions();
 }
 
-export function loadBlankState() {
-    try {
-        load({
-            timeline: timeline.newRasterCelTimeline()
-            // timeline: timeline.newVectorCelTimeline()
-        });
-    } catch (error) {
-        console.error("Failed to load blank state:", error);
-        onLoadError({});
-    }
-}
-
 export function loadNewState(projectType, dimensions, colorMode, background) {
     let primaryColor, paletteState;
     if (background !== undefined) {
@@ -65,7 +53,7 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
     }
 
     try {
-        load({
+        deserialize({
             config: {
                 projectType: projectType,
                 colorMode: colorMode,
@@ -74,6 +62,7 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
                 primaryColor: primaryColor,
             },
             timeline: timeline.newRasterCelTimeline(),
+            // timeline: timeline.newVectorCelTimeline()
             palette: paletteState
         })
     } catch (error) {
@@ -82,18 +71,24 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
     }
 }
 
-function load(data) {
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        config.deserialize(data.config, options);
+        timeline.deserialize(data.timeline, options);
+        palette.deserialize(data.palette, options);
+        unicode.deserialize(data.unicode, options);
+        return;
+    }
+
     valid = false; // State is considered invalid until it is fully loaded
 
     history.reset();
 
-    config.load(data.config); // Load this first so dimensions and other config data is available to loaders
-    timeline.load(data.timeline);
-    palette.load(data.palette);
-    unicode.load(data.unicode);
+    config.deserialize(data.config, options); // Load config first so dimensions are available to loaders
+    timeline.deserialize(data.timeline, options);
+    palette.deserialize(data.palette, options);
+    unicode.deserialize(data.unicode, options);
 
-    timeline.validate();
-    timeline.vacuumColorTable();
     validateProjectType();
     validateColorMode();
 
@@ -105,74 +100,31 @@ function load(data) {
     eventBus.emit(EVENTS.STATE.LOADED);
 }
 
-export function replaceState(newState) {
-    config.replaceState(newState.config);
-    timeline.replaceState(newState.timeline);
-    palette.replaceState(newState.palette);
-    unicode.replaceState(newState.unicode);
-}
-
-export function stateForLocalStorage() {
+export function serialize(options = {}) {
     return {
         version: CURRENT_VERSION,
-        config: config.getState(),
-        timeline: timeline.getState(),
-        palette: palette.getState(),
-        unicode: unicode.getState(),
+        config: config.serialize(options),
+        timeline: timeline.serialize(options),
+        palette: palette.serialize(options),
+        unicode: unicode.serialize(options),
     }
 }
-export function loadFromLocalStorage(localStorageState) {
-    const originalState = structuredClone(localStorageState);
+
+export function loadFromStorage(storedState, fileName) {
+    const originalState = structuredClone(storedState);
 
     try {
-        migrateState(localStorageState, 'localStorage');
-
-        load(localStorageState);
-    } catch (error) {
-        console.error("Failed to load from local storage:", error);
-        onLoadError(originalState);
-    }
-}
-
-/**
- * Compresses the chars & colors arrays of every cel to minimize file size.
- *
- * Storing the chars/colors 2d arrays as-is is quite inefficient in JSON (the array is converted to a string, where every
- * comma and/or quotation mark uses 1 byte). Instead, we use pako to store these 2d arrays as compressed Base64 strings.
- *
- * @returns {Object}
- */
-export function stateForDiskStorage() {
-    return {
-        version: CURRENT_VERSION,
-        config: config.getState(),
-        palette: palette.getState(),
-        unicode: unicode.getState(),
-        timeline: timeline.encodeState()
-    }
-}
-
-/**
- * Reads the disk file, converting each cel's compressed chars/colors back into arrays.
- *
- * Also handles migrating older files to the current format, in case the webapp's code has changed since the file was saved.
- */
-export function loadFromDisk(diskState, fileName) {
-    const originalState = structuredClone(diskState);
-
-    try {
-        migrateState(diskState, 'disk');
-
-        // Decode timeline
-        diskState.timeline = timeline.decodeState(diskState.timeline, diskState?.config?.dimensions?.[1])
+        migrateState(storedState);
 
         // Always prefer the file's name over the name property stored in the json.
-        if (!diskState.config) diskState.config = {};
-        diskState.config.name = fileName;
+        if (fileName !== undefined) {
+            if (!storedState.config) storedState.config = {};
+            storedState.config.name = fileName;
+        }
 
-        load(diskState);
+        deserialize(storedState, { decompress: true });
     } catch (error) {
-        console.error("Failed to load file from disk:", error);
+        console.error("Failed to load from storage:", error);
         onLoadError(originalState);
     }
 }
@@ -187,7 +139,7 @@ export function loadFromTxt(txtContent, fileName) {
             dimensions = [chars.length, Math.max(...chars.map(row => row.length))]
         }
 
-        load({
+        deserialize({
             config: {
                 colorMode: 'monochrome',
                 dimensions: dimensions,
@@ -212,10 +164,8 @@ const CURRENT_VERSION = 7;
  * Migrates a state object to the latest version. A state object might be out-of-date if it was saved from an earlier
  * version of the app.
  * @param {Object} state - The state object to migrate
- * @param {'disk'|'localStorage'} source - Where the state is being loaded from. Might be useful if a migration only
- *    affects certain save types.
  */
-function migrateState(state, source) {
+function migrateState(state) {
     // State migrations (list will grow longer as more migrations are added):
     if (!state.version || state.version === 1) migrateToV2(state)
     if (state.version === 2) migrateToV3(state);

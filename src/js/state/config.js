@@ -56,23 +56,27 @@ export const MULTICOLOR_TOOLS = new Set(['paint-brush', 'color-swap', 'fill-colo
 
 let state = {};
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE, { createdAt: new Date().toISOString() }, newState);
-}
-export function replaceState(newState) {
-    state = newState;
-}
-export function getState() {
-    return state;
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        if (options.history) {
+            for (const [key, value] of Object.entries(pick(data, CONFIG_KEYS_SAVED_TO_HISTORY))) {
+                state[key] = value;
+            }
+        } else {
+            state = data;
+        }
+        return;
+    }
+
+    state = $.extend(true, {}, DEFAULT_STATE, { createdAt: new Date().toISOString() }, data);
 }
 
-// Only certain keys are stored to history (e.g. we don't want undo to change what tool the user has selected)
-export function getStateForHistory() {
-    return pick(state, CONFIG_KEYS_SAVED_TO_HISTORY);
-}
-export function updateStateFromHistory(updates) {
-    for (const [key, value] of Object.entries(pick(updates, CONFIG_KEYS_SAVED_TO_HISTORY))) {
-        state[key] = value;
+export function serialize(options = {}) {
+    if (options.history) {
+        // Only certain keys are stored to history (e.g. we don't want undo to change what tool the user has selected)
+        return pick(state, CONFIG_KEYS_SAVED_TO_HISTORY)
+    } else {
+        return state;
     }
 }
 
