@@ -8,7 +8,7 @@
 import * as frameController from './frames.js';
 import * as layerController from './layers.js';
 import * as celController from './cels.js';
-import ArrayRange, {create2dArray, translateGlyphs} from "../../utils/arrays.js";
+import ArrayRange, {create2dArray, mergeGlyphs, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 
@@ -160,7 +160,7 @@ export function deleteLayer(index) {
 // --------------------------------------------------------------------------- Cels API
 
 export {
-    hasCharContent, setCelGlyph, charInBounds, translateCel,
+    hasCharContent, setCelGlyph, addCelShape, charInBounds, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, convertToMonochrome
 } from './cels.js'
@@ -222,6 +222,9 @@ export function getCurrentCelGlyph(row, col) {
 export function setCurrentCelGlyph(row, col, char, color) {
     celController.setCelGlyph(currentCel(), row, col, char, color);
 }
+export function addCurrentCelShape(shape) {
+    celController.addCelShape(currentCel(), shape)
+}
 
 /**
  * Aggregates multiple layers into a final result. Chars on lower layers will be blocked if higher layers also have
@@ -277,22 +280,14 @@ export function layeredGlyphs(frame, options = {}) {
 
         // If there is movableContent, show it on top of the rest of the layer
         if (options.movableContent && options.movableContent.glyphs && isCurrentLayer && isCurrentFrame) {
-            translateGlyphs(options.movableContent.glyphs, options.movableContent.origin, (r, c, char, color) => {
-                if (char !== undefined && char !== EMPTY_CHAR && celController.charInBounds(r, c)) {
-                    chars[r][c] = char;
-                    colors[r][c] = color;
-                }
-            });
+            mergeGlyphs({ chars, colors }, options.movableContent.glyphs, options.movableContent.origin, (char, color) => {
+                return char !== undefined && char !== EMPTY_CHAR;
+            })
         }
 
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
         if (options.drawingContent && isCurrentLayer && isCurrentFrame) {
-            translateGlyphs(options.drawingContent.glyphs, options.drawingContent.origin, (r, c, char, color) => {
-                if (celController.charInBounds(r, c)) {
-                    if (char !== undefined) chars[r][c] = char;
-                    if (color !== undefined) colors[r][c] = color;
-                }
-            });
+            mergeGlyphs({ chars, colors }, options.drawingContent.glyphs, options.drawingContent.origin);
         }
 
         if (options.convertEmptyStrToSpace) {

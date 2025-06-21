@@ -1,4 +1,4 @@
-export default class Rect {
+export default class PixelRect {
     constructor(x, y, width, height) {
         this._x = x;
         this._y = y;

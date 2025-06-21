@@ -1,4 +1,4 @@
-import Rect from "./rect.js";
+import PixelRect from "./pixel_rect.js";
 import {fontHeight, fontWidth} from "../config/font.js";
 import bresenham from "bresenham";
 import {charInBounds} from "../state/index.js";
@@ -7,7 +7,7 @@ import {charInBounds} from "../state/index.js";
  * A Cell is a particular row/column pair of the drawable area. It is useful so we can deal with rows/columns instead
  * of raw x/y values.
  */
-export default class Cell extends Rect {
+export default class Cell extends PixelRect {
     constructor(row, col) {
         super();
         this.row = row;

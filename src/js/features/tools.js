@@ -24,6 +24,7 @@ import {standardTip} from "../components/tooltips.js";
 import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
+import BaseRect from "../geometry/shapes/rect/base.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -102,10 +103,11 @@ function setupEventBus() {
                 startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'paint-brush' })
                 break;
             case 'draw-freeform':
+                // todo pass cell pixel, not entire canvasControl
                 startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { canvas: canvasControl })
                 break;
             case 'draw-rect':
-                startDrawing(PolygonFactory.createRect, cell, mouseEvent);
+                startDrawing(BaseRect.beginRect, cell, mouseEvent);
                 break;
             case 'draw-line':
                 startDrawing(PolygonFactory.createLine, cell, mouseEvent);
@@ -612,12 +614,12 @@ function getDrawingModifiersTooltip(tool, drawType) {
 }
 
 function startDrawing(factory, cell, mouseEvent, options = {}) {
-    drawingContent = factory(cell, $.extend({
-        drawType: state.getConfig('drawTypes')[state.getConfig('tool')],
+    drawingContent = factory(cell, $.extend({ // todo rename drawingShape?
+        drawPreset: state.getConfig('drawTypes')[state.getConfig('tool')],
         colorIndex: state.primaryColorIndex(),
         char: state.getConfig('primaryChar'),
-        hoveredCells: hoveredCells,
-        canvasDimensions: state.getConfig('dimensions'),
+        // hoveredCells: hoveredCells, // todo this should be based on line thickness, don't pass hoveredCells fn
+        // canvasDimensions: state.getConfig('dimensions'),
     }, options));
 
     updateDrawing(cell, mouseEvent);
@@ -627,8 +629,9 @@ function updateDrawing(cell, mouseEvent) {
     if (!drawingContent) return;
     if (!cell) return;
 
-    drawingContent.end = cell;
-    drawingContent.recalculate(getDrawingModifiers(mouseEvent), mouseEvent);
+    // drawingContent.end = cell;
+    // drawingContent.recalculate(getDrawingModifiers(mouseEvent), mouseEvent);
+    drawingContent.resize(undefined, cell, getDrawingModifiers(mouseEvent));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -636,9 +639,8 @@ function updateDrawing(cell, mouseEvent) {
 function finishDrawing() {
     if (!drawingContent) return;
 
-    translateGlyphs(drawingContent.glyphs, drawingContent.origin, (r, c, char, color) => {
-        state.setCurrentCelGlyph(r, c, char, color);
-    });
+    drawingContent.commitResize();
+    state.addCurrentCelShape(drawingContent);
 
     drawingContent = null;
     eventBus.emit(EVENTS.REFRESH.ALL);

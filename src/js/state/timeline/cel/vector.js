@@ -1,6 +1,8 @@
-import {create2dArray, freeze2dArray} from "../../../utils/arrays.js";
+import {create2dArray, mergeGlyphs} from "../../../utils/arrays.js";
 import {numCols, numRows} from "../../config.js";
-import {EMPTY_CHAR} from "../../../config/chars.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
+import {deserializeShape} from "../../../geometry/shapes/deserialize.js";
+import {transformValues} from "../../../utils/objects.js";
 
 /**
  * Vector Cel
@@ -10,71 +12,112 @@ import {EMPTY_CHAR} from "../../../config/chars.js";
  *
  * Vector cels are still rasterized before they are displayed (which is expensive but cacheable).
  */
+export default class VectorCel {
+    constructor(shapesById, shapesOrder) {
+        this.layerType = 'vector';
+        this.shapesById = shapesById || {};
+        this.shapesOrder = shapesOrder || [];
+    }
 
-const VECTOR_CEL_DEFAULTS = {
-    layerType: 'vector',
-    shapesById: {},
-    shapesOrder: []
-}
+    static blank() {
+        const cel = new this();
+        cel.normalize()
+        return cel;
+    }
 
-export const VectorCelOps = {
-    normalize: cel => {
-        const normalizedCel = $.extend(true, {}, VECTOR_CEL_DEFAULTS);
+    static deserialize(celData, options = {}) {
+        const cel = new this(
+            transformValues(celData.shapesById || {}, (id, shapeData) => deserializeShape(shapeData)),
+            celData.shapesOrder
+        );
 
-        // Copy over everything except for shapesById
-        Object.keys(cel).filter(key => key !== 'shapesById').forEach(key => normalizedCel[key] = cel[key]);
-
-        normalizedCel.shapesById = cel.shapesById;
-
-        return normalizedCel;
-    },
-    rasterizedGlyphs: cel => {
-        // todo complex stuff
-        return {
-            chars: freeze2dArray(create2dArray(numRows(), numCols(), EMPTY_CHAR)),
-            colors: freeze2dArray(create2dArray(numRows(), numCols(), 0))
+        if (!options.replace) {
+            cel.normalize()
         }
-    },
-    hasContent: (cel, matchingColorIndex) => {
+        return cel;
+    }
+
+    serialize(options = {}) {
+        return {
+            layerType: this.layerType,
+            shapesById: transformValues(this.shapesById, (id, shape) => shape.serialize()),
+            shapesOrder: this.shapesOrder,
+        }
+    }
+
+    normalize() {
+        // need to do anything?
+    }
+
+    glyphs() {
+        if (!this._cachedGlyphs) {
+            this._cachedGlyphs = {
+                chars: create2dArray(numRows(), numCols(), EMPTY_CHAR),
+                colors: create2dArray(numRows(), numCols(), 0)
+            }
+
+            this.shapes().forEach(shape => {
+                const { glyphs: shapeGlyphs, origin: shapeOrigin } = shape.rasterize();
+                mergeGlyphs(this._cachedGlyphs, shapeGlyphs, shapeOrigin);
+            })
+        }
+
+        return this._cachedGlyphs;
+    }
+
+    hasContent(matchingColorIndex) {
         let result = false;
-        VectorCelOps.shapes(cel).forEach(shape => {
+        this.shapes().forEach(shape => {
             // todo check if shape uses color index
         })
         return result;
-    },
-    translate(cel, rowOffset, colOffset) {
-        VectorCelOps.shapes(cel).forEach(shape => {
-            shape.translate(rowOffset, colOffset);
-        })
-    },
-    resize: (cel, newDimensions, rowOffset, colOffset) => {
+    }
 
-    },
+    translate(rowOffset, colOffset) {
+        this.shapes().forEach(shape => shape.translate(rowOffset, colOffset))
+        this._clearCachedGlyphs();
+    }
 
-    convertToMonochrome: cel => {
+    resize(newDimensions, rowOffset, colOffset) {
+        // todo delete any shapes out of the picture?
+        this._clearCachedGlyphs();
+    }
+
+    convertToMonochrome() {
         // todo
-    },
-    updateColorIndexes: (cel, callback) => {
-        VectorCelOps.shapes(cel).forEach(shape => {
-            shape.updateColorIndexes(callback)
-        })
-    },
-    colorSwap: (cel, oldColorIndex, newColorIndex) => {
-        VectorCelOps.shapes(cel).forEach(shape => {
-            shape.colorSwap(newColorIndex, newColorIndex);
-        })
-    },
+        this._clearCachedGlyphs();
+    }
 
-    addShape: (cel, shapeData) => {
+    updateColorIndexes(callback) {
+        this.shapes().forEach(shape => shape.updateColorIndexes(callback))
+        this._clearCachedGlyphs();
+    }
+    colorSwap(oldColorIndex, newColorIndex) {
+        this.shapes().forEach(shape => shape.colorSwap(newColorIndex, newColorIndex))
+        this._clearCachedGlyphs();
+    }
 
-    },
-    updateShape: (cel, shapeId, shapeData) => {
 
-    },
-    deleteShape: (cel, shapeId) => {
+    addShape(shape) {
+        this.shapesById[shape.id] = shape;
+        this.shapesOrder.push(shape.id);
+        this._clearCachedGlyphs();
+    }
 
-    },
-    shapes: (cel) => {
-        return cel.shapesOrder.map(shapeId => cel.shapesById[shapeId])
+    // ------------------ Vector-specific functions:
+
+    _clearCachedGlyphs() {
+        this._cachedGlyphs = undefined;
+    }
+
+    updateShape(shapeId, shapeData) {
+        this._clearCachedGlyphs();
+    }
+    deleteShape(shapeId) {
+
+        this._clearCachedGlyphs();
+    }
+    shapes() {
+        return this.shapesOrder.map(shapeId => this.shapesById[shapeId]);
     }
 }

@@ -1,4 +1,5 @@
 import RasterCel from "./raster.js";
+import VectorCel from "./vector.js";
 
 /**
  * Cel
@@ -16,7 +17,7 @@ export default class CelFactory {
             case 'vector':
                 return VectorCel.blank();
             default:
-                throw `Invalid layerType '${layerType}'`
+                throw new Error(`Invalid layerType '${layerType}'`)
         }
     }
 
@@ -27,7 +28,7 @@ export default class CelFactory {
             case 'vector':
                 return VectorCel.deserialize(celData, options);
             default:
-                throw `Invalid layerType '${celData.layerType}' in ${celData}`
+                throw new Error(`Invalid layerType '${celData.layerType}' in ${celData}`)
         }
     }
 

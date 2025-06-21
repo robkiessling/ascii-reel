@@ -5,9 +5,9 @@ import {mod} from "../../utils/numbers.js";
 import {DEFAULT_COLOR} from "../palette.js";
 import CelFactory from "./cel/factory.js";
 
-export function translateCel(cel, ...args) { return cel.translate(...args) }
-export function setCelGlyph(cel, ...args) { return cel.setGlyph(...args) }
 export function getCelGlyphs(cel, ...args) { return cel.glyphs(...args) }
+export function setCelGlyph(cel, ...args) { return cel.setGlyph(...args) }
+export function translateCel(cel, ...args) { return cel.translate(...args) }
 export function colorSwapCel(cel, ...args) { return cel.colorSwap(...args) }
 export function addCelShape(cel, ...args) { return cel.addShape(...args) }
 export function updateCelShape(cel, ...args) { return cel.updateShape(...args) }

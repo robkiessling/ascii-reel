@@ -25,7 +25,8 @@ export {
 
     // cels
     iterateCelsForCurrentLayer, iterateCels,
-    getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph, charInBounds, layeredGlyphs, translateCel,
+    getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph, addCurrentCelShape, addCelShape,
+    charInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, colorSwap, hasCharContent
 } from './timeline/index.js'
@@ -60,9 +61,10 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
                 dimensions: dimensions,
                 background: background,
                 primaryColor: primaryColor,
+                tool: 'draw-rect' // todo remove this
             },
-            timeline: timeline.newRasterCelTimeline(),
-            // timeline: timeline.newVectorCelTimeline()
+            // timeline: timeline.newRasterCelTimeline(),
+            timeline: timeline.newVectorCelTimeline(),
             palette: paletteState
         })
     } catch (error) {

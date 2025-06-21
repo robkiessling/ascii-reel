@@ -30,6 +30,11 @@ export function freeze2dArray(arr) {
     return Object.freeze(arr);
 }
 
+export function isIn2dArrayBounds(array, row, col) {
+    return row >= 0 && row < array.length && col >= 0 && array[0] && col < array[0].length;
+}
+
+
 /**
  * Given an array such as [1, 2, 3, 4, 5, 6, 7, 8, 9] and a rowLength such as 3, will return a result:
  *
@@ -71,6 +76,23 @@ export function translateGlyphs(glyphs, cell, callback) {
             callback(r + cell.row, c + cell.col, glyphs.chars[r][c], glyphs.colors[r][c]);
         }
     }
+}
+
+/**
+ * Merges two glyphs objects. Incoming newGlyphs will be merged as if it was located at the given origin.
+ * @param {{chars: string[][], colors: number[][]}} baseGlyphs - The content to merge newGlyphs into
+ * @param {{chars: string[][], colors: number[][]}} newGlyphs - The content to merge into baseGlyphs
+ * @param {Cell} origin - Position to merge newGlyphs in at
+ * @param {(char: string, color: number) => boolean} [filter] - Optional filter. If provided, glyph will
+ *   only be merged if it passes filter
+ */
+export function mergeGlyphs(baseGlyphs, newGlyphs, origin, filter) {
+    translateGlyphs(newGlyphs, origin, (r, c, char, color) => {
+        if (isIn2dArrayBounds(baseGlyphs.chars, r, c) && (!filter || filter(char, color))) {
+            if (char !== undefined) baseGlyphs.chars[r][c] = char;
+            if (color !== undefined) baseGlyphs.colors[r][c] = color;
+        }
+    });
 }
 
 /**

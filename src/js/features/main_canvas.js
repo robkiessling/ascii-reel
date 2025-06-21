@@ -186,7 +186,7 @@ function redrawCharCanvas() {
             glyphs: selection.movableContent,
             origin: selection.movableContent ? selection.getSelectedCellArea().topLeft : null
         },
-        drawingContent: tools.drawingContent,
+        drawingContent: tools.drawingContent ? tools.drawingContent.rasterize() : undefined,
     }));
 
     // If showing all layers, build glyphs for all-layers-below-current and all-layers-above-current.:

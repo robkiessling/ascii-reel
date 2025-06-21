@@ -1,4 +1,4 @@
-import Rect from "./rect.js";
+import PixelRect from "./pixel_rect.js";
 import {fontHeight, fontWidth} from "../config/font.js";
 import Cell from "./cell.js";
 import * as state from "../state/index.js";
@@ -6,7 +6,7 @@ import * as state from "../state/index.js";
 /**
  * A CellArea is a rectangle of Cells between a topLeft Cell and a bottomRight Cell.
  */
-export default class CellArea extends Rect {
+export default class CellArea extends PixelRect {
     constructor(topLeft, bottomRight) {
         super();
         this.topLeft = topLeft; // Cell

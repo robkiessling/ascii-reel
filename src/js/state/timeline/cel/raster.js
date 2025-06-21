@@ -1,4 +1,4 @@
-import {create2dArray, split1DArrayInto2D} from "../../../utils/arrays.js";
+import {create2dArray, mergeGlyphs, split1DArrayInto2D} from "../../../utils/arrays.js";
 import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {charInBounds, COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT, getOffsetPosition} from "../cels.js";
@@ -160,14 +160,6 @@ export default class RasterCel {
         this.chars = resizedChars;
         this.colors = resizedColors;
     }
-    _iterateCells(callback) {
-        const rowLength = numRows(), colLength = numCols();
-        for (let row = 0; row < rowLength; row++) {
-            for (let col = 0; col < colLength; col++) {
-                callback(row, col, this.chars[row][col], this.colors[row][col]);
-            }
-        }
-    }
 
     convertToMonochrome() {
         this.colors = create2dArray(numRows(), numCols(), 0);
@@ -183,6 +175,14 @@ export default class RasterCel {
         })
     }
 
+    // Shapes are immediately rasterized and merged into chars/colors state
+    addShape(shape) {
+        const { glyphs: shapeGlyphs, origin: shapeOrigin } = shape.rasterize();
+        mergeGlyphs({ chars: this.chars, colors: this.colors }, shapeGlyphs, shapeOrigin);
+    }
+
+    // ------------------ Raster-specific functions:
+
     setGlyph(row, col, char, color) {
         if (charInBounds(row, col)) {
             if (char !== undefined) {
@@ -191,6 +191,15 @@ export default class RasterCel {
             }
             if (color !== undefined) {
                 this.colors[row][col] = color;
+            }
+        }
+    }
+
+    _iterateCells(callback) {
+        const rowLength = numRows(), colLength = numCols();
+        for (let row = 0; row < rowLength; row++) {
+            for (let col = 0; col < colLength; col++) {
+                callback(row, col, this.chars[row][col], this.colors[row][col]);
             }
         }
     }

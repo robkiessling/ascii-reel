@@ -1,7 +1,7 @@
 import {setIntervalUsingRAF} from "../utils/utilities.js";
 import {numCols, numRows, fontFamily, colorStr} from "../state/index.js";
 import {fontHeight, fontWidth} from "../config/font.js";
-import Rect from "../geometry/rect.js";
+import PixelRect from "../geometry/pixel_rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
@@ -255,7 +255,7 @@ export default class CanvasControl {
             this.context.stroke();
         } else {
             // Reduce rect size by half an outline width
-            const innerRect = new Rect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
+            const innerRect = new PixelRect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
             this.context.clearRect(...innerRect.xywh);
         }
     }
@@ -270,7 +270,7 @@ export default class CanvasControl {
         } else {
             // Clearing a rect that is a little larger than the cell -- for some reason there are sometimes stray pixels
             // right along the cell edge at certain zoom levels
-            const outerRect = new Rect(cell.x - OUTLINE_WIDTH / 2, cell.y - OUTLINE_WIDTH / 2, cell.width + OUTLINE_WIDTH, cell.height + OUTLINE_WIDTH);
+            const outerRect = new PixelRect(cell.x - OUTLINE_WIDTH / 2, cell.y - OUTLINE_WIDTH / 2, cell.width + OUTLINE_WIDTH, cell.height + OUTLINE_WIDTH);
             this.context.clearRect(...outerRect.xywh);
         }
     }
@@ -437,23 +437,23 @@ export default class CanvasControl {
         }
     }
 
-    // Returns a Rect of the current view window
+    // Returns a PixelRect of the current view window
     currentViewRect() {
         const topLeft = this.pointAtExternalXY(0, 0);
         const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
-        return new Rect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+        return new PixelRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
     }
 
     /**
      * Performs a callback that affects the entire canvas (entire <canvas> element; includes those margins that appear
      * when zoomed all the way out)
-     * @param {function(Rect)} callback - Callback is passed the full area Rect as its parameter
+     * @param {function(PixelRect)} callback - Callback is passed the full area PixelRect as its parameter
      */
     _usingFullArea(callback) {
         this._inTemporaryContext(() => {
-            // Temporarily transform to original context -> make a Rect with <canvas> boundaries -> transform back
+            // Temporarily transform to original context -> make a PixelRect with <canvas> boundaries -> transform back
             this.context.setTransform(this.originalTransform);
-            callback(new Rect(0, 0, this.outerWidth, this.outerHeight));
+            callback(new PixelRect(0, 0, this.outerWidth, this.outerHeight));
         })
     }
 
