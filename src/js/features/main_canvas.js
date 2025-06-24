@@ -20,7 +20,6 @@ import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
 import {EMPTY_CHAR} from "../config/chars.js";
-import {roundToDecimal} from "../utils/numbers.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -268,6 +267,9 @@ function redrawSelection() {
         caretCanvas.startCaretAnimation(selection.caretCell(), state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
     }
 
+    const selectedShapes = tools.getSelectedShapes();
+    if (selectedShapes.length) selectionCanvas.drawShapeSelection(selectedShapes);
+
     refreshCanvasDetails();
 }
 
@@ -275,7 +277,7 @@ function showHoverForTool() {
     switch(state.getConfig('tool')) {
         case 'text-editor':
             // If text-editor is in I-beam mode, not showing hover because clicking on a cell does not necessarily
-            // go to that cell (it gets rounded up/down -- see caretAtExternalXY)
+            // go to that cell (it gets rounded up/down -- see caretAtScreenXY)
             return state.getConfig('caretStyle') !== 'I-beam';
         case 'pan':
         case 'move-all':

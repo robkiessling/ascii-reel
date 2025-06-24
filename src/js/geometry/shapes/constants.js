@@ -3,11 +3,12 @@ export const HANDLES = {
     TOP_LEFT: 'top-left',
     TOP_CENTER: 'top-center',
     TOP_RIGHT: 'top-right',
-    RIGHT_CENTER: 'right-center',
-    BOTTOM_RIGHT: 'bottom-right',
-    BOTTOM_CENTER: 'bottom-center',
+    CENTER_LEFT: 'center-left',
+    CENTER_CENTER: 'center-center', // represents the center of the shape
+    CENTER_RIGHT: 'center-right',
     BOTTOM_LEFT: 'bottom-left',
-    LEFT_CENTER: 'left-center',
+    BOTTOM_CENTER: 'bottom-center',
+    BOTTOM_RIGHT: 'bottom-right',
 }
 
 
@@ -18,15 +19,17 @@ export const HANDLES = {
 //         break;
 //     case HANDLES.TOP_RIGHT:
 //         break;
-//     case HANDLES.RIGHT_CENTER:
+//     case HANDLES.CENTER_LEFT:
 //         break;
-//     case HANDLES.BOTTOM_RIGHT:
+//     case HANDLES.CENTER_CENTER:
 //         break;
-//     case HANDLES.BOTTOM_CENTER:
+//     case HANDLES.CENTER_RIGHT:
 //         break;
 //     case HANDLES.BOTTOM_LEFT:
 //         break;
-//     case HANDLES.LEFT_CENTER:
+//     case HANDLES.BOTTOM_CENTER:
+//         break;
+//     case HANDLES.BOTTOM_RIGHT:
 //         break;
 //     default:
 //         throw new Error(`Invalid handle: ${handle}`);

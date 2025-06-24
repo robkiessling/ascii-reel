@@ -46,7 +46,29 @@ export default class VectorCel {
     }
 
     normalize() {
-        // need to do anything?
+        // Filter shapesById to only keep keys that are in shapesOrder (and ensures shape id matches its key)
+        this.shapesById = Object.fromEntries(
+            Object.entries(this.shapesById).filter(([id, shape]) => {
+                if (!this.shapesOrder.includes(id)) {
+                    console.warn(`Removing shape ${id} from shapesById -- it is not found in shapesOrder`);
+                    return false;
+                }
+                if (shape.id !== id) {
+                    console.warn(`Removing shape ${id} from shapesById -- its internal id does not match key`);
+                    return false;
+                }
+                return true;
+            })
+        );
+
+        // Filter shapesOrder to only keep IDs that exist in shapesById
+        this.shapesOrder = this.shapesOrder.filter(id => {
+            if (!(id in this.shapesById)) {
+                console.warn(`Removing shape ${id} from shapesOrder -- it is not found in shapesById`);
+                return false;
+            }
+            return true;
+        });
     }
 
     glyphs() {
@@ -119,5 +141,17 @@ export default class VectorCel {
     }
     shapes() {
         return this.shapesOrder.map(shapeId => this.shapesById[shapeId]);
+    }
+
+    getHandle(cell, cellPixel, selectedShapeIds) {
+        // Find first shape that has a handle at that cell, iterating in reverse order (top shape is checked first)
+        for (let i = this.shapesOrder.length - 1; i >= 0; i--) {
+            const shapeId = this.shapesOrder[i]
+            const shape = this.shapesById[shapeId];
+            const handle = shape.getHandle(cell, cellPixel, selectedShapeIds.has(shapeId));
+            if (handle) return handle;
+        }
+
+        return null;
     }
 }

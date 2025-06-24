@@ -3,6 +3,7 @@ import Cell from "../../cell.js";
 import {create2dArray} from "../../../utils/arrays.js";
 import {isFunction} from "../../../utils/utilities.js";
 import {HANDLES} from "../constants.js";
+import CellArea from "../../cell_area.js";
 
 
 /**
@@ -124,22 +125,22 @@ export default class BaseRect extends Shape {
                 anchor1.row = position.row;
                 anchor2.col = position.col;
                 break;
-            case HANDLES.RIGHT_CENTER:
-                anchor2.col = position.col;
+            case HANDLES.CENTER_LEFT:
+                anchor1.col = position.col;
                 break;
-            case HANDLES.BOTTOM_RIGHT:
-                anchor2.row = position.row;
+            case HANDLES.CENTER_RIGHT:
                 anchor2.col = position.col;
-                break;
-            case HANDLES.BOTTOM_CENTER:
-                anchor2.row = position.row;
                 break;
             case HANDLES.BOTTOM_LEFT:
                 anchor1.col = position.col;
                 anchor2.row = position.row;
                 break;
-            case HANDLES.LEFT_CENTER:
-                anchor1.col = position.col;
+            case HANDLES.BOTTOM_CENTER:
+                anchor2.row = position.row;
+                break;
+            case HANDLES.BOTTOM_RIGHT:
+                anchor2.row = position.row;
+                anchor2.col = position.col;
                 break;
             default:
                 throw new Error(`Invalid handle: ${handle}`);
@@ -153,21 +154,14 @@ export default class BaseRect extends Shape {
             numRows: bottomRight.row - topLeft.row + 1,
             numCols: bottomRight.col - topLeft.col + 1,
         }
+
+        this._clearCache();
     }
 
-    _initGlyphs(numRows, numCols) {
-        return {
-            chars: create2dArray(numRows, numCols),
-            colors: create2dArray(numRows, numCols),
-        }
-    }
-    _setGlyph(glyphs, cell, char, colorIndex) {
-        glyphs.chars[cell.row][cell.col] = char;
-        glyphs.colors[cell.row][cell.col] = colorIndex;
-    }
-
-    rasterize() {
+    _cacheGeometry() {
         const state = this.appliedDraft();
+
+        const boundingArea = CellArea.fromOriginAndDimensions(state.topLeft, state.numRows, state.numCols);
 
         const glyphs = this._initGlyphs(state.numRows, state.numCols);
 
@@ -177,39 +171,57 @@ export default class BaseRect extends Shape {
         const lastRow = state.numRows - 1;
         const lastCol = state.numCols - 1;
 
-        // Draw 4 lines, 4 corners, and fill
-        for (let row = 0; row <= lastRow; row++) {
-            for (let col = 0; col <= lastCol; col++) {
-                let char;
-                let colorIndex = state.strokeColor;
+        boundingArea.iterateRelative((row, col) => {
+            let char;
+            let colorIndex = state.strokeColor;
 
-                if (col === 0) {
-                    if (row === 0) { char = strokeChars.TOP_LEFT; }
-                    else if (row === lastRow) { char = strokeChars.BOTTOM_LEFT; }
-                    else { char = strokeChars.VERTICAL; }
-                }
-                else if (col === lastCol) {
-                    if (row === 0) { char = strokeChars.TOP_RIGHT; }
-                    else if (row === lastRow) { char = strokeChars.BOTTOM_RIGHT; }
-                    else { char = strokeChars.VERTICAL; }
-                }
-                else {
-                    if (row === 0) { char = strokeChars.HORIZONTAL; }
-                    else if (row === lastRow) { char = strokeChars.HORIZONTAL; }
-                    else if (state.fillStyle === 'monochar') {
-                        char = state.fillChar;
-                        colorIndex = state.fillColor
-                    }
-                }
-
-                if (char !== undefined) this._setGlyph(glyphs, {row, col}, char, colorIndex);
+            if (col === 0) {
+                if (row === 0) { char = strokeChars.TOP_LEFT; }
+                else if (row === lastRow) { char = strokeChars.BOTTOM_LEFT; }
+                else { char = strokeChars.VERTICAL; }
             }
-        }
+            else if (col === lastCol) {
+                if (row === 0) { char = strokeChars.TOP_RIGHT; }
+                else if (row === lastRow) { char = strokeChars.BOTTOM_RIGHT; }
+                else { char = strokeChars.VERTICAL; }
+            }
+            else {
+                if (row === 0) { char = strokeChars.HORIZONTAL; }
+                else if (row === lastRow) { char = strokeChars.HORIZONTAL; }
+                else if (state.fillStyle === 'monochar') {
+                    char = state.fillChar;
+                    colorIndex = state.fillColor
+                }
+            }
 
-        return {
+            if (char !== undefined) this._setGlyph(glyphs, {row, col}, char, colorIndex);
+        });
+
+        this._cache = {
+            boundingArea: boundingArea,
             origin: state.topLeft,
             glyphs: glyphs
         }
     }
+
+    getHandle(cell, cellPixel, isSelected) {
+        const fullArea = this.boundingArea;
+        const innerArea = fullArea.innerArea();
+
+        if (isSelected) {
+            // If already selected, we have more anchor options
+
+            if (fullArea.doesCellOverlap(cell)) return this._centerHandle();
+        }
+        else {
+            // If not already selected, clicking inside an empty rect does not select the rect
+            if (innerArea && innerArea.doesCellOverlap(cell) && this.props.fillStyle === 'none') return null;
+
+            if (fullArea.doesCellOverlap(cell)) return this._centerHandle();
+        }
+
+        return null;
+    }
+
 
 }

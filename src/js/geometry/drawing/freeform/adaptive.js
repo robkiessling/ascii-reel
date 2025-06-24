@@ -262,7 +262,7 @@ export default class AdaptiveFreeform extends DrawingFreeform {
     }
 
     recalculate(modifiers, mouseEvent) {
-        const cellPixel = this.options.canvas.cellPixelAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY, true);
+        const cellPixel = this.options.canvas.cellPixelAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY, true);
 
         // Start a new AdaptiveChar if we're entering a new cell:
         if (!this.prevCell || !this.prevCell.equals(this.end)) this._newAdaptiveChar(cellPixel);

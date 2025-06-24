@@ -54,6 +54,8 @@ export default class CanvasControl {
         this.context = this.canvas.getContext("2d", {
             willReadFrequently: options.willReadFrequently
         });
+        
+        this.shapeManager = new CanvasShapeManager(this.context, this.worldToScreen.bind(this), this.screenToWorld.bind(this));
 
         this._setupMouseEvents();
         this._setupWheelEvents();
@@ -65,8 +67,6 @@ export default class CanvasControl {
      *   from before the resize (provided there is previous zoom/pan data).
      */
     resize(resetZoom = false) {
-        let previousTransform = this.context.getTransform();
-
         // Reset any width/height attributes that may have been set previously
         this.canvas.removeAttribute('width');
         this.canvas.removeAttribute('height');
@@ -74,25 +74,18 @@ export default class CanvasControl {
         this.canvas.style.height = "100%";
 
         // Fix canvas PPI https://stackoverflow.com/a/65124939
-        let ratio = window.devicePixelRatio;
-        this.canvas.width = this.outerWidth * ratio;
-        this.canvas.height = this.outerHeight * ratio;
+        this._dpr = window.devicePixelRatio;
+        this.canvas.width = this.outerWidth * this._dpr;
+        this.canvas.height = this.outerHeight * this._dpr;
         this.canvas.style.width = this.outerWidth + "px";
         this.canvas.style.height = this.outerHeight + "px";
 
         if (resetZoom || !this.initialized) {
-            // Final part of fixing canvas PPI
-            this.context.scale(ratio, ratio);
-
-            // Store the base transformation (after fixing PPI). Deltas have to be calculated according to
-            // this originalTransform (not the identity matrix)
-            this.originalTransform = this.context.getTransform();
-
+            this._resetCamera();
             this._buildZoomPanBoundaries(true);
         }
         else {
-            // Maintain transform from before
-            this.context.setTransform(previousTransform);
+            this._applyCamera();
             this._buildZoomPanBoundaries(false);
             this._applyZoomBoundaries();
             this._applyPanBoundaries();
@@ -281,6 +274,10 @@ export default class CanvasControl {
         this.context.fillRect(...cell.xywh);
     }
 
+    drawShapeSelection(shapes) {
+        this._inScreenSpace(() => this.shapeManager.drawSelection(shapes))
+    }
+
     outlinePolygon(polygon, isDashed) {
         this.context.lineWidth = OUTLINE_WIDTH;
 
@@ -313,7 +310,7 @@ export default class CanvasControl {
 
     drawWindow(rect) {
         this.context.strokeStyle = WINDOW_BORDER_COLOR;
-        const scaledBorder = WINDOW_BORDER_WIDTH / this._currentZoom();
+        const scaledBorder = WINDOW_BORDER_WIDTH / this._camera.zoom;
         this.context.lineWidth = scaledBorder;
         this.context.strokeRect(
             rect.x - scaledBorder / 2, // Need to move the whole window outwards by 50% of the border width
@@ -327,7 +324,7 @@ export default class CanvasControl {
         if (!spacing) return;
 
         this.context.strokeStyle = color;
-        this.context.lineWidth = width / this._currentZoom();
+        this.context.lineWidth = width / this._camera.zoom;
 
         for (let r = 0; r < numRows() + 1; r += spacing) {
             this.context.beginPath();
@@ -351,8 +348,8 @@ export default class CanvasControl {
 
         // Clear the 4 edges between the drawable area and the full area
         const drawableArea = CellArea.drawableArea();
-        const topLeft = this.pointAtExternalXY(0, 0);
-        const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
+        const topLeft = this.screenToWorld(0, 0);
+        const bottomRight = this.screenToWorld(this.outerWidth, this.outerHeight);
         this.context.clearRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, drawableArea.y - topLeft.y);
         this.context.clearRect(topLeft.x, topLeft.y, drawableArea.x - topLeft.x, bottomRight.y - topLeft.y);
         this.context.clearRect(
@@ -411,13 +408,170 @@ export default class CanvasControl {
     }
 
 
+    // -------------------------------------------------------------- Camera helpers
+    // Caching camera state (zoom, panX, panY) instead of relying on context.getTransform() because canvas transforms
+    // are stateful and can vary over time. This method gives predictable world <-> screen conversions and decouples
+    // logic from canvas state.
+
+    // Similar to context.translate(x, y), except translation won't be visible until _applyCamera() is called
+    _translateCamera(x, y) {
+        this._camera.panX += x;
+        this._camera.panY += y;
+    }
+
+    // Similar to context.scale(amount), except scale won't be visible until _applyCamera() is called
+    _scaleCamera(amount) {
+        this._camera.zoom *= amount;
+    }
+
+    // Applies the current camera transform to the canvas context, including zoom and pan, adjusted for devicePixelRatio
+    _applyCamera() {
+        this.context.setTransform(
+            this._camera.zoom * this._dpr,
+            0,
+            0,
+            this._camera.zoom * this._dpr,
+            this._camera.panX * this._dpr,
+            this._camera.panY * this._dpr
+        );
+    }
+
+    // Resets the camera to default (no pan/zoom) and applies it to the context
+    _resetCamera() {
+        this._camera = { zoom: 1, panX: 0, panY: 0 };
+        this._applyCamera();
+    }
+
+    // Returns a PixelRect of the current view window
+    currentViewRect() {
+        const topLeft = this.screenToWorld(0, 0);
+        const bottomRight = this.screenToWorld(this.outerWidth, this.outerHeight);
+        return new PixelRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+    }
+
+    /**
+     * Performs a callback that affects the entire canvas (entire <canvas> element; includes those margins that appear
+     * when zoomed all the way out)
+     * @param {function(PixelRect)} callback - Callback is passed the full area PixelRect as its parameter
+     */
+    _usingFullArea(callback) {
+        this._inTemporaryContext(() => {
+            this._resetCamera();
+            callback(new PixelRect(0, 0, this.outerWidth, this.outerHeight));
+        })
+    }
+
+    /**
+     * Runs the provided callback and then resets the camera/transform to its pre-callback state.
+     * @param callback
+     * @private
+     */
+    _inTemporaryContext(callback) {
+        const originalCamera = structuredClone(this._camera);
+
+        callback();
+
+        this._camera = originalCamera;
+        this._applyCamera();
+    }
+
+    /**
+     * Runs the provided callback with the canvas context reset to the identity transform, allowing you to draw in
+     * screen space (e.g., fixed-pixel overlays like bounding boxes or anchors that should not scale with zoom).
+     *
+     * Note: While the transform is reset, the camera state remains unchanged, so you can still use worldToScreen and
+     * screenToWorld to convert coordinates based on the current zoom and pan.
+     */
+    _inScreenSpace(callback) {
+        this.context.setTransform(this._dpr, 0, 0, this._dpr, 0, 0);
+        callback();
+        this._applyCamera();
+    }
+
+    /**
+     * Converts a point from screen space (pixels) to world space (logical coordinates of the drawing) using the
+     * current camera's pan and zoom.
+     *
+     * This is used to translate mouse input or screen-based positions into world coordinates.
+     *
+     * @param {number} screenX - The X coordinate in screen pixels
+     * @param {number} screenY - The Y coordinate in screen pixels
+     * @returns {{ x: number, y: number }} The corresponding point in world space
+     */
+    screenToWorld(screenX, screenY) {
+        return {
+            x: (screenX - this._camera.panX) / this._camera.zoom,
+            y: (screenY - this._camera.panY) / this._camera.zoom
+        };
+    }
+
+    /**
+     * Converts a point from world space (logical coordinates of the drawing) to screen space (pixels) using the
+     * current camera's pan and zoom.
+     *
+     * This is used to map content positions onto the canvas for rendering or UI overlay alignment.
+     *
+     * @param {number} worldX - The X coordinate in world space
+     * @param {number} worldY - The Y coordinate in world space
+     * @returns {{ x: number, y: number }} The corresponding point in screen space (pixels)
+     */
+    worldToScreen(worldX, worldY) {
+        return {
+            x: worldX * this._camera.zoom + this._camera.panX,
+            y: worldY * this._camera.zoom + this._camera.panY
+        };
+    }
+
+    cellAtScreenXY(x, y) {
+        const point = this.screenToWorld(x, y);
+        const row = Math.floor(point.y / fontHeight);
+        const col = Math.floor(point.x / fontWidth);
+        return new Cell(row, col);
+    }
+
+    // Getting the caret positioning is slightly different than just getting the corresponding cell; we round the x
+    // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
+    // click on the right half of a character, it will round up to the next character
+    caretAtScreenXY(x, y) {
+        const point = this.screenToWorld(x, y);
+        const row = Math.floor(point.y / fontHeight);
+        const col = Math.round(point.x / fontWidth);
+        return new Cell(row, col);
+    }
+
+    /**
+     * Returns an {x, y} coordinate of a given pixel relative to the top-left corner of the cell it's in.
+     * @param {number} x - The x value of the target pixel
+     * @param {number} y - The y value of the target pixel
+     * @param {Boolean} [asFraction=true] - If true, the returned x/y coordinates will be a percentage of the cell width/height,
+     *   respectively. E.g. if the pixel was in the center of the cell, the returned value would be { x: 0.5, y: 0.5 }.
+     * @returns {{x: number, y: number}} - Coordinate of cell pixel
+     */
+    cellPixelAtScreenXY(x, y, asFraction = true) {
+        const point = this.screenToWorld(x, y);
+
+        const rowY = Math.floor(point.y / fontHeight) * fontHeight;
+        const colX = Math.floor(point.x / fontWidth) * fontWidth;
+
+        let relativeX = point.x - colX;
+        let relativeY = point.y - rowY;
+
+        if (asFraction) {
+            relativeX /= fontWidth;
+            relativeY /= fontHeight;
+        }
+
+        return { x: relativeX, y: relativeY };
+    }
+
+
     // -------------------------------------------------------------- Zoom/Pan related methods
 
     /**
-     * Calculates the zoom/pan boundaries.  
+     * Calculates the zoom/pan boundaries.
      * @param {boolean} zoomOutToMax - If true, canvas will be zoomed all the way out. If false, canvas's current zoom
      *   will be maintained. This option is to increase performance: we have to zoom all the way out anyway to calculate
-     *   the boundaries, so if that is the desired zoom state we have an option to leave it zoomed out. 
+     *   the boundaries, so if that is the desired zoom state we have an option to leave it zoomed out.
      */
     _buildZoomPanBoundaries(zoomOutToMax) {
         this._zoomOutThreshold = this._zoomLevelForFit() / ZOOM_OUT_THRESHOLD_RATIO;
@@ -437,92 +591,10 @@ export default class CanvasControl {
         }
     }
 
-    // Returns a PixelRect of the current view window
-    currentViewRect() {
-        const topLeft = this.pointAtExternalXY(0, 0);
-        const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
-        return new PixelRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
-    }
-
-    /**
-     * Performs a callback that affects the entire canvas (entire <canvas> element; includes those margins that appear
-     * when zoomed all the way out)
-     * @param {function(PixelRect)} callback - Callback is passed the full area PixelRect as its parameter
-     */
-    _usingFullArea(callback) {
-        this._inTemporaryContext(() => {
-            // Temporarily transform to original context -> make a PixelRect with <canvas> boundaries -> transform back
-            this.context.setTransform(this.originalTransform);
-            callback(new PixelRect(0, 0, this.outerWidth, this.outerHeight));
-        })
-    }
-
-    // Performs a callback in a temporary context; any transformations will be undone after callback is finished.
-    _inTemporaryContext(callback) {
-        const currentTransform = this.context.getTransform();
-        callback();
-        this.context.setTransform(currentTransform);
-    }
-
-    /**
-     * Returns the transformed coordinates of an external XY coordinate. "External" means the unmodified x y coordinates
-     * of your mouse over the canvas. E.g. hovering over the top left of the canvas would be an external x y of 0 0.
-     * The returned value is the transformed x y coordinate, accounting for zoom, pan, etc.
-     */
-    pointAtExternalXY(x, y) {
-        const absTransform = this._absoluteTransform();
-        return {
-            x: (x - absTransform.e) / absTransform.a,
-            y: (y - absTransform.f) / absTransform.d
-        };
-    }
-
-    cellAtExternalXY(x, y) {
-        const point = this.pointAtExternalXY(x, y);
-        const row = Math.floor(point.y / fontHeight);
-        const col = Math.floor(point.x / fontWidth);
-        return new Cell(row, col);
-    }
-
-    // Getting the caret positioning is slightly different than just getting the corresponding cell; we round the x
-    // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
-    // click on the right half of a character, it will round up to the next character
-    caretAtExternalXY(x, y) {
-        const point = this.pointAtExternalXY(x, y);
-        const row = Math.floor(point.y / fontHeight);
-        const col = Math.round(point.x / fontWidth);
-        return new Cell(row, col);
-    }
-
-    /**
-     * Returns an {x, y} coordinate of a given pixel relative to the top-left corner of the cell it's in.
-     * @param {number} x - The x value of the target pixel
-     * @param {number} y - The y value of the target pixel
-     * @param {Boolean} [asFraction=true] - If true, the returned x/y coordinates will be a percentage of the cell width/height,
-     *   respectively. E.g. if the pixel was in the center of the cell, the returned value would be { x: 0.5, y: 0.5 }.
-     * @returns {{x: number, y: number}} - Coordinate of cell pixel
-     */
-    cellPixelAtExternalXY(x, y, asFraction = true) {
-        const point = this.pointAtExternalXY(x, y);
-
-        const rowY = Math.floor(point.y / fontHeight) * fontHeight;
-        const colX = Math.floor(point.x / fontWidth) * fontWidth;
-
-        let relativeX = point.x - colX;
-        let relativeY = point.y - rowY;
-
-        if (asFraction) {
-            relativeX /= fontWidth;
-            relativeY /= fontHeight;
-        }
-
-        return { x: relativeX, y: relativeY };
-    }
-
     // Zooms to a particular zoom level centered around the midpoint of the canvas
     zoomTo(level) {
         // Reset scale
-        this.context.setTransform(this.originalTransform);
+        this._resetCamera();
 
         // Center around absolute midpoint of drawableArea
         const drawableArea = CellArea.drawableArea();
@@ -530,10 +602,12 @@ export default class CanvasControl {
             x: this.outerWidth / 2 - drawableArea.width * level / 2,
             y: this.outerHeight / 2 - drawableArea.height * level / 2
         }
-        this.context.translate(target.x, target.y);
+        this._translateCamera(target.x, target.y);
 
         // Scale to desired level
-        this.context.scale(level, level);
+        this._scaleCamera(level);
+
+        this._applyCamera();
     }
 
     // Zooms out just far enough so that the entire canvas is visible. If the canvas dimensions do not result in a
@@ -548,10 +622,10 @@ export default class CanvasControl {
     }
 
     canZoomIn() {
-        return roundForComparison(this._currentZoom()) < roundForComparison(this._zoomInThreshold)
+        return roundForComparison(this._camera.zoom) < roundForComparison(this._zoomInThreshold)
     }
     canZoomOut() {
-        return roundForComparison(this._currentZoom()) > roundForComparison(this._zoomOutThreshold)
+        return roundForComparison(this._camera.zoom) > roundForComparison(this._zoomOutThreshold)
     }
 
     /**
@@ -561,20 +635,26 @@ export default class CanvasControl {
      *   center of the current view.
      */
     zoomDelta(delta, target) {
-        const currentZoom = this._currentZoom();
-        let newZoom = currentZoom * delta;
+        let newZoom = this._camera.zoom * delta;
 
-        if (newZoom < this._zoomOutThreshold) { newZoom = this._zoomOutThreshold; delta = newZoom / currentZoom; }
-        if (newZoom > this._zoomInThreshold) { newZoom = this._zoomInThreshold; delta = newZoom / currentZoom; }
-        if (roundForComparison(newZoom) === roundForComparison(currentZoom)) return;
+        if (newZoom < this._zoomOutThreshold) { newZoom = this._zoomOutThreshold; delta = newZoom / this._camera.zoom; }
+        if (newZoom > this._zoomInThreshold) { newZoom = this._zoomInThreshold; delta = newZoom / this._camera.zoom; }
+        if (roundForComparison(newZoom) === roundForComparison(this._camera.zoom)) return;
 
         // If no target use canvas center
-        if (!target) target = this.pointAtExternalXY(this.outerWidth / 2, this.outerHeight / 2);
+        if (!target) target = this.screenToWorld(this.outerWidth / 2, this.outerHeight / 2);
 
-        // Zoom to the mouse target, using a process described here: https://stackoverflow.com/a/5526721
-        this.context.translate(target.x, target.y)
-        this.context.scale(delta, delta);
-        this.context.translate(-target.x, -target.y)
+        // Calculate target screen point (so we have both world and screen coords)
+        const { x: screenX, y: screenY } = this.worldToScreen(target.x, target.y);
+
+        // Apply zoom
+        this._scaleCamera(delta);
+
+        // Figure out what pan is needed to keep that world point at the same screen point
+        this._camera.panX = screenX - target.x * this._camera.zoom;
+        this._camera.panY = screenY - target.y * this._camera.zoom;
+
+        this._applyCamera();
 
         this._applyPanBoundaries();
     }
@@ -586,26 +666,25 @@ export default class CanvasControl {
 
     // Moves zoom window to be centered around target
     translateToTarget(target) {
-        const currentZoom = this._currentZoom();
+        const currentZoom = this._camera.zoom;
         const viewRect = this.currentViewRect();
 
-        this.context.setTransform(this.originalTransform);
-        this.context.translate(
+        this._resetCamera();
+        this._translateCamera(
             -target.x * currentZoom + viewRect.width * currentZoom / 2,
             -target.y * currentZoom + viewRect.height * currentZoom / 2
-        )
-        this.context.scale(currentZoom, currentZoom);
+        );
+        this._scaleCamera(currentZoom);
+        this._applyCamera();
 
         this._applyPanBoundaries();
     }
 
     translateAmount(x, y) {
-        this.context.translate(x, y);
-        this._applyPanBoundaries();
-    }
+        this._translateCamera(x, y);
+        this._applyCamera();
 
-    _currentZoom() {
-        return this._absoluteTransform().a;
+        this._applyPanBoundaries();
     }
 
     _zoomLevelForFit() {
@@ -638,28 +717,17 @@ export default class CanvasControl {
     // Lock zoom-out to a set of boundaries
     _applyPanBoundaries() {
         if (this._panBoundaries) {
-            const topLeft = this.pointAtExternalXY(0, 0);
-            const bottomRight = this.pointAtExternalXY(this.outerWidth, this.outerHeight);
+            const topLeft = this.screenToWorld(0, 0);
+            const bottomRight = this.screenToWorld(this.outerWidth, this.outerHeight);
 
             const rightBoundary = this._panBoundaries.x + this._panBoundaries.width;
             const bottomBoundary = this._panBoundaries.y + this._panBoundaries.height;
 
-            if (topLeft.x < this._panBoundaries.x) this.context.translate(topLeft.x - this._panBoundaries.x, 0);
-            if (topLeft.y < this._panBoundaries.y) this.context.translate(0, topLeft.y - this._panBoundaries.y);
-            if (bottomRight.x > rightBoundary) this.context.translate(bottomRight.x - rightBoundary, 0);
-            if (bottomRight.y > bottomBoundary) this.context.translate(0, bottomRight.y - bottomBoundary);
+            if (topLeft.x < this._panBoundaries.x) this._translateCamera(topLeft.x - this._panBoundaries.x, 0);
+            if (topLeft.y < this._panBoundaries.y) this._translateCamera(0, topLeft.y - this._panBoundaries.y);
+            if (bottomRight.x > rightBoundary) this._translateCamera(bottomRight.x - rightBoundary, 0);
+            if (bottomRight.y > bottomBoundary) this._translateCamera(0, bottomRight.y - bottomBoundary);
         }
-    }
-
-    // When you call getTransform(), it contains values relative to our originalTransform (which is not necessarily 1,
-    // e.g. on a Mac retina screen it is 2). If you want the absolute transform, have to divide by the originalTransform
-    _absoluteTransform() {
-        const current = this.context.getTransform();
-        current.a /= this.originalTransform.a;
-        current.d /= this.originalTransform.d;
-        current.e /= this.originalTransform.a;
-        current.f /= this.originalTransform.d;
-        return current;
     }
 
 
@@ -673,8 +741,8 @@ export default class CanvasControl {
 
         const runCallback = (callback, evt, includeMouseDownArgs = false) => {
             if (!this.initialized) return;
-            const cell = this.cellAtExternalXY(evt.offsetX, evt.offsetY);
-            const currentPoint = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
+            const cell = this.cellAtScreenXY(evt.offsetX, evt.offsetY);
+            const currentPoint = this.screenToWorld(evt.offsetX, evt.offsetY);
 
             const callbackArgs = {evt, cell, currentPoint};
             if (includeMouseDownArgs) $.extend(callbackArgs, {isDragging, originalPoint, mouseDownButton})
@@ -686,7 +754,7 @@ export default class CanvasControl {
                 if (isDragging) return; // Ignore multiple mouse buttons being pressed at the same time
 
                 isDragging = true;
-                originalPoint = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
+                originalPoint = this.screenToWorld(evt.offsetX, evt.offsetY);
                 mouseDownButton = evt.which;
 
                 if (this.options.onMouseDown) runCallback(this.options.onMouseDown, evt, true)
@@ -724,13 +792,16 @@ export default class CanvasControl {
                 let deltaX = evt.originalEvent.deltaX;
                 let deltaY = evt.originalEvent.deltaY;
                 if (deltaX === 0 && deltaY === 0) return;
-                const target = this.pointAtExternalXY(evt.offsetX, evt.offsetY);
+                const target = this.screenToWorld(evt.offsetX, evt.offsetY);
 
                 // Adjust pan distance based on the current zoom level. Without this, panning while zoomed in moves too
                 // quickly (each screen pixel covers less world space)
-                const zoom = this._currentZoom();
-                const panX = deltaX / zoom;
-                const panY = deltaY / zoom;
+                // TODO This no longer seems necessary?
+                // const zoom = this._camera.zoom;
+                // const panX = deltaX / zoom;
+                // const panY = deltaY / zoom;
+                const panX = deltaX;
+                const panY = deltaY;
 
                 // Convert linear delta amount to a multiplicative zoom factor
                 const zoomX = this._zoomFactor(deltaX);
@@ -743,3 +814,72 @@ export default class CanvasControl {
 
 }
 
+const SHAPE_OUTLINE_WIDTH = 2;
+const BOUNDING_BOX_PADDING = 6;
+
+// Handles things like adding little offsets to boundaries, adding offsets to anchor points, hit detection
+class CanvasShapeManager {
+    constructor(context, worldToScreen, screenToWorld) {
+        this.context = context;
+        this.worldToScreen = worldToScreen;
+        this.screenToWorld = screenToWorld;
+    }
+
+    /**
+     *
+     * Context is assumed to be in screen space.
+     */
+    drawSelection(shapes) {
+        if (shapes.length === 0) return;
+
+        if (shapes.length === 1) {
+            const shape = shapes[0];
+            // draw shape anchors
+            // draw shape bounding box (if applicable; line doesn't have)
+            this._drawBoundingBox(shape)
+        } else {
+            // multiple shapes:
+            // draw bounding box around each shape (no anchors)
+            // draw dashed bounding box around shape union
+            // draw anchors on outermost bounding box
+            shapes.forEach(shape => {
+                this._drawBoundingBox(shape);
+            })
+        }
+    }
+
+    _drawBoundingBox(shape) {
+        this.context.lineWidth = SHAPE_OUTLINE_WIDTH;
+        this.context.setLineDash([]);
+        this.context.strokeStyle = SELECTION_COLOR;
+
+        this.context.beginPath();
+        this.context.rect(...this._buildScreenRect(shape.boundingArea.xywh, BOUNDING_BOX_PADDING));
+        this.context.stroke();
+    }
+
+    /**
+     * Converts a rectangle from world space to screen space, and applies fixed screen-space padding.
+     *
+     * The padding is added equally to all sides of the rectangle **in screen coordinates, meaning it is not affected
+     * by zoom level.
+     *
+     * @param {Array} xywh - Rectangle properties in world space
+     * @param {number} padding - Padding (in screen space) to apply. Screen pixels means it won't be affected by zoom.
+     * @returns {Array} - xywh rectangle properties in screen space
+     */
+    _buildScreenRect(xywh, padding) {
+        const [x, y, w, h] = xywh;
+
+        // Convert rectangle to screen pixels
+        const topLeftScreen = this.worldToScreen(x, y);
+        const bottomRightScreen = this.worldToScreen(x + w, y + h);
+
+        return [
+            topLeftScreen.x - padding,
+            topLeftScreen.y - padding,
+            bottomRightScreen.x - topLeftScreen.x + 2 * padding,
+            bottomRightScreen.y - topLeftScreen.y + 2 * padding,
+        ]
+    }
+}

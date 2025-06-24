@@ -91,11 +91,14 @@ function setupEventBus() {
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl, mouseDownButton }) => {
         const tool = toolForMouseButton(mouseDownButton);
-        $canvasContainer.css('cursor', cursorStyle(tool, true, mouseEvent, cell));
+        $canvasContainer.css('cursor', cursorStyle(tool, true, mouseEvent, cell, canvasControl));
 
         prevCell = undefined;
 
         switch(tool) {
+            case 'select':
+                selectShape(cell, mouseEvent, canvasControl);
+                break;
             case 'eraser':
                 startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'eraser' })
                 break;
@@ -148,9 +151,9 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, isDragging, originalPoint, currentPoint, mouseDownButton }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvasControl, isDragging, originalPoint, currentPoint, mouseDownButton }) => {
         const tool = toolForMouseButton(mouseDownButton);
-        $canvasContainer.css('cursor', cursorStyle(tool, isDragging, mouseEvent, cell));
+        $canvasContainer.css('cursor', cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl));
 
         if (!isDragging) return;
         if (mouseEvent.buttons === 0) return; // Catch firefox mousemove bug where mouseEvent.which is 1 when no buttons pressed
@@ -186,9 +189,9 @@ function setupEventBus() {
         prevCell = cell;
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, isDragging, mouseDownButton }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, canvasControl, isDragging, mouseDownButton }) => {
         const tool = toolForMouseButton(mouseDownButton);
-        $canvasContainer.css('cursor', cursorStyle(state.getConfig('tool'), false, mouseEvent, cell));
+        $canvasContainer.css('cursor', cursorStyle(state.getConfig('tool'), false, mouseEvent, cell, canvasControl));
 
         if (!isDragging) return;
 
@@ -649,6 +652,41 @@ function finishDrawing() {
 
 
 
+// -------------------------------------------------------------------------------- Select tool
+// TODO Perhaps this should be moved to its own file? like how we have selection.js for raster selection
+
+let selectedShapes = {}
+
+function selectShape(cell, mouseEvent, canvasControl) {
+    const handle = getShapeHandle(cell, mouseEvent, canvasControl)
+
+    if (mouseEvent.shiftKey) {
+        if (!handle) return;
+
+        // Toggle shape inclusion
+        if (selectedShapes[handle.shape.id]) {
+            delete selectedShapes[handle.shape.id];
+        } else {
+            selectedShapes[handle.shape.id] = handle.shape;
+        }
+    } else {
+        selectedShapes = {}
+        if (handle) selectedShapes[handle.shape.id] = handle.shape;
+    }
+
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
+}
+
+export function getSelectedShapes() {
+    return Object.values(selectedShapes);
+}
+
+function getShapeHandle(cell, mouseEvent, canvasControl) {
+    const cellPixel = canvasControl.cellPixelAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY, true);
+    return state.getCurrentCelHandle(cell, cellPixel, new Set(Object.keys(selectedShapes)));
+}
+
+
 // -------------------------------------------------------------------------------- Move-all tool
 // The move-all tool moves all content in the canvas
 
@@ -858,10 +896,13 @@ function refreshAddToPalette() {
 
 // -------------------------------------------------------------------------------- Misc.
 
-function cursorStyle(tool, isDragging, mouseEvent, cell) {
+function cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl) {
     const grab = isDragging ? 'grabbing' : 'grab'
 
     switch (tool) {
+        case 'select':
+            const handle = getShapeHandle(cell, mouseEvent, canvasControl);
+            return handle ? handle.cursor : 'default';
         case 'text-editor':
             return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? grab : 'text';
         case 'selection-rect':

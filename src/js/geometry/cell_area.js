@@ -17,6 +17,11 @@ export default class CellArea extends PixelRect {
         return new CellArea(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
     }
 
+    static fromOriginAndDimensions(topLeft, numRows, numCols) {
+        const bottomRight = new Cell(topLeft.row + numRows - 1, topLeft.col + numCols - 1);
+        return new CellArea(topLeft.clone(), bottomRight);
+    }
+
     get x() {
         return this.topLeft.x;
     }
@@ -74,4 +79,18 @@ export default class CellArea extends PixelRect {
             }
         }
     }
+
+    doesCellOverlap(cell) {
+        return cell.row >= this.topLeft.row && cell.row <= this.bottomRight.row &&
+            cell.col >= this.topLeft.col && cell.col <= this.bottomRight.col;
+    }
+
+    innerArea() {
+        if (this.numRows < 3 || this.numCols < 3) return null;
+        return new CellArea(
+            this.topLeft.clone().translate(1, 1),
+            this.bottomRight.clone().translate(-1, -1),
+        )
+    }
+
 }

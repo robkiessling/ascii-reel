@@ -322,7 +322,7 @@ function setupEventBus() {
                     break;
                 case 'text-editor':
                     if (state.getConfig('caretStyle') === 'I-beam') {
-                        cell = canvasControl.caretAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+                        cell = canvasControl.caretAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
                     }
 
                     if (polygons.length === 0) {
@@ -344,8 +344,8 @@ function setupEventBus() {
         // TODO This could be more efficient, could just trigger refreshes if cell is different than last?
 
         if (isDrawing) {
-            if (state.getConfig('caretStyle') === 'I-beam') {
-                cell = canvasControl.caretAtExternalXY(mouseEvent.offsetX, mouseEvent.offsetY);
+            if (state.getConfig('tool') === 'text-editor' && state.getConfig('caretStyle') === 'I-beam') {
+                cell = canvasControl.caretAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
             }
             lastPolygon().end = cell;
             eventBus.emit(EVENTS.SELECTION.CHANGED);

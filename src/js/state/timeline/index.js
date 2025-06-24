@@ -226,6 +226,10 @@ export function addCurrentCelShape(shape) {
     celController.addCelShape(currentCel(), shape)
 }
 
+export function getCurrentCelHandle(cell, cellPixel, selectedShapeIds) {
+    return currentCel().getHandle(cell, cellPixel, selectedShapeIds);
+}
+
 /**
  * Aggregates multiple layers into a final result. Chars on lower layers will be blocked if higher layers also have
  * a char at that spot.
