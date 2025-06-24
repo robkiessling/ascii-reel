@@ -178,7 +178,7 @@ function setupEventBus() {
                 break;
             case 'pan':
                 eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
-                    delta: [currentPoint.x - originalPoint.x, currentPoint.y - originalPoint.y]
+                    delta: [originalPoint.x - currentPoint.x, originalPoint.y - currentPoint.y]
                 })
                 break;
             case 'move-all':

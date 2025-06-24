@@ -409,14 +409,28 @@ export default class CanvasControl {
 
 
     // -------------------------------------------------------------- Camera helpers
-    // Caching camera state (zoom, panX, panY) instead of relying on context.getTransform() because canvas transforms
-    // are stateful and can vary over time. This method gives predictable world <-> screen conversions and decouples
-    // logic from canvas state.
+    /**
+     * Cache camera state (zoom, panX, panY) instead of relying on context.getTransform(). This decouples the camera
+     * logic from the canvas context, allowing accurate world/screen conversions (e.g., screenToWorld, worldToScreen)
+     * regardless of the current transform.
+     *
+     * For example, in `_inScreenSpace`, we can temporarily reset to the identity transform to draw UI elements while
+     * still using the cached camera state for coordinate conversions.
+     */
 
-    // Similar to context.translate(x, y), except translation won't be visible until _applyCamera() is called
-    _translateCamera(x, y) {
-        this._camera.panX += x;
-        this._camera.panY += y;
+    /**
+     * Pans the camera by a given delta. Similar to a call to context.translate(x, y), except:
+     * - the translation won't be visible until _applyCamera() is called
+     * - since we are panning the camera (not the content), x/y values are inverted from typical context.translate calls
+     */
+    _panCamera(x, y, ignoreZoom = false) {
+        if (ignoreZoom) {
+            this._camera.panX += x;
+            this._camera.panY += y;
+        } else {
+            this._camera.panX += x * this._camera.zoom;
+            this._camera.panY += y * this._camera.zoom;
+        }
     }
 
     // Similar to context.scale(amount), except scale won't be visible until _applyCamera() is called
@@ -431,8 +445,8 @@ export default class CanvasControl {
             0,
             0,
             this._camera.zoom * this._dpr,
-            this._camera.panX * this._dpr,
-            this._camera.panY * this._dpr
+            -this._camera.panX * this._dpr,
+            -this._camera.panY * this._dpr
         );
     }
 
@@ -500,8 +514,8 @@ export default class CanvasControl {
      */
     screenToWorld(screenX, screenY) {
         return {
-            x: (screenX - this._camera.panX) / this._camera.zoom,
-            y: (screenY - this._camera.panY) / this._camera.zoom
+            x: (screenX + this._camera.panX) / this._camera.zoom,
+            y: (screenY + this._camera.panY) / this._camera.zoom
         };
     }
 
@@ -517,8 +531,8 @@ export default class CanvasControl {
      */
     worldToScreen(worldX, worldY) {
         return {
-            x: worldX * this._camera.zoom + this._camera.panX,
-            y: worldY * this._camera.zoom + this._camera.panY
+            x: worldX * this._camera.zoom - this._camera.panX,
+            y: worldY * this._camera.zoom - this._camera.panY
         };
     }
 
@@ -602,7 +616,7 @@ export default class CanvasControl {
             x: this.outerWidth / 2 - drawableArea.width * level / 2,
             y: this.outerHeight / 2 - drawableArea.height * level / 2
         }
-        this._translateCamera(target.x, target.y);
+        this._panCamera(-target.x, -target.y);
 
         // Scale to desired level
         this._scaleCamera(level);
@@ -651,10 +665,8 @@ export default class CanvasControl {
         this._scaleCamera(delta);
 
         // Figure out what pan is needed to keep that world point at the same screen point
-        this._camera.panX = screenX - target.x * this._camera.zoom;
-        this._camera.panY = screenY - target.y * this._camera.zoom;
-
-        this._applyCamera();
+        this._camera.panX = target.x * this._camera.zoom - screenX;
+        this._camera.panY = target.y * this._camera.zoom - screenY;
 
         this._applyPanBoundaries();
     }
@@ -665,24 +677,22 @@ export default class CanvasControl {
     }
 
     // Moves zoom window to be centered around target
-    translateToTarget(target) {
+    panToTarget(target) {
         const currentZoom = this._camera.zoom;
         const viewRect = this.currentViewRect();
 
         this._resetCamera();
-        this._translateCamera(
-            -target.x * currentZoom + viewRect.width * currentZoom / 2,
-            -target.y * currentZoom + viewRect.height * currentZoom / 2
+        this._panCamera(
+            target.x * currentZoom - viewRect.width * currentZoom / 2,
+            target.y * currentZoom - viewRect.height * currentZoom / 2
         );
         this._scaleCamera(currentZoom);
-        this._applyCamera();
 
         this._applyPanBoundaries();
     }
 
-    translateAmount(x, y) {
-        this._translateCamera(x, y);
-        this._applyCamera();
+    panBy(x, y, ignoreZoom = false) {
+        this._panCamera(x, y, ignoreZoom);
 
         this._applyPanBoundaries();
     }
@@ -716,18 +726,18 @@ export default class CanvasControl {
 
     // Lock zoom-out to a set of boundaries
     _applyPanBoundaries() {
-        if (this._panBoundaries) {
-            const topLeft = this.screenToWorld(0, 0);
-            const bottomRight = this.screenToWorld(this.outerWidth, this.outerHeight);
+        const topLeft = this.screenToWorld(0, 0);
+        const bottomRight = this.screenToWorld(this.outerWidth, this.outerHeight);
 
-            const rightBoundary = this._panBoundaries.x + this._panBoundaries.width;
-            const bottomBoundary = this._panBoundaries.y + this._panBoundaries.height;
+        const rightBoundary = this._panBoundaries.x + this._panBoundaries.width;
+        const bottomBoundary = this._panBoundaries.y + this._panBoundaries.height;
 
-            if (topLeft.x < this._panBoundaries.x) this._translateCamera(topLeft.x - this._panBoundaries.x, 0);
-            if (topLeft.y < this._panBoundaries.y) this._translateCamera(0, topLeft.y - this._panBoundaries.y);
-            if (bottomRight.x > rightBoundary) this._translateCamera(bottomRight.x - rightBoundary, 0);
-            if (bottomRight.y > bottomBoundary) this._translateCamera(0, bottomRight.y - bottomBoundary);
-        }
+        if (topLeft.x < this._panBoundaries.x) this._panCamera(this._panBoundaries.x - topLeft.x, 0);
+        if (topLeft.y < this._panBoundaries.y) this._panCamera(0, this._panBoundaries.y - topLeft.y);
+        if (bottomRight.x > rightBoundary) this._panCamera(rightBoundary - bottomRight.x, 0);
+        if (bottomRight.y > bottomBoundary) this._panCamera(0, bottomBoundary - bottomRight.y);
+
+        this._applyCamera();
     }
 
 

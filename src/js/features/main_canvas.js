@@ -72,7 +72,8 @@ export function init() {
             else {
                 eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
                     // Divide pan values to slow pan down a tiny bit
-                    delta: [-panX / 1.25, -panY / 1.25]
+                    delta: [panX / 1.25, panY / 1.25],
+                    ignoreZoom: true // Wheel delta already reflects world-like movement (is consistent across zoom levels)
                 })
             }
         },
@@ -111,10 +112,10 @@ function setupEventBus() {
         iterateCanvases(canvasControl => canvasControl.zoomToFit())
     })
     eventBus.on(EVENTS.CANVAS.PAN_TO_TARGET, ({target}) => {
-        iterateCanvases(canvasControl => canvasControl.translateToTarget(target))
+        iterateCanvases(canvasControl => canvasControl.panToTarget(target))
     })
-    eventBus.on(EVENTS.CANVAS.PAN_DELTA, ({delta}) => {
-        iterateCanvases(canvasControl => canvasControl.translateAmount(...delta))
+    eventBus.on(EVENTS.CANVAS.PAN_DELTA, ({delta, ignoreZoom}) => {
+        iterateCanvases(canvasControl => canvasControl.panBy(...delta, ignoreZoom))
     })
 
     eventBus.on(EVENTS.CANVAS.HOVERED, ({cell}) => {
