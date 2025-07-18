@@ -587,7 +587,10 @@ function setupDrawSubMenu(toolKey) {
 }
 
 function getDrawingModifiers(mouseEvent) {
-    const result = {}
+    const result = {
+        fullCellHandle: true
+    }
+
     const tool = state.getConfig('tool');
     const drawType = state.getConfig('drawTypes')[tool]
 
@@ -626,6 +629,8 @@ function startDrawing(factory, cell, mouseEvent, options = {}) {
         // canvasDimensions: state.getConfig('dimensions'),
     }, options));
 
+    drawingContent.beginResize();
+
     updateDrawing(cell, mouseEvent);
 }
 
@@ -643,7 +648,7 @@ function updateDrawing(cell, mouseEvent) {
 function finishDrawing() {
     if (!drawingContent) return;
 
-    drawingContent.commitResize();
+    drawingContent.finishResize();
     state.addCurrentCelShape(drawingContent);
 
     drawingContent = null;
@@ -868,7 +873,6 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl) {
         case 'select':
             const handle = vectorSelection.getHandle(cell, mouseEvent, canvasControl);
             return handle ? handle.cursor : 'default';
-            // return 'default';
         case 'text-editor':
             return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? grab : 'text';
         case 'selection-rect':

@@ -1,5 +1,6 @@
 import * as state from "../../state/index.js";
 import CellArea from "../../geometry/cell_area.js";
+import BaseRect from "../../geometry/shapes/rect/base.js";
 
 export default class ShapeSelection {
     constructor() {
@@ -50,6 +51,50 @@ export default class ShapeSelection {
         } else {
             this.add(shapeId);
         }
+    }
+
+    // ----------------------------------------- Resizing
+    // These resize functions have extra logic to handle resizing a group of shapes together.
+    //
+    // When the user begins resizing, we capture the initial bounding rectangle that encompasses all shapes in the
+    // group. As the resize progresses, we compute a new bounding rectangle based on the updated mouse position. Both
+    // the original and new bounding rectangles are passed to each shape's `resizeInGroup` function.
+    //
+    // Each shape uses these bounding rectangles to determine its original relative position and size within the group.
+    // It then applies the same relative proportions to fit itself into the new bounding rectangle, preserving layout
+    // relationships during the group resize.
+
+    beginResize() {
+        if (this.length === 0) return;
+
+        if (this.length > 1) {
+            if (this._boundingRect) throw new Error(`beginResize has already been called`);
+            const area = this.boundingArea;
+            this._boundingRect = new BaseRect(undefined, 'rect', {
+                topLeft: area.topLeft,
+                numRows: area.numRows,
+                numCols: area.numCols
+            })
+            this._boundingRect.beginResize();
+        }
+
+        this.update(shape => shape.beginResize());
+    }
+    resize(handleType, roundedCell) {
+        if (this.length === 0) return;
+
+        if (this.length === 1) {
+            this.update(shape => shape.resize(handleType, roundedCell));
+        } else {
+            this._boundingRect.resize(handleType, roundedCell);
+            const oldBox = this._boundingRect.resizeSnapshot;
+            const newBox = this._boundingRect.props;
+            this.update(shape => shape.resizeInGroup(oldBox, newBox));
+        }
+    }
+    finishResize() {
+        this._boundingRect = undefined;
+        this.update(shape => shape.finishResize());
     }
 
     // ----------------------------------------- Pending selections

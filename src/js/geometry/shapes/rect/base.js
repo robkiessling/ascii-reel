@@ -107,61 +107,96 @@ export default class BaseRect extends Shape {
         return result;
     }
 
-    resize(handle, position, mods) {
+    /**
+     *
+     * @param handle
+     * @param position - New position of the dragged handle
+     * @param {Object} options - resize options
+     * @param {boolean} [options.fullCellHandle=false] - If true, the position will be treated as a cell. If false,
+     *   position will be offset according to which corner of the cell the handle is in.
+     */
+    resize(handle, position, options = {}) {
+        const snapshot = this.resizeSnapshot;
         if (handle === undefined) handle = HANDLES.BOTTOM_RIGHT_CORNER;
 
-        let anchor1 = this.props.topLeft.clone();
-        let anchor2 = this.props.topLeft.clone().translate(this.props.numRows - 1, this.props.numCols - 1);
-
+        let anchor; // anchor is the corner of the rectangle that is not moving (it is opposite of the handle)
         switch(handle) {
             case HANDLES.TOP_LEFT_CORNER:
-                anchor1.row = position.row;
-                anchor1.col = position.col;
+                anchor = snapshot.topLeft.clone().translate(snapshot.numRows - 1, snapshot.numCols - 1); // anchor is bottom-right
                 break;
             case HANDLES.TOP_RIGHT_CORNER:
-                anchor1.row = position.row;
-                anchor2.col = position.col;
+                anchor = snapshot.topLeft.clone().translate(snapshot.numRows - 1, 0); // anchor is bottom-left
                 break;
             case HANDLES.BOTTOM_LEFT_CORNER:
-                anchor1.col = position.col;
-                anchor2.row = position.row;
+                anchor = snapshot.topLeft.clone().translate(0, snapshot.numCols - 1); // anchor is top-right
                 break;
             case HANDLES.BOTTOM_RIGHT_CORNER:
-                anchor2.row = position.row;
-                anchor2.col = position.col;
+                anchor = snapshot.topLeft.clone(); // anchor is top-left
                 break;
-
             case HANDLES.TOP_EDGE:
-                anchor1.row = position.row;
+                // todo
+                // anchor1.row = position.row;
                 break;
             case HANDLES.LEFT_EDGE:
-                anchor1.col = position.col;
+                // anchor1.col = position.col;
                 break;
             case HANDLES.RIGHT_EDGE:
-                anchor2.col = position.col;
+                // anchor2.col = position.col;
                 break;
             case HANDLES.BOTTOM_EDGE:
-                anchor2.row = position.row;
+                // anchor2.row = position.row;
                 break;
             default:
                 throw new Error(`Invalid handle: ${handle}`);
         }
 
-        const topLeft = new Cell(Math.min(anchor1.row, anchor2.row), Math.min(anchor1.col, anchor2.col));
-        const bottomRight = new Cell(Math.max(anchor1.row, anchor2.row), Math.max(anchor1.col, anchor2.col));
-
-        // Need to use a draft because we need the original topLeft until resize is done
-        this.draft = {
-            topLeft: topLeft,
-            numRows: bottomRight.row - topLeft.row + 1,
-            numCols: bottomRight.col - topLeft.col + 1,
+        // Handles positioned on the bottom or right edges are conceptually attached to the *next* row/column
+        // (i.e. one cell past the handle corner). For example, the bottom-right handle is located at [row+1, col+1].
+        // To get the correct handle cell for the rectangle during resizing, we subtract [1,0] or [0,1] accordingly.
+        if (!options.fullCellHandle) {
+            position = position.clone();
+            if (position.row > anchor.row) position.translate(-1, 0);
+            if (position.col > anchor.col) position.translate(0, -1);
         }
+
+        const topLeft = new Cell(Math.min(anchor.row, position.row), Math.min(anchor.col, position.col));
+        const bottomRight = new Cell(Math.max(anchor.row, position.row), Math.max(anchor.col, position.col));
+
+        this.props.topLeft = topLeft;
+        this.props.numRows = bottomRight.row - topLeft.row + 1;
+        this.props.numCols = bottomRight.col - topLeft.col + 1;
+
+        this._clearCache();
+    }
+
+    resizeInGroup(oldGroupBox, newGroupBox) {
+        const snapshot = this.resizeSnapshot;
+
+        let relX = (snapshot.topLeft.col - oldGroupBox.topLeft.col) / oldGroupBox.numCols;
+        let relY = (snapshot.topLeft.row - oldGroupBox.topLeft.row) / oldGroupBox.numRows;
+        const relW = snapshot.numCols / oldGroupBox.numCols;
+        const relH = snapshot.numRows / oldGroupBox.numRows;
+
+        // When dragging a corner handle past its opposite corner anchor, the group must be inverted
+        const invertRows = newGroupBox.topLeft.row < oldGroupBox.topLeft.row;
+        const invertCols = newGroupBox.topLeft.col < oldGroupBox.topLeft.col;
+        if (invertRows) relY = (1 - relY) - relH;
+        if (invertCols) relX = (1 - relX) - relW;
+
+        let newCol = Math.round(newGroupBox.topLeft.col + newGroupBox.numCols * relX);
+        let newRow = Math.round(newGroupBox.topLeft.row + newGroupBox.numRows * relY);
+        const newNumCols = Math.max(1, Math.round(newGroupBox.numCols * relW));
+        const newNumRows = Math.max(1, Math.round(newGroupBox.numRows * relH));
+
+        this.props.topLeft = new Cell(newRow, newCol);
+        this.props.numRows = newNumRows;
+        this.props.numCols = newNumCols;
 
         this._clearCache();
     }
 
     _cacheGeometry() {
-        const state = this.appliedDraft();
+        const state = this.props;
 
         const boundingArea = CellArea.fromOriginAndDimensions(state.topLeft, state.numRows, state.numCols);
         const innerArea = boundingArea.innerArea();

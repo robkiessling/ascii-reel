@@ -57,6 +57,7 @@ function onMousedown(cell, mouseEvent, canvasControl) {
         case HANDLES.BOTTOM_LEFT_CORNER:
         case HANDLES.BOTTOM_RIGHT_CORNER:
             draggedHandle = handle;
+            shapeSelection.beginResize();
             break;
         case HANDLES.TOP_EDGE:
         case HANDLES.LEFT_EDGE:
@@ -92,9 +93,8 @@ function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
         case HANDLES.TOP_RIGHT_CORNER:
         case HANDLES.BOTTOM_LEFT_CORNER:
         case HANDLES.BOTTOM_RIGHT_CORNER:
-            const offset = draggedHandle.cellOriginOffset;
-            const roundedCell = canvasControl.roundedCellAtScreenXY(mouseEvent.offsetX - offset.x, mouseEvent.offsetY - offset.y);
-            shapeSelection.update(shape => shape.resize(draggedHandle.type, roundedCell));
+            const roundedCell = canvasControl.roundedCellAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
+            shapeSelection.resize(draggedHandle.type, roundedCell)
             break;
         case HANDLES.TOP_EDGE:
         case HANDLES.LEFT_EDGE:
@@ -122,7 +122,7 @@ function finishDragHandle() {
         case HANDLES.TOP_RIGHT_CORNER:
         case HANDLES.BOTTOM_LEFT_CORNER:
         case HANDLES.BOTTOM_RIGHT_CORNER:
-            shapeSelection.update(shape => shape.commitResize());
+            shapeSelection.finishResize();
             break;
         case HANDLES.TOP_EDGE:
         case HANDLES.LEFT_EDGE:
@@ -160,8 +160,7 @@ export function getHandle(cell, mouseEvent, canvasControl) {
                     ) {
                         return {
                             type: handleType,
-                            cursor: corner.cursor,
-                            cellOriginOffset: corner.cellOriginOffset,
+                            cursor: corner.cursor
                         }
                     }
                     break;
@@ -310,7 +309,6 @@ function cornerRegion(canvasControl, cellArea, corner) {
     let x, y; // in world units
     let xPadding, yPadding; // in screen units
     let cursor;
-    let associatedCell;
 
     switch (corner) {
         case HANDLES.TOP_LEFT_CORNER:
@@ -319,8 +317,6 @@ function cornerRegion(canvasControl, cellArea, corner) {
             xPadding = -BOUNDING_BOX_PADDING;
             yPadding = -BOUNDING_BOX_PADDING;
             cursor = 'nwse-resize';
-            associatedCell = cellArea.topLeft;
-            // cellOriginOffset = [xPadding, yPadding];
             break;
         case HANDLES.TOP_RIGHT_CORNER:
             x = cellArea.x + cellArea.width;
@@ -328,8 +324,6 @@ function cornerRegion(canvasControl, cellArea, corner) {
             xPadding = BOUNDING_BOX_PADDING;
             yPadding = -BOUNDING_BOX_PADDING;
             cursor = 'nesw-resize';
-            associatedCell = cellArea.topRight;
-            // cellOriginOffset = [xPadding, yPadding];
             break;
         case HANDLES.BOTTOM_LEFT_CORNER:
             x = cellArea.x;
@@ -337,7 +331,6 @@ function cornerRegion(canvasControl, cellArea, corner) {
             xPadding = -BOUNDING_BOX_PADDING;
             yPadding = BOUNDING_BOX_PADDING;
             cursor = 'nesw-resize';
-            associatedCell = cellArea.bottomLeft;
             break;
         case HANDLES.BOTTOM_RIGHT_CORNER:
             x = cellArea.x + cellArea.width;
@@ -345,20 +338,14 @@ function cornerRegion(canvasControl, cellArea, corner) {
             xPadding = BOUNDING_BOX_PADDING;
             yPadding = BOUNDING_BOX_PADDING;
             cursor = 'nwse-resize';
-            associatedCell = cellArea.bottomRight;
             break;
     }
 
     const screenPosition = canvasControl.worldToScreen(x, y)
-    const cellScreenPosition = canvasControl.worldToScreen(associatedCell.x, associatedCell.y)
     return {
         x: screenPosition.x + xPadding,
         y: screenPosition.y + yPadding,
         size: CORNER_SIZE,
-        cellOriginOffset: {
-            x: screenPosition.x - cellScreenPosition.x,
-            y: screenPosition.y - cellScreenPosition.y
-        },
         cursor: cursor
     }
 }

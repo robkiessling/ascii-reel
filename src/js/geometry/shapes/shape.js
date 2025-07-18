@@ -26,17 +26,32 @@ export default class Shape {
         return structuredClone(props);
     }
 
-    resize(handle, position, mods) {
+    // ------------------------------------------------------ Resizing
+    // Resizing requires a snapshot of its initial state to compare to. So resizing is a three part process:
+    // 1. call beginResize()
+    // 2. call resize() multiple times as user drags. resize() can reference resizeSnapshot if needed
+    // 3. call finishResize()
+
+    beginResize() {
+        if (this._resizeSnapshot) throw new Error(`beginResize has already been called`);
+        this._resizeSnapshot = this.serializeProps();
+    }
+
+    get resizeSnapshot() {
+        if (!this._resizeSnapshot) throw new Error(`Must call beginResize before resizing`)
+        return this.constructor.deserializeProps(this._resizeSnapshot);
+    }
+
+    resize(handle, position, options) {
         throw new Error(`resize must be implemented by subclass`)
     }
-    commitResize() {
-        if (!this.draft) return;
-        $.extend(this.props, this.draft);
-        this.draft = undefined;
-        this._clearCache();
+
+    resizeInGroup(oldGroupBox, newGroupBox) {
+        throw new Error(`resizeInGroup must be implemented by subclass`)
     }
-    appliedDraft() {
-        return this.draft ? { ...this.props, ...this.draft } : this.props;
+
+    finishResize() {
+        this._resizeSnapshot = undefined;
     }
 
 
