@@ -56,13 +56,12 @@ function onMousedown(cell, mouseEvent, canvasControl) {
         case HANDLES.TOP_RIGHT_CORNER:
         case HANDLES.BOTTOM_LEFT_CORNER:
         case HANDLES.BOTTOM_RIGHT_CORNER:
-            draggedHandle = handle;
-            shapeSelection.beginResize();
-            break;
         case HANDLES.TOP_EDGE:
         case HANDLES.LEFT_EDGE:
         case HANDLES.RIGHT_EDGE:
         case HANDLES.BOTTOM_EDGE:
+            draggedHandle = handle;
+            shapeSelection.beginResize();
             break;
         case HANDLES.BODY:
             draggedHandle = handle;
@@ -93,13 +92,12 @@ function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
         case HANDLES.TOP_RIGHT_CORNER:
         case HANDLES.BOTTOM_LEFT_CORNER:
         case HANDLES.BOTTOM_RIGHT_CORNER:
-            const roundedCell = canvasControl.roundedCellAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
-            shapeSelection.resize(draggedHandle.type, roundedCell)
-            break;
         case HANDLES.TOP_EDGE:
         case HANDLES.LEFT_EDGE:
         case HANDLES.RIGHT_EDGE:
         case HANDLES.BOTTOM_EDGE:
+            const roundedCell = canvasControl.roundedCellAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
+            shapeSelection.resize(draggedHandle.type, roundedCell)
             break;
         case HANDLES.BODY:
             const rowDelta = cell.row - moveStep.row;
@@ -122,12 +120,11 @@ function finishDragHandle() {
         case HANDLES.TOP_RIGHT_CORNER:
         case HANDLES.BOTTOM_LEFT_CORNER:
         case HANDLES.BOTTOM_RIGHT_CORNER:
-            shapeSelection.finishResize();
-            break;
         case HANDLES.TOP_EDGE:
         case HANDLES.LEFT_EDGE:
         case HANDLES.RIGHT_EDGE:
         case HANDLES.BOTTOM_EDGE:
+            shapeSelection.finishResize();
             break;
         case HANDLES.BODY:
             shapeSelection.commitPending();
@@ -168,6 +165,16 @@ export function getHandle(cell, mouseEvent, canvasControl) {
                 case HANDLES.LEFT_EDGE:
                 case HANDLES.RIGHT_EDGE:
                 case HANDLES.BOTTOM_EDGE:
+                    const edge = edgeRegion(canvasControl, shapeSelection.boundingArea, handleType);
+                    if (
+                        (mouseEvent.offsetX >= edge.x1) && (mouseEvent.offsetX <= edge.x2) &&
+                        (mouseEvent.offsetY >= edge.y1) && (mouseEvent.offsetY <= edge.y2)
+                    ) {
+                        return {
+                            type: handleType,
+                            cursor: edge.cursor
+                        }
+                    }
                     break;
                 case HANDLES.BODY:
                     const hitShape = state.checkCurrentCelHitbox(cell, shapeSelection.shapeIds);
@@ -226,10 +233,11 @@ export function drawShapeSelection(canvasControl) {
 }
 
 const SHAPE_OUTLINE_WIDTH = 2;
-const BOUNDING_BOX_PADDING = 2;
+const BOUNDING_BOX_PADDING = 6;
 
 const CORNER_SIZE = 8;
 const CORNER_RADIUS = 2;
+const EDGE_WIDTH = 8;
 const DASH_OUTLINE_LENGTH = 5;
 
 function drawBoundingBox(canvasControl, cellArea, dashed = false) {
@@ -280,6 +288,8 @@ function drawHandles(canvasControl, cellArea) {
                 const corner = cornerRegion(canvasControl, cellArea, handle);
                 drawCorner(canvasControl, corner)
                 break;
+
+            // EDGE handles have no visual representation
         }
     })
 }
@@ -345,7 +355,54 @@ function cornerRegion(canvasControl, cellArea, corner) {
     return {
         x: screenPosition.x + xPadding,
         y: screenPosition.y + yPadding,
-        size: CORNER_SIZE,
+        size: CORNER_SIZE, // in screen units
         cursor: cursor
     }
+}
+
+function edgeRegion(canvasControl, cellArea, edge) {
+    let screen1, screen2; // in screen units
+    let x1, x2, y1, y2; // in screen units
+    let cursor;
+
+    switch (edge) {
+        case HANDLES.TOP_EDGE:
+            screen1 = canvasControl.worldToScreen(cellArea.x, cellArea.y);
+            screen2 = canvasControl.worldToScreen(cellArea.x + cellArea.width, cellArea.y);
+            x1 = screen1.x - BOUNDING_BOX_PADDING;
+            x2 = screen2.x + BOUNDING_BOX_PADDING;
+            y1 = screen1.y - EDGE_WIDTH / 2 - BOUNDING_BOX_PADDING;
+            y2 = screen2.y + EDGE_WIDTH / 2 - BOUNDING_BOX_PADDING;
+            cursor = 'ns-resize';
+            break;
+        case HANDLES.LEFT_EDGE:
+            screen1 = canvasControl.worldToScreen(cellArea.x, cellArea.y);
+            screen2 = canvasControl.worldToScreen(cellArea.x, cellArea.y + cellArea.height);
+            x1 = screen1.x - EDGE_WIDTH / 2 - BOUNDING_BOX_PADDING;
+            x2 = screen2.x + EDGE_WIDTH / 2 - BOUNDING_BOX_PADDING;
+            y1 = screen1.y - BOUNDING_BOX_PADDING;
+            y2 = screen2.y + BOUNDING_BOX_PADDING;
+            cursor = 'ew-resize';
+            break;
+        case HANDLES.RIGHT_EDGE:
+            screen1 = canvasControl.worldToScreen(cellArea.x + cellArea.width, cellArea.y);
+            screen2 = canvasControl.worldToScreen(cellArea.x + cellArea.width, cellArea.y + cellArea.height);
+            x1 = screen1.x - EDGE_WIDTH / 2 + BOUNDING_BOX_PADDING;
+            x2 = screen2.x + EDGE_WIDTH / 2 + BOUNDING_BOX_PADDING;
+            y1 = screen1.y - BOUNDING_BOX_PADDING;
+            y2 = screen2.y + BOUNDING_BOX_PADDING;
+            cursor = 'ew-resize';
+            break;
+        case HANDLES.BOTTOM_EDGE:
+            screen1 = canvasControl.worldToScreen(cellArea.x, cellArea.y + cellArea.height);
+            screen2 = canvasControl.worldToScreen(cellArea.x + cellArea.width, cellArea.y + cellArea.height);
+            x1 = screen1.x - BOUNDING_BOX_PADDING;
+            x2 = screen2.x + BOUNDING_BOX_PADDING;
+            y1 = screen1.y - EDGE_WIDTH / 2 + BOUNDING_BOX_PADDING;
+            y2 = screen2.y + EDGE_WIDTH / 2 + BOUNDING_BOX_PADDING;
+            cursor = 'ns-resize';
+            break;
+    }
+
+    return {x1, x2, y1, y2, cursor};
 }

@@ -118,8 +118,9 @@ export default class BaseRect extends Shape {
     resize(handle, position, options = {}) {
         const snapshot = this.resizeSnapshot;
         if (handle === undefined) handle = HANDLES.BOTTOM_RIGHT_CORNER;
+        position = position.clone();
 
-        let anchor; // anchor is the corner of the rectangle that is not moving (it is opposite of the handle)
+        let anchor; // anchor is the corner/edge of the rectangle that is not moving (it is opposite of the handle)
         switch(handle) {
             case HANDLES.TOP_LEFT_CORNER:
                 anchor = snapshot.topLeft.clone().translate(snapshot.numRows - 1, snapshot.numCols - 1); // anchor is bottom-right
@@ -134,17 +135,25 @@ export default class BaseRect extends Shape {
                 anchor = snapshot.topLeft.clone(); // anchor is top-left
                 break;
             case HANDLES.TOP_EDGE:
-                // todo
-                // anchor1.row = position.row;
+                anchor = snapshot.topLeft.clone().translate(snapshot.numRows - 1, 0); // anchor is bottom-left
+                
+                // Lock the position's col to the right edge. This way, since anchor is on bottom-left and position
+                // is locked to right, the rect width stays the same. Note that we do not subtract 1; we actually
+                // want the col to be 1 space *outside* the rect, since the cells for the right edge are 1 space
+                // outside and to the right of the rect.
+                position.col = snapshot.topLeft.col + snapshot.numCols; // lock position's col to right edge
                 break;
             case HANDLES.LEFT_EDGE:
-                // anchor1.col = position.col;
+                anchor = snapshot.topLeft.clone().translate(0, snapshot.numCols - 1); // anchor is top-right
+                position.row = snapshot.topLeft.row + snapshot.numRows; // lock position's row to bottom edge
                 break;
             case HANDLES.RIGHT_EDGE:
-                // anchor2.col = position.col;
+                anchor = snapshot.topLeft.clone(); // anchor is top-left
+                position.row = snapshot.topLeft.row + snapshot.numRows; // lock position's row to bottom edge
                 break;
             case HANDLES.BOTTOM_EDGE:
-                // anchor2.row = position.row;
+                anchor = snapshot.topLeft.clone(); // anchor is top-left
+                position.col = snapshot.topLeft.col + snapshot.numCols; // lock position's col to right edge
                 break;
             default:
                 throw new Error(`Invalid handle: ${handle}`);
@@ -154,7 +163,6 @@ export default class BaseRect extends Shape {
         // (i.e. one cell past the handle corner). For example, the bottom-right handle is located at [row+1, col+1].
         // To get the correct handle cell for the rectangle during resizing, we subtract [1,0] or [0,1] accordingly.
         if (!options.fullCellHandle) {
-            position = position.clone();
             if (position.row > anchor.row) position.translate(-1, 0);
             if (position.col > anchor.col) position.translate(0, -1);
         }
