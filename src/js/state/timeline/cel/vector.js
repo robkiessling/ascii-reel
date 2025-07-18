@@ -132,7 +132,13 @@ export default class VectorCel {
         this._cachedGlyphs = undefined;
     }
 
-    updateShape(shapeId, shapeData) {
+    getShape(shapeId) {
+        if (this.shapesById[shapeId] === undefined) throw new Error(`Could not find shape for id ${shapeId}`);
+        return this.shapesById[shapeId];
+    }
+
+    updateShape(shapeId, updater) {
+        updater(this.shapesById[shapeId])
         this._clearCachedGlyphs();
     }
     deleteShape(shapeId) {
@@ -143,13 +149,15 @@ export default class VectorCel {
         return this.shapesOrder.map(shapeId => this.shapesById[shapeId]);
     }
 
-    getHandle(cell, cellPixel, selectedShapeIds) {
+    checkHitbox(cell, forShapeIds) {
         // Find first shape that has a handle at that cell, iterating in reverse order (top shape is checked first)
         for (let i = this.shapesOrder.length - 1; i >= 0; i--) {
             const shapeId = this.shapesOrder[i]
             const shape = this.shapesById[shapeId];
-            const handle = shape.getHandle(cell, cellPixel, selectedShapeIds.has(shapeId));
-            if (handle) return handle;
+
+            if (forShapeIds !== undefined && !forShapeIds.includes(shapeId)) continue;
+
+            if (shape.checkHitbox(cell)) return shape;
         }
 
         return null;

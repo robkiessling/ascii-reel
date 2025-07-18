@@ -108,39 +108,40 @@ export default class BaseRect extends Shape {
     }
 
     resize(handle, position, mods) {
-        if (handle === undefined) handle = HANDLES.BOTTOM_RIGHT;
+        if (handle === undefined) handle = HANDLES.BOTTOM_RIGHT_CORNER;
 
         let anchor1 = this.props.topLeft.clone();
         let anchor2 = this.props.topLeft.clone().translate(this.props.numRows - 1, this.props.numCols - 1);
 
         switch(handle) {
-            case HANDLES.TOP_LEFT:
+            case HANDLES.TOP_LEFT_CORNER:
                 anchor1.row = position.row;
                 anchor1.col = position.col;
                 break;
-            case HANDLES.TOP_CENTER:
-                anchor1.row = position.row;
-                break;
-            case HANDLES.TOP_RIGHT:
+            case HANDLES.TOP_RIGHT_CORNER:
                 anchor1.row = position.row;
                 anchor2.col = position.col;
                 break;
-            case HANDLES.CENTER_LEFT:
-                anchor1.col = position.col;
-                break;
-            case HANDLES.CENTER_RIGHT:
-                anchor2.col = position.col;
-                break;
-            case HANDLES.BOTTOM_LEFT:
+            case HANDLES.BOTTOM_LEFT_CORNER:
                 anchor1.col = position.col;
                 anchor2.row = position.row;
                 break;
-            case HANDLES.BOTTOM_CENTER:
-                anchor2.row = position.row;
-                break;
-            case HANDLES.BOTTOM_RIGHT:
+            case HANDLES.BOTTOM_RIGHT_CORNER:
                 anchor2.row = position.row;
                 anchor2.col = position.col;
+                break;
+
+            case HANDLES.TOP_EDGE:
+                anchor1.row = position.row;
+                break;
+            case HANDLES.LEFT_EDGE:
+                anchor1.col = position.col;
+                break;
+            case HANDLES.RIGHT_EDGE:
+                anchor2.col = position.col;
+                break;
+            case HANDLES.BOTTOM_EDGE:
+                anchor2.row = position.row;
                 break;
             default:
                 throw new Error(`Invalid handle: ${handle}`);
@@ -149,6 +150,7 @@ export default class BaseRect extends Shape {
         const topLeft = new Cell(Math.min(anchor1.row, anchor2.row), Math.min(anchor1.col, anchor2.col));
         const bottomRight = new Cell(Math.max(anchor1.row, anchor2.row), Math.max(anchor1.col, anchor2.col));
 
+        // Need to use a draft because we need the original topLeft until resize is done
         this.draft = {
             topLeft: topLeft,
             numRows: bottomRight.row - topLeft.row + 1,
@@ -162,6 +164,7 @@ export default class BaseRect extends Shape {
         const state = this.appliedDraft();
 
         const boundingArea = CellArea.fromOriginAndDimensions(state.topLeft, state.numRows, state.numCols);
+        const innerArea = boundingArea.innerArea();
 
         const glyphs = this._initGlyphs(state.numRows, state.numCols);
 
@@ -197,31 +200,19 @@ export default class BaseRect extends Shape {
             if (char !== undefined) this._setGlyph(glyphs, {row, col}, char, colorIndex);
         });
 
+        const hitbox = cell => {
+            if (innerArea && innerArea.doesCellOverlap(cell) && this.props.fillStyle === 'none') return false;
+            return boundingArea.doesCellOverlap(cell);
+        };
+
         this._cache = {
             boundingArea: boundingArea,
             origin: state.topLeft,
-            glyphs: glyphs
+            glyphs: glyphs,
+            hitbox: hitbox
         }
     }
 
-    getHandle(cell, cellPixel, isSelected) {
-        const fullArea = this.boundingArea;
-        const innerArea = fullArea.innerArea();
-
-        if (isSelected) {
-            // If already selected, we have more anchor options
-
-            if (fullArea.doesCellOverlap(cell)) return this._centerHandle();
-        }
-        else {
-            // If not already selected, clicking inside an empty rect does not select the rect
-            if (innerArea && innerArea.doesCellOverlap(cell) && this.props.fillStyle === 'none') return null;
-
-            if (fullArea.doesCellOverlap(cell)) return this._centerHandle();
-        }
-
-        return null;
-    }
 
 
 }

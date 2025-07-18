@@ -160,7 +160,7 @@ export function deleteLayer(index) {
 // --------------------------------------------------------------------------- Cels API
 
 export {
-    hasCharContent, setCelGlyph, addCelShape, charInBounds, translateCel,
+    hasCharContent, setCelGlyph, charInBounds, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, convertToMonochrome
 } from './cels.js'
@@ -222,12 +222,20 @@ export function getCurrentCelGlyph(row, col) {
 export function setCurrentCelGlyph(row, col, char, color) {
     celController.setCelGlyph(currentCel(), row, col, char, color);
 }
+
+
+export function getCurrentCelShape(shapeId) {
+    return celController.getCelShape(currentCel(), shapeId);
+}
 export function addCurrentCelShape(shape) {
     celController.addCelShape(currentCel(), shape)
 }
+export function updateCurrentCelShape(shapeId, updater) {
+    celController.updateCelShape(currentCel(), shapeId, updater);
+}
 
-export function getCurrentCelHandle(cell, cellPixel, selectedShapeIds) {
-    return currentCel().getHandle(cell, cellPixel, selectedShapeIds);
+export function checkCurrentCelHitbox(cell, forShapeIds) {
+    return currentCel().checkHitbox(cell, forShapeIds);
 }
 
 /**

@@ -9,7 +9,7 @@ import {hoverColor, HOVER_CELL_OPACITY, PRIMARY_COLOR, SELECTION_COLOR, checkerb
 import {EMPTY_CHAR, WHITESPACE_CHAR, isMonospaceUnsafeChar} from "../config/chars.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
-const WINDOW_BORDER_WIDTH = 4;
+const WINDOW_BORDER_WIDTH = 3;
 
 const VISIBLE_WHITESPACE_CHAR = '·';
 const VISIBLE_WHITESPACE_COLOR = 'rgba(192,192,192,0.5)'
@@ -54,8 +54,6 @@ export default class CanvasControl {
         this.context = this.canvas.getContext("2d", {
             willReadFrequently: options.willReadFrequently
         });
-        
-        this.shapeManager = new CanvasShapeManager(this.context, this.worldToScreen.bind(this), this.screenToWorld.bind(this));
 
         this._setupMouseEvents();
         this._setupWheelEvents();
@@ -83,9 +81,10 @@ export default class CanvasControl {
         if (resetZoom || !this.initialized) {
             this._resetCamera();
             this._buildZoomPanBoundaries(true);
+            // Don't need to apply zoom/pan boundaries; assume a camera that has been reset is within bounds
         }
         else {
-            this._applyCamera();
+            this._applyCamera(); // Apply camera with new canvas dimensions
             this._buildZoomPanBoundaries(false);
             this._applyZoomBoundaries();
             this._applyPanBoundaries();
@@ -274,10 +273,6 @@ export default class CanvasControl {
         this.context.fillRect(...cell.xywh);
     }
 
-    drawShapeSelection(shapes) {
-        this._inScreenSpace(() => this.shapeManager.drawSelection(shapes))
-    }
-
     outlinePolygon(polygon, isDashed) {
         this.context.lineWidth = OUTLINE_WIDTH;
 
@@ -411,10 +406,10 @@ export default class CanvasControl {
     // -------------------------------------------------------------- Camera helpers
     /**
      * Cache camera state (zoom, panX, panY) instead of relying on context.getTransform(). This decouples the camera
-     * logic from the canvas context, allowing accurate world/screen conversions (e.g., screenToWorld, worldToScreen)
-     * regardless of the current transform.
+     * logic from the canvas context, allowing world/screen conversions (e.g., screenToWorld, worldToScreen) regardless
+     * of the current transform.
      *
-     * For example, in `_inScreenSpace`, we can temporarily reset to the identity transform to draw UI elements while
+     * For example, in `inScreenSpace`, we can temporarily reset to the identity transform to draw UI elements while
      * still using the cached camera state for coordinate conversions.
      */
 
@@ -496,7 +491,7 @@ export default class CanvasControl {
      * Note: While the transform is reset, the camera state remains unchanged, so you can still use worldToScreen and
      * screenToWorld to convert coordinates based on the current zoom and pan.
      */
-    _inScreenSpace(callback) {
+    inScreenSpace(callback) {
         this.context.setTransform(this._dpr, 0, 0, this._dpr, 0, 0);
         callback();
         this._applyCamera();
@@ -540,6 +535,13 @@ export default class CanvasControl {
         const point = this.screenToWorld(x, y);
         const row = Math.floor(point.y / fontHeight);
         const col = Math.floor(point.x / fontWidth);
+        return new Cell(row, col);
+    }
+
+    roundedCellAtScreenXY(x, y) {
+        const point = this.screenToWorld(x, y);
+        const row = Math.round(point.y / fontHeight);
+        const col = Math.round(point.x / fontWidth);
         return new Cell(row, col);
     }
 
@@ -667,6 +669,7 @@ export default class CanvasControl {
         // Figure out what pan is needed to keep that world point at the same screen point
         this._camera.panX = target.x * this._camera.zoom - screenX;
         this._camera.panY = target.y * this._camera.zoom - screenY;
+        this._applyCamera();
 
         this._applyPanBoundaries();
     }
@@ -687,12 +690,14 @@ export default class CanvasControl {
             target.y * currentZoom - viewRect.height * currentZoom / 2
         );
         this._scaleCamera(currentZoom);
+        this._applyCamera();
 
         this._applyPanBoundaries();
     }
 
     panBy(x, y, ignoreZoom = false) {
         this._panCamera(x, y, ignoreZoom);
+        this._applyCamera();
 
         this._applyPanBoundaries();
     }
@@ -732,12 +737,17 @@ export default class CanvasControl {
         const rightBoundary = this._panBoundaries.x + this._panBoundaries.width;
         const bottomBoundary = this._panBoundaries.y + this._panBoundaries.height;
 
-        if (topLeft.x < this._panBoundaries.x) this._panCamera(this._panBoundaries.x - topLeft.x, 0);
-        if (topLeft.y < this._panBoundaries.y) this._panCamera(0, this._panBoundaries.y - topLeft.y);
-        if (bottomRight.x > rightBoundary) this._panCamera(rightBoundary - bottomRight.x, 0);
-        if (bottomRight.y > bottomBoundary) this._panCamera(0, bottomBoundary - bottomRight.y);
+        let dx = 0, dy = 0;
 
-        this._applyCamera();
+        if (topLeft.x < this._panBoundaries.x) dx = this._panBoundaries.x - topLeft.x;
+        if (topLeft.y < this._panBoundaries.y) dy = this._panBoundaries.y - topLeft.y;
+        if (bottomRight.x > rightBoundary) dx = rightBoundary - bottomRight.x;
+        if (bottomRight.y > bottomBoundary) dy = bottomBoundary - bottomRight.y;
+
+        if (dx !== 0 || dy !== 0) {
+            this._panCamera(dx, dy);
+            this._applyCamera();
+        }
     }
 
 
@@ -820,76 +830,5 @@ export default class CanvasControl {
                 this.options.onWheel({ panX, panY, zoomX, zoomY, target, evt })
             });
         }
-    }
-
-}
-
-const SHAPE_OUTLINE_WIDTH = 2;
-const BOUNDING_BOX_PADDING = 6;
-
-// Handles things like adding little offsets to boundaries, adding offsets to anchor points, hit detection
-class CanvasShapeManager {
-    constructor(context, worldToScreen, screenToWorld) {
-        this.context = context;
-        this.worldToScreen = worldToScreen;
-        this.screenToWorld = screenToWorld;
-    }
-
-    /**
-     *
-     * Context is assumed to be in screen space.
-     */
-    drawSelection(shapes) {
-        if (shapes.length === 0) return;
-
-        if (shapes.length === 1) {
-            const shape = shapes[0];
-            // draw shape anchors
-            // draw shape bounding box (if applicable; line doesn't have)
-            this._drawBoundingBox(shape)
-        } else {
-            // multiple shapes:
-            // draw bounding box around each shape (no anchors)
-            // draw dashed bounding box around shape union
-            // draw anchors on outermost bounding box
-            shapes.forEach(shape => {
-                this._drawBoundingBox(shape);
-            })
-        }
-    }
-
-    _drawBoundingBox(shape) {
-        this.context.lineWidth = SHAPE_OUTLINE_WIDTH;
-        this.context.setLineDash([]);
-        this.context.strokeStyle = SELECTION_COLOR;
-
-        this.context.beginPath();
-        this.context.rect(...this._buildScreenRect(shape.boundingArea.xywh, BOUNDING_BOX_PADDING));
-        this.context.stroke();
-    }
-
-    /**
-     * Converts a rectangle from world space to screen space, and applies fixed screen-space padding.
-     *
-     * The padding is added equally to all sides of the rectangle **in screen coordinates, meaning it is not affected
-     * by zoom level.
-     *
-     * @param {Array} xywh - Rectangle properties in world space
-     * @param {number} padding - Padding (in screen space) to apply. Screen pixels means it won't be affected by zoom.
-     * @returns {Array} - xywh rectangle properties in screen space
-     */
-    _buildScreenRect(xywh, padding) {
-        const [x, y, w, h] = xywh;
-
-        // Convert rectangle to screen pixels
-        const topLeftScreen = this.worldToScreen(x, y);
-        const bottomRightScreen = this.worldToScreen(x + w, y + h);
-
-        return [
-            topLeftScreen.x - padding,
-            topLeftScreen.y - padding,
-            bottomRightScreen.x - topLeftScreen.x + 2 * padding,
-            bottomRightScreen.y - topLeftScreen.y + 2 * padding,
-        ]
     }
 }

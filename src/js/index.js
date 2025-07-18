@@ -14,6 +14,7 @@ import { init as initPreview, resize as resizePreview } from "./features/preview
 import { init as initUnicode } from "./features/unicode.js";
 import { init as initMainCanvas, resize as resizeMainCanvas } from './features/main_canvas.js';
 import { init as initSelection, clear as performClearSelection, syncTextEditorCaretPosition } from './features/selection.js';
+import { init as initVectorSelection } from './features/selection/vector_selection.js';
 import {
     init as initState, isValid as isStateValid,
     loadFromStorage, markClean, loadNewState
@@ -43,6 +44,7 @@ initFrames();
 initLayers();
 initSidebar();
 initSelection();
+initVectorSelection();
 initLocalStorage();
 
 setupEventBus();

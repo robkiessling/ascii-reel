@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
 import {create2dArray} from "../../utils/arrays.js";
-import {HANDLES} from "./constants.js";
+import {COLOR_PROPS, HANDLES, TRANSLATABLE_PROPS} from "./constants.js";
 
 export default class Shape {
     constructor(id, type, props = {}) {
@@ -30,7 +30,7 @@ export default class Shape {
         throw new Error(`resize must be implemented by subclass`)
     }
     commitResize() {
-        if (!this.draft) throw new Error(`draft is required to commitResize()`)
+        if (!this.draft) return;
         $.extend(this.props, this.draft);
         this.draft = undefined;
         this._clearCache();
@@ -62,8 +62,13 @@ export default class Shape {
         };
     }
 
-    getHandle(cell, cellPixel, isSelected) {
-        throw new Error(`getHandle must be implemented by subclass`)
+    /**
+     * Hitbox is the area where if clicked on the shape will be selected. This varies from shape to shape; e.g. for
+     * rectangles if the rectangle is not filled the hitbox is just the outer area.
+     */
+    checkHitbox(cell) {
+        if (!this._cache.hitbox) this._cacheGeometry();
+        return this._cache.hitbox(cell);
     }
 
     _initGlyphs(numRows, numCols) {
@@ -78,55 +83,35 @@ export default class Shape {
     }
 
 
-    //---- handles
-    _centerHandle() {
-        return {
-            shape: this,
-            handle: HANDLES.CENTER_CENTER,
-            cursor: 'move'
-        }
-    }
-    _topLeftHandle() {
-        return {
-            shape: this,
-            handle: HANDLES.TOP_LEFT,
-            cursor: 'nwse-resize'
-        }
-    }
-    _topRightHandle() {
-        return {
-            shape: this,
-            handle: HANDLES.TOP_RIGHT,
-            cursor: 'nesw-resize'
-        }
-    }
-    _bottomLeftHandle() {
-        return {
-            shape: this,
-            handle: HANDLES.BOTTOM_LEFT,
-            cursor: 'nesw-resize'
-        }
-    }
-    _bottomRightHandle() {
-        return {
-            shape: this,
-            handle: HANDLES.BOTTOM_RIGHT,
-            cursor: 'nwse-resize'
-        }
-    }
-
-
 
     hasContent(matchingColorIndex) {
-
+        // TODO
     }
     translate(rowOffset, colOffset) {
+        TRANSLATABLE_PROPS.forEach(prop => {
+            if (this.props[prop] !== undefined) {
+                this.props[prop].translate(rowOffset, colOffset);
+            }
+        })
         this._clearCache();
     }
+
     updateColorIndexes(callback) {
+        COLOR_PROPS.forEach(prop => {
+            if (this.props[prop] !== undefined) {
+                callback(this.props[prop], newColorIndex => this.props[prop] = newColorIndex);
+            }
+        })
+
         this._clearCache();
     }
     colorSwap(oldColorIndex, newColorIndex) {
+        COLOR_PROPS.forEach(prop => {
+            if (this.props[prop] === oldColorIndex) {
+                this.props[prop] = newColorIndex;
+            }
+        })
+
         this._clearCache();
     }
 }

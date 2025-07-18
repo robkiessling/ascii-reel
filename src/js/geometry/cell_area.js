@@ -22,6 +22,14 @@ export default class CellArea extends PixelRect {
         return new CellArea(topLeft.clone(), bottomRight);
     }
 
+    static mergeCellAreas(cellAreas) {
+        const top = Math.min(...cellAreas.map(cellArea => cellArea.topLeft.row));
+        const left = Math.min(...cellAreas.map(cellArea => cellArea.topLeft.col));
+        const bottom = Math.max(...cellAreas.map(cellArea => cellArea.bottomRight.row));
+        const right = Math.max(...cellAreas.map(cellArea => cellArea.bottomRight.col));
+        return new CellArea(new Cell(top, left), new Cell(bottom, right));
+    }
+
     get x() {
         return this.topLeft.x;
     }
@@ -41,6 +49,13 @@ export default class CellArea extends PixelRect {
 
     get numCols() {
         return this.bottomRight.col - this.topLeft.col + 1;
+    }
+
+    get topRight() {
+        return this.topLeft.clone().translate(0, this.numCols - 1);
+    }
+    get bottomLeft() {
+        return this.topLeft.clone().translate(this.numRows - 1, 0);
     }
 
     clone() {

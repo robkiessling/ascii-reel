@@ -13,6 +13,7 @@
 
 import CanvasControl from "../components/canvas_control.js";
 import * as selection from "./selection.js";
+import * as vectorSelection from "./selection/vector_selection.js";
 import {hoveredCells} from "./tools.js";
 import * as state from "../state/index.js";
 import {majorGridColor, minorGridColor} from "../config/colors.js";
@@ -268,8 +269,7 @@ function redrawSelection() {
         caretCanvas.startCaretAnimation(selection.caretCell(), state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
     }
 
-    const selectedShapes = tools.getSelectedShapes();
-    if (selectedShapes.length) selectionCanvas.drawShapeSelection(selectedShapes);
+    vectorSelection.drawShapeSelection(selectionCanvas);
 
     refreshCanvasDetails();
 }

@@ -164,6 +164,16 @@ export default class RasterCel {
     convertToMonochrome() {
         this.colors = create2dArray(numRows(), numCols(), 0);
     }
+
+    /**
+     * Updates all instances of a color index
+     * @param {(colorIndex: number, updater: function) => void} callback - Function to call for each color instance.
+     *   The 1st arg is the given colorIndex so that the caller has a record of what color indexes are in use.
+     *   The 2nd arg is an updater function {(newColorIndex: number) => void} that is given the new color index to use
+     *
+     * TODO Maybe split this into 2 functions?
+     *   getUniqueColorIndexes & updateColorIndexes?
+     */
     updateColorIndexes(callback) {
         this._iterateCells((r, c, char, colorIndex) => {
             callback(colorIndex, newColorIndex => this.colors[r][c] = newColorIndex);
