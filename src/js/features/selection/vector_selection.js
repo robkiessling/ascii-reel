@@ -1,19 +1,16 @@
-
-
 import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js";
 import {SELECTION_COLOR} from "../../config/colors.js";
 import {HANDLES} from "../../geometry/shapes/constants.js";
 import CellArea from "../../geometry/cell_area.js";
+import ShapeSelection from "./shape_selection.js";
 
 export function init() {
     setupEventBus();
 }
 
-let selectedShapeIds = new Set();
-let draggedHandle = null;
-let potentialDeselection = null;
-let potentialSelection = null;
+let shapeSelection = new ShapeSelection();
+let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
 
 function setupEventBus() {
     let moveStep;
@@ -71,23 +68,19 @@ function onMousedown(cell, mouseEvent, canvasControl) {
             if (handle.focusedShapeId === undefined) throw new Error(`HANDLES.BODY must provide focusedShapeId`);
 
             if (mouseEvent.shiftKey) {
-                // Toggle shape inclusion
-                if (selectedShapeIds.has(handle.focusedShapeId)) {
-                    potentialDeselection = handle.focusedShapeId
-                } else {
-                    selectedShapeIds.add(handle.focusedShapeId);
-                }
-            } else if (selectedShapeIds.size > 1 && selectedShapeIds.has(handle.focusedShapeId)) {
-                // Multiple shapes are selected. Might be the start of a click-and-drag move, or just selecting 1
-                potentialSelection = handle.focusedShapeId
+                shapeSelection.toggleShape(handle.focusedShapeId);
+            } else if (shapeSelection.length > 1 && shapeSelection.has(handle.focusedShapeId)) {
+                // If multiple shapes are already selected, mousedown (without shift) merely flags the shape for
+                // selection; the shape will be selected on mouseup once it's confirmed we are not dragging
+                shapeSelection.markPendingSelection(handle.focusedShapeId);
             } else {
-                selectedShapeIds = new Set([handle.focusedShapeId]);
+                shapeSelection.shapeIds = [handle.focusedShapeId];
             }
             eventBus.emit(EVENTS.SELECTION.CHANGED);
             break;
         case null:
             if (mouseEvent.shiftKey) return;
-            selectedShapeIds = new Set();
+            shapeSelection.clear();
             eventBus.emit(EVENTS.SELECTION.CHANGED);
             break;
     }
@@ -101,9 +94,7 @@ function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
         case HANDLES.BOTTOM_RIGHT_CORNER:
             const offset = draggedHandle.cellOriginOffset;
             const roundedCell = canvasControl.roundedCellAtScreenXY(mouseEvent.offsetX - offset.x, mouseEvent.offsetY - offset.y);
-            getSelectedShapes().forEach(shape => {
-                state.updateCurrentCelShape(shape.id, shape => shape.resize(draggedHandle.type, roundedCell));
-            })
+            shapeSelection.update(shape => shape.resize(draggedHandle.type, roundedCell));
             break;
         case HANDLES.TOP_EDGE:
         case HANDLES.LEFT_EDGE:
@@ -113,16 +104,13 @@ function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
         case HANDLES.BODY:
             const rowDelta = cell.row - moveStep.row;
             const colDelta = cell.col - moveStep.col;
-            getSelectedShapes().forEach(shape => {
-                state.updateCurrentCelShape(shape.id, shape => shape.translate(rowDelta, colDelta));
-            })
+            shapeSelection.update(shape => shape.translate(rowDelta, colDelta));
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")
     }
 
-    potentialDeselection = null; // If user moves mouse while down, do not consider them to be deselecting a shape
-    potentialSelection = null;
+    shapeSelection.cancelPending();
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -134,9 +122,7 @@ function finishDragHandle() {
         case HANDLES.TOP_RIGHT_CORNER:
         case HANDLES.BOTTOM_LEFT_CORNER:
         case HANDLES.BOTTOM_RIGHT_CORNER:
-            getSelectedShapes().forEach(shape => {
-                state.updateCurrentCelShape(shape.id, shape => shape.commitResize());
-            })
+            shapeSelection.update(shape => shape.commitResize());
             break;
         case HANDLES.TOP_EDGE:
         case HANDLES.LEFT_EDGE:
@@ -144,16 +130,7 @@ function finishDragHandle() {
         case HANDLES.BOTTOM_EDGE:
             break;
         case HANDLES.BODY:
-            // if holding shift and mouse didn't move, deselect the current shape
-            if (potentialDeselection) {
-                selectedShapeIds.delete(potentialDeselection)
-                potentialDeselection = null;
-            }
-
-            if (potentialSelection) {
-                selectedShapeIds = new Set([potentialSelection]);
-                potentialSelection = null;
-            }
+            shapeSelection.commitPending();
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")
@@ -164,42 +141,47 @@ function finishDragHandle() {
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
-function getSelectedShapes() {
-    return Array.from(selectedShapeIds).map(shapeId => state.getCurrentCelShape(shapeId));
-}
-
-class ShapeSelection {
-    constructor(shapes) {
-        this.shapes = shapes;
-    }
-
-    get length() {
-        return this.shapes.length;
-    }
-
-    get boundingArea() {
-        if (this.length === 1) return this.shapes[0].boundingArea;
-        return CellArea.mergeCellAreas(this.shapes.map(shape => shape.boundingArea))
-    }
-}
-
 export function getHandle(cell, mouseEvent, canvasControl) {
+    // If a shape is currently being dragged, the handle is locked to the drag handle
     if (draggedHandle) return draggedHandle;
 
-    let handle;
-
-    // If 1 selected shape -> check if mouse over any of its handles
-    const shapes = getSelectedShapes();
-    if (shapes.length === 1) {
-        handle = testHandles(canvasControl, shapes[0].boundingArea, mouseEvent, cell, [shapes[0].id]);
-        if (handle) return handle;
-    }
-
-    // If 2+ selected shapes -> check if mouse over any of the bounding box's handles
-    if (shapes.length > 1) {
-        const cumulativeArea = CellArea.mergeCellAreas(shapes.map(shape => shape.boundingArea))
-        handle = testHandles(canvasControl, cumulativeArea, mouseEvent, cell, shapes.map(shape => shape.id));
-        if (handle) return handle;
+    // If there are 1 or more selected shapes, check the handles of those shape(s)
+    if (shapeSelection.length) {
+        for (const handleType of Object.values(HANDLES)) {
+            switch(handleType) {
+                case HANDLES.TOP_LEFT_CORNER:
+                case HANDLES.TOP_RIGHT_CORNER:
+                case HANDLES.BOTTOM_LEFT_CORNER:
+                case HANDLES.BOTTOM_RIGHT_CORNER:
+                    const corner = cornerRegion(canvasControl, shapeSelection.boundingArea, handleType);
+                    if (
+                        (Math.abs(mouseEvent.offsetX - corner.x) <= corner.size / 2) &&
+                        (Math.abs(mouseEvent.offsetY - corner.y) <= corner.size / 2)
+                    ) {
+                        return {
+                            type: handleType,
+                            cursor: corner.cursor,
+                            cellOriginOffset: corner.cellOriginOffset,
+                        }
+                    }
+                    break;
+                case HANDLES.TOP_EDGE:
+                case HANDLES.LEFT_EDGE:
+                case HANDLES.RIGHT_EDGE:
+                case HANDLES.BOTTOM_EDGE:
+                    break;
+                case HANDLES.BODY:
+                    const hitShape = state.checkCurrentCelHitbox(cell, shapeSelection.shapeIds);
+                    if (hitShape) {
+                        return {
+                            type: handleType,
+                            cursor: 'move',
+                            focusedShapeId: hitShape.id,
+                        }
+                    }
+                    break;
+            }
+        }
     }
 
     // Otherwise, check if mouse is over any current cel's shapes' hitboxes (iterate in top-to-bottom shape order)
@@ -213,49 +195,11 @@ export function getHandle(cell, mouseEvent, canvasControl) {
     }
 }
 
-function testHandles(canvasControl, cellArea, mouseEvent, cell, shapeIds) {
-    for (const handleType of Object.values(HANDLES)) {
-        switch(handleType) {
-            case HANDLES.TOP_LEFT_CORNER:
-            case HANDLES.TOP_RIGHT_CORNER:
-            case HANDLES.BOTTOM_LEFT_CORNER:
-            case HANDLES.BOTTOM_RIGHT_CORNER:
-                const corner = cornerRegion(canvasControl, cellArea, handleType);
-                if (
-                    (Math.abs(mouseEvent.offsetX - corner.x) <= corner.size / 2) &&
-                    (Math.abs(mouseEvent.offsetY - corner.y) <= corner.size / 2)
-                ) {
-                    return {
-                        type: handleType,
-                        cursor: corner.cursor,
-                        cellOriginOffset: corner.cellOriginOffset,
-                    }
-                }
-                break;
-            case HANDLES.TOP_EDGE:
-            case HANDLES.LEFT_EDGE:
-            case HANDLES.RIGHT_EDGE:
-            case HANDLES.BOTTOM_EDGE:
-                break;
-            case HANDLES.BODY:
-                const hitShape = state.checkCurrentCelHitbox(cell, shapeIds);
-                if (hitShape) {
-                    return {
-                        type: handleType,
-                        cursor: 'move',
-                        focusedShapeId: hitShape.id,
-                    }
-                }
-                break;
-        }
-    }
-}
-
 // ------------------------------------------------------------------------------------------------- Drawing
 
 export function drawShapeSelection(canvasControl) {
     canvasControl.inScreenSpace(() => {
-        const shapes = getSelectedShapes();
+        const shapes = shapeSelection.shapes;
 
         if (shapes.length === 0) return;
 
