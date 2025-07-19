@@ -25,6 +25,7 @@ import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
 import BaseRect from "../geometry/shapes/rect/base.js";
+import {REORDER_ACTIONS} from "../geometry/shapes/constants.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -523,10 +524,24 @@ let $shapeProperties, shapeTooltips;
 function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
+    actions.registerAction('tools.shapes.send-to-back', {
+        callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.SEND_TO_BACK),
+        enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.SEND_TO_BACK),
+    })
+    actions.registerAction('tools.shapes.send-backward', {
+        callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.SEND_BACKWARD),
+        enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.SEND_BACKWARD),
+    })
+    actions.registerAction('tools.shapes.bring-forward', {
+        callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.BRING_FORWARD),
+        enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.BRING_FORWARD),
+    })
+    actions.registerAction('tools.shapes.bring-to-front', {
+        callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.BRING_TO_FRONT),
+        enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.BRING_TO_FRONT),
+    })
     actions.registerAction('tools.shapes.delete', {
-        callback: () => {
-            vectorSelection.deleteSelectedShapes()
-        },
+        callback: () => vectorSelection.deleteSelectedShapes()
     })
 
     $shapeProperties.off('click', '.sub-tool').on('click', '.sub-tool', evt => {

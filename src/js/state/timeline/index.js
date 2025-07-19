@@ -237,6 +237,12 @@ export function updateCurrentCelShape(shapeId, updater) {
 export function deleteCurrentCelShape(shapeId) {
     celController.deleteCelShape(currentCel(), shapeId);
 }
+export function reorderCurrentCelShapes(shapeIds, action) {
+    celController.reorderCelShapes(currentCel(), shapeIds, action)
+}
+export function canReorderCurrentCelShapes(shapeIds, action) {
+    return celController.canReorderCelShapes(currentCel(), shapeIds, action);
+}
 
 export function checkCurrentCelHitbox(cell, forShapeIds) {
     return currentCel().checkHitbox(cell, forShapeIds);

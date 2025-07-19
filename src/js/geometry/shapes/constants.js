@@ -23,6 +23,13 @@ export const TRANSLATABLE_PROPS = [
     'topLeft'
 ]
 
+export const REORDER_ACTIONS = {
+    BRING_TO_FRONT: "bringToFront",
+    BRING_FORWARD: "bringForward",
+    SEND_TO_BACK: "sendToBack",
+    SEND_BACKWARD: "sendBackward"
+}
+
 // switch(handle) {
 //     case HANDLES.TOP_LEFT:
 //         break;

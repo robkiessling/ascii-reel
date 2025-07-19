@@ -1,4 +1,10 @@
-import {deleteCurrentCelShape, getCurrentCelShape, updateCurrentCelShape} from "../index.js";
+import {
+    canReorderCurrentCelShapes,
+    deleteCurrentCelShape,
+    getCurrentCelShape,
+    reorderCurrentCelShapes,
+    updateCurrentCelShape
+} from "../index.js";
 
 const DEFAULT_STATE = {
     shapeIds: new Set()
@@ -25,39 +31,51 @@ export function serialize(options = {}) {
     }
 }
 
+function shapeIdsSet() {
+    return state.shapeIds ? state.shapeIds : new Set();
+}
+
 export function selectedShapeIds() {
-    return Array.from(state.shapeIds);
+    return Array.from(shapeIdsSet());
 }
 export function setSelectedShapeIds(shapeIds) {
     state.shapeIds = new Set(shapeIds);
 }
 
 export function numSelectedShapes() {
-    return state.shapeIds.size;
+    return shapeIdsSet().size;
 }
 export function hasSelectedShapes() {
     return numSelectedShapes() > 0;
 }
 export function isShapeSelected(shapeId) {
-    return state.shapeIds.has(shapeId);
+    return shapeIdsSet().has(shapeId);
 }
 export function selectShape(shapeId) {
-    state.shapeIds.add(shapeId);
+    shapeIdsSet().add(shapeId);
 }
 export function deselectShape(shapeId) {
-    state.shapeIds.delete(shapeId);
+    shapeIdsSet().delete(shapeId);
 }
 export function deselectAllShapes() {
-    state.shapeIds.clear();
+    shapeIdsSet().clear();
 }
 
 export function selectedShapes() {
     return selectedShapeIds().map(shapeId => getCurrentCelShape(shapeId));
 }
+
 export function updateSelectedShapes(updater) {
     selectedShapeIds().forEach(shapeId => updateCurrentCelShape(shapeId, updater));
 }
 export function deleteSelectedShapes() {
     selectedShapeIds().forEach(shapeId => deleteCurrentCelShape(shapeId));
     deselectAllShapes();
+}
+export function reorderSelectedShapes(action) {
+    reorderCurrentCelShapes(selectedShapeIds(), action)
+}
+export function canReorderSelectedShapes(action) {
+    if (!hasSelectedShapes()) return false;
+    return canReorderCurrentCelShapes(selectedShapeIds(), action)
 }

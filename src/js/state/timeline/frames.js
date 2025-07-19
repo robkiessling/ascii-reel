@@ -23,13 +23,11 @@ export function deserialize(data = {}, options = {}) {
         return;
     }
 
-    state = $.extend(true, {}, DEFAULT_STATE);
+    state = $.extend(true, {}, DEFAULT_STATE, data);
 
     if (data.frames) {
         state.frames = data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame));
     }
-
-    state.currentIndex = 0; // Do not import from data; always start at 0
 
     idSequence = Math.max(...state.frames.map(frame => frame.id), 0);
 }

@@ -51,6 +51,10 @@ const ICON_DATA = {
     'tools.selection.resize': { type: REMIXICON, content: 'ri-crop-line' },
     'tools.selection.close': { type: REMIXICON, content: 'ri-close-line' },
 
+    'tools.shapes.send-to-back': { type: REMIXICON, content: 'ri-contract-right-line rotate90' },
+    'tools.shapes.send-backward': { type: REMIXICON, content: 'ri-arrow-right-line rotate90' },
+    'tools.shapes.bring-forward': { type: REMIXICON, content: 'ri-arrow-right-line rotate270' },
+    'tools.shapes.bring-to-front': { type: REMIXICON, content: 'ri-contract-right-line rotate270' },
     'tools.shapes.delete': { type: REMIXICON, content: 'ri-delete-bin-line' },
 
     'themes.dark-mode': { type: REMIXICON, content: 'ri-moon-line' },

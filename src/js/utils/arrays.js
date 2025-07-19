@@ -111,6 +111,43 @@ export function arraysEqual(a, b) {
     return a.every((val, index) => val === b[index]);
 }
 
+
+/**
+ * Moves specified elements step forward or backward without disrupting their relative order or swapping over
+ * each other. Items at the edge or blocked by other selected items will not move.
+ *
+ * @param {Array} array - The full array
+ * @param {Array} elementsToMove - The elements to move. Elements do not have to be in same order as array.
+ * @param {number} direction - Either +1 (move towards end of array) or -1 (move towards start of array).
+ * @returns {Array} A new array with the specified elements moved one step if possible.
+ */
+export function moveOneStep(array, elementsToMove, direction) {
+    const elementsToMoveLookup = new Set(elementsToMove);
+    const result = [...array];
+
+    // Process in correct order: reverse for forward, normal for backward
+    const indexes = [];
+    for (let i = 0; i < result.length; i++) {
+        if (elementsToMoveLookup.has(result[i])) indexes.push(i);
+    }
+
+    if (direction > 0) indexes.reverse();
+
+    for (const i of indexes) {
+        const j = i + direction;
+        if (
+            j < 0 || j >= result.length ||      // out of bounds
+            elementsToMoveLookup.has(result[j]) // would swap with another selected item
+        ) continue;
+
+        // Swap elements
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result;
+}
+
+
 /**
  * A Range represents a subarray between two indices: startIndex and endIndex
  * Indices are inclusive.

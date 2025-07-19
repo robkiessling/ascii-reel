@@ -19,12 +19,10 @@ export function deserialize(data = {}, options = {}) {
         return;
     }
 
-    state = $.extend(true, {}, DEFAULT_STATE);
+    state = $.extend(true, {}, DEFAULT_STATE, data);
     if (data.layers) {
         state.layers = data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer));
     }
-
-    state.currentIndex = 0; // Do not import from data; always start at 0
 
     idSequence = Math.max(...state.layers.map(layer => layer.id), 0);
 }

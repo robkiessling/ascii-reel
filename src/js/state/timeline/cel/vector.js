@@ -1,8 +1,9 @@
-import {create2dArray, mergeGlyphs} from "../../../utils/arrays.js";
+import {arraysEqual, create2dArray, mergeGlyphs, moveOneStep} from "../../../utils/arrays.js";
 import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {deserializeShape} from "../../../geometry/shapes/deserialize.js";
 import {transformValues} from "../../../utils/objects.js";
+import {REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
 
 /**
  * Vector Cel
@@ -147,6 +148,35 @@ export default class VectorCel {
     }
     shapes() {
         return this.shapesOrder.map(shapeId => this.shapesById[shapeId]);
+    }
+
+    reorderShapes(shapeIds, action) {
+        this.shapesOrder = this._reorderShapesPreview(shapeIds, action);
+        this._clearCachedGlyphs();
+    }
+
+    canReorderShapes(shapeIds, action) {
+        return !arraysEqual(this.shapesOrder, this._reorderShapesPreview(shapeIds, action));
+    }
+
+    _reorderShapesPreview(shapeIds, action) {
+        if (!Array.isArray(shapeIds) || shapeIds.length === 0) return [...this.shapesOrder];
+
+        const idSet = new Set(shapeIds);
+        const remainingIds = this.shapesOrder.filter(id => !idSet.has(id));
+
+        switch(action) {
+            case REORDER_ACTIONS.BRING_TO_FRONT:
+                return [...remainingIds, ...shapeIds];
+            case REORDER_ACTIONS.SEND_TO_BACK:
+                return [...shapeIds, ...remainingIds];
+            case REORDER_ACTIONS.BRING_FORWARD:
+                return moveOneStep(this.shapesOrder, shapeIds, 1);
+            case REORDER_ACTIONS.SEND_BACKWARD:
+                return moveOneStep(this.shapesOrder, shapeIds, -1);
+            default:
+                throw new Error(`Invalid reorder action: ${action}`)
+        }
     }
 
     checkHitbox(cell, forShapeIds) {

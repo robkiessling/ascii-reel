@@ -28,6 +28,7 @@ export {
     iterateCelsForCurrentLayer, iterateCels,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph,
     getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape, deleteCurrentCelShape,
+    reorderCurrentCelShapes, canReorderCurrentCelShapes,
     checkCurrentCelHitbox, checkCurrentCelMarquee,
     charInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
@@ -46,7 +47,7 @@ export {
 export {
     selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
     selectShape, deselectShape, deselectAllShapes,
-    selectedShapes, updateSelectedShapes, deleteSelectedShapes
+    selectedShapes, updateSelectedShapes, deleteSelectedShapes, reorderSelectedShapes, canReorderSelectedShapes
 } from './selection/index.js'
 
 export function init() {
@@ -359,7 +360,7 @@ export function changeLayerIndex(newIndex) {
 
 // -------------------------------------------------------------------------------- Error handling
 const $loadError = $('#load-error');
-let valid = true;
+let valid = false;
 
 function onLoadError(attemptedData) {
     console.log('attemptedData:');

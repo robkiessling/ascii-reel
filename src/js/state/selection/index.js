@@ -17,5 +17,5 @@ export function serialize(options = {}) {
 export {
     selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
     selectShape, deselectShape, deselectAllShapes,
-    selectedShapes, updateSelectedShapes, deleteSelectedShapes
+    selectedShapes, updateSelectedShapes, deleteSelectedShapes, reorderSelectedShapes, canReorderSelectedShapes
 } from './vector_selection.js'

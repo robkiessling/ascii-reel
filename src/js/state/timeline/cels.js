@@ -14,6 +14,8 @@ export function getCelShape(cel, ...args) { return cel.getShape(...args) }
 export function addCelShape(cel, ...args) { return cel.addShape(...args) }
 export function updateCelShape(cel, ...args) { return cel.updateShape(...args) }
 export function deleteCelShape(cel, ...args) { return cel.deleteShape(...args) }
+export function reorderCelShapes(cel, ...args) { return cel.reorderShapes(...args) }
+export function canReorderCelShapes(cel, ...args) { return cel.canReorderShapes(...args) }
 
 const DEFAULT_STATE = {
     cels: {},
@@ -31,7 +33,7 @@ export function deserialize(data = {}, options = {}) {
 
     const celOptions = celSerializationOptions(options, data);
 
-    state = $.extend(true, {}, DEFAULT_STATE);
+    state = $.extend(true, {}, DEFAULT_STATE, data);
 
     if (data.colorTable) state.colorTable = [...data.colorTable];
     if (data.cels) state.cels = transformValues(data.cels, (celId, cel) => CelFactory.deserialize(cel, celOptions))

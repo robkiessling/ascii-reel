@@ -221,6 +221,13 @@ export function deselectAllShapes(allowHistoryPush = true) {
     if (allowHistoryPush && hasStateChange) state.pushHistory();
 }
 
+export function reorderSelectedShapes(action) {
+    state.reorderSelectedShapes(action);
+    eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
+}
+
 
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.

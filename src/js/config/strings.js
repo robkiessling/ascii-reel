@@ -183,6 +183,10 @@ export const STRINGS = {
     'tools.draw-ellipse-types.filled-monochar.name': 'Filled Ellipse',
     'tools.draw-ellipse-types.filled-monochar.description': 'Draws a filled ellipse by repeating the selected character.',
 
+    'tools.shapes.send-to-back.name': 'Send To Back',
+    'tools.shapes.send-backward.name': 'Send Backward',
+    'tools.shapes.bring-forward.name': 'Bring Forward',
+    'tools.shapes.bring-to-front.name': 'Bring To Front',
     'tools.shapes.delete.name': 'Delete Shape',
 
     'frames.new-frame.name': 'New Frame',
