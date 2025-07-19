@@ -70,6 +70,7 @@ function refresh() {
 export function changeTool(newTool) {
     state.setConfig('tool', newTool);
     selection.clear();
+    vectorSelection.deselectAllShapes();
     refresh();
 }
 
@@ -668,6 +669,8 @@ function getDrawingModifiersTooltip(tool, drawType) {
 }
 
 function startDrawing(factory, cell, mouseEvent, options = {}) {
+    vectorSelection.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
+
     drawingContent = factory(cell, $.extend({ // todo rename drawingShape?
         drawPreset: state.getConfig('drawTypes')[state.getConfig('tool')],
         colorIndex: state.primaryColorIndex(),

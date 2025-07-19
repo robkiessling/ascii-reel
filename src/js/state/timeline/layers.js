@@ -41,13 +41,20 @@ export function layerAt(index) {
     return state.layers[index];
 }
 
-export function layerIndex(newIndex) {
-    if (newIndex !== undefined) state.currentIndex = newIndex;
+export function layerIndex() {
     return state.currentIndex;
+}
+
+export function changeLayerIndex(newIndex) {
+    state.currentIndex = newIndex;
 }
 
 export function currentLayer() {
     return state.layers[layerIndex()];
+}
+
+export function currentLayerType() {
+    return currentLayer().type;
 }
 
 export function createLayer(index, data) {

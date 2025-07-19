@@ -336,14 +336,14 @@ function setupEventBus() {
 
 function selectFrame(index, historyModifiable) {
     state.frameRangeSelection(null); // Clear out any range selection
-    state.frameIndex(index);
+    state.changeFrameIndex(index);
     eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory({ modifiable: historyModifiable });
 }
 
 function selectFrameRange(newRange, newFrameIndex) {
     state.frameRangeSelection(newRange);
-    state.frameIndex(newFrameIndex);
+    state.changeFrameIndex(newFrameIndex);
     eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
 }

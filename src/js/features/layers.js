@@ -177,7 +177,7 @@ function layerIndexFromDOM(index) {
 }
 
 function selectLayer(index) {
-    state.layerIndex(index);
+    state.changeLayerIndex(index);
     eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory()
 }

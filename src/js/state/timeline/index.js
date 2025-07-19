@@ -104,12 +104,12 @@ export function convertToDrawing() {
     if (numFrames > 1) deleteFrames(new ArrayRange(1, numFrames - 1))
 
     frameController.frameRangeSelection(null);
-    frameController.frameIndex(0);
+    frameController.changeFrameIndex(0);
 }
 
 // --------------------------------------------------------------------------- Frames API
 export {
-    frames as frames, frameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame,
+    frames as frames, frameIndex, changeFrameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame,
     previousFrame, reorderFrames, reverseFrames, updateFrame, expandedFrames,
     TICKS_OPTIONS
 } from './frames.js'
@@ -141,7 +141,8 @@ export function deleteFrames(range) {
 
 // --------------------------------------------------------------------------- Layers API
 export {
-    layers as layers, layerIndex, currentLayer, updateLayer, reorderLayer, toggleLayerVisibility
+    layers as layers, layerIndex, changeLayerIndex, currentLayer, currentLayerType, updateLayer, reorderLayer,
+    toggleLayerVisibility
 } from './layers.js'
 
 export function createLayer(index, data) {

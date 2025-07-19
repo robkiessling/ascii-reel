@@ -336,6 +336,25 @@ export function validateProjectType() {
     }
 }
 
+// --------------------------------------------------------------------------------
+
+export function changeFrameIndex(newIndex) {
+    if (timeline.frameIndex() !== newIndex) {
+        if (timeline.currentLayerType() === 'vector') selection.deselectAllShapes();
+
+        timeline.changeFrameIndex(newIndex);
+    }
+}
+
+export function changeLayerIndex(newIndex) {
+    if (timeline.layerIndex() !== newIndex) {
+        if (timeline.currentLayerType() === 'vector') selection.deselectAllShapes();
+
+        timeline.changeLayerIndex(newIndex);
+    }
+}
+
+
 
 
 // -------------------------------------------------------------------------------- Error handling

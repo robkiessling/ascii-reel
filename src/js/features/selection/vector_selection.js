@@ -82,11 +82,8 @@ function onMousedown(cell, mouseEvent, canvasControl) {
             if (mouseEvent.shiftKey) {
                 createMarquee(canvasControl, mouseEvent);
             } else {
-                const hasStateChange = state.hasSelectedShapes();
-                state.deselectAllShapes();
+                deselectAllShapes();
                 createMarquee(canvasControl, mouseEvent);
-                eventBus.emit(EVENTS.SELECTION.CHANGED);
-                if (hasStateChange) state.pushHistory();
             }
             break;
     }
@@ -215,6 +212,13 @@ export function deleteSelectedShapes() {
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory();
+}
+
+export function deselectAllShapes(allowHistoryPush = true) {
+    const hasStateChange = state.hasSelectedShapes();
+    state.deselectAllShapes();
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
+    if (allowHistoryPush && hasStateChange) state.pushHistory();
 }
 
 

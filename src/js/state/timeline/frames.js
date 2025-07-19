@@ -42,9 +42,12 @@ export function frames() {
     return state.frames;
 }
 
-export function frameIndex(newIndex) {
-    if (newIndex !== undefined) state.currentIndex = newIndex;
+export function frameIndex() {
     return state.currentIndex;
+}
+
+export function changeFrameIndex(newIndex) {
+    state.currentIndex = newIndex;
 }
 
 /**
