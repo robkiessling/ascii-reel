@@ -86,6 +86,10 @@ export default class Shape {
         return this._cache.hitbox(cell);
     }
 
+    fitsInside(cellArea) {
+        return cellArea.contains(this.boundingArea);
+    }
+
     _initGlyphs(numRows, numCols) {
         return {
             chars: create2dArray(numRows, numCols),

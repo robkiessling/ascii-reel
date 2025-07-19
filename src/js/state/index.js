@@ -26,7 +26,8 @@ export {
     // cels
     iterateCelsForCurrentLayer, iterateCels,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph,
-    getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape, deleteCurrentCelShape, checkCurrentCelHitbox,
+    getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape, deleteCurrentCelShape,
+    checkCurrentCelHitbox, checkCurrentCelMarquee,
     charInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, colorSwap, hasCharContent

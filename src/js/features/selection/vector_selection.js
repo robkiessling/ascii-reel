@@ -4,6 +4,7 @@ import {SELECTION_COLOR} from "../../config/colors.js";
 import {HANDLES} from "../../geometry/shapes/constants.js";
 import CellArea from "../../geometry/cell_area.js";
 import ShapeSelection from "./shape_selection.js";
+import VectorMarquee from "./vector_marquee.js";
 
 export function init() {
     setupEventBus();
@@ -11,6 +12,7 @@ export function init() {
 
 let shapeSelection = new ShapeSelection();
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
+let marquee = null;
 
 export function hasSelection() {
     return shapeSelection.length > 0;
@@ -46,12 +48,15 @@ function setupEventBus() {
             dragHandle(canvasControl, mouseEvent, cell, moveStep);
             moveStep = cell;
         }
+
+        if (marquee) updateMarquee(mouseEvent);
+
     });
 
     eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, canvasControl }) => {
-        if (draggedHandle) {
-            finishDragHandle()
-        }
+        if (draggedHandle) finishDragHandle();
+
+        if (marquee) finishMarquee(mouseEvent);
     })
 }
 
@@ -88,6 +93,7 @@ function onMousedown(cell, mouseEvent, canvasControl) {
             eventBus.emit(EVENTS.SELECTION.CHANGED);
             break;
         case null:
+            createMarquee(canvasControl, mouseEvent);
             if (mouseEvent.shiftKey) return;
             shapeSelection.clear();
             eventBus.emit(EVENTS.SELECTION.CHANGED);
@@ -210,15 +216,53 @@ export function getHandle(cell, mouseEvent, canvasControl) {
     }
 }
 
+// ------------------------------------------------------------------------------------------------- Marquee
+// The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.
+
+function createMarquee(canvasControl, mouseEvent) {
+    const isFreshMarquee = !hasSelection();
+
+    marquee = new VectorMarquee(
+        canvasControl,
+        mouseEvent.offsetX,
+        mouseEvent.offsetY,
+        area => {
+            const marqueeShapeIds = state.checkCurrentCelMarquee(area).map(shape => shape.id);
+
+            if (isFreshMarquee) {
+                // If fresh marquee, shapeSelection is equal to covered shapes (allows shapes to be included/excluded
+                // as the rect changes).
+                shapeSelection.shapeIds = marqueeShapeIds;
+            } else {
+                // If selection already exists, shapes will only be *added* to selection; moving selection rect away
+                // from rect will not exclude it
+                marqueeShapeIds.forEach(shapeId => shapeSelection.add(shapeId));
+            }
+        }
+    )
+}
+
+function updateMarquee(mouseEvent) {
+    marquee.update(mouseEvent.offsetX, mouseEvent.offsetY);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+}
+
+function finishMarquee(mouseEvent) {
+    marquee.update(mouseEvent.offsetX, mouseEvent.offsetY);
+    marquee = null;
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+}
+
+
 // ------------------------------------------------------------------------------------------------- Drawing
 
 export function drawShapeSelection(canvasControl) {
     canvasControl.inScreenSpace(() => {
         const shapes = shapeSelection.shapes;
 
-        if (shapes.length === 0) return;
-
-        if (shapes.length === 1) {
+        if (shapes.length === 0) {
+            // no shapes to draw
+        } else if (shapes.length === 1) {
             const shape = shapes[0];
             // draw shape anchors
             // draw shape bounding box (if applicable; line doesn't have)
@@ -238,6 +282,7 @@ export function drawShapeSelection(canvasControl) {
             drawHandles(canvasControl, cumulativeArea)
         }
 
+        if (marquee) drawMarquee(canvasControl);
     })
 }
 
@@ -258,6 +303,17 @@ function drawBoundingBox(canvasControl, cellArea, dashed = false) {
 
     context.beginPath();
     context.rect(...buildScreenRect(canvasControl, cellArea.xywh, BOUNDING_BOX_PADDING));
+    context.stroke();
+}
+
+function drawMarquee(canvasControl) {
+    const context = canvasControl.context;
+    context.lineWidth = SHAPE_OUTLINE_WIDTH;
+    context.setLineDash([]);
+    context.strokeStyle = SELECTION_COLOR;
+
+    context.beginPath();
+    context.rect(...marquee.xywh);
     context.stroke();
 }
 

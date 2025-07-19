@@ -163,6 +163,17 @@ export default class VectorCel {
         return null;
     }
 
+    checkMarquee(cellArea) {
+        // Find all shapes that fit in the cellArea bounds
+        const shapes = [];
+        this.shapes().forEach(shape => {
+            if (shape.fitsInside(cellArea)) {
+                shapes.push(shape);
+            }
+        })
+        return shapes;
+    }
+
 
     _clearCachedGlyphs() {
         this._cachedGlyphs = undefined;

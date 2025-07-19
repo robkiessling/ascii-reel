@@ -108,4 +108,11 @@ export default class CellArea extends PixelRect {
         )
     }
 
+    contains(cellArea) {
+        return this.topLeft.row <= cellArea.topLeft.row &&
+            this.topLeft.col <= cellArea.topLeft.col &&
+            this.bottomRight.row >= cellArea.bottomRight.row &&
+            this.bottomRight.col >= cellArea.bottomRight.col;
+    }
+
 }

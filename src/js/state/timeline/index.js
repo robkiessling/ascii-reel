@@ -240,6 +240,9 @@ export function deleteCurrentCelShape(shapeId) {
 export function checkCurrentCelHitbox(cell, forShapeIds) {
     return currentCel().checkHitbox(cell, forShapeIds);
 }
+export function checkCurrentCelMarquee(cellArea) {
+    return currentCel().checkMarquee(cellArea)
+}
 
 /**
  * Aggregates multiple layers into a final result. Chars on lower layers will be blocked if higher layers also have
