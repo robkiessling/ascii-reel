@@ -3,11 +3,12 @@ import CellArea from "../../geometry/cell_area.js";
 
 export default class VectorMarquee {
 
-    constructor(canvasControl, startX, startY, onUpdate) {
+    constructor({canvasControl, startX, startY, onUpdate, onFinish}) {
         this.canvasControl = canvasControl;
         this.startX = startX;
         this.startY = startY;
         this.onUpdate = onUpdate;
+        this.onFinish = onFinish;
     }
 
     update(endX, endY) {
@@ -15,6 +16,10 @@ export default class VectorMarquee {
         this.endY = endY;
 
         this.onUpdate(this.boundingArea);
+    }
+
+    finish() {
+        this.onFinish();
     }
 
     get xywh() {

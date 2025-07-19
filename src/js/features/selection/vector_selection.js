@@ -5,6 +5,7 @@ import {HANDLES} from "../../geometry/shapes/constants.js";
 import CellArea from "../../geometry/cell_area.js";
 import ShapeSelection from "./shape_selection.js";
 import VectorMarquee from "./vector_marquee.js";
+import {arraysEqual} from "../../utils/arrays.js";
 
 export function init() {
     setupEventBus();
@@ -13,15 +14,6 @@ export function init() {
 let shapeSelection = new ShapeSelection();
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
 let marquee = null;
-
-export function hasSelection() {
-    return shapeSelection.length > 0;
-}
-export function deleteSelectedShapes() {
-    shapeSelection.deleteShapes();
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-}
 
 function setupEventBus() {
     let moveStep;
@@ -81,22 +73,21 @@ function onMousedown(cell, mouseEvent, canvasControl) {
             draggedHandle = handle;
             if (handle.focusedShapeId === undefined) throw new Error(`HANDLES.BODY must provide focusedShapeId`);
 
-            if (mouseEvent.shiftKey) {
-                shapeSelection.toggleShape(handle.focusedShapeId);
-            } else if (shapeSelection.length > 1 && shapeSelection.has(handle.focusedShapeId)) {
-                // If multiple shapes are already selected, mousedown (without shift) merely flags the shape for
-                // selection; the shape will be selected on mouseup once it's confirmed we are not dragging
-                shapeSelection.markPendingSelection(handle.focusedShapeId);
-            } else {
-                shapeSelection.shapeIds = [handle.focusedShapeId];
+            if (shapeSelection.mousedownShape(handle.focusedShapeId, mouseEvent.shiftKey)) {
+                eventBus.emit(EVENTS.SELECTION.CHANGED);
+                state.pushHistory();
             }
-            eventBus.emit(EVENTS.SELECTION.CHANGED);
             break;
         case null:
-            createMarquee(canvasControl, mouseEvent);
-            if (mouseEvent.shiftKey) return;
-            shapeSelection.clear();
-            eventBus.emit(EVENTS.SELECTION.CHANGED);
+            if (mouseEvent.shiftKey) {
+                createMarquee(canvasControl, mouseEvent);
+            } else {
+                const hasStateChange = state.hasSelectedShapes();
+                state.deselectAllShapes();
+                createMarquee(canvasControl, mouseEvent);
+                eventBus.emit(EVENTS.SELECTION.CHANGED);
+                if (hasStateChange) state.pushHistory();
+            }
             break;
     }
 }
@@ -115,9 +106,7 @@ function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
             shapeSelection.resize(draggedHandle.type, roundedCell)
             break;
         case HANDLES.BODY:
-            const rowDelta = cell.row - moveStep.row;
-            const colDelta = cell.col - moveStep.col;
-            shapeSelection.updateShapes(shape => shape.translate(rowDelta, colDelta));
+            shapeSelection.translate(cell.row - moveStep.row, cell.col - moveStep.col)
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")
@@ -130,6 +119,8 @@ function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
 }
 
 function finishDragHandle() {
+    let hasStateChange = false;
+
     switch (draggedHandle.type) {
         case HANDLES.TOP_LEFT_CORNER:
         case HANDLES.TOP_RIGHT_CORNER:
@@ -139,10 +130,11 @@ function finishDragHandle() {
         case HANDLES.LEFT_EDGE:
         case HANDLES.RIGHT_EDGE:
         case HANDLES.BOTTOM_EDGE:
-            shapeSelection.finishResize();
+            if (shapeSelection.finishResize()) hasStateChange = true;
             break;
         case HANDLES.BODY:
-            shapeSelection.commitPending();
+            if (shapeSelection.commitPending()) hasStateChange = true;
+            if (shapeSelection.finishTranslate()) hasStateChange = true;
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")
@@ -151,6 +143,8 @@ function finishDragHandle() {
     draggedHandle = null;
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+
+    if (hasStateChange) state.pushHistory();
 }
 
 export function getHandle(cell, mouseEvent, canvasControl) {
@@ -158,7 +152,7 @@ export function getHandle(cell, mouseEvent, canvasControl) {
     if (draggedHandle) return draggedHandle;
 
     // If there are 1 or more selected shapes, check the handles of those shape(s)
-    if (shapeSelection.length) {
+    if (state.hasSelectedShapes()) {
         for (const handleType of Object.values(HANDLES)) {
             switch(handleType) {
                 case HANDLES.TOP_LEFT_CORNER:
@@ -192,7 +186,7 @@ export function getHandle(cell, mouseEvent, canvasControl) {
                     }
                     break;
                 case HANDLES.BODY:
-                    const hitShape = state.checkCurrentCelHitbox(cell, shapeSelection.shapeIds);
+                    const hitShape = state.checkCurrentCelHitbox(cell, state.selectedShapeIds());
                     if (hitShape) {
                         return {
                             type: handleType,
@@ -216,30 +210,43 @@ export function getHandle(cell, mouseEvent, canvasControl) {
     }
 }
 
+export function deleteSelectedShapes() {
+    state.deleteSelectedShapes();
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
+}
+
+
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.
 
 function createMarquee(canvasControl, mouseEvent) {
-    const isFreshMarquee = !hasSelection();
+    const isFreshMarquee = !state.hasSelectedShapes();
+    const originalSelection = state.selectedShapeIds();
 
-    marquee = new VectorMarquee(
+    marquee = new VectorMarquee({
         canvasControl,
-        mouseEvent.offsetX,
-        mouseEvent.offsetY,
-        area => {
+        startX: mouseEvent.offsetX,
+        startY: mouseEvent.offsetY,
+        onUpdate: area => {
             const marqueeShapeIds = state.checkCurrentCelMarquee(area).map(shape => shape.id);
 
             if (isFreshMarquee) {
-                // If fresh marquee, shapeSelection is equal to covered shapes (allows shapes to be included/excluded
-                // as the rect changes).
-                shapeSelection.shapeIds = marqueeShapeIds;
+                // If fresh marquee, set selected shapes to match the covered shapes (this allows shapes to be
+                // added/removed as the marquee boundaries change)
+                state.setSelectedShapeIds(marqueeShapeIds);
             } else {
-                // If selection already exists, shapes will only be *added* to selection; moving selection rect away
-                // from rect will not exclude it
-                marqueeShapeIds.forEach(shapeId => shapeSelection.add(shapeId));
+                // If selection already exists, shapes will only be *added* to selection; if the marquee adds a rect
+                // and then the marquee is moved away, the rect remains added
+                marqueeShapeIds.forEach(shapeId => state.selectShape(shapeId));
             }
+        },
+        onFinish: () => {
+            const hasStateChange = !arraysEqual(originalSelection, state.selectedShapeIds())
+            if (hasStateChange) state.pushHistory();
         }
-    )
+    })
 }
 
 function updateMarquee(mouseEvent) {
@@ -249,6 +256,7 @@ function updateMarquee(mouseEvent) {
 
 function finishMarquee(mouseEvent) {
     marquee.update(mouseEvent.offsetX, mouseEvent.offsetY);
+    marquee.finish();
     marquee = null;
     eventBus.emit(EVENTS.SELECTION.CHANGED)
 }
@@ -258,7 +266,7 @@ function finishMarquee(mouseEvent) {
 
 export function drawShapeSelection(canvasControl) {
     canvasControl.inScreenSpace(() => {
-        const shapes = shapeSelection.shapes;
+        const shapes = state.selectedShapes();
 
         if (shapes.length === 0) {
             // no shapes to draw

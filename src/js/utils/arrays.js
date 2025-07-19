@@ -95,6 +95,22 @@ export function mergeGlyphs(baseGlyphs, newGlyphs, origin, filter) {
     });
 }
 
+
+/**
+ * Checks if two arrays are shallowly equal (same elements in the same order).
+ *
+ * @param {Array} a - The first array to compare.
+ * @param {Array} b - The second array to compare.
+ * @returns {boolean} - True if both arrays contain the same elements in the same order.
+ */
+export function arraysEqual(a, b) {
+    if (a === b) return true;
+    if (!Array.isArray(a) || !Array.isArray(b)) return false;
+    if (a.length !== b.length) return false;
+
+    return a.every((val, index) => val === b[index]);
+}
+
 /**
  * A Range represents a subarray between two indices: startIndex and endIndex
  * Indices are inclusive.

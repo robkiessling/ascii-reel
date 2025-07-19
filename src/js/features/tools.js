@@ -523,7 +523,9 @@ function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
     actions.registerAction('tools.shapes.delete', {
-        callback: () => vectorSelection.deleteSelectedShapes(),
+        callback: () => {
+            vectorSelection.deleteSelectedShapes()
+        },
     })
 
     $shapeProperties.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
@@ -541,7 +543,7 @@ function setupShapeProperties() {
 }
 
 function refreshShapeProperties() {
-    const isVisible = vectorSelection.hasSelection();
+    const isVisible = state.hasSelectedShapes();
     $shapeProperties.toggle(isVisible);
 
     if (!isVisible) shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())

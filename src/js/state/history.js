@@ -40,6 +40,8 @@ export function setupActions() {
  * @param {boolean} [options.recalculateColors] - If true, undoing/redoing to this slice will recalculate the canvas colors.
  */
 export function pushHistory(options = {}) {
+    // console.log("push history", options);
+
     // Remove anything in the future (all "redo" states are removed)
     if (historyIndex !== undefined) history.splice(historyIndex + 1, history.length);
 

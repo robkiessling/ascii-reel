@@ -3,6 +3,7 @@ import * as history from './history.js';
 import * as palette from './palette.js';
 import * as unicode from './unicode.js';
 import * as timeline from './timeline/index.js';
+import * as selection from './selection/index.js';
 
 import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "../storage/local_storage.js";
 import {toggleStandard} from "../io/keyboard.js";
@@ -42,7 +43,11 @@ export {
 export {
     pushHistory, endHistoryModification, modifyHistory, isDirty, markClean
 } from './history.js'
-
+export {
+    selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
+    selectShape, deselectShape, deselectAllShapes,
+    selectedShapes, updateSelectedShapes, deleteSelectedShapes
+} from './selection/index.js'
 
 export function init() {
     history.setupActions();
@@ -81,6 +86,7 @@ export function deserialize(data = {}, options = {}) {
         timeline.deserialize(data.timeline, options);
         palette.deserialize(data.palette, options);
         unicode.deserialize(data.unicode, options);
+        selection.deserialize(data.selection, options);
         return;
     }
 
@@ -92,6 +98,7 @@ export function deserialize(data = {}, options = {}) {
     timeline.deserialize(data.timeline, options);
     palette.deserialize(data.palette, options);
     unicode.deserialize(data.unicode, options);
+    selection.deserialize(data.selection, options);
 
     validateProjectType();
     validateColorMode();
@@ -111,6 +118,7 @@ export function serialize(options = {}) {
         timeline: timeline.serialize(options),
         palette: palette.serialize(options),
         unicode: unicode.serialize(options),
+        selection: selection.serialize(options),
     }
 }
 
