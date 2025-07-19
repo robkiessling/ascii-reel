@@ -8,13 +8,13 @@
 import Picker from 'vanilla-picker/csp';
 import * as state from '../state/index.js';
 import * as selection from './selection.js';
+import * as vectorSelection from "./selection/vector_selection.js";
 import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
 import tippy from 'tippy.js';
 import {getActionInfo, setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
-import {translateGlyphs} from "../utils/arrays.js";
 import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -25,7 +25,6 @@ import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
 import BaseRect from "../geometry/shapes/rect/base.js";
-import * as vectorSelection from "./selection/vector_selection.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -56,6 +55,7 @@ export function init() {
     setupBrushSubMenu();
     setupColorPicker();
     setupCharPicker();
+    setupShapeProperties();
 }
 
 function refresh() {
@@ -64,6 +64,7 @@ function refresh() {
     refreshStandardTools();
     refreshSelectionTools();
     subMenus.forEach(subMenu => subMenu.refresh());
+    refreshShapeProperties();
 }
 
 export function changeTool(newTool) {
@@ -513,6 +514,50 @@ function setupBrushSubMenu() {
 
     subMenus.push(subMenu);
 }
+
+// -------------------------------------------------------------------------------- Shape Properties
+
+let $shapeProperties, shapeTooltips;
+
+function setupShapeProperties() {
+    $shapeProperties = $('#shape-properties')
+
+    actions.registerAction('tools.shapes.delete', {
+        callback: () => vectorSelection.deleteSelectedShapes(),
+    })
+
+    $shapeProperties.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
+        const $element = $(evt.currentTarget);
+        actions.callAction($element.data('tool'), evt);
+    });
+
+    shapeTooltips = setupTooltips(
+        $shapeProperties.find('.sub-tool').toArray(),
+        element => $(element).data('tool'),
+        {
+            placement: 'bottom'
+        }
+    );
+}
+
+function refreshShapeProperties() {
+    const isVisible = vectorSelection.hasSelection();
+    $shapeProperties.toggle(isVisible);
+
+    if (!isVisible) shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
+
+    $shapeProperties.find('.sub-tool').each((i, element) => {
+        const $element = $(element);
+        const actionId = $element.data('tool');
+        $element.html(getIconHTML(actionId))
+        $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
+    });
+
+    // todo hide if color-related and state isn't multicolored
+    // $shapeProperties.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
+
+}
+
 
 // -------------------------------------------------------------------------------- Color Tools
 

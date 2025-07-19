@@ -40,8 +40,12 @@ export default class ShapeSelection {
         return CellArea.mergeCellAreas(this.shapes.map(shape => shape.boundingArea))
     }
 
-    update(updater) {
+    updateShapes(updater) {
         this.shapeIds.forEach(shapeId => state.updateCurrentCelShape(shapeId, updater))
+    }
+    deleteShapes() {
+        this.shapeIds.forEach(shapeId => state.deleteCurrentCelShape(shapeId));
+        this.clear();
     }
 
     toggleShape(shapeId) {
@@ -78,23 +82,23 @@ export default class ShapeSelection {
             this._boundingRect.beginResize();
         }
 
-        this.update(shape => shape.beginResize());
+        this.updateShapes(shape => shape.beginResize());
     }
     resize(handleType, roundedCell) {
         if (this.length === 0) return;
 
         if (this.length === 1) {
-            this.update(shape => shape.resize(handleType, roundedCell));
+            this.updateShapes(shape => shape.resize(handleType, roundedCell));
         } else {
             this._boundingRect.resize(handleType, roundedCell);
             const oldBox = this._boundingRect.resizeSnapshot;
             const newBox = this._boundingRect.props;
-            this.update(shape => shape.resizeInGroup(oldBox, newBox));
+            this.updateShapes(shape => shape.resizeInGroup(oldBox, newBox));
         }
     }
     finishResize() {
         this._boundingRect = undefined;
-        this.update(shape => shape.finishResize());
+        this.updateShapes(shape => shape.finishResize());
     }
 
     // ----------------------------------------- Pending selections

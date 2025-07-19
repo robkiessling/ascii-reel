@@ -128,10 +128,6 @@ export default class VectorCel {
 
     // ------------------ Vector-specific functions:
 
-    _clearCachedGlyphs() {
-        this._cachedGlyphs = undefined;
-    }
-
     getShape(shapeId) {
         if (this.shapesById[shapeId] === undefined) throw new Error(`Could not find shape for id ${shapeId}`);
         return this.shapesById[shapeId];
@@ -142,6 +138,10 @@ export default class VectorCel {
         this._clearCachedGlyphs();
     }
     deleteShape(shapeId) {
+        delete this.shapesById[shapeId];
+
+        const index = this.shapesOrder.indexOf(shapeId);
+        if (index !== -1) this.shapesOrder.splice(index, 1);
 
         this._clearCachedGlyphs();
     }
@@ -162,4 +162,10 @@ export default class VectorCel {
 
         return null;
     }
+
+
+    _clearCachedGlyphs() {
+        this._cachedGlyphs = undefined;
+    }
+
 }

@@ -12,6 +12,15 @@ export function init() {
 let shapeSelection = new ShapeSelection();
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
 
+export function hasSelection() {
+    return shapeSelection.length > 0;
+}
+export function deleteSelectedShapes() {
+    shapeSelection.deleteShapes();
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+}
+
 function setupEventBus() {
     let moveStep;
 
@@ -102,7 +111,7 @@ function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
         case HANDLES.BODY:
             const rowDelta = cell.row - moveStep.row;
             const colDelta = cell.col - moveStep.col;
-            shapeSelection.update(shape => shape.translate(rowDelta, colDelta));
+            shapeSelection.updateShapes(shape => shape.translate(rowDelta, colDelta));
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")

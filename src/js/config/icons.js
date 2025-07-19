@@ -51,6 +51,8 @@ const ICON_DATA = {
     'tools.selection.resize': { type: REMIXICON, content: 'ri-crop-line' },
     'tools.selection.close': { type: REMIXICON, content: 'ri-close-line' },
 
+    'tools.shapes.delete': { type: REMIXICON, content: 'ri-delete-bin-line' },
+
     'themes.dark-mode': { type: REMIXICON, content: 'ri-moon-line' },
     'themes.light-mode': { type: REMIXICON, content: 'ri-sun-line' },
     'themes.os': { type: REMIXICON, content: 'ri-contrast-line' },

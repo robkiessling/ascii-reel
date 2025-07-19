@@ -233,6 +233,9 @@ export function addCurrentCelShape(shape) {
 export function updateCurrentCelShape(shapeId, updater) {
     celController.updateCelShape(currentCel(), shapeId, updater);
 }
+export function deleteCurrentCelShape(shapeId) {
+    celController.deleteCelShape(currentCel(), shapeId);
+}
 
 export function checkCurrentCelHitbox(cell, forShapeIds) {
     return currentCel().checkHitbox(cell, forShapeIds);
