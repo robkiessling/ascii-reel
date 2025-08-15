@@ -4,7 +4,6 @@
 
 import SimpleBar from "simplebar";
 import * as state from '../state/index.js';
-import * as tools from './tools.js';
 import * as actions from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -26,7 +25,7 @@ export function init() {
 
     $colorList.on('click', '.color', evt => {
         const $color = $(evt.currentTarget);
-        tools.selectColor($color.data('color'));
+        eventBus.emit(EVENTS.PALETTE.COLOR_SELECTED, { color: $color.data('color') });
     });
 
     minimizer = new Minimizer($container, 'palette')

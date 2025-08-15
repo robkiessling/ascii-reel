@@ -6,30 +6,30 @@ const ICOMOON = 'icomoon'
 const CUSTOM = 'custom'
 
 const ICON_DATA = {
-    // 'tools.draw-freeform-types.irregular-adaptive': { type: REMIXICON, content: 'ri-brush-line' },
-    // 'tools.draw-freeform-types.irregular-monochar': { type: PRE, content: 'AAAAA\nBBBBB\nCCCCC' },
+    // 'tools.shapes.freeformStyle.irregular-adaptive': { type: REMIXICON, content: 'ri-brush-line' },
+    // 'tools.shapes.freeformStyle.irregular-monochar': { type: PRE, content: 'AAAAA\nBBBBB\nCCCCC' },
 
-    'tools.draw-freeform-types.irregular-adaptive': { type: PRE, content: "  /'.\n| | |\n'./  " },
-    'tools.draw-freeform-types.irregular-monochar': { type: PRE, content: "  AAA\nA A A\nAAA  " },
+    'tools.shapes.freeformStyle.irregular-adaptive': { type: PRE, content: "  /'.\n| | |\n'./  " },
+    'tools.shapes.freeformStyle.irregular-monochar': { type: PRE, content: "  AAA\nA A A\nAAA  " },
 
-    'tools.draw-line-types.straight-adaptive': { type: PRE, content: "  _,-\n-'   " },
-    'tools.draw-line-types.straight-monochar': { type: PRE, content: '    AA\n  AA  \nAA    ' },
+    'tools.shapes.lineStyle.straight-adaptive': { type: PRE, content: "  _,-\n-'   " },
+    'tools.shapes.lineStyle.straight-monochar': { type: PRE, content: '    AA\n  AA  \nAA    ' },
 
-    'tools.draw-line-types.elbow-line-ascii': { type: PRE, content: '+----\n|    \n|    ' },
-    'tools.draw-line-types.elbow-arrow-ascii': { type: PRE, content: '+--->\n|    \n|    ' },
-    'tools.draw-line-types.elbow-line-unicode': { type: PRE, content: '┌────\n│    \n│    ' },
-    'tools.draw-line-types.elbow-arrow-unicode': { type: PRE, content: '┌───▶\n│    \n│    ' },
-    'tools.draw-line-types.elbow-line-monochar': { type: PRE, content: 'AAAAA\nA    \nA    ' },
+    'tools.shapes.lineStyle.elbow-line-ascii': { type: PRE, content: '+----\n|    \n|    ' },
+    'tools.shapes.lineStyle.elbow-arrow-ascii': { type: PRE, content: '+--->\n|    \n|    ' },
+    'tools.shapes.lineStyle.elbow-line-unicode': { type: PRE, content: '┌────\n│    \n│    ' },
+    'tools.shapes.lineStyle.elbow-arrow-unicode': { type: PRE, content: '┌───▶\n│    \n│    ' },
+    'tools.shapes.lineStyle.elbow-line-monochar': { type: PRE, content: 'AAAAA\nA    \nA    ' },
 
-    'tools.draw-rect-types.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
-    'tools.draw-rect-types.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
-    'tools.draw-rect-types.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },
-    'tools.draw-rect-types.outline-unicode-2': { type: PRE, content: "╔═══╗\n║   ║\n╚═══╝" },
-    'tools.draw-rect-types.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
-    'tools.draw-rect-types.filled-monochar': { type: PRE, content: "AAAAA\nAAAAA\nAAAAA" },
+    'tools.shapes.rectStyle.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
+    'tools.shapes.rectStyle.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
+    'tools.shapes.rectStyle.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },
+    'tools.shapes.rectStyle.outline-unicode-2': { type: PRE, content: "╔═══╗\n║   ║\n╚═══╝" },
+    'tools.shapes.rectStyle.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
+    'tools.shapes.rectStyle.filled-monochar': { type: PRE, content: "AAAAA\nAAAAA\nAAAAA" },
 
-    'tools.draw-ellipse-types.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
-    'tools.draw-ellipse-types.filled-monochar': { type: PRE, content: " AAA \nAAAAA\n AAA " },
+    'tools.shapes.ellipseStyle.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
+    'tools.shapes.ellipseStyle.filled-monochar': { type: PRE, content: " AAA \nAAAAA\n AAA " },
 
     'tools.selection.move': { type: REMIXICON, content: 'ri-drag-move-2-fill' },
     'tools.selection.flip-v': { type: REMIXICON, content: 'ri-flip-vertical-fill' },

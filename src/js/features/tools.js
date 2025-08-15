@@ -5,27 +5,31 @@
  * - The color picker on the left toolbar
  */
 
-import Picker from 'vanilla-picker/csp';
 import * as state from '../state/index.js';
 import * as selection from './selection.js';
 import * as vectorSelection from "./selection/vector_selection.js";
-import * as keyboard from "../io/keyboard.js";
 import * as actions from "../io/actions.js";
-import Color from "@sphinxxxx/color-conversion";
 import tippy from 'tippy.js';
-import {getActionInfo, setupTooltips, shouldModifyAction} from "../io/actions.js";
+import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
-import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
+import {capitalizeFirstLetter} from "../utils/strings.js";
 import {modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Cell from "../geometry/cell.js";
 import CharPicker from "../components/char_picker.js";
-import {standardTip} from "../components/tooltips.js";
 import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
 import BaseRect from "../geometry/shapes/rect/base.js";
-import {REORDER_ACTIONS} from "../geometry/shapes/constants.js";
+import {
+    CHAR_PROP, COLOR_PROP,
+    REORDER_ACTIONS,
+    SHAPE_NAMES,
+    SHAPE_STYLES,
+    SHAPES,
+    STYLE_PROPS
+} from "../geometry/shapes/constants.js";
+import ColorPicker from "../components/color_picker.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -227,6 +231,21 @@ function setupEventBus() {
                 // waiting for another mousemove
                 updateDrawing(prevCell, { shiftKey: shiftKey });
                 break;
+        }
+    })
+
+    eventBus.on(EVENTS.PALETTE.COLOR_SELECTED, ({ color }) => {
+        setPrimaryColorPicker(color);
+
+        if (state.hasSelectedShapes()) {
+            shapeColorPicker.value(color)
+        }
+    })
+    eventBus.on(EVENTS.UNICODE.CHAR_SELECTED, ({ char }) => {
+        selectChar(char);
+
+        if (state.hasSelectedShapes()) {
+            shapeCharPicker.value(char);
         }
     })
 }
@@ -519,11 +538,95 @@ function setupBrushSubMenu() {
 
 // -------------------------------------------------------------------------------- Shape Properties
 
-let $shapeProperties, shapeTooltips;
+let $shapeProperties, shapeTooltips, shapeSubMenus = [], shapeCharPicker, shapeColorPicker;
 
 function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
+    // Attach style options for each shape type
+    Object.values(SHAPES).forEach(shapeType => {
+        const styleProp = STYLE_PROPS[shapeType]; // E.g. rectStyle
+
+        const actionsHTML = Object.values(SHAPE_STYLES[shapeType])
+            .map(style => `<div class="sub-tool" data-style="${style}"></div>`)
+            .join('')
+
+        const $shapeStyles = $(`
+            <div class="property-group">
+                <span class="group-title">${SHAPE_NAMES[shapeType]} Style</span>
+                <div class="group-actions">${actionsHTML}</div>
+            </div>
+        `);
+        $shapeProperties.prepend($shapeStyles);
+
+        // todo support initial drawing too
+        const subMenu = new ToolSubMenu($shapeStyles, {
+            visible: () => {
+                return state.selectedShapeTypes().includes(shapeType)
+            },
+            getValue: () => {
+                const styles = state.selectedShapeProps()[styleProp];
+                return {
+                    // If multiple styles are selected, cannot show a value
+                    style: styles.length === 1 ? styles[0] : null
+                }
+            },
+            onChange: newValue => {
+                // changeDrawType(toolKey, newValue.type)
+                vectorSelection.updateSelectedShapes(shape => {
+                    if (shape.type === shapeType) shape.updateProp(styleProp, newValue.style)
+                });
+                console.log(state.selectedShapes())
+            },
+            icon: $tool => {
+                console.log(`tools.shapes.${styleProp}.${$tool.data('style')}`)
+                // getIconHTML(`tools.${typesKey}.${$tool.data('type')}`)
+                return getIconHTML(`tools.shapes.${styleProp}.${$tool.data('style')}`)
+            },
+            tooltipContent: $tool => {
+                const style = $tool.data('style');
+                const name = STRINGS[`tools.shapes.${styleProp}.${style}.name`];
+                const description = STRINGS[`tools.shapes.${styleProp}.${style}.description`];
+                return `<div class="header">` +
+                    `<span class="title">${name}</span>` +
+                    `</div>` +
+                    `<div class="description">${description}</div>`// +
+                    // getDrawingModifiersTooltip(toolKey, type); // todo drawing modifiers don't work
+            },
+            tooltipOptions: {
+                placement: 'bottom'
+            }
+        })
+
+        shapeSubMenus.push(subMenu);
+    })
+
+    // Char prop
+    shapeCharPicker = new CharPicker($('#shape-char'), {
+        popupDirection: 'bottom',
+        popupOffset: 22,
+        onChange: (newValue) => {
+            vectorSelection.updateSelectedShapes(shape => shape.updateProp(CHAR_PROP, newValue));
+            // todo if not using monochar, switch shape to it
+        }
+    })
+
+    // Color prop
+    shapeColorPicker = new ColorPicker($('#shape-color'), {
+        pickerOptions: {
+            popup: 'bottom'
+        },
+        tooltipOptions: {
+            // offset: tooltipOffset('center')
+        },
+        onCommit: color => {
+            console.log('commit');
+            const colorIndex = state.colorIndex(color);
+            vectorSelection.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+        },
+    })
+
+    // Static properties / actions:
     actions.registerAction('tools.shapes.send-to-back', {
         callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.SEND_TO_BACK),
         enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.SEND_TO_BACK),
@@ -544,14 +647,14 @@ function setupShapeProperties() {
         callback: () => vectorSelection.deleteSelectedShapes()
     })
 
-    $shapeProperties.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
+    $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {
         const $element = $(evt.currentTarget);
-        actions.callAction($element.data('tool'), evt);
+        actions.callAction($element.data('action'), evt);
     });
 
     shapeTooltips = setupTooltips(
-        $shapeProperties.find('.sub-tool').toArray(),
-        element => $(element).data('tool'),
+        $shapeProperties.find('.action-button').toArray(),
+        element => $(element).data('action'),
         {
             placement: 'bottom'
         }
@@ -564,9 +667,17 @@ function refreshShapeProperties() {
 
     if (!isVisible) shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
 
-    $shapeProperties.find('.sub-tool').each((i, element) => {
+    // todo hide tooltips for other stuff like shape char picker
+
+    shapeSubMenus.forEach(subMenu => subMenu.refresh());
+
+    const shapeProps = state.selectedShapeProps();
+    shapeCharPicker.value(shapeProps[CHAR_PROP][0], true) // just showing the first shape's char
+    shapeColorPicker.value(state.colorStr(shapeProps[COLOR_PROP][0]), true);
+
+    $shapeProperties.find('.action-button').each((i, element) => {
         const $element = $(element);
-        const actionId = $element.data('tool');
+        const actionId = $element.data('action');
         $element.html(getIconHTML(actionId))
         $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
     });
@@ -606,7 +717,7 @@ function colorSwap(cell, options) {
 function eyedropper(cell, options) {
     const [char, colorIndex] = state.getCurrentCelGlyph(cell.row, cell.col);
     const colorStr = state.colorStr(colorIndex);
-    selectColor(colorStr);
+    setPrimaryColorPicker(colorStr);
 
     if (options.addToPalette) {
         state.addColor(colorStr);
@@ -620,29 +731,30 @@ function eyedropper(cell, options) {
 export let drawingContent = null;
 
 function setupDrawSubMenus() {
-    setupDrawSubMenu('draw-freeform');
-    setupDrawSubMenu('draw-rect');
-    setupDrawSubMenu('draw-line');
-    setupDrawSubMenu('draw-ellipse');
+    setupDrawSubMenu('draw-freeform', SHAPES.FREEFORM);
+    setupDrawSubMenu('draw-rect', SHAPES.RECT);
+    setupDrawSubMenu('draw-line', SHAPES.LINE);
+    setupDrawSubMenu('draw-ellipse', SHAPES.ELLIPSE);
 }
 
-function setupDrawSubMenu(toolKey) {
-    const typesKey = `${toolKey}-types`; // E.g. 'draw-rect-types', 'draw-line-types'
+function setupDrawSubMenu(toolKey, shapeType) {
+    const $menu = $(`.sub-tool-menu[data-tool="${toolKey}"]`)
+    const styleProp = STYLE_PROPS[shapeType]
 
-    const subMenu = new ToolSubMenu($(`#${typesKey}`), {
+    const subMenu = new ToolSubMenu($menu, {
         visible: () => state.getConfig('tool') === toolKey,
-        getValue: () => ({ type: state.getConfig('drawTypes')[toolKey] }),
-        onChange: newValue => changeDrawType(toolKey, newValue.type),
-        icon: $tool => getIconHTML(`tools.${typesKey}.${$tool.data('type')}`),
+        getValue: () => ({ style: state.getConfig('drawTypes')[toolKey] }),
+        onChange: newValue => changeDrawType(toolKey, newValue.style),
+        icon: $tool => getIconHTML(`tools.shapes.${styleProp}.${$tool.data('style')}`),
         tooltipContent: $tool => {
-            const type = $tool.data('type');
-            const name = STRINGS[`tools.${typesKey}.${type}.name`];
-            const description = STRINGS[`tools.${typesKey}.${type}.description`];
+            const style = $tool.data('style');
+            const name = STRINGS[`tools.shapes.${styleProp}.${style}.name`];
+            const description = STRINGS[`tools.shapes.${styleProp}.${style}.description`];
             return `<div class="header">` +
                 `<span class="title">${name}</span>` +
                 `</div>` +
                 `<div class="description">${description}</div>` +
-            getDrawingModifiersTooltip(toolKey, type);
+            getDrawingModifiersTooltip(toolKey, style);
         }
     })
 
@@ -768,19 +880,22 @@ let $charPicker, charPicker, charWellTooltip, charQuickSwapTooltip;
 function setupCharPicker() {
     $charPicker = $('#current-char');
 
+    const onCharChange = newValue => {
+        state.setConfig('primaryChar', newValue);
+
+        // If you want the paint bucket char icon to change along with the selected char
+        // let visibleChar = newValue;
+        // if (visibleChar === WHITESPACE_CHAR) visibleChar = '␣';
+        // if (visibleChar === EMPTY_CHAR) visibleChar = '∅';
+        // $('.picked-char').html(visibleChar);
+
+        eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
+    }
+
     charPicker = new CharPicker($charPicker, {
         initialValue: 'A',
-        onChange: (newValue) => {
-            state.setConfig('primaryChar', newValue);
-
-            // If you want the paint bucket char icon to change along with the selected char
-            // let visibleChar = newValue;
-            // if (visibleChar === WHITESPACE_CHAR) visibleChar = '␣';
-            // if (visibleChar === EMPTY_CHAR) visibleChar = '∅';
-            // $('.picked-char').html(visibleChar);
-
-            eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
-        },
+        onChange: onCharChange,
+        onLoad: onCharChange,
         onOpen: () => {
             charWellTooltip.disable();
             charQuickSwapTooltip.disable();
@@ -842,89 +957,35 @@ export function toggleQuickSwap(enabled) {
 
 // -------------------------------------------------------------------------------- Color Picker
 
-let colorPicker, colorPickerTooltip, $addToPalette, addToPaletteTooltip;
-
-export function selectColor(colorStr) {
-    colorPicker.setColor(colorStr, false);
-}
+let colorPicker;
 
 function setupColorPicker() {
     const $colorPicker = $('#current-color');
-
-    colorPicker = new Picker({
-        parent: $colorPicker.get(0),
-        popup: 'right',
-        onOpen: () => {
-            keyboard.toggleStandard('color-picker', true);
-            colorPickerTooltip.disable();
-            $colorPicker.addClass('picker-open');
-
-            if (!$addToPalette) {
-                $addToPalette = $colorPicker.find('.picker_sample');
-                addToPaletteTooltip = standardTip($addToPalette, 'tools.standard.color-picker-add', {
-                    placement: 'right',
-                    offset: [0, 20],
-                })
-            }
-
-            refreshAddToPalette();
-        },
-        onClose: () => {
-            keyboard.toggleStandard('color-picker', false);
-            colorPickerTooltip.enable();
-            $colorPicker.removeClass('picker-open');
-        },
-        onChange: (color) => {
-            state.setConfig('primaryColor', color[state.COLOR_FORMAT]);
-            $colorPicker.css('background', state.getConfig('primaryColor'));
-
-            refreshAddToPalette();
-            eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
-        },
-    });
-
-    $colorPicker.on('click', '.add-to-palette', () => {
-        state.addColor(state.getConfig('primaryColor'));
-
-        refreshAddToPalette();
-        eventBus.emit(EVENTS.TOOLS.COLOR_ADDED);
-        state.pushHistory();
-    })
 
     actions.registerAction('tools.standard.color-picker', {
         callback: () => toggleCharPicker(true),
     })
 
-    colorPickerTooltip = setupTooltips($colorPicker.toArray(), 'tools.standard.color-picker', {
-        offset: tooltipOffset('center')
-    }).tooltips[0];
+    colorPicker = new ColorPicker($colorPicker, {
+        pickerOptions: {
+            popup: 'right'
+        },
+        tooltipOptions: {
+            offset: tooltipOffset('center')
+        },
+        onChange: color => {
+            state.setConfig('primaryColor', color);
+            eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
+        },
+    })
+}
+
+function setPrimaryColorPicker(colorStr) {
+    colorPicker.value(colorStr);
 }
 
 function refreshColorPicker() {
-    selectColor(state.getConfig('primaryColor'))
-}
-
-function refreshAddToPalette() {
-    if (!$addToPalette) return;
-
-    $addToPalette.empty();
-
-    if (state.isNewColor(state.getConfig('primaryColor'))) {
-        $addToPalette.addClass('add-to-palette');
-
-        const [h, s, l, a] = new Color(state.getConfig('primaryColor')).hsla; // Break colorStr into hsla components
-
-        $('<span>', {
-            css: { color: l <= 0.5 ? 'white' : 'black' },
-            class: 'ri ri-fw ri-alert-line'
-        }).appendTo($addToPalette);
-
-        addToPaletteTooltip.enable();
-    }
-    else {
-        $addToPalette.removeClass('add-to-palette');
-        addToPaletteTooltip.disable();
-    }
+    setPrimaryColorPicker(state.getConfig('primaryColor'))
 }
 
 
@@ -965,6 +1026,8 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl) {
 }
 
 
+
+// Menu where many options are displayed, and only one can be 'selected' at a time.
 class ToolSubMenu {
     /**
      * @param $menu - jQuery element for the menu
@@ -975,6 +1038,7 @@ class ToolSubMenu {
      * @param {() => boolean} [options.disabled] - Callback that controls whether the submenu is disabled. Default: always enabled.
      * @param {function} [options.icon] - Icon retriever. Passed the current $tool, returns the icon.
      * @param {function} [options.tooltipContent] - Tooltip content retriever. Passed the current $tool, returns tooltip content.
+     * @param {Object} [options.tooltipOptions] - Tooltip options to pass to tippy
      */
     constructor($menu, options = {}) {
         this.$menu = $menu;
@@ -997,13 +1061,13 @@ class ToolSubMenu {
         }
 
         if (this.options.tooltipContent) {
-            tippy(this.$menu.find('.sub-tool').toArray(), {
+            tippy(this.$menu.find('.sub-tool').toArray(), $.extend({
                 content: element => this.options.tooltipContent($(element)),
                 placement: 'right',
                 offset: SUB_TOOL_MENU_TOOLTIP_OFFSET,
                 hideOnClick: false,
                 allowHTML: true
-            })
+            }, this.options.tooltipOptions))
         }
     }
 

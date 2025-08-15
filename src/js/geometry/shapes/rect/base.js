@@ -1,17 +1,16 @@
 import Shape from "../shape.js";
 import Cell from "../../cell.js";
-import {create2dArray} from "../../../utils/arrays.js";
 import {isFunction} from "../../../utils/utilities.js";
-import {HANDLES} from "../constants.js";
+import {CHAR_PROP, COLOR_PROP, HANDLES, SHAPES, STYLE_PROPS} from "../constants.js";
 import CellArea from "../../cell_area.js";
 
 
 /**
  * Characters used to draw the different types of ascii rectangles. A rectangle is made up of 4 corners (TOP_LEFT,
- * TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT), 2 HORIZONTAL lines, and 2 VERTICAL lines.
+ * TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT), 2 HORIZONTAL lines, 2 VERTICAL lines, and an optional FILL.
  */
-const STROKE_CHARS = {
-    'ascii-1': {
+const CHAR_SHEETS = {
+    'outline-ascii-1': {
         TOP_LEFT: '/',
         TOP_RIGHT: '\\',
         BOTTOM_LEFT: '\\',
@@ -19,7 +18,7 @@ const STROKE_CHARS = {
         HORIZONTAL: '-',
         VERTICAL: '|'
     },
-    'ascii-2': {
+    'outline-ascii-2': {
         TOP_LEFT: '+',
         TOP_RIGHT: '+',
         BOTTOM_LEFT: '+',
@@ -27,7 +26,7 @@ const STROKE_CHARS = {
         HORIZONTAL: '-',
         VERTICAL: '|'
     },
-    'unicode-1': {
+    'outline-unicode-1': {
         TOP_LEFT: '┌',
         TOP_RIGHT: '┐',
         BOTTOM_LEFT: '└',
@@ -35,7 +34,7 @@ const STROKE_CHARS = {
         HORIZONTAL: '─',
         VERTICAL: '│'
     },
-    'unicode-2': {
+    'outline-unicode-2': {
         TOP_LEFT: '╔',
         TOP_RIGHT: '╗',
         BOTTOM_LEFT: '╚',
@@ -43,7 +42,7 @@ const STROKE_CHARS = {
         HORIZONTAL: '═',
         VERTICAL: '║'
     },
-    'monochar': char => {
+    'outline-monochar': char => {
         return {
             TOP_LEFT: char,
             TOP_RIGHT: char,
@@ -51,6 +50,17 @@ const STROKE_CHARS = {
             BOTTOM_RIGHT: char,
             HORIZONTAL: char,
             VERTICAL: char,
+        }
+    },
+    'filled-monochar': char => {
+        return {
+            TOP_LEFT: char,
+            TOP_RIGHT: char,
+            BOTTOM_LEFT: char,
+            BOTTOM_RIGHT: char,
+            HORIZONTAL: char,
+            VERTICAL: char,
+            FILL: char,
         }
     }
 }
@@ -62,37 +72,12 @@ export default class BaseRect extends Shape {
             topLeft: startCell,
             numRows: 1,
             numCols: 1,
-            strokeStyle: 'monochar',
-            strokeColor: options.colorIndex,
-            strokeChar: options.char,
-            fillStyle: 'none',
-            fillColor: options.colorIndex,
-            fillChar: options.char
+            [STYLE_PROPS[SHAPES.RECT]]: options.drawPreset,
+            [CHAR_PROP]: options.char,
+            [COLOR_PROP]: options.colorIndex,
         };
 
-        switch (options.drawPreset) { // todo drawType could be "drawPreset"?
-            case 'outline-ascii-1':
-                props.strokeStyle = 'ascii-1';
-                break;
-            case 'outline-ascii-2':
-                props.strokeStyle = 'ascii-2';
-                break;
-            case 'outline-unicode-1':
-                props.strokeStyle = 'unicode-1';
-                break;
-            case 'outline-unicode-2':
-                props.strokeStyle = 'unicode-2';
-                break;
-            case 'outline-monochar':
-                break;
-            case 'filled-monochar':
-                props.fillStyle = 'monochar';
-                break;
-            default:
-                console.warn(`No Rect drawing found for: ${options.drawType}`);
-        }
-
-        return new BaseRect(undefined, 'rect', props);
+        return new BaseRect(undefined, SHAPES.RECT, props);
     }
 
     serializeProps() {
@@ -211,40 +196,37 @@ export default class BaseRect extends Shape {
 
         const glyphs = this._initGlyphs(state.numRows, state.numCols);
 
-        let strokeChars = STROKE_CHARS[state.strokeStyle];
-        if (isFunction(strokeChars)) strokeChars = strokeChars(state.strokeChar);
+        let charSheet = CHAR_SHEETS[state[STYLE_PROPS[SHAPES.RECT]]];
+        if (isFunction(charSheet)) charSheet = charSheet(state[CHAR_PROP]);
 
         const lastRow = state.numRows - 1;
         const lastCol = state.numCols - 1;
 
         boundingArea.iterateRelative((row, col) => {
             let char;
-            let colorIndex = state.strokeColor;
+            const colorIndex = state[COLOR_PROP];
 
             if (col === 0) {
-                if (row === 0) { char = strokeChars.TOP_LEFT; }
-                else if (row === lastRow) { char = strokeChars.BOTTOM_LEFT; }
-                else { char = strokeChars.VERTICAL; }
+                if (row === 0) { char = charSheet.TOP_LEFT; }
+                else if (row === lastRow) { char = charSheet.BOTTOM_LEFT; }
+                else { char = charSheet.VERTICAL; }
             }
             else if (col === lastCol) {
-                if (row === 0) { char = strokeChars.TOP_RIGHT; }
-                else if (row === lastRow) { char = strokeChars.BOTTOM_RIGHT; }
-                else { char = strokeChars.VERTICAL; }
+                if (row === 0) { char = charSheet.TOP_RIGHT; }
+                else if (row === lastRow) { char = charSheet.BOTTOM_RIGHT; }
+                else { char = charSheet.VERTICAL; }
             }
             else {
-                if (row === 0) { char = strokeChars.HORIZONTAL; }
-                else if (row === lastRow) { char = strokeChars.HORIZONTAL; }
-                else if (state.fillStyle === 'monochar') {
-                    char = state.fillChar;
-                    colorIndex = state.fillColor
-                }
+                if (row === 0) { char = charSheet.HORIZONTAL; }
+                else if (row === lastRow) { char = charSheet.HORIZONTAL; }
+                else if (charSheet.FILL) { char = charSheet.FILL; }
             }
 
             if (char !== undefined) this._setGlyph(glyphs, {row, col}, char, colorIndex);
         });
 
         const hitbox = cell => {
-            if (innerArea && innerArea.doesCellOverlap(cell) && this.props.fillStyle === 'none') return false;
+            if (innerArea && innerArea.doesCellOverlap(cell) && !charSheet.FILL) return false;
             return boundingArea.doesCellOverlap(cell);
         };
 

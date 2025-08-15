@@ -5,6 +5,8 @@ import {
     reorderCurrentCelShapes,
     updateCurrentCelShape
 } from "../index.js";
+import {SHARED_SHAPE_PROPS} from "../../geometry/shapes/constants.js";
+import {transformValues} from "../../utils/objects.js";
 
 const DEFAULT_STATE = {
     shapeIds: new Set()
@@ -63,6 +65,20 @@ export function deselectAllShapes() {
 
 export function selectedShapes() {
     return selectedShapeIds().map(shapeId => getCurrentCelShape(shapeId));
+}
+export function selectedShapeTypes() {
+    return [...new Set(selectedShapes().map(shape => shape.type))];
+}
+export function selectedShapeProps() {
+    const result = {};
+    const shapes = selectedShapes();
+
+    SHARED_SHAPE_PROPS.forEach(prop => {
+        if (!result[prop]) result[prop] = new Set();
+        shapes.forEach(shape => result[prop].add(shape.props[prop]))
+    })
+
+    return transformValues(result, (k, v) => [...v]);
 }
 
 export function updateSelectedShapes(updater) {

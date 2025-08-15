@@ -229,28 +229,59 @@ $char-picker-arrow-border-size: $char-picker-arrow-size + 2px;
   }
 }
 
-/* Outer triangle (the border) */
-.char-picker-popup::before {
-  content: "";
-  position: absolute;
-  bottom: 6px;
-  left: -$char-picker-arrow-border-size;
-  width: 0;
-  height: 0;
-  border-top: $char-picker-arrow-border-size solid transparent;
-  border-bottom: $char-picker-arrow-border-size solid transparent;
-  border-right: $char-picker-arrow-border-size solid $char-picker-border-color;
+.char-picker-popup.position-right {
+  /* Outer triangle (border) */
+  &::before {
+    content: "";
+    position: absolute;
+    bottom: 6px;
+    left: -$char-picker-arrow-border-size;
+    width: 0;
+    height: 0;
+    border-top: $char-picker-arrow-border-size solid transparent;
+    border-bottom: $char-picker-arrow-border-size solid transparent;
+    border-right: $char-picker-arrow-border-size solid $char-picker-border-color;
+  }
+
+  /* Outer triangle */
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 8px;
+    left: -$char-picker-arrow-size;
+    width: 0;
+    height: 0;
+    border-top: $char-picker-arrow-size solid transparent;
+    border-bottom: $char-picker-arrow-size solid transparent;
+    border-right: $char-picker-arrow-size solid var(--color-tooltip-bg);
+  }
 }
 
-/* Outer triangle */
-.char-picker-popup::after {
-  content: "";
-  position: absolute;
-  bottom: 8px;
-  left: -$char-picker-arrow-size;
-  width: 0;
-  height: 0;
-  border-top: $char-picker-arrow-size solid transparent;
-  border-bottom: $char-picker-arrow-size solid transparent;
-  border-right: $char-picker-arrow-size solid var(--color-tooltip-bg);
+.char-picker-popup.position-bottom {
+  /* Outer triangle (border) */
+  &::before {
+    content: "";
+    position: absolute;
+    top: -$char-picker-arrow-border-size;
+    left: 6px;
+    width: 0;
+    height: 0;
+    border-left: $char-picker-arrow-border-size solid transparent;
+    border-right: $char-picker-arrow-border-size solid transparent;
+    border-bottom: $char-picker-arrow-border-size solid $char-picker-border-color;
+  }
+
+  /* Inner triangle (fill) */
+  &::after {
+    content: "";
+    position: absolute;
+    top: -$char-picker-arrow-size;
+    left: 8px;
+    width: 0;
+    height: 0;
+    border-left: $char-picker-arrow-size solid transparent;
+    border-right: $char-picker-arrow-size solid transparent;
+    border-bottom: $char-picker-arrow-size solid var(--color-tooltip-bg);
+  }
 }
+

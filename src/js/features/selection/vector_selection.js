@@ -148,6 +148,11 @@ export function getHandle(cell, mouseEvent, canvasControl) {
     // If a shape is currently being dragged, the handle is locked to the drag handle
     if (draggedHandle) return draggedHandle;
 
+    // todo maybe need to check hitboxes of shapes above current shape?
+    //      then do current shape handles
+    //      then hitboxes of shapes below
+    //      E.g. make a small rect on top big rect. select big rect. now you can't select small rect unless you click off first
+
     // If there are 1 or more selected shapes, check the handles of those shape(s)
     if (state.hasSelectedShapes()) {
         for (const handleType of Object.values(HANDLES)) {
@@ -228,6 +233,12 @@ export function reorderSelectedShapes(action) {
     state.pushHistory();
 }
 
+export function updateSelectedShapes(updater) {
+    state.updateSelectedShapes(updater);
+    eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
+}
 
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.

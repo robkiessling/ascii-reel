@@ -131,8 +131,12 @@ export const EVENTS = {
     THEME: {
         CHANGED: 'theme:changed',
     },
+    PALETTE: {
+        COLOR_SELECTED: 'palette:color-selected',
+    },
     UNICODE: {
-        CHANGED: 'unicode:changed'
+        UPDATED: 'unicode:updated',
+        CHAR_SELECTED: 'unicode:char-selected'
     },
     KEYBOARD: {
         SHIFT_KEY: 'keyboard:shift-key'

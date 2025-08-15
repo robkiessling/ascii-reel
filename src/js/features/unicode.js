@@ -5,7 +5,6 @@
 import SimpleBar from "simplebar";
 import * as actions from "../io/actions.js";
 import * as state from "../state/index.js";
-import * as tools from "./tools.js";
 import {copyChar} from "../io/clipboard.js";
 import * as selection from "./selection.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -33,7 +32,7 @@ export function init() {
         // copyChar(char);
 
         selection.setSelectionToSingleChar(char, selection.caretCell() ? state.primaryColorIndex() : undefined);
-        tools.selectChar(char);
+        eventBus.emit(EVENTS.UNICODE.CHAR_SELECTED, { char })
     });
 
     minimizer = new Minimizer($container, 'unicode')
@@ -81,7 +80,7 @@ function setupActions() {
 function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
 
-    eventBus.on(EVENTS.UNICODE.CHANGED, () => refresh())
+    eventBus.on(EVENTS.UNICODE.UPDATED, () => refresh())
 
     eventBus.on(EVENTS.TOOLS.CHAR_CHANGED, () => refreshSelectedChar())
 }

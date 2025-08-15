@@ -7,11 +7,12 @@
  * these Shape subclasses because the subclasses already import the base shape.js class.
  */
 
+import {SHAPES} from "./constants.js";
 import BaseRect from "./rect/base.js";
 
 export function deserializeShape(data) {
     switch (data.type) {
-        case 'rect':
+        case SHAPES.RECT:
             return new BaseRect(data.id, data.type, BaseRect.deserializeProps(data.props));
         default:
             throw new Error(`Unsupported shape type ${data.type}`);

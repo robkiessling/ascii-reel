@@ -2,6 +2,7 @@ import {getFormattedDateTime} from "../utils/strings.js";
 import {COLOR_FORMAT, DEFAULT_COLOR} from "./palette.js";
 import {pick} from "../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
+import {DEFAULT_SHAPE_STYLES} from "../geometry/shapes/constants.js";
 
 // TODO There are a lot of strings that should be constants
 // TODO Organize this better? E.g. projectSettings could contain certain keys
@@ -40,6 +41,7 @@ export const DEFAULT_STATE = {
         'draw-line': 'straight-adaptive',
         'draw-ellipse': 'outline-monochar',
     },
+    shapeStyles: DEFAULT_SHAPE_STYLES,
     lastExportOptions: null,
     caretPosition: {},
     caretStyle: 'I-beam' // vs. block

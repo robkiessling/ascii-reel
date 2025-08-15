@@ -54,7 +54,14 @@
     width: 7rem;
   }
 
-  .picker_done {
+  .picker_done button {
+    color: var(--color-font-black);
+    width: auto;
+    height: auto;
+    margin: 0;
+    border-radius: 0;
+  }
+  .picker_done.hidden {
     display: none;
   }
 

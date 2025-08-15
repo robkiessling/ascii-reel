@@ -76,7 +76,7 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
   left: $left-tools-width + $main-spacing;
   top: 50%;
   transform: translate(0, -50%);
-  z-index: 1;
+  z-index: 2;
 
   display: flex;
   flex-direction: column;
@@ -92,7 +92,7 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
   top: $main-spacing;
   left: calc(50% + #{$left-tools-width} / 2);
   transform: translate(-50%, 0);
-  z-index: 1;
+  z-index: 2;
 
   display: flex;
   flex-direction: row;
@@ -100,6 +100,39 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
 
   .sub-tool-menu {
     flex-direction: row;
+  }
+}
+
+
+#shape-properties {
+  //flex-direction: row;
+  padding: 0.5rem;
+  //gap: 1rem;
+  gap: 0;
+
+  .property-group {
+    flex-shrink: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    &:not(:last-child) {
+      padding-right: 0.75rem;
+      margin-right: 0.75rem;
+      border-right: 1px solid var(--color-surface-hover);
+    }
+
+    .group-title {
+      display: flex;
+      justify-content: center;
+    }
+    .group-actions {
+      display: flex;
+      flex-direction: row;
+      gap: 0.25rem;
+
+    }
   }
 }
 
@@ -115,7 +148,14 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
 
   border: 1px solid var(--color-contrast);
 
-  .sub-tool {
+  .color-well {
+    width: $sub-tool-size;
+    height: $sub-tool-size;
+    border-radius: 0.5rem;
+    padding: 0.1rem;
+  }
+
+  .sub-tool, .action-button, .prop-option, .char-well {
     width: $sub-tool-size;
     height: $sub-tool-size;
     display: flex;

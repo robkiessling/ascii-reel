@@ -33,7 +33,7 @@ export function sortedChars() {
 export function importChars(newChars) {
     unicodeCache = new Set(newChars); // Remove any dups
     state.chars = [...unicodeCache].filter(char => char.length === 1);
-    eventBus.emit(EVENTS.UNICODE.CHANGED);
+    eventBus.emit(EVENTS.UNICODE.UPDATED);
 }
 
 export function setUnicodeSetting(key, value) {
@@ -64,6 +64,6 @@ export function addToCache(char) {
     if (!unicodeCache.has(char)) {
         unicodeCache.add(char);
         state.chars = [...unicodeCache];
-        eventBus.emit(EVENTS.UNICODE.CHANGED);
+        eventBus.emit(EVENTS.UNICODE.UPDATED);
     }
 }

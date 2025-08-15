@@ -47,7 +47,8 @@ export {
 export {
     selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
     selectShape, deselectShape, deselectAllShapes,
-    selectedShapes, updateSelectedShapes, deleteSelectedShapes, reorderSelectedShapes, canReorderSelectedShapes
+    selectedShapes, selectedShapeTypes, selectedShapeProps,
+    updateSelectedShapes, deleteSelectedShapes, reorderSelectedShapes, canReorderSelectedShapes
 } from './selection/index.js'
 
 export function init() {

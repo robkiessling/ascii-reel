@@ -1,5 +1,7 @@
 
 // Note: This is in a priority order - the earlier handles are checked for mouse events before later handles
+import {transformValues} from "../../utils/objects.js";
+
 export const HANDLES = {
     TOP_LEFT_CORNER: 'top-left-corner',
     TOP_RIGHT_CORNER: 'top-right-corner',
@@ -14,11 +16,6 @@ export const HANDLES = {
     BODY: 'body',
 }
 
-export const COLOR_PROPS = [
-    'strokeColor',
-    'fillColor',
-    'textColor',
-]
 export const TRANSLATABLE_PROPS = [
     'topLeft'
 ]
@@ -29,6 +26,59 @@ export const REORDER_ACTIONS = {
     SEND_TO_BACK: "sendToBack",
     SEND_BACKWARD: "sendBackward"
 }
+
+
+export const SHAPES = {
+    FREEFORM: 'freeform',
+    RECT: 'rect',
+    LINE: 'line',
+    ELLIPSE: 'ellipse',
+}
+export const SHAPE_NAMES = {
+    [SHAPES.FREEFORM]: 'Freeform',
+    [SHAPES.RECT]: 'Rectangle',
+    [SHAPES.LINE]: 'Line',
+    [SHAPES.ELLIPSE]: 'Ellipse',
+}
+export const SHAPE_STYLES = {
+    [SHAPES.FREEFORM]: {
+        IRREGULAR_ADAPTIVE: 'irregular-adaptive',
+        IRREGULAR_MONOCHAR: 'irregular-monochar',
+    },
+    [SHAPES.RECT]: {
+        OUTLINE_ASCII_1: 'outline-ascii-1',
+        OUTLINE_ASCII_2: 'outline-ascii-2',
+        OUTLINE_UNICODE_1: 'outline-unicode-1',
+        OUTLINE_UNICODE_2: 'outline-unicode-2',
+        OUTLINE_MONOCHAR: 'outline-monochar',
+        FILLED_MONOCHAR: 'filled-monochar',
+    },
+    [SHAPES.LINE]: {
+        STRAIGHT_ADAPTIVE: 'straight-adaptive',
+        STRAIGHT_MONOCHAR: 'straight-monochar',
+        ELBOW_LINE_ASCII: 'elbow-line-ascii',
+        ELBOW_ARROW_ASCII: 'elbow-arrow-ascii',
+        ELBOW_LINE_UNICODE: 'elbow-line-unicode',
+        ELBOW_ARROW_UNICODE: 'elbow-arrow-unicode',
+        ELBOW_LINE_MONOCHAR: 'elbow-line-monochar',
+    },
+    [SHAPES.ELLIPSE]: {
+        OUTLINE_MONOCHAR: 'outline-monochar',
+        FILLED_MONOCHAR: 'filled-monochar',
+    }
+}
+export const DEFAULT_SHAPE_STYLES = transformValues(SHAPE_STYLES, (k, v) => Object.values(v)[0])
+
+export const CHAR_PROP = 'char';
+export const COLOR_PROP = 'color';
+export const STYLE_PROPS = {
+    [SHAPES.FREEFORM]: 'freeformStyle',
+    [SHAPES.RECT]: 'rectStyle',
+    [SHAPES.LINE]: 'lineStyle',
+    [SHAPES.ELLIPSE]: 'ellipseStyle',
+}
+
+export const SHARED_SHAPE_PROPS = [...Object.values(STYLE_PROPS), CHAR_PROP, COLOR_PROP]; // todo textAlignment
 
 // switch(handle) {
 //     case HANDLES.TOP_LEFT:

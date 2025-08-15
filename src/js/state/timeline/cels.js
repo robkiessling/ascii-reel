@@ -166,11 +166,13 @@ export function vacuumColorTable() {
         updater(vacuumMap.get(colorIndex));
     }))
 
-    const vacuumedColorTable = [];
-    for (const [oldIndex, newIndex] of vacuumMap.entries()) {
-        vacuumedColorTable[newIndex] = state.colorTable[oldIndex];
+    if (vacuumMap.size) {
+        const vacuumedColorTable = [];
+        for (const [oldIndex, newIndex] of vacuumMap.entries()) {
+            vacuumedColorTable[newIndex] = state.colorTable[oldIndex];
+        }
+        state.colorTable = vacuumedColorTable;
     }
-    state.colorTable = vacuumedColorTable;
 }
 
 // Returns a map of any duplicate colorTable values, where the key is the dup index and the value is the original index.

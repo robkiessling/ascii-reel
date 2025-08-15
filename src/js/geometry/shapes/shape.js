@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
 import {create2dArray} from "../../utils/arrays.js";
-import {COLOR_PROPS, HANDLES, TRANSLATABLE_PROPS} from "./constants.js";
+import {COLOR_PROP, TRANSLATABLE_PROPS} from "./constants.js";
 
 export default class Shape {
     constructor(id, type, props = {}) {
@@ -24,6 +24,11 @@ export default class Shape {
     }
     static deserializeProps(props) {
         return structuredClone(props);
+    }
+
+    updateProp(prop, newValue) {
+        this.props[prop] = newValue;
+        this._clearCache();
     }
 
     // ------------------------------------------------------ Resizing
@@ -116,20 +121,16 @@ export default class Shape {
     }
 
     updateColorIndexes(callback) {
-        COLOR_PROPS.forEach(prop => {
-            if (this.props[prop] !== undefined) {
-                callback(this.props[prop], newColorIndex => this.props[prop] = newColorIndex);
-            }
-        })
+        if (this.props[COLOR_PROP] !== undefined) {
+            callback(this.props[COLOR_PROP], newColorIndex => this.props[COLOR_PROP] = newColorIndex);
+        }
 
         this._clearCache();
     }
     colorSwap(oldColorIndex, newColorIndex) {
-        COLOR_PROPS.forEach(prop => {
-            if (this.props[prop] === oldColorIndex) {
-                this.props[prop] = newColorIndex;
-            }
-        })
+        if (this.props[COLOR_PROP] === oldColorIndex) {
+            this.props[COLOR_PROP] = newColorIndex;
+        }
 
         this._clearCache();
     }

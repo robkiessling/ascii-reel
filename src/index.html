@@ -142,30 +142,30 @@
                         <div class="sub-tool" data-tool="resize"></div>
                         <div class="sub-tool" data-tool="close"></div>
                     </div>
-                    <div id="draw-freeform-types" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-type="irregular-adaptive"></div>
-                        <div class="sub-tool" data-type="irregular-monochar"></div>
+                    <div class="sub-tool-menu" data-tool="draw-freeform" style="display: none;">
+                        <div class="sub-tool" data-style="irregular-adaptive"></div>
+                        <div class="sub-tool" data-style="irregular-monochar"></div>
                     </div>
-                    <div id="draw-rect-types" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-type="outline-ascii-1"></div>
-                        <div class="sub-tool" data-type="outline-ascii-2"></div>
-                        <div class="sub-tool" data-type="outline-unicode-1"></div>
-                        <div class="sub-tool" data-type="outline-unicode-2"></div>
-                        <div class="sub-tool" data-type="outline-monochar"></div>
-                        <div class="sub-tool" data-type="filled-monochar"></div>
+                    <div class="sub-tool-menu" data-tool="draw-rect" style="display: none;">
+                        <div class="sub-tool" data-style="outline-ascii-1"></div>
+                        <div class="sub-tool" data-style="outline-ascii-2"></div>
+                        <div class="sub-tool" data-style="outline-unicode-1"></div>
+                        <div class="sub-tool" data-style="outline-unicode-2"></div>
+                        <div class="sub-tool" data-style="outline-monochar"></div>
+                        <div class="sub-tool" data-style="filled-monochar"></div>
                     </div>
-                    <div id="draw-line-types" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-type="straight-adaptive"></div>
-                        <div class="sub-tool" data-type="straight-monochar"></div>
-                        <div class="sub-tool" data-type="elbow-line-ascii"></div>
-                        <div class="sub-tool" data-type="elbow-arrow-ascii"></div>
-                        <div class="sub-tool" data-type="elbow-line-unicode"></div> <!-- TODO -->
-                        <div class="sub-tool" data-type="elbow-arrow-unicode"></div>
-                        <div class="sub-tool" data-type="elbow-line-monochar"></div>
+                    <div class="sub-tool-menu" data-tool="draw-line" style="display: none;">
+                        <div class="sub-tool" data-style="straight-adaptive"></div>
+                        <div class="sub-tool" data-style="straight-monochar"></div>
+                        <div class="sub-tool" data-style="elbow-line-ascii"></div>
+                        <div class="sub-tool" data-style="elbow-arrow-ascii"></div>
+                        <div class="sub-tool" data-style="elbow-line-unicode"></div> <!-- TODO -->
+                        <div class="sub-tool" data-style="elbow-arrow-unicode"></div>
+                        <div class="sub-tool" data-style="elbow-line-monochar"></div>
                     </div>
-                    <div id="draw-ellipse-types" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-type="outline-monochar"></div>
-                        <div class="sub-tool" data-type="filled-monochar"></div>
+                    <div class="sub-tool-menu" data-tool="draw-ellipse" style="display: none;">
+                        <div class="sub-tool" data-style="outline-monochar"></div>
+                        <div class="sub-tool" data-style="filled-monochar"></div>
                     </div>
                     <div id="brush-shapes" class="sub-tool-menu" style="display: none;">
                         <div class="sub-tool" data-shape="square" data-size="1">
@@ -194,11 +194,37 @@
 
                 <div id="context-tools-top">
                     <div id="shape-properties" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-tool="tools.shapes.send-to-back"></div>
-                        <div class="sub-tool" data-tool="tools.shapes.send-backward"></div>
-                        <div class="sub-tool" data-tool="tools.shapes.bring-forward"></div>
-                        <div class="sub-tool" data-tool="tools.shapes.bring-to-front"></div>
-                        <div class="sub-tool" data-tool="tools.shapes.delete"></div>
+                        <div class="property-group" data-static="true">
+                            <span class="group-title">Char</span>
+                            <div class="group-actions">
+                                <div class="char-picker-container" id="shape-char">
+                                    <div class="char-well-border">
+                                        <div class="char-well"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="property-group" data-static="true">
+                            <span class="group-title">Color</span>
+                            <div class="group-actions">
+                                <div id="shape-color" class="color-well"></div>
+                            </div>
+                        </div>
+                        <div class="property-group" data-static="true">
+                            <span class="group-title">Order</span>
+                            <div class="group-actions">
+                                <div class="action-button" data-action="tools.shapes.send-to-back"></div>
+                                <div class="action-button" data-action="tools.shapes.send-backward"></div>
+                                <div class="action-button" data-action="tools.shapes.bring-forward"></div>
+                                <div class="action-button" data-action="tools.shapes.bring-to-front"></div>
+                            </div>
+                        </div>
+                        <div class="property-group" data-static="true">
+                            <span class="group-title">Actions</span>
+                            <div class="group-actions">
+                                <div class="action-button" data-action="tools.shapes.delete"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -489,7 +515,7 @@
     </div>
 
     <div id="unicode-dialog" title="Unicode Reference" class="dialog-form">
-        <label>
+        <label class="unicode-chars-container">
             Enter the characters you'd like to have available in the quick reference:
             <textarea id="unicode-chars"></textarea>
         </label>
