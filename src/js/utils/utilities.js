@@ -58,3 +58,31 @@ export function setIntervalUsingRAF(callback, delay, evaluateImmediately = false
         stop: () => { stop = true; }
     }
 }
+
+/**
+ * Callbacks that handle when a mouse is clicked on a target, and then released after some dragging.
+ * Dragging can go off the target and the onDragEnd callback will still be called.
+ * @param $element - jQuery element to bind to.
+ * @param {Function} onDragStart - Function to call on mousedown.
+ * @param {Function} onDragEnd - Function to call on mouseup.
+ * @returns {Function} - Call this to unbind the mousedown listener.
+ */
+export function onMouseDrag($element, onDragStart, onDragEnd) {
+    function handleMouseUp() {
+        $(document).off('mouseup', handleMouseUp);
+        onDragEnd();
+    }
+
+    function handleMouseDown() {
+        $(document).on('mouseup', handleMouseUp);
+        onDragStart();
+    }
+
+    $element.on('mousedown', handleMouseDown);
+
+    // Return a teardown function to remove all bound handlers
+    return function teardown() {
+        $element.off('mousedown', handleMouseDown);
+        $(document).off('mouseup', handleMouseUp);
+    };
+}

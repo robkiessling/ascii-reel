@@ -12,11 +12,12 @@ export default class ColorPicker {
      * @param {Object} options - Picker options
      * @param {string} [options.initialValue] - Initial char value
      * @param {function} [options.onLoad] - Callback when picker value is set for the first time
-     * @param {function} [options.onChange] - Callback when picker value changes
-     * @param {function} [options.onCommit] - Callback when picker 'Ok' button is clicked, picker is closed, or value
+     * @param {function} [options.onChange] - Callback when picker value changes. Will be rapidly called if user clicks
+     *   and drags their mouse in the rainbow. Use onDone instead to only fire when 'Ok' button is clicked / popup is closed
+     * @param {function} [options.onDone] - Callback when picker 'Ok' button is clicked, picker is closed, or value
      *   is set programmatically
      * @param {function} [options.pickerOptions] - Options to pass to vanilla-picker
-     * @param {function} [options.tooltipOptions] - Options to pass to picker tooltip
+     * @param {() => tippy} [options.tooltip] - Function that attaches a tooltip to the picker
      */
     constructor($picker, options = {}) {
         this.$picker = $picker;
@@ -51,7 +52,7 @@ export default class ColorPicker {
                 this._tooltip.enable();
                 this.$picker.removeClass('picker-open');
 
-                if (this.options.onCommit) this.options.onCommit(this._value);
+                if (this.options.onDone) this.options.onDone(this._value);
             },
             onChange: (color) => {
                 this._storeValue(color[state.COLOR_FORMAT])
@@ -59,11 +60,7 @@ export default class ColorPicker {
             },
         }, this.options.pickerOptions));
 
-        this._tooltip = setupTooltips(
-            this.$picker.toArray(),
-            'tools.standard.color-picker',
-            this.options.tooltipOptions
-        ).tooltips[0];
+        if (this.options.tooltip) this._tooltip = this.options.tooltip();
 
         this.$picker.on('click', '.add-to-palette', () => {
             state.addColor(this._value);
@@ -100,15 +97,15 @@ export default class ColorPicker {
     /**
      * Sets and gets the char picker value
      * @param {String} [newValue] - If defined, sets the value of char picker. If undefined, char picker is not changed
-     * @param {Boolean} [silent=true] - If true, onChange event is not fired
+     * @param {Boolean} [silent=true] - If true, onChange/onDone events are not fired
      * @returns {String} - Current value of the char picker
      */
     value(newValue, silent = false) {
         if (newValue !== undefined) {
-            this.picker.setColor(newValue, true); // Silent; so vanilla-picker's onChange doesn't fire
+            this.picker.setColor(newValue, true); // Silent; so vanilla-picker's onDone doesn't fire
             this._storeValue(newValue);
             if (!silent && this.options.onChange) this.options.onChange(this._value);
-            if (!silent && this.options.onCommit) this.options.onCommit(this._value);
+            if (!silent && this.options.onDone) this.options.onDone(this._value);
         }
 
         return this._value;

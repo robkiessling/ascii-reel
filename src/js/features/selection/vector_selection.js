@@ -240,6 +240,12 @@ export function updateSelectedShapes(updater) {
     state.pushHistory();
 }
 
+// For rapid updates that affect shape display but should not be committed to history
+export function rapidUpdateSelectedShapes(updater) {
+    state.updateSelectedShapes(updater);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+}
+
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.
 

@@ -30,6 +30,7 @@ import {
     STYLE_PROPS
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
+import {standardTip} from "../components/tooltips.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -235,7 +236,7 @@ function setupEventBus() {
     })
 
     eventBus.on(EVENTS.PALETTE.COLOR_SELECTED, ({ color }) => {
-        setPrimaryColorPicker(color);
+        selectColor(color);
 
         if (state.hasSelectedShapes()) {
             shapeColorPicker.value(color)
@@ -243,10 +244,6 @@ function setupEventBus() {
     })
     eventBus.on(EVENTS.UNICODE.CHAR_SELECTED, ({ char }) => {
         selectChar(char);
-
-        if (state.hasSelectedShapes()) {
-            shapeCharPicker.value(char);
-        }
     })
 }
 
@@ -538,7 +535,7 @@ function setupBrushSubMenu() {
 
 // -------------------------------------------------------------------------------- Shape Properties
 
-let $shapeProperties, shapeTooltips, shapeSubMenus = [], shapeCharPicker, shapeColorPicker;
+let $shapeProperties, shapeTooltips, shapeSubMenus = [];
 
 function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
@@ -576,10 +573,8 @@ function setupShapeProperties() {
                 vectorSelection.updateSelectedShapes(shape => {
                     if (shape.type === shapeType) shape.updateProp(styleProp, newValue.style)
                 });
-                console.log(state.selectedShapes())
             },
             icon: $tool => {
-                console.log(`tools.shapes.${styleProp}.${$tool.data('style')}`)
                 // getIconHTML(`tools.${typesKey}.${$tool.data('type')}`)
                 return getIconHTML(`tools.shapes.${styleProp}.${$tool.data('style')}`)
             },
@@ -599,31 +594,6 @@ function setupShapeProperties() {
         })
 
         shapeSubMenus.push(subMenu);
-    })
-
-    // Char prop
-    shapeCharPicker = new CharPicker($('#shape-char'), {
-        popupDirection: 'bottom',
-        popupOffset: 22,
-        onChange: (newValue) => {
-            vectorSelection.updateSelectedShapes(shape => shape.updateProp(CHAR_PROP, newValue));
-            // todo if not using monochar, switch shape to it
-        }
-    })
-
-    // Color prop
-    shapeColorPicker = new ColorPicker($('#shape-color'), {
-        pickerOptions: {
-            popup: 'bottom'
-        },
-        tooltipOptions: {
-            // offset: tooltipOffset('center')
-        },
-        onCommit: color => {
-            console.log('commit');
-            const colorIndex = state.colorIndex(color);
-            vectorSelection.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
-        },
     })
 
     // Static properties / actions:
@@ -665,26 +635,24 @@ function refreshShapeProperties() {
     const isVisible = state.hasSelectedShapes();
     $shapeProperties.toggle(isVisible);
 
-    if (!isVisible) shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
+    if (isVisible) {
+        shapeSubMenus.forEach(subMenu => subMenu.refresh());
 
-    // todo hide tooltips for other stuff like shape char picker
+        // Note: shape char/color pickers are handled by primary refreshCharPicker/refreshColorPicker
 
-    shapeSubMenus.forEach(subMenu => subMenu.refresh());
+        $shapeProperties.find('.action-button').each((i, element) => {
+            const $element = $(element);
+            const actionId = $element.data('action');
+            $element.html(getIconHTML(actionId))
+            $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
+        });
 
-    const shapeProps = state.selectedShapeProps();
-    shapeCharPicker.value(shapeProps[CHAR_PROP][0], true) // just showing the first shape's char
-    shapeColorPicker.value(state.colorStr(shapeProps[COLOR_PROP][0]), true);
-
-    $shapeProperties.find('.action-button').each((i, element) => {
-        const $element = $(element);
-        const actionId = $element.data('action');
-        $element.html(getIconHTML(actionId))
-        $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
-    });
-
-    // todo hide if color-related and state isn't multicolored
-    // $shapeProperties.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
-
+        // todo hide if color-related and state isn't multicolored
+        // $shapeProperties.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
+    } else {
+        shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
+        // todo hide tooltips for other stuff like shape char picker
+    }
 }
 
 
@@ -717,7 +685,7 @@ function colorSwap(cell, options) {
 function eyedropper(cell, options) {
     const [char, colorIndex] = state.getCurrentCelGlyph(cell.row, cell.col);
     const colorStr = state.colorStr(colorIndex);
-    setPrimaryColorPicker(colorStr);
+    selectColor(colorStr);
 
     if (options.addToPalette) {
         state.addColor(colorStr);
@@ -875,36 +843,10 @@ function finishMoveAll() {
 
 // -------------------------------------------------------------------------------- Char Picker
 
-let $charPicker, charPicker, charWellTooltip, charQuickSwapTooltip;
+let $charPicker, primaryCharPicker, shapeCharPicker, charQuickSwapTooltip;
 
 function setupCharPicker() {
     $charPicker = $('#current-char');
-
-    const onCharChange = newValue => {
-        state.setConfig('primaryChar', newValue);
-
-        // If you want the paint bucket char icon to change along with the selected char
-        // let visibleChar = newValue;
-        // if (visibleChar === WHITESPACE_CHAR) visibleChar = '␣';
-        // if (visibleChar === EMPTY_CHAR) visibleChar = '∅';
-        // $('.picked-char').html(visibleChar);
-
-        eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
-    }
-
-    charPicker = new CharPicker($charPicker, {
-        initialValue: 'A',
-        onChange: onCharChange,
-        onLoad: onCharChange,
-        onOpen: () => {
-            charWellTooltip.disable();
-            charQuickSwapTooltip.disable();
-        },
-        onClose: () => {
-            charWellTooltip.enable();
-            charQuickSwapTooltip.enable();
-        }
-    })
 
     actions.registerAction('tools.standard.char-picker', {
         callback: () => toggleCharPicker(true),
@@ -913,33 +855,82 @@ function setupCharPicker() {
         callback: () => toggleQuickSwap(),
     })
 
+    primaryCharPicker = new CharPicker($charPicker, {
+        initialValue: 'A',
+        onLoad: newValue => selectChar(newValue, false),
+        onChange: newValue => selectChar(newValue),
+        onOpen: () => {
+            charQuickSwapTooltip.disable();
+        },
+        onClose: () => {
+            charQuickSwapTooltip.enable();
+        },
+        popupDirection: 'right',
+        popupOffset: 34,
+        tooltip: () => {
+            return setupTooltips(
+                $charPicker.toArray(),
+                'tools.standard.char-picker',
+                { offset: tooltipOffset('center') }
+            ).tooltips[0];
+        }
+    })
+
+    const $shapeChar = $('#shape-char');
+    shapeCharPicker = new CharPicker($shapeChar, {
+        onChange: newValue => selectChar(newValue),
+        popupDirection: 'bottom',
+        popupOffset: 22,
+        tooltip: () => {
+            return standardTip($shapeChar, 'tools.shapes.char-picker', {
+                placement: 'bottom',
+                offset: [0, 15]
+            })
+        }
+    })
+
     const $quickSwap = $charPicker.find('.char-well-corner-button');
     $quickSwap.off('click').on('click', () => actions.callAction('tools.standard.quick-swap-char'))
 
-    charWellTooltip = setupTooltips(charPicker.$well.toArray(), 'tools.standard.char-picker', {
-        offset: tooltipOffset('center')
-    }).tooltips[0];
     charQuickSwapTooltip = setupTooltips($quickSwap.toArray(), 'tools.standard.quick-swap-char', {
         offset: tooltipOffset('center-corner-button')
     }).tooltips[0];
 }
 
 function refreshCharPicker() {
-    selectChar(state.getConfig('primaryChar'))
+    const char = state.hasSelectedShapes() ?
+        state.selectedShapeProps()[CHAR_PROP][0] :
+        state.getConfig('primaryChar');
+
+    selectChar(char, false);
 
     $charPicker.toggleClass('animated-border', isQuickSwapEnabled());
 }
 
 export function isCharPickerOpen() {
-    return charPicker.isOpen;
+    return primaryCharPicker.isOpen || shapeCharPicker.isOpen;
 }
 export function toggleCharPicker(open) {
-    charPicker.toggle(open);
-}
-export function selectChar(char) {
-    charPicker.value(char);
+    if (open) {
+        primaryCharPicker.toggle(true);
+    } else {
+        primaryCharPicker.toggle(false);
+        shapeCharPicker.toggle(false);
+    }
 }
 
+export function selectChar(char, triggerUpdates = true) {
+    if (primaryCharPicker) primaryCharPicker.value(char, true);
+    if (shapeCharPicker) shapeCharPicker.value(char, true);
+
+    state.setConfig('primaryChar', char);
+    eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
+
+    if (triggerUpdates) {
+        vectorSelection.updateSelectedShapes(shape => shape.updateProp(CHAR_PROP, char));
+        // todo if not using monochar, switch shape to it
+    }
+}
 
 // "Quick Swap" is a toggle that lets the user instantly update the char picker's selected value by pressing a keyboard key
 let quickSwapEnabled = false;
@@ -957,35 +948,80 @@ export function toggleQuickSwap(enabled) {
 
 // -------------------------------------------------------------------------------- Color Picker
 
-let colorPicker;
+let primaryColorPicker, shapeColorPicker;
 
 function setupColorPicker() {
     const $colorPicker = $('#current-color');
 
     actions.registerAction('tools.standard.color-picker', {
-        callback: () => toggleCharPicker(true),
+        // callback: () => toggleColorPicker(true),
     })
 
-    colorPicker = new ColorPicker($colorPicker, {
+    primaryColorPicker = new ColorPicker($colorPicker, {
         pickerOptions: {
             popup: 'right'
         },
-        tooltipOptions: {
-            offset: tooltipOffset('center')
+        tooltip: () => {
+            return setupTooltips(
+                $colorPicker.toArray(),
+                'tools.standard.color-picker',
+                { offset: tooltipOffset('center') }
+            ).tooltips[0]
         },
-        onChange: color => {
-            state.setConfig('primaryColor', color);
-            eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
+        onChange: color => selectColorFromPicker(color, primaryColorPicker),
+        onDone: color => selectColor(color)
+    })
+
+    const $shapeColor = $('#shape-color');
+    shapeColorPicker = new ColorPicker($shapeColor, {
+        pickerOptions: {
+            popup: 'bottom'
         },
+        tooltip: () => {
+            return standardTip($shapeColor, 'tools.shapes.color-picker', {
+                placement: 'bottom',
+                offset: [0, 15]
+            })
+        },
+        onChange: color => selectColorFromPicker(color, shapeColorPicker),
+        onDone: color => selectColor(color),
     })
 }
 
-function setPrimaryColorPicker(colorStr) {
-    colorPicker.value(colorStr);
+function selectColor(colorStr, triggerUpdates = true) {
+    if (primaryColorPicker) primaryColorPicker.value(colorStr, true);
+    if (shapeColorPicker) shapeColorPicker.value(colorStr, true);
+
+    state.setConfig('primaryColor', colorStr);
+    eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
+
+    if (triggerUpdates) {
+        const colorIndex = state.colorIndex(colorStr);
+        vectorSelection.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+    }
+}
+
+// When one picker selects a color, we update the value in the other picker. We also call rapidUpdateSelectedShapes
+// (not the usual updateSelectedShapes) because the picker will trigger update events for every pixel that the mouse
+// moves while changing the color. We want the shapes to update in real time, but we do not commit the change
+// to history until the onDone is called
+function selectColorFromPicker(colorStr, fromPicker) {
+    if (fromPicker !== primaryColorPicker) primaryColorPicker.value(colorStr, true);
+    if (fromPicker !== shapeColorPicker) shapeColorPicker.value(colorStr, true);
+
+    state.setConfig('primaryColor', colorStr);
+    eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
+
+    const colorIndex = state.colorIndex(colorStr);
+    vectorSelection.rapidUpdateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
 }
 
 function refreshColorPicker() {
-    setPrimaryColorPicker(state.getConfig('primaryColor'))
+    const color = state.hasSelectedShapes() ?
+        state.colorStr(state.selectedShapeProps()[COLOR_PROP][0]) :
+        state.getConfig('primaryColor');
+
+    selectColor(color, false);
 }
 
 

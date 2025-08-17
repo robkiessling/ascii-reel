@@ -183,6 +183,11 @@ export const STRINGS = {
     'tools.shapes.ellipseStyle.filled-monochar.name': 'Filled Ellipse',
     'tools.shapes.ellipseStyle.filled-monochar.description': 'Draws a filled ellipse by repeating the selected character.',
 
+    'tools.shapes.char-picker.name': 'Shape Character',
+    'tools.shapes.char-picker.description': 'Click to open the character picker. While open, pressing a key will select that character.',
+    'tools.shapes.color-picker.name': 'Shape Color',
+    'tools.shapes.color-picker.description': 'Click to open the color picker.',
+
     'tools.shapes.send-to-back.name': 'Send To Back',
     'tools.shapes.send-backward.name': 'Send Backward',
     'tools.shapes.bring-forward.name': 'Bring Forward',

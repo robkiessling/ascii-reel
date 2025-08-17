@@ -77,6 +77,7 @@ export default class CharPicker {
      * @param {function} [options.onClose] - Callback when picker is closed
      * @param {function} [options.onLoad] - Callback when picker value is set for the first time
      * @param {function} [options.onChange] - Callback when picker value changes
+     * @param {() => tippy} [options.tooltip] - Function that attaches a tooltip to the picker
      */
     constructor($container, options = {}) {
         this.$well = $container.find('.char-well');
@@ -104,6 +105,8 @@ export default class CharPicker {
         });
 
         this.$popup.addClass(`position-${this.options.popupDirection}`)
+
+        if (this.options.tooltip) this._tooltip = this.options.tooltip();
     }
 
     _buildPopupHTML() {
@@ -176,12 +179,16 @@ export default class CharPicker {
 
         this.$popup.show().position(position);
 
+        if (this._tooltip) this._tooltip.disable();
+
         if (this.options.onOpen) this.options.onOpen();
     }
     close() {
         window.removeEventListener('click', this._handleOutsideClick, true);
 
         this.$popup.hide();
+
+        if (this._tooltip) this._tooltip.enable();
 
         if (this.options.onClose) this.options.onClose();
     }

@@ -148,14 +148,14 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
 
   border: 1px solid var(--color-contrast);
 
-  .color-well {
-    width: $sub-tool-size;
-    height: $sub-tool-size;
-    border-radius: 0.5rem;
-    padding: 0.1rem;
-  }
+  //.color-well {
+  //  width: $sub-tool-size;
+  //  height: $sub-tool-size;
+  //  border-radius: 0.5rem;
+  //  padding: 0.1rem;
+  //}
 
-  .sub-tool, .action-button, .prop-option, .char-well {
+  .sub-tool, .action-button, .prop-option, .char-well, .color-well {
     width: $sub-tool-size;
     height: $sub-tool-size;
     display: flex;
@@ -167,9 +167,11 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
     padding: 0.1rem;
 
     border-radius: 0.5rem;
+    //background: var(--color-surface-hover);
 
     &:hover:not(.disabled):not(.active) {
       background: var(--color-surface-hover);
+      //background: var(--color-surface-hover-2);
     }
 
     &.disabled {
@@ -181,6 +183,11 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
       background: var(--color-primary);
       color: var(--color-font-white);
     }
+  }
+
+  // Color picker popup actually becomes a child element of color-well, so cannot use overflow:hidden like other buttons
+  .color-well {
+    overflow: inherit;
   }
 
   &.disabled {
