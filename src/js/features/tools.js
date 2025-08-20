@@ -22,6 +22,7 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
 import BaseRect from "../geometry/shapes/rect/base.js";
 import {
+    ALIGN_ACTIONS,
     CHAR_PROP, COLOR_PROP,
     REORDER_ACTIONS,
     SHAPE_NAMES,
@@ -616,6 +617,22 @@ function setupShapeProperties() {
     actions.registerAction('tools.shapes.delete', {
         callback: () => vectorSelection.deleteSelectedShapes()
     })
+
+    actions.registerAction('tools.shapes.startCursor', {
+        callback: () => {
+            vectorSelection.setShapeCursor(state.selectedShapes()[0].id, 0)
+        },
+        enabled: () => state.selectedShapes().length
+    })
+    
+    for (const [action, { prop, value }] of Object.entries(ALIGN_ACTIONS)) {
+        actions.registerAction(`tools.shapes.${action}`, {
+            callback: () => {
+                vectorSelection.updateSelectedShapes(shape => shape.updateProp(prop, value))
+            },
+            enabled: () => state.selectedShapes().length // todo has text
+        })
+    }
 
     $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {
         const $element = $(evt.currentTarget);

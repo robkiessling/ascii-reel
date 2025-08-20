@@ -5,6 +5,7 @@ import * as actions from "./actions.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
 import {toggleQuickSwap} from "../features/tools.js";
+import * as vectorSelection from "../features/selection/vector_selection.js";
 
 const $document = $(document);
 
@@ -128,6 +129,11 @@ function handleArrowKey(e, arrowKey) {
         state.endHistoryModification();
 
         selection.handleArrowKey(direction, e.shiftKey);
+    }
+    else if (vectorSelection.caretCell()) {
+        state.endHistoryModification();
+
+        vectorSelection.handleArrowKey(direction, e.shiftKey);
     }
     else {
         switch(direction) {

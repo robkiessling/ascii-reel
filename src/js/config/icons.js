@@ -56,6 +56,13 @@ const ICON_DATA = {
     'tools.shapes.bring-forward': { type: REMIXICON, content: 'ri-arrow-right-line rotate270' },
     'tools.shapes.bring-to-front': { type: REMIXICON, content: 'ri-contract-right-line rotate270' },
     'tools.shapes.delete': { type: REMIXICON, content: 'ri-delete-bin-line' },
+    'tools.shapes.startCursor': { type: REMIXICON, content: 'ri-text' },
+    'tools.shapes.alignTextLeft': { type: REMIXICON, content: 'ri-align-left' },
+    'tools.shapes.alignTextCenter': { type: REMIXICON, content: 'ri-align-center' },
+    'tools.shapes.alignTextRight': { type: REMIXICON, content: 'ri-align-right' },
+    'tools.shapes.alignTextTop': { type: REMIXICON, content: 'ri-align-top' },
+    'tools.shapes.alignTextMiddle': { type: REMIXICON, content: 'ri-align-vertically' },
+    'tools.shapes.alignTextBottom': { type: REMIXICON, content: 'ri-align-bottom' },
 
     'themes.dark-mode': { type: REMIXICON, content: 'ri-moon-line' },
     'themes.light-mode': { type: REMIXICON, content: 'ri-sun-line' },

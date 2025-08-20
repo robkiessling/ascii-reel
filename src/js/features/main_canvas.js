@@ -16,7 +16,7 @@ import * as selection from "./selection.js";
 import * as vectorSelection from "./selection/vector_selection.js";
 import {hoveredCells} from "./tools.js";
 import * as state from "../state/index.js";
-import {majorGridColor, minorGridColor} from "../config/colors.js";
+import {majorGridColor, minorGridColor, PRIMARY_COLOR} from "../config/colors.js";
 import * as tools from "./tools.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
@@ -270,6 +270,10 @@ function redrawSelection() {
     }
 
     vectorSelection.drawShapeSelection(selectionCanvas);
+    if (vectorSelection.caretCell()) {
+        const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
+        caretCanvas.startCaretAnimation(vectorSelection.caretCell(), state.getConfig('caretStyle'), () => PRIMARY_COLOR);
+    }
 
     refreshCanvasDetails();
 }

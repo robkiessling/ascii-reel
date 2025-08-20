@@ -69,13 +69,13 @@ export default class Shape {
     }
 
     get boundingArea() {
-        if (!this._cache.boundingArea) this._cacheGeometry();
+        if (this._cache.boundingArea === undefined) this._cacheGeometry();
         return this._cache.boundingArea;
     }
 
     // Returns { glyphs: [[]], origin: Cell }
     rasterize() {
-        if (!this._cache.glyphs) this._cacheGeometry();
+        if (this._cache.glyphs === undefined) this._cacheGeometry();
         return {
             glyphs: this._cache.glyphs,
             origin: this._cache.origin
@@ -87,12 +87,17 @@ export default class Shape {
      * rectangles if the rectangle is not filled the hitbox is just the outer area.
      */
     checkHitbox(cell) {
-        if (!this._cache.hitbox) this._cacheGeometry();
+        if (this._cache.hitbox === undefined) this._cacheGeometry();
         return this._cache.hitbox(cell);
     }
 
     fitsInside(cellArea) {
         return cellArea.contains(this.boundingArea);
+    }
+
+    get textLayout() {
+        if (this._cache.textLayout === undefined) this._cacheGeometry();
+        return this._cache.textLayout;
     }
 
     _initGlyphs(numRows, numCols) {

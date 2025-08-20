@@ -78,7 +78,35 @@ export const STYLE_PROPS = {
     [SHAPES.ELLIPSE]: 'ellipseStyle',
 }
 
-export const SHARED_SHAPE_PROPS = [...Object.values(STYLE_PROPS), CHAR_PROP, COLOR_PROP]; // todo textAlignment
+export const TEXT_PROP = 'text';
+export const TEXT_ALIGN_H_PROP = 'textAlignH';
+export const TEXT_ALIGN_V_PROP = 'textAlignV';
+
+export const ALIGN_H_LEFT = 'align-left';
+export const ALIGN_H_CENTER = 'align-center';
+export const ALIGN_H_RIGHT = 'align-right';
+export const ALIGN_V_TOP = 'align-top';
+export const ALIGN_V_MIDDLE = 'align-middle';
+export const ALIGN_V_BOTTOM = 'align-bottom';
+
+export const ALIGN_ACTIONS = {
+    alignTextLeft: { prop: TEXT_ALIGN_H_PROP, value: ALIGN_H_LEFT },
+    alignTextCenter: { prop: TEXT_ALIGN_H_PROP, value: ALIGN_H_CENTER },
+    alignTextRight: { prop: TEXT_ALIGN_H_PROP, value: ALIGN_H_RIGHT },
+    alignTextTop: { prop: TEXT_ALIGN_V_PROP, value: ALIGN_V_TOP },
+    alignTextMiddle: { prop: TEXT_ALIGN_V_PROP, value: ALIGN_V_MIDDLE },
+    alignTextBottom: { prop: TEXT_ALIGN_V_PROP, value: ALIGN_V_BOTTOM },
+}
+
+export const SHARED_SHAPE_PROPS = [
+    ...Object.values(STYLE_PROPS), 
+    CHAR_PROP, 
+    COLOR_PROP,
+    TEXT_PROP,
+    TEXT_ALIGN_H_PROP,
+    TEXT_ALIGN_V_PROP
+]; // todo textPadding
+
 
 // switch(handle) {
 //     case HANDLES.TOP_LEFT:

@@ -6,6 +6,8 @@ import CellArea from "../../geometry/cell_area.js";
 import ShapeSelection from "./shape_selection.js";
 import VectorMarquee from "./vector_marquee.js";
 import {arraysEqual} from "../../utils/arrays.js";
+import Cell from "../../geometry/cell.js";
+import {moveCaretTo, polygons} from "../selection.js";
 
 export function init() {
     setupEventBus();
@@ -288,6 +290,80 @@ function finishMarquee(mouseEvent) {
     marquee = null;
     eventBus.emit(EVENTS.SELECTION.CHANGED)
 }
+
+
+// ------------------------------------------------------------------------------------------------- Text caret
+
+let preferredCursorCol;
+
+export function caretCell() {
+    let { shape, cursorIndex } = state.getShapeCursor();
+    if (!shape) return null;
+    return getTextLayout().getCellForCursorIndex(cursorIndex)
+}
+
+function getTextLayout() {
+    return state.getShapeCursor().shape.textLayout;
+}
+
+export function setShapeCursor(shapeId, atIndex, resetPreferredCol = true) {
+    if (resetPreferredCol) preferredCursorCol = undefined;
+    state.setShapeCursor(shapeId, atIndex);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+}
+
+function moveCursorInVertDir(vertOffset) {
+    const currentCell = caretCell();
+    const desiredCell = currentCell.translate(vertOffset, 0);
+
+    if (preferredCursorCol === undefined) {
+        preferredCursorCol = desiredCell.col;
+    } else {
+        desiredCell.col = preferredCursorCol
+    }
+
+    const layout = getTextLayout();
+
+    let cursorIndex;
+    let resetPreferredCol = false;
+    if (layout.isCellInVerticalBounds(desiredCell)) {
+        cursorIndex = layout.getCursorIndexForCell(desiredCell);
+    } else {
+        cursorIndex = vertOffset > 0 ? layout.maxCursorIndex : 0;
+        resetPreferredCol = true;
+    }
+
+    setShapeCursor(state.getShapeCursor().shape.id, cursorIndex, resetPreferredCol);
+}
+
+function moveCursorInHorizDir(horizOffset) {
+    const min = 0;
+    const max = state.getShapeCursor().shape.textLayout.maxCursorIndex;
+    let newIndex = state.getShapeCursor().cursorIndex + horizOffset;
+    if (newIndex < min) newIndex = min;
+    if (newIndex > max) newIndex = max;
+    setShapeCursor(state.getShapeCursor().shape.id, newIndex, true);
+}
+
+export function handleArrowKey(direction, shiftKey) {
+    switch(direction) {
+        case 'left':
+            moveCursorInHorizDir(-1)
+            break;
+        case 'up':
+            moveCursorInVertDir(-1)
+            break;
+        case 'right':
+            moveCursorInHorizDir(1)
+            break;
+        case 'down':
+            moveCursorInVertDir(1)
+            break;
+        default:
+            throw new Error(`Invalid direction: ${direction}`);
+    }
+}
+
 
 
 // ------------------------------------------------------------------------------------------------- Drawing

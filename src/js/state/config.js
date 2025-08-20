@@ -44,7 +44,7 @@ export const DEFAULT_STATE = {
     shapeStyles: DEFAULT_SHAPE_STYLES,
     lastExportOptions: null,
     caretPosition: {},
-    caretStyle: 'I-beam' // vs. block
+    caretStyle: 'I-beam', // vs. block
 }
 
 // Only the following config keys are saved to history; undo/redo will not affect the other config

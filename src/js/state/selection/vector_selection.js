@@ -9,7 +9,9 @@ import {SHARED_SHAPE_PROPS} from "../../geometry/shapes/constants.js";
 import {transformValues} from "../../utils/objects.js";
 
 const DEFAULT_STATE = {
-    shapeIds: new Set()
+    shapeIds: new Set(),
+    cursorShapeId: null,
+    cursorIndex: null,
 }
 
 let state = {};
@@ -58,9 +60,24 @@ export function selectShape(shapeId) {
 }
 export function deselectShape(shapeId) {
     shapeIdsSet().delete(shapeId);
+    if (state.cursorShapeId === shapeId) state.cursorShapeId = null;
 }
 export function deselectAllShapes() {
     shapeIdsSet().clear();
+    state.cursorShapeId = null;
+}
+
+export function setShapeCursor(shapeId, cursorIndex = 0) {
+    state.cursorShapeId = shapeId;
+    state.cursorIndex = cursorIndex;
+}
+export function getShapeCursor() {
+    if (state.cursorShapeId === null) return {};
+
+    return {
+        shape: getCurrentCelShape(state.cursorShapeId),
+        cursorIndex: state.cursorIndex,
+    }
 }
 
 export function selectedShapes() {

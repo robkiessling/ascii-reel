@@ -1,8 +1,18 @@
 import Shape from "../shape.js";
 import Cell from "../../cell.js";
 import {isFunction} from "../../../utils/utilities.js";
-import {CHAR_PROP, COLOR_PROP, HANDLES, SHAPES, STYLE_PROPS} from "../constants.js";
+import {
+    ALIGN_H_LEFT,
+    ALIGN_V_TOP,
+    CHAR_PROP,
+    COLOR_PROP,
+    HANDLES,
+    SHAPES,
+    STYLE_PROPS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_PROP, TEXT_PROP
+} from "../constants.js";
 import CellArea from "../../cell_area.js";
+import TextLayout from "../text_layout.js";
+import {EMPTY_CHAR} from "../../../config/chars.js";
 
 
 /**
@@ -75,6 +85,10 @@ export default class BaseRect extends Shape {
             [STYLE_PROPS[SHAPES.RECT]]: options.drawPreset,
             [CHAR_PROP]: options.char,
             [COLOR_PROP]: options.colorIndex,
+            [TEXT_PROP]: " Hello World\nMy name    is robert brand kiessling junior",
+            [TEXT_ALIGN_V_PROP]: ALIGN_V_TOP,
+            [TEXT_ALIGN_H_PROP]: ALIGN_H_LEFT,
+            textPadding: 0
         };
 
         return new BaseRect(undefined, SHAPES.RECT, props);
@@ -225,19 +239,50 @@ export default class BaseRect extends Shape {
             if (char !== undefined) this._setGlyph(glyphs, {row, col}, char, colorIndex);
         });
 
+        const textLayout = this._applyTextLayout(glyphs, boundingArea);
+
         const hitbox = cell => {
+            if (textLayout && textLayout.doesCellOverlap(cell)) return true;
             if (innerArea && innerArea.doesCellOverlap(cell) && !charSheet.FILL) return false;
             return boundingArea.doesCellOverlap(cell);
         };
 
         this._cache = {
-            boundingArea: boundingArea,
+            boundingArea,
             origin: state.topLeft,
-            glyphs: glyphs,
-            hitbox: hitbox
+            glyphs,
+            hitbox,
+            textLayout
         }
     }
 
+    // ------------------------------------------------------ Text
+
+    _applyTextLayout(glyphs, cellArea) {
+        if (!this.props[TEXT_PROP]) return null;
+        if (cellArea.numCols < 3 || cellArea.numRows < 3) return null;
+
+        const textLayout = new TextLayout(
+            this.props[TEXT_PROP],
+            cellArea,
+            {
+                alignH: this.props[TEXT_ALIGN_H_PROP],
+                alignV: this.props[TEXT_ALIGN_V_PROP],
+                paddingH: this.props.textPadding + 1, // Add 1 for rect's natural outline
+                paddingV: this.props.textPadding + 1,
+            }
+        )
+
+        textLayout.grid.forEach((row, rowIndex) => {
+            row.forEach((char, colIndex) => {
+                if (char !== EMPTY_CHAR) {
+                    this._setGlyph(glyphs, { row: rowIndex, col: colIndex }, char, this.props[COLOR_PROP])
+                }
+            })
+        })
+
+        return textLayout;
+    }
 
 
 }

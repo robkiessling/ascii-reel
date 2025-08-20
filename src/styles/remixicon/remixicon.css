@@ -8,7 +8,7 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1752959202946") format("woff2");
+    src: url("remixicon/remixicon.woff2?t=1755655077142") format("woff2");
     font-display: swap;
 }
 
@@ -98,3 +98,9 @@
 .ri-text-snippet:before { content: "\f46e"; }
 .ri-contract-right-line:before { content: "\f301"; }
 .ri-arrow-right-line:before { content: "\ea6c"; }
+.ri-align-left:before { content: "\ea27"; }
+.ri-align-center:before { content: "\ea25"; }
+.ri-align-right:before { content: "\ea28"; }
+.ri-align-top:before { content: "\ea29"; }
+.ri-align-vertically:before { content: "\ea2a"; }
+.ri-align-bottom:before { content: "\ea24"; }
