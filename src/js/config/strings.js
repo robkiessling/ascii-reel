@@ -193,13 +193,15 @@ export const STRINGS = {
     'tools.shapes.bring-forward.name': 'Bring Forward',
     'tools.shapes.bring-to-front.name': 'Bring To Front',
     'tools.shapes.delete.name': 'Delete Shape',
+
     'tools.shapes.startCursor.name': 'Start Cursor',
-    'tools.shapes.alignTextLeft.name': 'Align Left',
-    'tools.shapes.alignTextCenter.name': 'Align Center',
-    'tools.shapes.alignTextRight.name': 'Align Right',
-    'tools.shapes.alignTextTop.name': 'Align Top',
-    'tools.shapes.alignTextMiddle.name': 'Align Middle',
-    'tools.shapes.alignTextBottom.name': 'Align Bottom',
+
+    'tools.shapes.textAlignH.alignLeft.name': 'Align Left',
+    'tools.shapes.textAlignH.alignCenter.name': 'Align Center',
+    'tools.shapes.textAlignH.alignRight.name': 'Align Right',
+    'tools.shapes.textAlignV.alignTop.name': 'Align Top',
+    'tools.shapes.textAlignV.alignMiddle.name': 'Align Middle',
+    'tools.shapes.textAlignV.alignBottom.name': 'Align Bottom',
 
     'frames.new-frame.name': 'New Frame',
     'frames.new-frame.description': 'Creates a new blank frame.',

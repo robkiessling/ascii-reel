@@ -22,13 +22,12 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
 import BaseRect from "../geometry/shapes/rect/base.js";
 import {
-    ALIGN_ACTIONS,
     CHAR_PROP, COLOR_PROP,
     REORDER_ACTIONS,
     SHAPE_NAMES,
     SHAPE_STYLES,
     SHAPES,
-    STYLE_PROPS
+    STYLE_PROPS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_PROP
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
 import {standardTip} from "../components/tooltips.js";
@@ -559,9 +558,7 @@ function setupShapeProperties() {
 
         // todo support initial drawing too
         const subMenu = new ToolSubMenu($shapeStyles, {
-            visible: () => {
-                return state.selectedShapeTypes().includes(shapeType)
-            },
+            visible: () => state.selectedShapeTypes().includes(shapeType),
             getValue: () => {
                 const styles = state.selectedShapeProps()[styleProp];
                 return {
@@ -570,19 +567,14 @@ function setupShapeProperties() {
                 }
             },
             onChange: newValue => {
-                // changeDrawType(toolKey, newValue.type)
                 vectorSelection.updateSelectedShapes(shape => {
                     if (shape.type === shapeType) shape.updateProp(styleProp, newValue.style)
                 });
             },
-            icon: $tool => {
-                // getIconHTML(`tools.${typesKey}.${$tool.data('type')}`)
-                return getIconHTML(`tools.shapes.${styleProp}.${$tool.data('style')}`)
-            },
+            icon: $tool => getIconHTML(`tools.shapes.${styleProp}.${$tool.data('style')}`),
             tooltipContent: $tool => {
-                const style = $tool.data('style');
-                const name = STRINGS[`tools.shapes.${styleProp}.${style}.name`];
-                const description = STRINGS[`tools.shapes.${styleProp}.${style}.description`];
+                const name = STRINGS[`tools.shapes.${styleProp}.${$tool.data('style')}.name`];
+                const description = STRINGS[`tools.shapes.${styleProp}.${$tool.data('style')}.description`];
                 return `<div class="header">` +
                     `<span class="title">${name}</span>` +
                     `</div>` +
@@ -625,14 +617,8 @@ function setupShapeProperties() {
         enabled: () => state.selectedShapes().length
     })
     
-    for (const [action, { prop, value }] of Object.entries(ALIGN_ACTIONS)) {
-        actions.registerAction(`tools.shapes.${action}`, {
-            callback: () => {
-                vectorSelection.updateSelectedShapes(shape => shape.updateProp(prop, value))
-            },
-            enabled: () => state.selectedShapes().length // todo has text
-        })
-    }
+    setupTextAlignMenu($('#text-align-h'), TEXT_ALIGN_H_PROP);
+    setupTextAlignMenu($('#text-align-v'), TEXT_ALIGN_V_PROP);
 
     $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {
         const $element = $(evt.currentTarget);
@@ -646,6 +632,37 @@ function setupShapeProperties() {
             placement: 'bottom'
         }
     );
+}
+
+function setupTextAlignMenu($menu, prop) {
+    const subMenu = new ToolSubMenu($menu, {
+        dropdown: true,
+        visible: () => {
+            return true; // todo
+        },
+        getValue: () => {
+            const alignments = state.selectedShapeProps()[prop];
+            return {
+                // If multiple alignments are selected, cannot show a value
+                align: alignments.length === 1 ? alignments[0] : null
+            }
+        },
+        onChange: newValue => vectorSelection.updateSelectedShapes(shape => shape.updateProp(prop, newValue.align)),
+        icon: $tool => getIconHTML(`tools.shapes.${prop}.${$tool.data('align')}`),
+        tooltipContent: $tool => {
+            const name = STRINGS[`tools.shapes.${prop}.${$tool.data('align')}.name`];
+            const description = STRINGS[`tools.shapes.${prop}.${$tool.data('align')}.description`];
+            return `<div class="header">` +
+                `<span class="title">${name}</span>` +
+                `</div>` +
+                `<div class="description">${description}</div>`;
+        },
+        tooltipOptions: {
+            placement: 'bottom'
+        }
+    })
+
+    shapeSubMenus.push(subMenu);
 }
 
 function refreshShapeProperties() {
@@ -1081,6 +1098,7 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl) {
 
 
 // Menu where many options are displayed, and only one can be 'selected' at a time.
+// TODO just use data-value instead of varying data attributes
 class ToolSubMenu {
     /**
      * @param $menu - jQuery element for the menu

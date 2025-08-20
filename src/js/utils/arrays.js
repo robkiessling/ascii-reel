@@ -113,7 +113,7 @@ export function arraysEqual(a, b) {
 
 
 /**
- * Moves specified elements step forward or backward without disrupting their relative order or swapping over
+ * Moves specified elements one step forward or backward without disrupting their relative order or swapping over
  * each other. Items at the edge or blocked by other selected items will not move.
  *
  * @param {Array} array - The full array

@@ -2,13 +2,8 @@ import Shape from "../shape.js";
 import Cell from "../../cell.js";
 import {isFunction} from "../../../utils/utilities.js";
 import {
-    ALIGN_H_LEFT,
-    ALIGN_V_TOP,
-    CHAR_PROP,
-    COLOR_PROP,
-    HANDLES,
-    SHAPES,
-    STYLE_PROPS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_PROP, TEXT_PROP
+    CHAR_PROP, COLOR_PROP, HANDLES, SHAPES,
+    STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
 } from "../constants.js";
 import CellArea from "../../cell_area.js";
 import TextLayout from "../text_layout.js";
@@ -85,9 +80,9 @@ export default class BaseRect extends Shape {
             [STYLE_PROPS[SHAPES.RECT]]: options.drawPreset,
             [CHAR_PROP]: options.char,
             [COLOR_PROP]: options.colorIndex,
-            [TEXT_PROP]: " Hello World\nMy name    is robert brand kiessling junior",
-            [TEXT_ALIGN_V_PROP]: ALIGN_V_TOP,
-            [TEXT_ALIGN_H_PROP]: ALIGN_H_LEFT,
+            [TEXT_PROP]: " Hello World\nI am Merlin, lord of magicke, and I shall rule these lands",
+            [TEXT_ALIGN_V_PROP]: TEXT_ALIGN_V_OPTS.TOP,
+            [TEXT_ALIGN_H_PROP]: TEXT_ALIGN_H_OPTS.LEFT,
             textPadding: 0
         };
 

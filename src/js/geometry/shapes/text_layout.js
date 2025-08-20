@@ -1,11 +1,11 @@
 import Cell from "../cell.js";
-import {ALIGN_H_CENTER, ALIGN_H_LEFT, ALIGN_H_RIGHT, ALIGN_V_BOTTOM, ALIGN_V_MIDDLE, ALIGN_V_TOP} from "./constants.js";
+import {TEXT_ALIGN_H_OPTS, TEXT_ALIGN_V_OPTS} from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {create2dArray} from "../../utils/arrays.js";
 
 const DEFAULT_OPTIONS = {
-    alignH: ALIGN_H_LEFT,
-    alignV: ALIGN_V_TOP,
+    alignH: TEXT_ALIGN_H_OPTS.LEFT,
+    alignV: TEXT_ALIGN_V_OPTS.TOP,
     paddingH: 0,
     paddingV: 0,
 }
@@ -224,8 +224,8 @@ export default class TextLayout {
 
         // Calculate vertical offset based on alignment
         let offsetTop = this.paddingV;
-        if (this.alignV === ALIGN_V_MIDDLE) offsetTop += Math.floor((usableRows - this.lines.length) / 2);
-        else if (this.alignV === ALIGN_V_BOTTOM) offsetTop += (usableRows - this.lines.length);
+        if (this.alignV === TEXT_ALIGN_V_OPTS.MIDDLE) offsetTop += Math.floor((usableRows - this.lines.length) / 2);
+        else if (this.alignV === TEXT_ALIGN_V_OPTS.BOTTOM) offsetTop += (usableRows - this.lines.length);
 
         this.lines.forEach((line, lineIndex) => {
             line.displayText = this._calcDisplayText(line, lineIndex, usableCols);
@@ -233,8 +233,8 @@ export default class TextLayout {
 
             // Calculate horizontal offset based on alignment and display length
             let offsetLeft = this.paddingH;
-            if (this.alignH === ALIGN_H_CENTER) offsetLeft += Math.floor((usableCols - line.displayLength) / 2);
-            else if (this.alignH === ALIGN_H_RIGHT) offsetLeft += (usableCols - line.displayLength);
+            if (this.alignH === TEXT_ALIGN_H_OPTS.CENTER) offsetLeft += Math.floor((usableCols - line.displayLength) / 2);
+            else if (this.alignH === TEXT_ALIGN_H_OPTS.RIGHT) offsetLeft += (usableCols - line.displayLength);
 
             // Update line metadata with final position
             line.row = offsetTop + lineIndex;
