@@ -12,7 +12,7 @@ import * as actions from "../io/actions.js";
 import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
-import {capitalizeFirstLetter} from "../utils/strings.js";
+import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Cell from "../geometry/cell.js";
@@ -22,15 +22,18 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
 import BaseRect from "../geometry/shapes/rect/base.js";
 import {
+    BRUSH_TYPES,
+    BRUSHES,
     CHAR_PROP, COLOR_PROP,
     REORDER_ACTIONS,
-    SHAPE_NAMES,
     SHAPE_STYLES,
     SHAPES,
-    STYLE_PROPS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_PROP
+    STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
-import {standardTip} from "../components/tooltips.js";
+import {standardTip, standardTips} from "../components/tooltips.js";
+import {defer} from "../utils/utilities.js";
+import IconMenu from "../components/icon_menu.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -445,15 +448,15 @@ function brushEnabled() {
 export function hoveredCells(primaryCell) {
     if (!primaryCell) return [];
     if (!brushEnabled()) return [primaryCell];
-    const { shape, size } = state.getConfig('brush');
+    const { type, size } = BRUSHES[state.getConfig('brush')];
 
-    switch(shape) {
-        case 'square':
+    switch(type) {
+        case BRUSH_TYPES.SQUARE:
             return squareBrushCells(primaryCell, size);
-        case 'circle':
+        case BRUSH_TYPES.CIRCLE:
             return circleBrushCells(primaryCell, size);
         default:
-            console.error('Unsupported brush shape: ', shape);
+            console.error('Unsupported brush type: ', type);
     }
 }
 
@@ -474,63 +477,43 @@ function squareBrushCells(primaryCell, size) {
 // Also, it's actually more of a diamond than a circle
 function circleBrushCells(primaryCell, size) {
     const result = [];
-    let offsets;
+    const radius = Math.floor((size - 1) / 2);
 
-    switch(size) {
-        // Note: There are mathematical ways to generate a circle shape around a point, but since I'm only implementing
-        //       a few sizes I'm just hard-coding the cell coordinates. Offsets are formatted: [row offset, col offset]
-        case 3:
-            offsets = [
-                [-1, 0],
-                [ 0,-1], [ 0, 0], [ 0, 1],
-                [ 1, 0]
-            ];
-            break;
-        // case 4:
-        //     offsets = [
-        //                  [-2,-1], [-2, 0],
-        //         [-1,-2], [-1,-1], [-1, 0], [-1, 1],
-        //         [ 0,-2], [ 0,-1], [ 0, 0], [ 0, 1],
-        //                  [ 1,-1], [ 1, 0]
-        //     ];
-        //     break;
-        case 5:
-            offsets = [
-                [-2, 0],
-                [-1,-1], [-1, 0], [-1, 1],
-                [ 0,-2], [ 0,-1], [ 0, 0], [ 0, 1], [ 0, 2],
-                [ 1,-1], [ 1, 0], [ 1, 1],
-                [ 2, 0]
-            ];
-            break;
-        default:
-            console.error('Unsupported circle size: ', size);
-            return;
+    for (let row = -radius; row <= radius; row++) {
+        for (let col = -radius; col <= radius; col++) {
+            if (Math.abs(col) + Math.abs(row) <= radius) {
+                result.push(new Cell(primaryCell.row + row, primaryCell.col + col));
+            }
+        }
     }
 
-    offsets.forEach(offset => {
-        result.push(new Cell(primaryCell.row + offset[0], primaryCell.col + offset[1]));
-    });
     return result;
 }
 
 function setupBrushSubMenu() {
-    const subMenu = new ToolSubMenu($('#brush-shapes'), {
+    const $container = $('#context-tools-left');
+    const $menu = $('<div>', {
+        class: 'sub-tool-menu'
+    }).appendTo($container);
+
+    const menu = new IconMenu($menu, {
+        items: Object.keys(BRUSHES).map(key => {
+            return {
+                value: key,
+                icon: `tools.brush.${key}`,
+                tooltip: `tools.brush.${key}`,
+            }
+        }),
         visible: () => BRUSH_TOOLS.includes(state.getConfig('tool')),
         disabled: () => !brushEnabled(),
         getValue: () => state.getConfig('brush'),
-        onChange: (newValue) => {
+        onSelect: newValue => {
             state.setConfig('brush', newValue)
             refresh();
-        },
-        tooltipContent: $tool => {
-            const shape = $tool.data('shape');
-            const size = $tool.data('size');
-            return `<span class="title">${capitalizeFirstLetter(shape)} Brush</span><br><span>Size: ${size}</span>`;
         }
     })
 
-    subMenus.push(subMenu);
+    subMenus.push(menu);
 }
 
 // -------------------------------------------------------------------------------- Shape Properties
@@ -540,72 +523,15 @@ let $shapeProperties, shapeTooltips, shapeSubMenus = [];
 function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
-    // Attach style options for each shape type
-    Object.values(SHAPES).forEach(shapeType => {
-        const styleProp = STYLE_PROPS[shapeType]; // E.g. rectStyle
+    // Style dropdowns for each shape type
+    const $styleActions = $('#shape-style').find('.group-actions')
+    Object.values(SHAPES).forEach(shapeType => setupStyleMenu($('<div>').appendTo($styleActions), shapeType));
 
-        const actionsHTML = Object.values(SHAPE_STYLES[shapeType])
-            .map(style => `<div class="sub-tool" data-style="${style}"></div>`)
-            .join('')
+    setupTextAlignMenu($('#shape-text-align-h'), TEXT_ALIGN_H_PROP, Object.values(TEXT_ALIGN_H_OPTS));
+    setupTextAlignMenu($('#shape-text-align-v'), TEXT_ALIGN_V_PROP, Object.values(TEXT_ALIGN_V_OPTS));
 
-        const $shapeStyles = $(`
-            <div class="property-group">
-                <span class="group-title">${SHAPE_NAMES[shapeType]} Style</span>
-                <div class="group-actions">${actionsHTML}</div>
-            </div>
-        `);
-        $shapeProperties.prepend($shapeStyles);
+    setupOrderMenu();
 
-        // todo support initial drawing too
-        const subMenu = new ToolSubMenu($shapeStyles, {
-            visible: () => state.selectedShapeTypes().includes(shapeType),
-            getValue: () => {
-                const styles = state.selectedShapeProps()[styleProp];
-                return {
-                    // If multiple styles are selected, cannot show a value
-                    style: styles.length === 1 ? styles[0] : null
-                }
-            },
-            onChange: newValue => {
-                vectorSelection.updateSelectedShapes(shape => {
-                    if (shape.type === shapeType) shape.updateProp(styleProp, newValue.style)
-                });
-            },
-            icon: $tool => getIconHTML(`tools.shapes.${styleProp}.${$tool.data('style')}`),
-            tooltipContent: $tool => {
-                const name = STRINGS[`tools.shapes.${styleProp}.${$tool.data('style')}.name`];
-                const description = STRINGS[`tools.shapes.${styleProp}.${$tool.data('style')}.description`];
-                return `<div class="header">` +
-                    `<span class="title">${name}</span>` +
-                    `</div>` +
-                    `<div class="description">${description}</div>`// +
-                    // getDrawingModifiersTooltip(toolKey, type); // todo drawing modifiers don't work
-            },
-            tooltipOptions: {
-                placement: 'bottom'
-            }
-        })
-
-        shapeSubMenus.push(subMenu);
-    })
-
-    // Static properties / actions:
-    actions.registerAction('tools.shapes.send-to-back', {
-        callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.SEND_TO_BACK),
-        enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.SEND_TO_BACK),
-    })
-    actions.registerAction('tools.shapes.send-backward', {
-        callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.SEND_BACKWARD),
-        enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.SEND_BACKWARD),
-    })
-    actions.registerAction('tools.shapes.bring-forward', {
-        callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.BRING_FORWARD),
-        enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.BRING_FORWARD),
-    })
-    actions.registerAction('tools.shapes.bring-to-front', {
-        callback: () => vectorSelection.reorderSelectedShapes(REORDER_ACTIONS.BRING_TO_FRONT),
-        enabled: () => state.canReorderSelectedShapes(REORDER_ACTIONS.BRING_TO_FRONT),
-    })
     actions.registerAction('tools.shapes.delete', {
         callback: () => vectorSelection.deleteSelectedShapes()
     })
@@ -616,9 +542,6 @@ function setupShapeProperties() {
         },
         enabled: () => state.selectedShapes().length
     })
-    
-    setupTextAlignMenu($('#text-align-h'), TEXT_ALIGN_H_PROP);
-    setupTextAlignMenu($('#text-align-v'), TEXT_ALIGN_V_PROP);
 
     $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {
         const $element = $(evt.currentTarget);
@@ -634,35 +557,90 @@ function setupShapeProperties() {
     );
 }
 
-function setupTextAlignMenu($menu, prop) {
-    const subMenu = new ToolSubMenu($menu, {
+function setupStyleMenu($menu, shapeType) {
+    const styleProp = STYLE_PROPS[shapeType]; // E.g. rectStyle
+
+    const styleMenu = new IconMenu($menu, {
         dropdown: true,
-        visible: () => {
-            return true; // todo
-        },
-        getValue: () => {
-            const alignments = state.selectedShapeProps()[prop];
+        dropdownBtnTooltip: `tools.shapes.${styleProp}`,
+        items: Object.values(SHAPE_STYLES[shapeType]).map(style => {
             return {
-                // If multiple alignments are selected, cannot show a value
-                align: alignments.length === 1 ? alignments[0] : null
+                value: style,
+                icon: `tools.shapes.${styleProp}.${style}`,
+                tooltip: `tools.shapes.${styleProp}.${style}`,
             }
-        },
-        onChange: newValue => vectorSelection.updateSelectedShapes(shape => shape.updateProp(prop, newValue.align)),
-        icon: $tool => getIconHTML(`tools.shapes.${prop}.${$tool.data('align')}`),
-        tooltipContent: $tool => {
-            const name = STRINGS[`tools.shapes.${prop}.${$tool.data('align')}.name`];
-            const description = STRINGS[`tools.shapes.${prop}.${$tool.data('align')}.description`];
-            return `<div class="header">` +
-                `<span class="title">${name}</span>` +
-                `</div>` +
-                `<div class="description">${description}</div>`;
+        }),
+        visible: () => state.selectedShapeTypes().includes(shapeType),
+        getValue: () => state.selectedShapeProps()[styleProp][0],
+        onSelect: newValue => {
+            vectorSelection.updateSelectedShapes(shape => {
+                if (shape.type === shapeType) shape.updateProp(styleProp, newValue)
+            });
         },
         tooltipOptions: {
-            placement: 'bottom'
+            placement: 'right'
         }
     })
 
-    shapeSubMenus.push(subMenu);
+    shapeSubMenus.push(styleMenu);
+}
+
+function setupTextAlignMenu($menu, prop, options) {
+    const menu = new IconMenu($menu, {
+        dropdown: true,
+        dropdownBtnTooltip: `tools.shapes.${prop}`,
+        items: options.map(option => {
+            return {
+                value: option,
+                icon: `tools.shapes.${prop}.${option}`,
+                tooltip: `tools.shapes.${prop}.${option}`,
+            }
+        }),
+        visible: () => {
+            // Show text-align if any selected shapes have non-zero text length
+            // TODO or if cursor is currently in the shape
+            return state.selectedShapeProps()[TEXT_PROP].some(textProp => !!textProp);
+        },
+        getValue: () => state.selectedShapeProps()[prop][0],
+        onSelect: newValue => vectorSelection.updateSelectedShapes(shape => shape.updateProp(prop, newValue)),
+        tooltipOptions: {
+            placement: 'right'
+        }
+    })
+
+    shapeSubMenus.push(menu);
+}
+
+function setupOrderMenu() {
+    const $menu = $('#shape-order');
+
+    Object.values(REORDER_ACTIONS).forEach(action => {
+        actions.registerAction(`tools.shapes.${action}`, {
+            callback: () => vectorSelection.reorderSelectedShapes(action),
+            enabled: () => state.canReorderSelectedShapes(action),
+        })
+    })
+
+    const menu = new IconMenu($menu, {
+        dropdown: true,
+        dropdownBtnIcon: 'tools.shapes.order',
+        dropdownBtnTooltip: 'tools.shapes.order',
+        items: Object.values(REORDER_ACTIONS).map(action => {
+            const actionId = `tools.shapes.${action}`;
+            return {
+                value: action,
+                icon: actionId,
+                tooltip: actionId,
+                disabled: () => !actions.isActionEnabled(actionId)
+            }
+        }),
+        onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
+        tooltipOptions: {
+            placement: 'right'
+        }
+    })
+
+    shapeSubMenus.push(menu);
 }
 
 function refreshShapeProperties() {
@@ -683,6 +661,8 @@ function refreshShapeProperties() {
 
         // todo hide if color-related and state isn't multicolored
         // $shapeProperties.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
+
+        // todo iterate thru property-groups, and check if they have any visible actions
     } else {
         shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
         // todo hide tooltips for other stuff like shape char picker
@@ -740,27 +720,28 @@ function setupDrawSubMenus() {
 }
 
 function setupDrawSubMenu(toolKey, shapeType) {
-    const $menu = $(`.sub-tool-menu[data-tool="${toolKey}"]`)
+    const $container = $('#context-tools-left');
+    const $menu = $('<div>', {
+        class: 'sub-tool-menu'
+    }).appendTo($container);
+
     const styleProp = STYLE_PROPS[shapeType]
 
-    const subMenu = new ToolSubMenu($menu, {
+    const menu = new IconMenu($menu, {
+        items: Object.values(SHAPE_STYLES[shapeType]).map(style => {
+            return {
+                value: style,
+                icon: `tools.shapes.${styleProp}.${style}`,
+                tooltip: `tools.shapes.${styleProp}.${style}`,
+            }
+        }),
         visible: () => state.getConfig('tool') === toolKey,
-        getValue: () => ({ style: state.getConfig('drawTypes')[toolKey] }),
-        onChange: newValue => changeDrawType(toolKey, newValue.style),
-        icon: $tool => getIconHTML(`tools.shapes.${styleProp}.${$tool.data('style')}`),
-        tooltipContent: $tool => {
-            const style = $tool.data('style');
-            const name = STRINGS[`tools.shapes.${styleProp}.${style}.name`];
-            const description = STRINGS[`tools.shapes.${styleProp}.${style}.description`];
-            return `<div class="header">` +
-                `<span class="title">${name}</span>` +
-                `</div>` +
-                `<div class="description">${description}</div>` +
-            getDrawingModifiersTooltip(toolKey, style);
-        }
+        getValue: () => state.getConfig('drawTypes')[toolKey],
+        onSelect: newValue => changeDrawType(toolKey, newValue),
+        // TODO getDrawingModifiersTooltip(toolKey, style)
     })
 
-    subMenus.push(subMenu);
+    subMenus.push(menu);
 }
 
 function getDrawingModifiers(mouseEvent) {
@@ -1093,68 +1074,4 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl) {
         default:
             return 'default';
     }
-}
-
-
-
-// Menu where many options are displayed, and only one can be 'selected' at a time.
-// TODO just use data-value instead of varying data attributes
-class ToolSubMenu {
-    /**
-     * @param $menu - jQuery element for the menu
-     * @param {Object} options - Menu options
-     * @param {(Object) => void} options.onChange - Callback when sub-tool changes
-     * @param {() => Object} options.getValue - Callback to get the current value of the submenu
-     * @param {() => boolean} options.visible - Callback that controls whether the submenu is visible
-     * @param {() => boolean} [options.disabled] - Callback that controls whether the submenu is disabled. Default: always enabled.
-     * @param {function} [options.icon] - Icon retriever. Passed the current $tool, returns the icon.
-     * @param {function} [options.tooltipContent] - Tooltip content retriever. Passed the current $tool, returns tooltip content.
-     * @param {Object} [options.tooltipOptions] - Tooltip options to pass to tippy
-     */
-    constructor($menu, options = {}) {
-        this.$menu = $menu;
-        this.options = options;
-        this._init();
-    }
-
-    _init() {
-        this.$menu.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
-            this.options.onChange($(evt.currentTarget).data());
-            // this.refresh(); // Don't need to refresh here; entire tools panel will refresh
-        });
-
-        if (this.options.icon) {
-            this.$menu.find('.sub-tool').each((i, element) => {
-                const $tool = $(element);
-                const icon = this.options.icon($tool);
-                if (icon) $tool.html(icon);
-            })
-        }
-
-        if (this.options.tooltipContent) {
-            tippy(this.$menu.find('.sub-tool').toArray(), $.extend({
-                content: element => this.options.tooltipContent($(element)),
-                placement: 'right',
-                offset: SUB_TOOL_MENU_TOOLTIP_OFFSET,
-                hideOnClick: false,
-                allowHTML: true
-            }, this.options.tooltipOptions))
-        }
-    }
-
-    refresh() {
-        let show = this.options.visible();
-        this.$menu.toggle(show);
-        this.$menu.toggleClass('disabled', !!this.options.disabled && this.options.disabled())
-
-        if (show) {
-            let str = '';
-            for (const [key, value] of Object.entries(this.options.getValue())) {
-                str += `[data-${key}="${value}"]`;
-            }
-            this.$menu.find('.sub-tool').toggleClass('active', false);
-            this.$menu.find(`.sub-tool${str}`).toggleClass('active', true);
-        }
-    }
-
 }

@@ -92,7 +92,10 @@ export function selectedShapeProps() {
 
     SHARED_SHAPE_PROPS.forEach(prop => {
         if (!result[prop]) result[prop] = new Set();
-        shapes.forEach(shape => result[prop].add(shape.props[prop]))
+        shapes.forEach(shape => {
+            const value = shape.props[prop];
+            if (value !== undefined) result[prop].add(value)
+        })
     })
 
     return transformValues(result, (k, v) => [...v]);

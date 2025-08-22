@@ -23,8 +23,8 @@ export const TRANSLATABLE_PROPS = [
 export const REORDER_ACTIONS = {
     BRING_TO_FRONT: "bringToFront",
     BRING_FORWARD: "bringForward",
+    SEND_BACKWARD: "sendBackward",
     SEND_TO_BACK: "sendToBack",
-    SEND_BACKWARD: "sendBackward"
 }
 
 
@@ -34,12 +34,7 @@ export const SHAPES = {
     LINE: 'line',
     ELLIPSE: 'ellipse',
 }
-export const SHAPE_NAMES = {
-    [SHAPES.FREEFORM]: 'Freeform',
-    [SHAPES.RECT]: 'Rectangle',
-    [SHAPES.LINE]: 'Line',
-    [SHAPES.ELLIPSE]: 'Ellipse',
-}
+
 export const SHAPE_STYLES = {
     [SHAPES.FREEFORM]: {
         IRREGULAR_ADAPTIVE: 'irregular-adaptive',
@@ -126,3 +121,20 @@ export const SHARED_SHAPE_PROPS = [
 //     default:
 //         throw new Error(`Invalid handle: ${handle}`);
 // }
+
+
+export const BRUSH_TYPES = {
+    SQUARE: 'square',
+    CIRCLE: 'circle',
+}
+export const BRUSHES = {
+    'square-1': { type: BRUSH_TYPES.SQUARE, size: 1 },
+    'square-2': { type: BRUSH_TYPES.SQUARE, size: 2 },
+    'square-3': { type: BRUSH_TYPES.SQUARE, size: 3 },
+    'square-5': { type: BRUSH_TYPES.SQUARE, size: 5 },
+    'square-10': { type: BRUSH_TYPES.SQUARE, size: 10 },
+    'circle-3': { type: BRUSH_TYPES.CIRCLE, size: 3 },
+    'circle-5': { type: BRUSH_TYPES.CIRCLE, size: 5 },
+    'circle-10': { type: BRUSH_TYPES.CIRCLE, size: 10 },
+}
+

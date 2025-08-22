@@ -142,58 +142,14 @@
                         <div class="sub-tool" data-tool="resize"></div>
                         <div class="sub-tool" data-tool="close"></div>
                     </div>
-                    <div class="sub-tool-menu" data-tool="draw-freeform" style="display: none;">
-                        <div class="sub-tool" data-style="irregular-adaptive"></div>
-                        <div class="sub-tool" data-style="irregular-monochar"></div>
-                    </div>
-                    <div class="sub-tool-menu" data-tool="draw-rect" style="display: none;">
-                        <div class="sub-tool" data-style="outline-ascii-1"></div>
-                        <div class="sub-tool" data-style="outline-ascii-2"></div>
-                        <div class="sub-tool" data-style="outline-unicode-1"></div>
-                        <div class="sub-tool" data-style="outline-unicode-2"></div>
-                        <div class="sub-tool" data-style="outline-monochar"></div>
-                        <div class="sub-tool" data-style="filled-monochar"></div>
-                    </div>
-                    <div class="sub-tool-menu" data-tool="draw-line" style="display: none;">
-                        <div class="sub-tool" data-style="straight-adaptive"></div>
-                        <div class="sub-tool" data-style="straight-monochar"></div>
-                        <div class="sub-tool" data-style="elbow-line-ascii"></div>
-                        <div class="sub-tool" data-style="elbow-arrow-ascii"></div>
-                        <div class="sub-tool" data-style="elbow-line-unicode"></div> <!-- TODO -->
-                        <div class="sub-tool" data-style="elbow-arrow-unicode"></div>
-                        <div class="sub-tool" data-style="elbow-line-monochar"></div>
-                    </div>
-                    <div class="sub-tool-menu" data-tool="draw-ellipse" style="display: none;">
-                        <div class="sub-tool" data-style="outline-monochar"></div>
-                        <div class="sub-tool" data-style="filled-monochar"></div>
-                    </div>
-                    <div id="brush-shapes" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-shape="square" data-size="1">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.5rem;"></span>
-                        </div>
-                        <div class="sub-tool" data-shape="square" data-size="2">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.75rem;"></span>
-                        </div>
-                        <div class="sub-tool" data-shape="square" data-size="3">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1rem;"></span>
-                        </div>
-                        <div class="sub-tool" data-shape="square" data-size="5">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.25rem;"></span>
-                        </div>
-                        <div class="sub-tool" data-shape="square" data-size="10">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.5rem;"></span>
-                        </div>
-                        <div class="sub-tool" data-shape="circle" data-size="3">
-                            <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1rem;"></span>
-                        </div>
-                        <div class="sub-tool" data-shape="circle" data-size="5">
-                            <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1.25rem;"></span>
-                        </div>
-                    </div>
                 </div>
 
                 <div id="context-tools-top">
                     <div id="shape-properties" class="sub-tool-menu" style="display: none;">
+                        <div class="property-group" id="shape-style">
+                            <span class="group-title">Style</span>
+                            <div class="group-actions"></div>
+                        </div>
                         <div class="property-group" data-static="true">
                             <span class="group-title">Char</span>
                             <div class="group-actions">
@@ -210,34 +166,17 @@
                                 <div id="shape-color" class="color-well"></div>
                             </div>
                         </div>
-                        <div class="property-group" data-static="true">
-                            <span class="group-title">Order</span>
+                        <div class="property-group" id="shape-text-align">
+                            <span class="group-title">Text Align</span>
                             <div class="group-actions">
-                                <div class="action-button" data-action="tools.shapes.send-to-back"></div>
-                                <div class="action-button" data-action="tools.shapes.send-backward"></div>
-                                <div class="action-button" data-action="tools.shapes.bring-forward"></div>
-                                <div class="action-button" data-action="tools.shapes.bring-to-front"></div>
+                                <div id="shape-text-align-h"></div>
+                                <div id="shape-text-align-v"></div>
                             </div>
                         </div>
-                        <div class="property-group" data-static="true" id="text-align-h">
-                            <span class="group-title">Text (H)</span>
-                            <div class="group-actions">
-                                <div class="sub-tool" data-align="alignLeft"></div>
-                                <div class="sub-tool" data-align="alignCenter"></div>
-                                <div class="sub-tool" data-align="alignRight"></div>
-                            </div>
-                        </div>
-                        <div class="property-group" data-static="true" id="text-align-v">
-                            <span class="group-title">Text (V)</span>
-                            <div class="group-actions">
-                                <div class="sub-tool" data-align="alignTop"></div>
-                                <div class="sub-tool" data-align="alignMiddle"></div>
-                                <div class="sub-tool" data-align="alignBottom"></div>
-                            </div>
-                        </div>
-                        <div class="property-group" data-static="true">
+                        <div class="property-group">
                             <span class="group-title">Actions</span>
                             <div class="group-actions">
+                                <div id="shape-order"></div>
                                 <div class="action-button" data-action="tools.shapes.startCursor"></div>
                                 <div class="action-button" data-action="tools.shapes.delete"></div>
                             </div>

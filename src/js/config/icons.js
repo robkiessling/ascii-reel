@@ -51,10 +51,21 @@ const ICON_DATA = {
     'tools.selection.resize': { type: REMIXICON, content: 'ri-crop-line' },
     'tools.selection.close': { type: REMIXICON, content: 'ri-close-line' },
 
-    'tools.shapes.send-to-back': { type: REMIXICON, content: 'ri-contract-right-line rotate90' },
-    'tools.shapes.send-backward': { type: REMIXICON, content: 'ri-arrow-right-line rotate90' },
-    'tools.shapes.bring-forward': { type: REMIXICON, content: 'ri-arrow-right-line rotate270' },
-    'tools.shapes.bring-to-front': { type: REMIXICON, content: 'ri-contract-right-line rotate270' },
+    'tools.brush.square-1': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 0.5rem;" },
+    'tools.brush.square-2': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 0.75rem;" },
+    'tools.brush.square-3': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 1rem;" },
+    'tools.brush.square-5': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 1.25rem;" },
+    'tools.brush.square-10': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 1.5rem;" },
+    'tools.brush.circle-3': { type: REMIXICON, content: 'ri-checkbox-blank-circle-fill', style: "font-size: 1rem;" },
+    'tools.brush.circle-5': { type: REMIXICON, content: 'ri-checkbox-blank-circle-fill', style: "font-size: 1.25rem;" },
+    'tools.brush.circle-10': { type: REMIXICON, content: 'ri-checkbox-blank-circle-fill', style: "font-size: 1.5rem;" },
+
+    'tools.shapes.order': { type: REMIXICON, content: 'ri-stack-line' },
+    'tools.shapes.sendToBack': { type: REMIXICON, content: 'ri-contract-right-line rotate90' },
+    'tools.shapes.sendBackward': { type: REMIXICON, content: 'ri-arrow-right-line rotate90' },
+    'tools.shapes.bringForward': { type: REMIXICON, content: 'ri-arrow-right-line rotate270' },
+    'tools.shapes.bringToFront': { type: REMIXICON, content: 'ri-contract-right-line rotate270' },
+
     'tools.shapes.delete': { type: REMIXICON, content: 'ri-delete-bin-line' },
 
     'tools.shapes.startCursor': { type: REMIXICON, content: 'ri-text' },

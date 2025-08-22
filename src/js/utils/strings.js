@@ -59,5 +59,6 @@ export function getFormattedDateTime(date = new Date()) {
 
 // Convert string chars like \n to HTML elements like <br>
 export function strToHTML(str) {
+    if (!str) return '';
     return str.replace(/\n/g, '<br/>');
 }
