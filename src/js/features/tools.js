@@ -26,9 +26,9 @@ import {
     BRUSHES,
     CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP,
     REORDER_ACTIONS,
-    SHAPE_STYLES,
-    SHAPES,
-    STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
+    STROKE_OPTIONS,
+    SHAPE_TYPES,
+    STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
 import {standardTip, standardTips} from "../components/tooltips.js";
@@ -526,7 +526,7 @@ function setupShapeProperties() {
 
     // Style dropdowns for each shape type
     const $styleActions = $('#shape-style').find('.group-actions')
-    Object.values(SHAPES).forEach(shapeType => setupStyleMenu($('<div>').appendTo($styleActions), shapeType));
+    Object.values(SHAPE_TYPES).forEach(shapeType => setupStyleMenu($('<div>').appendTo($styleActions), shapeType));
 
     setupFillMenu();
 
@@ -561,23 +561,23 @@ function setupShapeProperties() {
 }
 
 function setupStyleMenu($menu, shapeType) {
-    const styleProp = STYLE_PROPS[shapeType]; // E.g. rectStyle
+    const strokeProp = STROKE_PROPS[shapeType];
 
     const styleMenu = new IconMenu($menu, {
         dropdown: true,
-        dropdownBtnTooltip: `tools.shapes.${styleProp}`,
-        items: Object.values(SHAPE_STYLES[shapeType]).map(style => {
+        dropdownBtnTooltip: `tools.shapes.${strokeProp}`,
+        items: Object.values(STROKE_OPTIONS[shapeType]).map(stroke => {
             return {
-                value: style,
-                icon: `tools.shapes.${styleProp}.${style}`,
-                tooltip: `tools.shapes.${styleProp}.${style}`,
+                value: stroke,
+                icon: `tools.shapes.${strokeProp}.${stroke}`,
+                tooltip: `tools.shapes.${strokeProp}.${stroke}`,
             }
         }),
         visible: () => state.selectedShapeTypes().includes(shapeType),
-        getValue: () => state.selectedShapeProps()[styleProp][0],
+        getValue: () => state.selectedShapeProps()[strokeProp][0],
         onSelect: newValue => {
             vectorSelection.updateSelectedShapes(shape => {
-                if (shape.type === shapeType) shape.updateProp(styleProp, newValue)
+                if (shape.type === shapeType) shape.updateProp(strokeProp, newValue)
             });
         },
         tooltipOptions: {
@@ -616,11 +616,11 @@ function setupTextAlignMenu($menu, prop, options) {
 
 function selectedShapesUseCharPicker() {
     let strokeUsesChar = false;
-    Object.values(STYLE_PROPS).forEach(styleProp => {
-        const styles = state.selectedShapeProps()[styleProp];
+    Object.values(STROKE_PROPS).forEach(strokeProp => {
+        const strokes = state.selectedShapeProps()[strokeProp];
 
         // TODO This is basing monochar styles off of their key name... change to a real property
-        if (styles.some(style => style.includes('monochar'))) strokeUsesChar = true;
+        if (strokes.some(stroke => stroke.includes('monochar'))) strokeUsesChar = true;
     })
 
     const fillUsesChar = state.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
@@ -754,10 +754,10 @@ function eyedropper(cell, options) {
 export let drawingContent = null;
 
 function setupDrawSubMenus() {
-    setupDrawSubMenu('draw-freeform', SHAPES.FREEFORM);
-    setupDrawSubMenu('draw-rect', SHAPES.RECT);
-    setupDrawSubMenu('draw-line', SHAPES.LINE);
-    setupDrawSubMenu('draw-ellipse', SHAPES.ELLIPSE);
+    setupDrawSubMenu('draw-freeform', SHAPE_TYPES.FREEFORM);
+    setupDrawSubMenu('draw-rect', SHAPE_TYPES.RECT);
+    setupDrawSubMenu('draw-line', SHAPE_TYPES.LINE);
+    setupDrawSubMenu('draw-ellipse', SHAPE_TYPES.ELLIPSE);
 }
 
 function setupDrawSubMenu(toolKey, shapeType) {
@@ -766,14 +766,14 @@ function setupDrawSubMenu(toolKey, shapeType) {
         class: 'sub-tool-menu'
     }).appendTo($container);
 
-    const styleProp = STYLE_PROPS[shapeType]
+    const strokeProp = STROKE_PROPS[shapeType]
 
     const menu = new IconMenu($menu, {
-        items: Object.values(SHAPE_STYLES[shapeType]).map(style => {
+        items: Object.values(STROKE_OPTIONS[shapeType]).map(stroke => {
             return {
-                value: style,
-                icon: `tools.shapes.${styleProp}.${style}`,
-                tooltip: `tools.shapes.${styleProp}.${style}`,
+                value: stroke,
+                icon: `tools.shapes.${strokeProp}.${stroke}`,
+                tooltip: `tools.shapes.${strokeProp}.${stroke}`,
             }
         }),
         visible: () => state.getConfig('tool') === toolKey,

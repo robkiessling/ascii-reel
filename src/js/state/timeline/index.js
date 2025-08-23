@@ -312,6 +312,11 @@ export function layeredGlyphs(frame, options = {}) {
 
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
         if (options.drawingContent && isCurrentLayer && isCurrentFrame) {
+            // todo vector drawings can't use this because they need EMPTY_CHAR to not override (so it's consistent
+            //      with vector_cel mergeGlyphs). To reproduce problem, in a vector layer try drawing an empty
+            //      ellipse over a background. It will block background until you finish shape, then it is unblocking.
+            //      Possible solutions: vectors don't use drawingContent; just addShape and updateShape immediately
+            //      Or, do something here based on vector layer type
             mergeGlyphs({ chars, colors }, options.drawingContent.glyphs, options.drawingContent.origin);
         }
 

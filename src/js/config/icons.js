@@ -6,30 +6,25 @@ const ICOMOON = 'icomoon'
 const CUSTOM = 'custom'
 
 const ICON_DATA = {
-    // 'tools.shapes.freeformStyle.irregular-adaptive': { type: REMIXICON, content: 'ri-brush-line' },
-    // 'tools.shapes.freeformStyle.irregular-monochar': { type: PRE, content: 'AAAAA\nBBBBB\nCCCCC' },
+    'tools.shapes.freeformStroke.irregular-adaptive': { type: PRE, content: "  /'.\n| | |\n'./  " },
+    'tools.shapes.freeformStroke.irregular-monochar': { type: PRE, content: "  AAA\nA A A\nAAA  " },
 
-    'tools.shapes.freeformStyle.irregular-adaptive': { type: PRE, content: "  /'.\n| | |\n'./  " },
-    'tools.shapes.freeformStyle.irregular-monochar': { type: PRE, content: "  AAA\nA A A\nAAA  " },
+    'tools.shapes.lineStroke.straight-adaptive': { type: PRE, content: "  _,-\n-'   " },
+    'tools.shapes.lineStroke.straight-monochar': { type: PRE, content: '    AA\n  AA  \nAA    ' },
 
-    'tools.shapes.lineStyle.straight-adaptive': { type: PRE, content: "  _,-\n-'   " },
-    'tools.shapes.lineStyle.straight-monochar': { type: PRE, content: '    AA\n  AA  \nAA    ' },
+    'tools.shapes.lineStroke.elbow-line-ascii': { type: PRE, content: '+----\n|    \n|    ' },
+    'tools.shapes.lineStroke.elbow-arrow-ascii': { type: PRE, content: '+--->\n|    \n|    ' },
+    'tools.shapes.lineStroke.elbow-line-unicode': { type: PRE, content: '┌────\n│    \n│    ' },
+    'tools.shapes.lineStroke.elbow-arrow-unicode': { type: PRE, content: '┌───▶\n│    \n│    ' },
+    'tools.shapes.lineStroke.elbow-line-monochar': { type: PRE, content: 'AAAAA\nA    \nA    ' },
 
-    'tools.shapes.lineStyle.elbow-line-ascii': { type: PRE, content: '+----\n|    \n|    ' },
-    'tools.shapes.lineStyle.elbow-arrow-ascii': { type: PRE, content: '+--->\n|    \n|    ' },
-    'tools.shapes.lineStyle.elbow-line-unicode': { type: PRE, content: '┌────\n│    \n│    ' },
-    'tools.shapes.lineStyle.elbow-arrow-unicode': { type: PRE, content: '┌───▶\n│    \n│    ' },
-    'tools.shapes.lineStyle.elbow-line-monochar': { type: PRE, content: 'AAAAA\nA    \nA    ' },
+    'tools.shapes.rectStroke.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
+    'tools.shapes.rectStroke.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
+    'tools.shapes.rectStroke.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },
+    'tools.shapes.rectStroke.outline-unicode-2': { type: PRE, content: "╔═══╗\n║   ║\n╚═══╝" },
+    'tools.shapes.rectStroke.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
 
-    'tools.shapes.rectStyle.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
-    'tools.shapes.rectStyle.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
-    'tools.shapes.rectStyle.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },
-    'tools.shapes.rectStyle.outline-unicode-2': { type: PRE, content: "╔═══╗\n║   ║\n╚═══╝" },
-    'tools.shapes.rectStyle.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
-    // 'tools.shapes.rectStyle.filled-monochar': { type: PRE, content: "AAAAA\nAAAAA\nAAAAA" },
-
-    'tools.shapes.ellipseStyle.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
-    'tools.shapes.ellipseStyle.filled-monochar': { type: PRE, content: " AAA \nAAAAA\n AAA " },
+    'tools.shapes.ellipseStroke.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
 
     // 'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-delete-back-2-line' },
     'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-forbid-line' },

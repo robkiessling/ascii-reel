@@ -2,7 +2,7 @@ import * as state from "../../state/index.js";
 import CellArea from "../../geometry/cell_area.js";
 import BaseRect from "../../geometry/shapes/rect/base_rect.js";
 import {arraysEqual} from "../../utils/arrays.js";
-import {SHAPES} from "../../geometry/shapes/constants.js";
+import {SHAPE_TYPES} from "../../geometry/shapes/constants.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -108,7 +108,7 @@ export default class ShapeSelection {
         if (state.numSelectedShapes() > 1) {
             if (this._groupBoundary) throw new Error(`beginResize has already been called`);
             const area = this.boundingArea;
-            this._groupBoundary = new BaseRect(undefined, SHAPES.RECT, {
+            this._groupBoundary = new BaseRect(undefined, SHAPE_TYPES.RECT, {
                 topLeft: area.topLeft,
                 numRows: area.numRows,
                 numCols: area.numCols

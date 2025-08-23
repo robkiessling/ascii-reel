@@ -1,7 +1,7 @@
 import {isFunction} from "../../../utils/utilities.js";
 import {
-    CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP, HANDLES, SHAPES,
-    STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
+    CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP, HANDLES, SHAPE_TYPES,
+    STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
 } from "../constants.js";
 import CellArea from "../../cell_area.js";
 import TextLayout from "../text_layout.js";
@@ -65,7 +65,7 @@ export default class BaseRect extends BoxShape {
             topLeft: startCell,
             numRows: 1,
             numCols: 1,
-            [STYLE_PROPS[SHAPES.RECT]]: options.drawPreset,
+            [STROKE_PROPS[SHAPE_TYPES.RECT]]: options.drawPreset,
             [FILL_PROP]: options.fill || FILL_OPTIONS.EMPTY,
             [CHAR_PROP]: options.char,
             [COLOR_PROP]: options.colorIndex,
@@ -75,7 +75,7 @@ export default class BaseRect extends BoxShape {
             textPadding: 0
         };
 
-        return new BaseRect(undefined, SHAPES.RECT, props);
+        return new BaseRect(undefined, SHAPE_TYPES.RECT, props);
     }
 
     _cacheGeometry() {
@@ -86,7 +86,8 @@ export default class BaseRect extends BoxShape {
 
         const glyphs = this._initGlyphs(state.numRows, state.numCols);
 
-        let charSheet = CHAR_SHEETS[state[STYLE_PROPS[SHAPES.RECT]]];
+        const stroke = state[STROKE_PROPS[SHAPE_TYPES.RECT]]
+        let charSheet = CHAR_SHEETS[stroke];
         if (isFunction(charSheet)) charSheet = charSheet(state[CHAR_PROP]);
         const fillChar = this._fillChar();
 

@@ -28,27 +28,33 @@ export const REORDER_ACTIONS = {
 }
 
 
-export const SHAPES = {
+export const SHAPE_TYPES = {
     FREEFORM: 'freeform',
     RECT: 'rect',
     LINE: 'line',
     ELLIPSE: 'ellipse',
 }
 
-export const SHAPE_STYLES = {
-    [SHAPES.FREEFORM]: {
+export const STROKE_PROPS = {
+    [SHAPE_TYPES.FREEFORM]: 'freeformStroke',
+    [SHAPE_TYPES.RECT]: 'rectStroke',
+    [SHAPE_TYPES.LINE]: 'lineStroke',
+    [SHAPE_TYPES.ELLIPSE]: 'ellipseStroke',
+}
+
+export const STROKE_OPTIONS = {
+    [SHAPE_TYPES.FREEFORM]: {
         IRREGULAR_ADAPTIVE: 'irregular-adaptive',
         IRREGULAR_MONOCHAR: 'irregular-monochar',
     },
-    [SHAPES.RECT]: {
+    [SHAPE_TYPES.RECT]: {
         OUTLINE_ASCII_1: 'outline-ascii-1',
         OUTLINE_ASCII_2: 'outline-ascii-2',
         OUTLINE_UNICODE_1: 'outline-unicode-1',
         OUTLINE_UNICODE_2: 'outline-unicode-2',
         OUTLINE_MONOCHAR: 'outline-monochar',
-        // FILLED_MONOCHAR: 'filled-monochar',
     },
-    [SHAPES.LINE]: {
+    [SHAPE_TYPES.LINE]: {
         STRAIGHT_ADAPTIVE: 'straight-adaptive',
         STRAIGHT_MONOCHAR: 'straight-monochar',
         ELBOW_LINE_ASCII: 'elbow-line-ascii',
@@ -57,13 +63,12 @@ export const SHAPE_STYLES = {
         ELBOW_ARROW_UNICODE: 'elbow-arrow-unicode',
         ELBOW_LINE_MONOCHAR: 'elbow-line-monochar',
     },
-    [SHAPES.ELLIPSE]: {
+    [SHAPE_TYPES.ELLIPSE]: {
         OUTLINE_MONOCHAR: 'outline-monochar',
-        FILLED_MONOCHAR: 'filled-monochar',
     }
 }
 
-export const DEFAULT_SHAPE_STYLES = transformValues(SHAPE_STYLES, (k, v) => Object.values(v)[0])
+export const DEFAULT_STROKES = transformValues(STROKE_OPTIONS, (k, v) => Object.values(v)[0])
 
 export const FILL_PROP = 'fill';
 export const FILL_OPTIONS = {
@@ -74,12 +79,6 @@ export const FILL_OPTIONS = {
 
 export const CHAR_PROP = 'char';
 export const COLOR_PROP = 'color';
-export const STYLE_PROPS = {
-    [SHAPES.FREEFORM]: 'freeformStyle',
-    [SHAPES.RECT]: 'rectStyle',
-    [SHAPES.LINE]: 'lineStyle',
-    [SHAPES.ELLIPSE]: 'ellipseStyle',
-}
 
 export const TEXT_PROP = 'text';
 
@@ -98,7 +97,7 @@ export const TEXT_ALIGN_V_OPTS = {
 }
 
 export const SHARED_SHAPE_PROPS = [
-    ...Object.values(STYLE_PROPS),
+    ...Object.values(STROKE_PROPS),
     FILL_PROP,
     CHAR_PROP, 
     COLOR_PROP,

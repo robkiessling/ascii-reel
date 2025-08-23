@@ -3,8 +3,8 @@ import {
     COLOR_PROP,
     FILL_OPTIONS,
     FILL_PROP, HANDLES,
-    SHAPES,
-    STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS,
+    SHAPE_TYPES,
+    STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS,
     TEXT_ALIGN_V_PROP,
     TEXT_PROP
 } from "../constants.js";
@@ -21,7 +21,7 @@ export default class BaseEllipse extends BoxShape {
             topLeft: startCell,
             numRows: 1,
             numCols: 1,
-            [STYLE_PROPS[SHAPES.RECT]]: options.drawPreset,
+            [STROKE_PROPS[SHAPE_TYPES.ELLIPSE]]: options.drawPreset,
             [FILL_PROP]: options.fill || FILL_OPTIONS.EMPTY,
             [CHAR_PROP]: options.char,
             [COLOR_PROP]: options.colorIndex,
@@ -31,7 +31,7 @@ export default class BaseEllipse extends BoxShape {
             // textPadding: 0
         };
 
-        return new BaseEllipse(undefined, SHAPES.ELLIPSE, props);
+        return new BaseEllipse(undefined, SHAPE_TYPES.ELLIPSE, props);
     }
 
     _cacheGeometry() {
