@@ -24,7 +24,7 @@ import BaseRect from "../geometry/shapes/rect/base.js";
 import {
     BRUSH_TYPES,
     BRUSHES,
-    CHAR_PROP, COLOR_PROP,
+    CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP,
     REORDER_ACTIONS,
     SHAPE_STYLES,
     SHAPES,
@@ -527,6 +527,8 @@ function setupShapeProperties() {
     const $styleActions = $('#shape-style').find('.group-actions')
     Object.values(SHAPES).forEach(shapeType => setupStyleMenu($('<div>').appendTo($styleActions), shapeType));
 
+    setupFillMenu();
+
     setupTextAlignMenu($('#shape-text-align-h'), TEXT_ALIGN_H_PROP, Object.values(TEXT_ALIGN_H_OPTS));
     setupTextAlignMenu($('#shape-text-align-v'), TEXT_ALIGN_V_PROP, Object.values(TEXT_ALIGN_V_OPTS));
 
@@ -611,6 +613,45 @@ function setupTextAlignMenu($menu, prop, options) {
     shapeSubMenus.push(menu);
 }
 
+function selectedShapesUseCharPicker() {
+    let strokeUsesChar = false;
+    Object.values(STYLE_PROPS).forEach(styleProp => {
+        const styles = state.selectedShapeProps()[styleProp];
+
+        // TODO This is basing monochar styles off of their key name... change to a real property
+        if (styles.some(style => style.includes('monochar'))) strokeUsesChar = true;
+    })
+
+    const fillUsesChar = state.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
+
+    return strokeUsesChar || fillUsesChar;
+}
+
+function setupFillMenu() {
+    const $propGroup = $('#shape-fill');
+    const $menu = $('<div>').appendTo($propGroup.find('.group-actions'));
+
+    const menu = new IconMenu($menu, {
+        dropdown: true,
+        dropdownBtnTooltip: `tools.shapes.${FILL_PROP}`,
+        items: Object.values(FILL_OPTIONS).map(option => {
+            return {
+                value: option,
+                icon: `tools.shapes.${FILL_PROP}.${option}`,
+                tooltip: `tools.shapes.${FILL_PROP}.${option}`,
+            }
+        }),
+        visible: () => state.selectedShapeProps()[FILL_PROP].length,
+        getValue: () => state.selectedShapeProps()[FILL_PROP][0],
+        onSelect: newValue => vectorSelection.updateSelectedShapes(shape => shape.updateProp(FILL_PROP, newValue)),
+        tooltipOptions: {
+            placement: 'right'
+        }
+    })
+
+    shapeSubMenus.push(menu);
+}
+
 function setupOrderMenu() {
     const $menu = $('#shape-order');
 
@@ -659,8 +700,7 @@ function refreshShapeProperties() {
             $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
         });
 
-        // todo hide if color-related and state isn't multicolored
-        // $shapeProperties.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
+        $shapeProperties.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
 
         // todo iterate thru property-groups, and check if they have any visible actions
     } else {
@@ -920,6 +960,8 @@ function refreshCharPicker() {
     selectChar(char, false);
 
     $charPicker.toggleClass('animated-border', isQuickSwapEnabled());
+
+    $('#shape-char-group').toggle(selectedShapesUseCharPicker())
 }
 
 export function isCharPickerOpen() {

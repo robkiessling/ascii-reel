@@ -158,6 +158,7 @@ export default class IconMenu {
             this._dropdown.buttonTip = standardTip(this._dropdown.$button, this.options.dropdownBtnTooltip, {
                 placement: 'bottom',
                 offset: [0, 15],
+                // delay: [500, null],
             })
         }
     }

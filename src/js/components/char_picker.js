@@ -4,7 +4,8 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 
 
 const SPECIAL_CHARS = new Map(Object.entries({
-    [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-delete-back-2-line', large: true },
+    // [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-delete-back-2-line', large: true },
+    [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-forbid-line', large: true },
     [WHITESPACE_CHAR]: { label: 'Space', value: WHITESPACE_CHAR, wellClass: 'ri-space' },
 }))
 const WELL_CLASSES = [...SPECIAL_CHARS.values()].map(special => special.wellClass).filter(Boolean);

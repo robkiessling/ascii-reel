@@ -26,10 +26,15 @@ const ICON_DATA = {
     'tools.shapes.rectStyle.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },
     'tools.shapes.rectStyle.outline-unicode-2': { type: PRE, content: "╔═══╗\n║   ║\n╚═══╝" },
     'tools.shapes.rectStyle.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
-    'tools.shapes.rectStyle.filled-monochar': { type: PRE, content: "AAAAA\nAAAAA\nAAAAA" },
+    // 'tools.shapes.rectStyle.filled-monochar': { type: PRE, content: "AAAAA\nAAAAA\nAAAAA" },
 
     'tools.shapes.ellipseStyle.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
     'tools.shapes.ellipseStyle.filled-monochar': { type: PRE, content: " AAA \nAAAAA\n AAA " },
+
+    // 'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-delete-back-2-line' },
+    'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-forbid-line' },
+    'tools.shapes.fill.whitespace': { type: REMIXICON, content: 'ri-space' },
+    'tools.shapes.fill.monochar': { type: PRE, content: "A", style: "font-size: 1.5rem;" },
 
     'tools.selection.move': { type: REMIXICON, content: 'ri-drag-move-2-fill' },
     'tools.selection.flip-v': { type: REMIXICON, content: 'ri-flip-vertical-fill' },

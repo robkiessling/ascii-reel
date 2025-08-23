@@ -46,7 +46,7 @@ export const SHAPE_STYLES = {
         OUTLINE_UNICODE_1: 'outline-unicode-1',
         OUTLINE_UNICODE_2: 'outline-unicode-2',
         OUTLINE_MONOCHAR: 'outline-monochar',
-        FILLED_MONOCHAR: 'filled-monochar',
+        // FILLED_MONOCHAR: 'filled-monochar',
     },
     [SHAPES.LINE]: {
         STRAIGHT_ADAPTIVE: 'straight-adaptive',
@@ -62,7 +62,15 @@ export const SHAPE_STYLES = {
         FILLED_MONOCHAR: 'filled-monochar',
     }
 }
+
 export const DEFAULT_SHAPE_STYLES = transformValues(SHAPE_STYLES, (k, v) => Object.values(v)[0])
+
+export const FILL_PROP = 'fill';
+export const FILL_OPTIONS = {
+    EMPTY: 'empty',
+    WHITESPACE: 'whitespace',
+    MONOCHAR: 'monochar',
+}
 
 export const CHAR_PROP = 'char';
 export const COLOR_PROP = 'color';
@@ -90,7 +98,8 @@ export const TEXT_ALIGN_V_OPTS = {
 }
 
 export const SHARED_SHAPE_PROPS = [
-    ...Object.values(STYLE_PROPS), 
+    ...Object.values(STYLE_PROPS),
+    FILL_PROP,
     CHAR_PROP, 
     COLOR_PROP,
     TEXT_PROP,

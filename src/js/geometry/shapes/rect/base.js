@@ -2,17 +2,17 @@ import Shape from "../shape.js";
 import Cell from "../../cell.js";
 import {isFunction} from "../../../utils/utilities.js";
 import {
-    CHAR_PROP, COLOR_PROP, HANDLES, SHAPES,
+    CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP, HANDLES, SHAPES,
     STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
 } from "../constants.js";
 import CellArea from "../../cell_area.js";
 import TextLayout from "../text_layout.js";
-import {EMPTY_CHAR} from "../../../config/chars.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 
 
 /**
  * Characters used to draw the different types of ascii rectangles. A rectangle is made up of 4 corners (TOP_LEFT,
- * TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT), 2 HORIZONTAL lines, 2 VERTICAL lines, and an optional FILL.
+ * TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT), 2 HORIZONTAL lines, and 2 VERTICAL lines
  */
 const CHAR_SHEETS = {
     'outline-ascii-1': {
@@ -56,17 +56,6 @@ const CHAR_SHEETS = {
             HORIZONTAL: char,
             VERTICAL: char,
         }
-    },
-    'filled-monochar': char => {
-        return {
-            TOP_LEFT: char,
-            TOP_RIGHT: char,
-            BOTTOM_LEFT: char,
-            BOTTOM_RIGHT: char,
-            HORIZONTAL: char,
-            VERTICAL: char,
-            FILL: char,
-        }
     }
 }
 
@@ -78,6 +67,7 @@ export default class BaseRect extends Shape {
             numRows: 1,
             numCols: 1,
             [STYLE_PROPS[SHAPES.RECT]]: options.drawPreset,
+            [FILL_PROP]: options.fill || FILL_OPTIONS.EMPTY,
             [CHAR_PROP]: options.char,
             [COLOR_PROP]: options.colorIndex,
             [TEXT_PROP]: " Hello World\nI am Merlin, lord of magicke, and I shall rule these lands",
@@ -207,6 +197,7 @@ export default class BaseRect extends Shape {
 
         let charSheet = CHAR_SHEETS[state[STYLE_PROPS[SHAPES.RECT]]];
         if (isFunction(charSheet)) charSheet = charSheet(state[CHAR_PROP]);
+        const fillChar = this._fillChar();
 
         const lastRow = state.numRows - 1;
         const lastCol = state.numCols - 1;
@@ -228,17 +219,19 @@ export default class BaseRect extends Shape {
             else {
                 if (row === 0) { char = charSheet.HORIZONTAL; }
                 else if (row === lastRow) { char = charSheet.HORIZONTAL; }
-                else if (charSheet.FILL) { char = charSheet.FILL; }
+                else { char = fillChar; }
             }
 
-            if (char !== undefined) this._setGlyph(glyphs, {row, col}, char, colorIndex);
+            if (char !== undefined && char !== EMPTY_CHAR) this._setGlyph(glyphs, {row, col}, char, colorIndex);
         });
 
         const textLayout = this._applyTextLayout(glyphs, boundingArea);
 
+        const emptyBackground = fillChar === EMPTY_CHAR;
+
         const hitbox = cell => {
             if (textLayout && textLayout.doesCellOverlap(cell)) return true;
-            if (innerArea && innerArea.doesCellOverlap(cell) && !charSheet.FILL) return false;
+            if (innerArea && innerArea.doesCellOverlap(cell) && emptyBackground) return false;
             return boundingArea.doesCellOverlap(cell);
         };
 
@@ -248,6 +241,17 @@ export default class BaseRect extends Shape {
             glyphs,
             hitbox,
             textLayout
+        }
+    }
+
+    _fillChar() {
+        switch(this.props[FILL_PROP]) {
+            case FILL_OPTIONS.WHITESPACE:
+                return WHITESPACE_CHAR;
+            case FILL_OPTIONS.MONOCHAR:
+                return this.props[CHAR_PROP];
+            default:
+                return EMPTY_CHAR;
         }
     }
 
