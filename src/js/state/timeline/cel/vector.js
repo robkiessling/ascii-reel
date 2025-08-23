@@ -81,7 +81,13 @@ export default class VectorCel {
 
             this.shapes().forEach(shape => {
                 const { glyphs: shapeGlyphs, origin: shapeOrigin } = shape.rasterize();
-                mergeGlyphs(this._cachedGlyphs, shapeGlyphs, shapeOrigin);
+                mergeGlyphs(this._cachedGlyphs, shapeGlyphs, shapeOrigin, (char, color) => {
+                    // Do not merge in EMPTY_CHARs when laying shapes on top of each other. In vector cels, an "empty"
+                    // shape should behave as see-through; it should not overwrite characters from shapes below it.
+                    // This differs from raster cels, where the final result may intentionally include EMPTY_CHARs to
+                    // erase or clear underlying content. In vector cels, the background is always empty.
+                    return char !== undefined && char !== EMPTY_CHAR;
+                });
             })
         }
 

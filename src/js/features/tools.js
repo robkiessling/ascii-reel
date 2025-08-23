@@ -20,7 +20,7 @@ import CharPicker from "../components/char_picker.js";
 import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
-import BaseRect from "../geometry/shapes/rect/base.js";
+import BaseRect from "../geometry/shapes/rect/base_rect.js";
 import {
     BRUSH_TYPES,
     BRUSHES,
@@ -34,6 +34,7 @@ import ColorPicker from "../components/color_picker.js";
 import {standardTip, standardTips} from "../components/tooltips.js";
 import {defer} from "../utils/utilities.js";
 import IconMenu from "../components/icon_menu.js";
+import BaseEllipse from "../geometry/shapes/ellipse/base_ellipse.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -128,7 +129,7 @@ function setupEventBus() {
                 startDrawing(PolygonFactory.createLine, cell, mouseEvent);
                 break;
             case 'draw-ellipse':
-                startDrawing(PolygonFactory.createEllipse, cell, mouseEvent);
+                startDrawing(BaseEllipse.beginEllipse, cell, mouseEvent);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {

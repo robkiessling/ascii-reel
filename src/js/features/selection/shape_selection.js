@@ -1,6 +1,6 @@
 import * as state from "../../state/index.js";
 import CellArea from "../../geometry/cell_area.js";
-import BaseRect from "../../geometry/shapes/rect/base.js";
+import BaseRect from "../../geometry/shapes/rect/base_rect.js";
 import {arraysEqual} from "../../utils/arrays.js";
 import {SHAPES} from "../../geometry/shapes/constants.js";
 
