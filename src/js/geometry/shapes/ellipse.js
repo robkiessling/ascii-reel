@@ -7,14 +7,14 @@ import {
     STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS,
     TEXT_ALIGN_V_PROP,
     TEXT_PROP
-} from "../constants.js";
-import Cell from "../../cell.js";
-import CellArea from "../../cell_area.js";
-import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
-import TextLayout from "../text_layout.js";
-import BoxShape from "../box_shape.js";
+} from "./constants.js";
+import Cell from "../cell.js";
+import CellArea from "../cell_area.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
+import TextLayout from "./text_layout.js";
+import BoxShape from "./box_shape.js";
 
-export default class BaseEllipse extends BoxShape {
+export default class Ellipse extends BoxShape {
 
     static beginEllipse(startCell, options) {
         const props = {
@@ -31,7 +31,7 @@ export default class BaseEllipse extends BoxShape {
             // textPadding: 0
         };
 
-        return new BaseEllipse(undefined, SHAPE_TYPES.ELLIPSE, props);
+        return new Ellipse(undefined, SHAPE_TYPES.ELLIPSE, props);
     }
 
     _cacheGeometry() {

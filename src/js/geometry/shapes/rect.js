@@ -1,12 +1,12 @@
-import {isFunction} from "../../../utils/utilities.js";
+import {isFunction} from "../../utils/utilities.js";
 import {
     CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP, HANDLES, SHAPE_TYPES,
     STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
-} from "../constants.js";
-import CellArea from "../../cell_area.js";
-import TextLayout from "../text_layout.js";
-import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
-import BoxShape from "../box_shape.js";
+} from "./constants.js";
+import CellArea from "../cell_area.js";
+import TextLayout from "./text_layout.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
+import BoxShape from "./box_shape.js";
 
 
 /**
@@ -58,7 +58,7 @@ const CHAR_SHEETS = {
     }
 }
 
-export default class BaseRect extends BoxShape {
+export default class Rect extends BoxShape {
 
     static beginRect(startCell, options) {
         const props = {
@@ -75,7 +75,7 @@ export default class BaseRect extends BoxShape {
             textPadding: 0
         };
 
-        return new BaseRect(undefined, SHAPE_TYPES.RECT, props);
+        return new Rect(undefined, SHAPE_TYPES.RECT, props);
     }
 
     _cacheGeometry() {

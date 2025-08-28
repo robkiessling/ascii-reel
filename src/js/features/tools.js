@@ -20,7 +20,7 @@ import CharPicker from "../components/char_picker.js";
 import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import PolygonFactory from "../geometry/drawing/polygon_factory.js";
-import BaseRect from "../geometry/shapes/rect/base_rect.js";
+import Rect from "../geometry/shapes/rect.js";
 import {
     BRUSH_TYPES,
     BRUSHES,
@@ -34,7 +34,7 @@ import ColorPicker from "../components/color_picker.js";
 import {standardTip, standardTips} from "../components/tooltips.js";
 import {defer} from "../utils/utilities.js";
 import IconMenu from "../components/icon_menu.js";
-import BaseEllipse from "../geometry/shapes/ellipse/base_ellipse.js";
+import Ellipse from "../geometry/shapes/ellipse.js";
 import Line from "../geometry/shapes/line.js";
 
 
@@ -124,13 +124,13 @@ function setupEventBus() {
                 startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { canvas: canvasControl })
                 break;
             case 'draw-rect':
-                startDrawing(BaseRect.beginRect, cell, mouseEvent);
+                startDrawing(Rect.beginRect, cell, mouseEvent);
                 break;
             case 'draw-line':
                 startDrawing(Line.beginLine, cell, mouseEvent);
                 break;
             case 'draw-ellipse':
-                startDrawing(BaseEllipse.beginEllipse, cell, mouseEvent);
+                startDrawing(Ellipse.beginEllipse, cell, mouseEvent);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
