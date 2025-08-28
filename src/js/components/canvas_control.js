@@ -33,7 +33,7 @@ const ZOOM_IN_THRESHOLD_VALUE = 30;
 
 // Threshold value limiting how far you can zoom out (actual value depends on length of largest axis)
 // E.g. ratio of 1.25 means show 125% more than the largest axis
-const ZOOM_OUT_THRESHOLD_RATIO = 1.25;
+const ZOOM_OUT_THRESHOLD_RATIO = 1.5;
 
 // Base zoom multiplier per scroll step (e.g., 1.1 = 10% zoom change per unit)
 const ZOOM_SCROLL_FACTOR = 1.3;

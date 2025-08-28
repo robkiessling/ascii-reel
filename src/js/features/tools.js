@@ -35,6 +35,7 @@ import {standardTip, standardTips} from "../components/tooltips.js";
 import {defer} from "../utils/utilities.js";
 import IconMenu from "../components/icon_menu.js";
 import BaseEllipse from "../geometry/shapes/ellipse/base_ellipse.js";
+import Line from "../geometry/shapes/line.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -126,7 +127,7 @@ function setupEventBus() {
                 startDrawing(BaseRect.beginRect, cell, mouseEvent);
                 break;
             case 'draw-line':
-                startDrawing(PolygonFactory.createLine, cell, mouseEvent);
+                startDrawing(Line.beginLine, cell, mouseEvent);
                 break;
             case 'draw-ellipse':
                 startDrawing(BaseEllipse.beginEllipse, cell, mouseEvent);
@@ -830,8 +831,6 @@ function startDrawing(factory, cell, mouseEvent, options = {}) {
         // canvasDimensions: state.getConfig('dimensions'),
     }, options));
 
-    drawingContent.beginResize();
-
     updateDrawing(cell, mouseEvent);
 }
 
@@ -839,9 +838,7 @@ function updateDrawing(cell, mouseEvent) {
     if (!drawingContent) return;
     if (!cell) return;
 
-    // drawingContent.end = cell;
-    // drawingContent.recalculate(getDrawingModifiers(mouseEvent), mouseEvent);
-    drawingContent.resize(undefined, cell, getDrawingModifiers(mouseEvent));
+    drawingContent.handleInitialDraw(cell, getDrawingModifiers(mouseEvent));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -849,7 +846,6 @@ function updateDrawing(cell, mouseEvent) {
 function finishDrawing() {
     if (!drawingContent) return;
 
-    drawingContent.finishResize();
     state.addCurrentCelShape(drawingContent);
 
     drawingContent = null;

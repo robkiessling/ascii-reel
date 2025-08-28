@@ -3,6 +3,7 @@
 import {transformValues} from "../../utils/objects.js";
 
 export const HANDLES = {
+    // Vertexes:
     TOP_LEFT_CORNER: 'top-left-corner',
     TOP_RIGHT_CORNER: 'top-right-corner',
     BOTTOM_LEFT_CORNER: 'bottom-left-corner',
@@ -13,7 +14,11 @@ export const HANDLES = {
     RIGHT_EDGE: 'right-edge',
     BOTTOM_EDGE: 'bottom-edge',
 
+    // Entire body:
     BODY: 'body',
+
+    // Cells:
+    CELL: 'cell'
 }
 
 export const TRANSLATABLE_PROPS = [

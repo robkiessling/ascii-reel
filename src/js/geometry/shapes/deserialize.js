@@ -10,6 +10,7 @@
 import {SHAPE_TYPES} from "./constants.js";
 import BaseRect from "./rect/base_rect.js";
 import BaseEllipse from "./ellipse/base_ellipse.js";
+import Line from "./line.js";
 
 export function deserializeShape(data) {
     switch (data.type) {
@@ -17,6 +18,8 @@ export function deserializeShape(data) {
             return new BaseRect(data.id, data.type, BaseRect.deserializeProps(data.props));
         case SHAPE_TYPES.ELLIPSE:
             return new BaseEllipse(data.id, data.type, BaseEllipse.deserializeProps(data.props));
+        case SHAPE_TYPES.LINE:
+            return new Line(data.id, data.type, Line.deserializeProps(data.props));
         default:
             throw new Error(`Unsupported shape type ${data.type}`);
     }

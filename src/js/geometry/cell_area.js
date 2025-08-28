@@ -4,13 +4,21 @@ import Cell from "./cell.js";
 import * as state from "../state/index.js";
 
 /**
- * A CellArea is a rectangle of Cells between a topLeft Cell and a bottomRight Cell.
+ * Represents a rectangular region of the grid using inclusive cell coordinates.
+ *
+ * A CellArea includes both its `topLeft` and `bottomRight` corners. That is,
+ * if `topLeft.row === bottomRight.row`, the area still has a height (numRows) of 1.
  */
 export default class CellArea extends PixelRect {
+
+    /**
+     * @param {Cell} topLeft - The area's top-left Cell (inclusive)
+     * @param {Cell} bottomRight - The area's bottom-right Cell (inclusive)
+     */
     constructor(topLeft, bottomRight) {
         super();
-        this.topLeft = topLeft; // Cell
-        this.bottomRight = bottomRight; // Cell
+        this.topLeft = topLeft;
+        this.bottomRight = bottomRight;
     }
 
     static drawableArea() {
@@ -18,8 +26,16 @@ export default class CellArea extends PixelRect {
     }
 
     static fromOriginAndDimensions(topLeft, numRows, numCols) {
-        const bottomRight = new Cell(topLeft.row + numRows - 1, topLeft.col + numCols - 1);
+        const bottomRight = topLeft.clone().translate(numRows - 1, numCols -1);
         return new CellArea(topLeft.clone(), bottomRight);
+    }
+
+    static fromCells(cells) {
+        const top = Math.min(...cells.map(cell => cell.row));
+        const left = Math.min(...cells.map(cell => cell.col));
+        const bottom = Math.max(...cells.map(cell => cell.row));
+        const right = Math.max(...cells.map(cell => cell.col));
+        return new CellArea(new Cell(top, left), new Cell(bottom, right));
     }
 
     static mergeCellAreas(cellAreas) {
@@ -113,6 +129,10 @@ export default class CellArea extends PixelRect {
             this.topLeft.col <= cellArea.topLeft.col &&
             this.bottomRight.row >= cellArea.bottomRight.row &&
             this.bottomRight.col >= cellArea.bottomRight.col;
+    }
+
+    toString() {
+        return `CA[${this.topLeft}-${this.bottomRight}]`
     }
 
 }

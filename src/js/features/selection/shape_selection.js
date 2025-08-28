@@ -1,8 +1,8 @@
 import * as state from "../../state/index.js";
 import CellArea from "../../geometry/cell_area.js";
-import BaseRect from "../../geometry/shapes/rect/base_rect.js";
 import {arraysEqual} from "../../utils/arrays.js";
-import {SHAPE_TYPES} from "../../geometry/shapes/constants.js";
+import {resizeBoundingBox} from "../../geometry/shapes/algorithms/box_sizing.js";
+import VertexArea from "../../geometry/vertex_area.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -18,6 +18,11 @@ export default class ShapeSelection {
         if (state.numSelectedShapes() === 1) return state.selectedShapes()[0].boundingArea;
 
         return CellArea.mergeCellAreas(state.selectedShapes().map(shape => shape.boundingArea))
+    }
+
+    get boundingVertexArea() {
+        const area = this.boundingArea;
+        return VertexArea.fromOriginAndDimensions(area.topLeft, area.numRows, area.numCols) // todo vertex
     }
 
     /**
@@ -105,17 +110,8 @@ export default class ShapeSelection {
 
         if (state.numSelectedShapes() === 0) return;
 
-        if (state.numSelectedShapes() > 1) {
-            if (this._groupBoundary) throw new Error(`beginResize has already been called`);
-            const area = this.boundingArea;
-            this._groupBoundary = new BaseRect(undefined, SHAPE_TYPES.RECT, {
-                topLeft: area.topLeft,
-                numRows: area.numRows,
-                numCols: area.numCols
-            })
-            this._groupBoundary.beginResize();
-        }
-
+        if (this._oldBounds) throw new Error(`beginResize has already been called`);
+        this._oldBounds = this.boundingVertexArea;
         state.updateSelectedShapes(shape => shape.beginResize());
     }
     resize(handleType, roundedCell) {
@@ -123,21 +119,15 @@ export default class ShapeSelection {
 
         if (state.numSelectedShapes() === 0) return;
 
-        if (state.numSelectedShapes() === 1) {
-            state.updateSelectedShapes(shape => shape.resize(handleType, roundedCell));
-        } else {
-            this._groupBoundary.resize(handleType, roundedCell);
-            const oldBox = this._groupBoundary.resizeSnapshot;
-            const newBox = this._groupBoundary.props;
-            state.updateSelectedShapes(shape => shape.resizeInGroup(oldBox, newBox));
-        }
+        const newBounds = resizeBoundingBox(this._oldBounds, handleType, roundedCell)
+        state.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds));
     }
 
     /**
      * @returns {boolean} - True if a state change occurred.
      */
     finishResize() {
-        this._groupBoundary = undefined;
+        this._oldBounds = undefined;
         state.updateSelectedShapes(shape => shape.finishResize());
 
         return this._resizeOccurred;

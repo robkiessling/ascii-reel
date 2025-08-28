@@ -38,8 +38,7 @@ export default class BaseEllipse extends BoxShape {
         const state = this.props;
 
         const boundingArea = CellArea.fromOriginAndDimensions(state.topLeft, state.numRows, state.numCols);
-
-        const glyphs = this._initGlyphs(state.numRows, state.numCols);
+        const glyphs = this._initGlyphs(boundingArea);
 
         const strokeChar = this.props[CHAR_PROP];
         const fillChar = this._fillChar();

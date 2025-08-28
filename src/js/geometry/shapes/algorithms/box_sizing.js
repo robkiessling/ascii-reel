@@ -1,0 +1,190 @@
+import {HANDLES} from "../constants.js";
+import Cell from "../../cell.js";
+import CellArea from "../../cell_area.js";
+import VertexArea from "../../vertex_area.js";
+
+
+/**
+ * Using vector-based areas when resizing so that flipping works better. Flipping occurs over an edge BETWEEN
+ * cells, not over a whole cell row.
+ */
+/**
+ * Returns a new rectangular CellArea after resizing the original CellArea using the given handle and its new position.
+ *
+ * This function interprets which edges or corners of the bounding box should move, based on which handle is
+ * being dragged, and by how much. Handles may cause the box to flip (e.g. dragging topLeft past bottomRight),
+ * but the returned box will preserve those inverted bounds — it's up to later logic to normalize or use it for
+ * proportional transforms.
+ *
+ * @param {VertexArea} oldBox - original CellArea before box resizing
+ * @param handle - the box handle being dragged
+ * @param {Cell} newPosition - New position of the dragged handle
+ * @returns {VertexArea} // todo vertex this could be a VertexArea?
+ */
+export function resizeBoundingBox(oldBox, handle, newPosition) {
+    newPosition = newPosition.clone(); // do not mutate parameter
+
+    // anchor is the corner/edge of the rectangle that is not moving (it is opposite of the handle)
+    let anchor;
+
+    // Prevent zero width or zero height boxes. If handle position overlaps anchor, handle will be pushed in
+    // this direction.
+    let anchorPushback = { row: 0, col: 0 };
+
+    switch(handle) {
+        case HANDLES.TOP_LEFT_CORNER:
+            anchor = oldBox.bottomRight;
+            anchorPushback = { row: -1, col: -1 }
+            break;
+        case HANDLES.TOP_RIGHT_CORNER:
+            anchor = oldBox.bottomLeft;
+            anchorPushback = { row: -1, col: 1 }
+            break;
+        case HANDLES.BOTTOM_LEFT_CORNER:
+            anchor = oldBox.topRight;
+            anchorPushback = { row: 1, col: -1 }
+            break;
+        case HANDLES.BOTTOM_RIGHT_CORNER:
+            anchor = oldBox.topLeft;
+            anchorPushback = { row: 1, col: 1 }
+            break;
+        case HANDLES.TOP_EDGE:
+            // Setting anchor to bottomLeft. It could be any point on the bottom row, but we pick bottomLeft and
+            // then lock the newPosition to the right side so the box width stays constant.
+            anchor = oldBox.bottomLeft;
+            anchorPushback = { row: -1, col: 0 }
+            newPosition.col = oldBox.topRight.col; // Lock to right edge
+            break;
+        case HANDLES.LEFT_EDGE:
+            anchor = oldBox.topRight;
+            anchorPushback = { row: 0, col: -1 }
+            newPosition.row = oldBox.bottomLeft.row; // Lock to bottom edge
+            break;
+        case HANDLES.RIGHT_EDGE:
+            anchor = oldBox.topLeft;
+            anchorPushback = { row: 0, col: 1 }
+            newPosition.row = oldBox.bottomRight.row; // Lock to bottom edge
+            break;
+        case HANDLES.BOTTOM_EDGE:
+            anchor = oldBox.topLeft;
+            anchorPushback = { row: 1, col: 0 }
+            newPosition.col = oldBox.bottomRight.col; // Lock to right edge
+            break;
+        default:
+            throw new Error(`Invalid handle: ${handle}`);
+    }
+
+    if (newPosition.row === anchor.row) newPosition.row += anchorPushback.row;
+    if (newPosition.col === anchor.col) newPosition.col += anchorPushback.col;
+
+    return VertexArea.fromVertices([anchor, newPosition]);
+}
+
+/**
+ * We cannot simply take all the points of a rect (e.g. topLeft & bottomRight) or a Line and map them from oldBox
+ * to newBox. If you do this, the difference between points may jitter as the shape is resized due to rounding.
+ * This makes the shape's size fluctuate as you resize a group larger or smaller, which looks bad.
+ * I've found that the smoothest way to resize is to instead:
+ * 1) Determine the dimensions of the new shape. By calculating this first, it guarantees that as you resize
+ *    a shape, its dimensions smoothly get smaller/larger; its height will not jump from 3 to 4 back to 3, etc.
+ * 2) Pick a single anchor point on the shape to map from oldBox to newBox. This determines where the new shape
+ *    will be placed. I'm currently just using the topLeft of every shape's boundaries as the point, but in the
+ *    future it may be better to choose the anchor closest to the drag handle.
+ * 3) Now that we have the new anchor point and dimensions of the new shape, we know exactly where and how big
+ *    the new area of the shape is. We can map every cell in the old shape to a cell in the new shape. Note that this
+ *    step is not required for all shapes - e.g. for a rect we already have everything needed from steps 1 & 2.
+ */
+export function translateAreaWithBoxResizing(cellArea, oldBox, newBox) {
+    const newDimensions = calculateScaledDimensions(cellArea.numRows, cellArea.numCols, oldBox, newBox);
+    const { cell: newTopLeft, flipRow, flipCol } = calculateNewTopLeft(cellArea.topLeft, newDimensions, oldBox, newBox);
+    const newCellArea = CellArea.fromOriginAndDimensions(newTopLeft, newDimensions.numRows, newDimensions.numCols);
+    return {
+        area: newCellArea,
+        cellMapper: buildCellMapper(cellArea, newCellArea, flipRow, flipCol)
+    };
+}
+
+function calculateScaledDimensions(numRows, numCols, oldBox, newBox, minSize = 1) {
+    const rowScale = newBox.numRows / oldBox.numRows;
+    const colScale = newBox.numCols / oldBox.numCols;
+
+    let scaledNumRows = Math.round(numRows * rowScale);
+    let scaledNumCols = Math.round(numCols * colScale);
+
+    // Ensure minimum size
+    scaledNumRows = Math.max(scaledNumRows, minSize);
+    scaledNumCols = Math.max(scaledNumCols, minSize);
+
+    return { numRows: scaledNumRows, numCols: scaledNumCols, rowScale, colScale };
+}
+
+function calculateNewTopLeft(oldPosition, dimensions, oldBox, newBox) {
+    const flipRow = oldBox.topLeft.row === newBox.bottomRight.row || oldBox.bottomRight.row === newBox.topLeft.row;
+    const flipCol = oldBox.topLeft.col === newBox.bottomRight.col || oldBox.bottomRight.col === newBox.topLeft.col;
+
+    // Calculate percentage positions
+    const rowPct = (oldPosition.row - oldBox.topLeft.row) / oldBox.numRows;
+    const colPct = (oldPosition.col - oldBox.topLeft.col) / oldBox.numCols;
+
+    let newRow, newCol;
+
+    if (flipRow) {
+        // Flipped vertically: calculate anchor based on distance from bottom edge
+        newRow = Math.round(newBox.bottomRight.row - newBox.numRows * rowPct);
+        newRow = Math.max(newRow, newBox.topLeft.row + dimensions.numRows); // Ensure shape fits within top bounds
+        newRow = newRow - dimensions.numRows;
+    } else {
+        // Normal case: calculate anchor based on distance from top edge
+        newRow = Math.round(newBox.topLeft.row + newBox.numRows * rowPct);
+        newRow = Math.min(newRow, newBox.bottomRight.row - dimensions.numRows); // Ensure shape fits within bottom bounds
+    }
+
+    if (flipCol) {
+        // Flipped horizontally: calculate anchor based on distance from right edge
+        newCol = Math.round(newBox.bottomRight.col - newBox.numCols * colPct);
+        newCol = Math.max(newCol, newBox.topLeft.col + dimensions.numCols); // Ensure shape fits within left bounds
+        newCol = newCol - dimensions.numCols;
+    } else {
+        // Normal case: calculate anchor based on distance from left edge
+        newCol = Math.round(newBox.topLeft.col + newBox.numCols * colPct);
+        newCol = Math.min(newCol, newBox.bottomRight.col - dimensions.numCols); // Ensure shape fits within right bounds
+    }
+
+    return {
+        cell: new Cell(newRow, newCol),
+        flipRow,
+        flipCol
+    };
+}
+
+
+function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
+    // If the oldCellArea is 1 dimensional, we have to choose where to map things.
+    // TODO This could be improved using fractional rows/cols?
+    const MAP_1D = 0.5; // map to the center of newCellArea
+
+    return oldCell => {
+        let rowPct = (oldCellArea.numRows > 1) ? (oldCell.row - oldCellArea.topLeft.row) / (oldCellArea.numRows - 1) : MAP_1D;
+        let colPct = (oldCellArea.numCols > 1) ? (oldCell.col - oldCellArea.topLeft.col) / (oldCellArea.numCols - 1) : MAP_1D;
+        rowPct = flipRow ? (1 - rowPct) : rowPct;
+        colPct = flipCol ? (1 - colPct) : colPct;
+
+        let newRow = (newCellArea.numRows > 1) ?
+            Math.round(newCellArea.topLeft.row + rowPct * (newCellArea.numRows - 1)) :
+            newCellArea.topLeft.row;
+        let newCol = (newCellArea.numCols > 1) ?
+            Math.round(newCellArea.topLeft.col + colPct * (newCellArea.numCols - 1)) :
+            newCellArea.topLeft.col;
+
+        // Clamp (defensive, handles floating-point/rounding drift)
+        // TODO Unsure if this is needed - haven't seen any issues without it
+        // const bottomRow = newCellArea.topLeft.row + newCellArea.numRows - 1;
+        // const rightCol  = newCellArea.topLeft.col + newCellArea.numCols - 1;
+        // if (newRow < newCellArea.topLeft.row) newRow = newCellArea.topLeft.row;
+        // if (newRow > bottomRow) newRow = bottomRow;
+        // if (newCol < newCellArea.topLeft.col) newCol = newCellArea.topLeft.col;
+        // if (newCol > rightCol) newCol = rightCol;
+
+        return new Cell(newRow, newCol);
+    }
+}

@@ -83,8 +83,7 @@ export default class BaseRect extends BoxShape {
 
         const boundingArea = CellArea.fromOriginAndDimensions(state.topLeft, state.numRows, state.numCols);
         const innerArea = boundingArea.innerArea();
-
-        const glyphs = this._initGlyphs(state.numRows, state.numCols);
+        const glyphs = this._initGlyphs(boundingArea);
 
         const stroke = state[STROKE_PROPS[SHAPE_TYPES.RECT]]
         let charSheet = CHAR_SHEETS[stroke];

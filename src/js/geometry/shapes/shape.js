@@ -1,6 +1,8 @@
 import { nanoid } from 'nanoid'
 import {create2dArray} from "../../utils/arrays.js";
-import {COLOR_PROP, TRANSLATABLE_PROPS} from "./constants.js";
+import {CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP, TRANSLATABLE_PROPS} from "./constants.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
+import Cell from "../cell.js";
 
 export default class Shape {
     constructor(id, type, props = {}) {
@@ -31,6 +33,16 @@ export default class Shape {
         this._clearCache();
     }
 
+    // Initial draw always deals with Cells, not vertexes.
+    handleInitialDraw(cell, modifiers) {
+        if (!this._initialDraw) {
+            this._initialDraw = {
+                start: cell.clone()
+            }
+        }
+        this._initialDraw.end = cell.clone();
+    }
+
     // ------------------------------------------------------ Resizing
     // Resizing requires a snapshot of its initial state to compare to. So resizing is a three part process:
     // 1. call beginResize()
@@ -49,10 +61,6 @@ export default class Shape {
 
     resize(handle, position, options) {
         throw new Error(`resize must be implemented by subclass`)
-    }
-
-    resizeInGroup(oldGroupBox, newGroupBox) {
-        throw new Error(`resizeInGroup must be implemented by subclass`)
     }
 
     finishResize() {
@@ -100,10 +108,11 @@ export default class Shape {
         return this._cache.textLayout;
     }
 
-    _initGlyphs(numRows, numCols) {
+    // Note: glyphs will be in relative coords
+    _initGlyphs(area) {
         return {
-            chars: create2dArray(numRows, numCols),
-            colors: create2dArray(numRows, numCols),
+            chars: create2dArray(area.numRows, area.numCols),
+            colors: create2dArray(area.numRows, area.numCols),
         }
     }
     _setGlyph(glyphs, cell, char, colorIndex) {
@@ -111,6 +120,16 @@ export default class Shape {
         glyphs.colors[cell.row][cell.col] = colorIndex;
     }
 
+    _fillChar() {
+        switch(this.props[FILL_PROP]) {
+            case FILL_OPTIONS.WHITESPACE:
+                return WHITESPACE_CHAR;
+            case FILL_OPTIONS.MONOCHAR:
+                return this.props[CHAR_PROP] || EMPTY_CHAR;
+            default:
+                return EMPTY_CHAR;
+        }
+    }
 
 
     hasContent(matchingColorIndex) {

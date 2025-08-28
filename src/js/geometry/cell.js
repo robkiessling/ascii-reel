@@ -94,6 +94,6 @@ export default class Cell extends PixelRect {
     }
 
     toString() {
-        return `[R:${this.row}, C:${this.col}]`
+        return `C{r:${this.row},c:${this.col}}`
     }
 }

@@ -379,7 +379,7 @@ export function drawShapeSelection(canvasControl) {
             // draw shape anchors
             // draw shape bounding box (if applicable; line doesn't have)
             drawBoundingBox(canvasControl, shape.boundingArea)
-            drawHandles(canvasControl, shape.boundingArea)
+            drawBoxHandles(canvasControl, shape.boundingArea)
         } else {
             // multiple shapes:
             // draw bounding box around each shape (no anchors)
@@ -391,7 +391,7 @@ export function drawShapeSelection(canvasControl) {
 
             const cumulativeArea = CellArea.mergeCellAreas(shapes.map(shape => shape.boundingArea))
             drawBoundingBox(canvasControl, cumulativeArea, true)
-            drawHandles(canvasControl, cumulativeArea)
+            drawBoxHandles(canvasControl, cumulativeArea)
         }
 
         if (marquee) drawMarquee(canvasControl);
@@ -399,7 +399,7 @@ export function drawShapeSelection(canvasControl) {
 }
 
 const SHAPE_OUTLINE_WIDTH = 2;
-const BOUNDING_BOX_PADDING = 6;
+const BOUNDING_BOX_PADDING = 2;
 
 const CORNER_SIZE = 8;
 const CORNER_RADIUS = 2;
@@ -455,7 +455,7 @@ function buildScreenRect(canvasControl, xywh, padding) {
     ]
 }
 
-function drawHandles(canvasControl, cellArea) {
+function drawBoxHandles(canvasControl, cellArea) {
     Object.values(HANDLES).forEach(handle => {
         switch(handle) {
             case HANDLES.TOP_LEFT_CORNER:
