@@ -2,6 +2,7 @@ import PixelRect from "./pixel_rect.js";
 import {fontHeight, fontWidth} from "../config/font.js";
 import Cell from "./cell.js";
 import * as state from "../state/index.js";
+import Vertex from "./vertex.js";
 
 /**
  * Represents a rectangular region of the grid using inclusive cell coordinates.
@@ -73,6 +74,11 @@ export default class CellArea extends PixelRect {
     get bottomLeft() {
         return this.topLeft.clone().translate(this.numRows - 1, 0);
     }
+
+    get topLeftVertex() { return new Vertex(this.topLeft.row, this.topLeft.col); }
+    get topRightVertex() { return new Vertex(this.topRight.row, this.topRight.col + 1); }
+    get bottomLeftVertex() { return new Vertex(this.bottomLeft.row + 1, this.bottomLeft.col); }
+    get bottomRightVertex() { return new Vertex(this.bottomRight.row + 1, this.bottomRight.col + 1); }
 
     clone() {
         return new CellArea(this.topLeft.clone(), this.bottomRight.clone());

@@ -2,16 +2,12 @@ import {
     CHAR_PROP,
     COLOR_PROP,
     FILL_OPTIONS,
-    FILL_PROP, HANDLES,
+    FILL_PROP,
     SHAPE_TYPES,
-    STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS,
-    TEXT_ALIGN_V_PROP,
-    TEXT_PROP
+    STROKE_PROPS
 } from "./constants.js";
-import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
-import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
-import TextLayout from "./text_layout.js";
+import {EMPTY_CHAR} from "../../config/chars.js";
 import BoxShape from "./box_shape.js";
 
 export default class Ellipse extends BoxShape {
@@ -59,19 +55,19 @@ export default class Ellipse extends BoxShape {
         // const textLayout = this._applyTextLayout(glyphs, boundingArea);
 
         const emptyBackground = fillChar === EMPTY_CHAR;
-        const hitbox = cell => {
+        const handles = this._buildHandleCollection(boundingArea, cell => {
             // if (textLayout && textLayout.doesCellOverlap(cell)) return true;
             if (outlineHitbox(cell)) return true
-            if (!emptyBackground && fillHitbox(cell)) return true;
-            return false;
-        };
+            return !emptyBackground && fillHitbox(cell);
+        })
+
 
         this._cache = {
             boundingArea,
             origin: state.topLeft,
             glyphs,
-            hitbox,
             // textLayout
+            handles,
         }
     }
 

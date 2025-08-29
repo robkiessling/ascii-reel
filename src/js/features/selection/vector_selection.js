@@ -1,19 +1,23 @@
 import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js";
 import {SELECTION_COLOR} from "../../config/colors.js";
-import {HANDLES} from "../../geometry/shapes/constants.js";
+import {
+    HANDLE_CELL_RADIUS,
+    HANDLE_TYPES,
+    SHAPE_BOX_PADDING,
+    SHAPE_DASHED_OUTLINE_LENGTH,
+    SHAPE_OUTLINE_WIDTH
+} from "../../geometry/shapes/constants.js";
 import CellArea from "../../geometry/cell_area.js";
-import ShapeSelection from "./shape_selection.js";
+import ShapeSelector from "./shape_selector.js";
 import VectorMarquee from "./vector_marquee.js";
 import {arraysEqual} from "../../utils/arrays.js";
-import Cell from "../../geometry/cell.js";
-import {moveCaretTo, polygons} from "../selection.js";
 
 export function init() {
     setupEventBus();
 }
 
-let shapeSelection = new ShapeSelection();
+let shapeSelector = new ShapeSelector();
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
 let marquee = null;
 
@@ -56,36 +60,32 @@ function setupEventBus() {
 
 
 function onMousedown(cell, mouseEvent, canvasControl) {
-    const handle = getHandle(cell, mouseEvent, canvasControl)
-    const handleType = handle ? handle.type : null;
+    const handle = getHandle(cell, mouseEvent, canvasControl);
 
-    switch(handleType) {
-        case HANDLES.TOP_LEFT_CORNER:
-        case HANDLES.TOP_RIGHT_CORNER:
-        case HANDLES.BOTTOM_LEFT_CORNER:
-        case HANDLES.BOTTOM_RIGHT_CORNER:
-        case HANDLES.TOP_EDGE:
-        case HANDLES.LEFT_EDGE:
-        case HANDLES.RIGHT_EDGE:
-        case HANDLES.BOTTOM_EDGE:
+    if (!handle) {
+        if (mouseEvent.shiftKey) {
+            createMarquee(canvasControl, mouseEvent);
+        } else {
+            deselectAllShapes();
+            createMarquee(canvasControl, mouseEvent);
+        }
+        return;
+    }
+
+    switch (handle.type) {
+        case HANDLE_TYPES.VERTEX:
+        case HANDLE_TYPES.EDGE:
+        case HANDLE_TYPES.CELL:
             draggedHandle = handle;
-            shapeSelection.beginResize();
+            shapeSelector.beginResize();
             break;
-        case HANDLES.BODY:
+        case HANDLE_TYPES.BODY:
             draggedHandle = handle;
-            if (handle.focusedShapeId === undefined) throw new Error(`HANDLES.BODY must provide focusedShapeId`);
+            if (handle.shapeId === undefined) throw new Error(`HANDLE_TYPES.BODY handle must provide shapeId`);
 
-            if (shapeSelection.mousedownShape(handle.focusedShapeId, mouseEvent.shiftKey)) {
+            if (shapeSelector.mousedownShape(handle.shapeId, mouseEvent.shiftKey)) {
                 eventBus.emit(EVENTS.SELECTION.CHANGED);
                 state.pushHistory();
-            }
-            break;
-        case null:
-            if (mouseEvent.shiftKey) {
-                createMarquee(canvasControl, mouseEvent);
-            } else {
-                deselectAllShapes();
-                createMarquee(canvasControl, mouseEvent);
             }
             break;
     }
@@ -93,25 +93,20 @@ function onMousedown(cell, mouseEvent, canvasControl) {
 
 function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
     switch (draggedHandle.type) {
-        case HANDLES.TOP_LEFT_CORNER:
-        case HANDLES.TOP_RIGHT_CORNER:
-        case HANDLES.BOTTOM_LEFT_CORNER:
-        case HANDLES.BOTTOM_RIGHT_CORNER:
-        case HANDLES.TOP_EDGE:
-        case HANDLES.LEFT_EDGE:
-        case HANDLES.RIGHT_EDGE:
-        case HANDLES.BOTTOM_EDGE:
+        case HANDLE_TYPES.VERTEX:
+        case HANDLE_TYPES.EDGE:
+        case HANDLE_TYPES.CELL:
             const roundedCell = canvasControl.roundedCellAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
-            shapeSelection.resize(draggedHandle.type, roundedCell)
+            shapeSelector.resize(draggedHandle, cell, roundedCell)
             break;
-        case HANDLES.BODY:
-            shapeSelection.translate(cell.row - moveStep.row, cell.col - moveStep.col)
+        case HANDLE_TYPES.BODY:
+            shapeSelector.translate(cell.row - moveStep.row, cell.col - moveStep.col)
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")
     }
 
-    shapeSelection.cancelPending();
+    shapeSelector.cancelPending();
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -121,19 +116,14 @@ function finishDragHandle() {
     let hasStateChange = false;
 
     switch (draggedHandle.type) {
-        case HANDLES.TOP_LEFT_CORNER:
-        case HANDLES.TOP_RIGHT_CORNER:
-        case HANDLES.BOTTOM_LEFT_CORNER:
-        case HANDLES.BOTTOM_RIGHT_CORNER:
-        case HANDLES.TOP_EDGE:
-        case HANDLES.LEFT_EDGE:
-        case HANDLES.RIGHT_EDGE:
-        case HANDLES.BOTTOM_EDGE:
-            if (shapeSelection.finishResize()) hasStateChange = true;
+        case HANDLE_TYPES.VERTEX:
+        case HANDLE_TYPES.EDGE:
+        case HANDLE_TYPES.CELL:
+            if (shapeSelector.finishResize()) hasStateChange = true;
             break;
-        case HANDLES.BODY:
-            if (shapeSelection.commitPending()) hasStateChange = true;
-            if (shapeSelection.finishTranslate()) hasStateChange = true;
+        case HANDLE_TYPES.BODY:
+            if (shapeSelector.commitPending()) hasStateChange = true;
+            if (shapeSelector.finishTranslate()) hasStateChange = true;
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")
@@ -150,68 +140,23 @@ export function getHandle(cell, mouseEvent, canvasControl) {
     // If a shape is currently being dragged, the handle is locked to the drag handle
     if (draggedHandle) return draggedHandle;
 
-    // todo maybe need to check hitboxes of shapes above current shape?
-    //      then do current shape handles
-    //      then hitboxes of shapes below
-    //      E.g. make a small rect on top big rect. select big rect. now you can't select small rect unless you click off first
+    const shapes = state.selectedShapes();
 
-    // If there are 1 or more selected shapes, check the handles of those shape(s)
-    if (state.hasSelectedShapes()) {
-        for (const handleType of Object.values(HANDLES)) {
-            switch(handleType) {
-                case HANDLES.TOP_LEFT_CORNER:
-                case HANDLES.TOP_RIGHT_CORNER:
-                case HANDLES.BOTTOM_LEFT_CORNER:
-                case HANDLES.BOTTOM_RIGHT_CORNER:
-                    const corner = cornerRegion(canvasControl, shapeSelection.boundingArea, handleType);
-                    if (
-                        (Math.abs(mouseEvent.offsetX - corner.x) <= corner.size / 2) &&
-                        (Math.abs(mouseEvent.offsetY - corner.y) <= corner.size / 2)
-                    ) {
-                        return {
-                            type: handleType,
-                            cursor: corner.cursor
-                        }
-                    }
-                    break;
-                case HANDLES.TOP_EDGE:
-                case HANDLES.LEFT_EDGE:
-                case HANDLES.RIGHT_EDGE:
-                case HANDLES.BOTTOM_EDGE:
-                    const edge = edgeRegion(canvasControl, shapeSelection.boundingArea, handleType);
-                    if (
-                        (mouseEvent.offsetX >= edge.x1) && (mouseEvent.offsetX <= edge.x2) &&
-                        (mouseEvent.offsetY >= edge.y1) && (mouseEvent.offsetY <= edge.y2)
-                    ) {
-                        return {
-                            type: handleType,
-                            cursor: edge.cursor
-                        }
-                    }
-                    break;
-                case HANDLES.BODY:
-                    const hitShape = state.checkCurrentCelHitbox(cell, state.selectedShapeIds());
-                    if (hitShape) {
-                        return {
-                            type: handleType,
-                            cursor: 'move',
-                            focusedShapeId: hitShape.id,
-                        }
-                    }
-                    break;
-            }
+    if (shapes.length === 1) {
+        // Check individual shape's non-body handles
+        const shape = shapes[0];
+        for (const handle of shape.handles.nonBody) {
+            if (handle.matches({mouseEvent, canvasControl, cell})) return handle;
+        }
+    } else {
+        // Check shape group's non-body handles
+        for (const handle of shapeSelector.handles.nonBody) {
+            if (handle.matches({mouseEvent, canvasControl, cell})) return handle;
         }
     }
 
-    // Otherwise, check if mouse is over any current cel's shapes' hitboxes (iterate in top-to-bottom shape order)
-    const hitShape = state.checkCurrentCelHitbox(cell);
-    if (hitShape) {
-        return {
-            type: HANDLES.BODY,
-            cursor: 'move',
-            focusedShapeId: hitShape.id,
-        }
-    }
+    // Check body handles of all shapes (both selected and unselected)
+    return state.testCurrentCelShapeHitboxes(cell);
 }
 
 export function deleteSelectedShapes() {
@@ -260,7 +205,7 @@ function createMarquee(canvasControl, mouseEvent) {
         startX: mouseEvent.offsetX,
         startY: mouseEvent.offsetY,
         onUpdate: area => {
-            const marqueeShapeIds = state.checkCurrentCelMarquee(area).map(shape => shape.id);
+            const marqueeShapeIds = state.testCurrentCelMarquee(area).map(shape => shape.id);
 
             if (isFreshMarquee) {
                 // If fresh marquee, set selected shapes to match the covered shapes (this allows shapes to be
@@ -376,45 +321,29 @@ export function drawShapeSelection(canvasControl) {
             // no shapes to draw
         } else if (shapes.length === 1) {
             const shape = shapes[0];
-            // draw shape anchors
-            // draw shape bounding box (if applicable; line doesn't have)
-            drawBoundingBox(canvasControl, shape.boundingArea)
-            drawBoxHandles(canvasControl, shape.boundingArea)
+            if (shape.handles.showBoundingBox) drawBoundingBox(canvasControl, shape.boundingArea);
+            drawHandles(canvasControl, shape.handles);
         } else {
-            // multiple shapes:
-            // draw bounding box around each shape (no anchors)
-            // draw dashed bounding box around shape union
-            // draw anchors on outermost bounding box
-            shapes.forEach(shape => {
-                drawBoundingBox(canvasControl, shape.boundingArea);
-            })
+            shapes.forEach(shape => drawBoundingBox(canvasControl, shape.boundingArea))
 
             const cumulativeArea = CellArea.mergeCellAreas(shapes.map(shape => shape.boundingArea))
             drawBoundingBox(canvasControl, cumulativeArea, true)
-            drawBoxHandles(canvasControl, cumulativeArea)
+            drawHandles(canvasControl, shapeSelector.handles)
         }
 
         if (marquee) drawMarquee(canvasControl);
     })
 }
 
-const SHAPE_OUTLINE_WIDTH = 2;
-const BOUNDING_BOX_PADDING = 2;
-
-const CORNER_SIZE = 8;
-const CORNER_RADIUS = 2;
-const EDGE_WIDTH = 8;
-const DASH_OUTLINE_LENGTH = 5;
-
 function drawBoundingBox(canvasControl, cellArea, dashed = false) {
     const context = canvasControl.context;
 
     context.lineWidth = SHAPE_OUTLINE_WIDTH;
-    context.setLineDash(dashed ? [DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH] : []);
+    context.setLineDash(dashed ? [SHAPE_DASHED_OUTLINE_LENGTH, SHAPE_DASHED_OUTLINE_LENGTH] : []);
     context.strokeStyle = SELECTION_COLOR;
 
     context.beginPath();
-    context.rect(...buildScreenRect(canvasControl, cellArea.xywh, BOUNDING_BOX_PADDING));
+    context.rect(...buildScreenRect(canvasControl, cellArea.xywh, SHAPE_BOX_PADDING));
     context.stroke();
 }
 
@@ -455,131 +384,56 @@ function buildScreenRect(canvasControl, xywh, padding) {
     ]
 }
 
-function drawBoxHandles(canvasControl, cellArea) {
-    Object.values(HANDLES).forEach(handle => {
-        switch(handle) {
-            case HANDLES.TOP_LEFT_CORNER:
-            case HANDLES.TOP_RIGHT_CORNER:
-            case HANDLES.BOTTOM_LEFT_CORNER:
-            case HANDLES.BOTTOM_RIGHT_CORNER:
-                const corner = cornerRegion(canvasControl, cellArea, handle);
-                drawCorner(canvasControl, corner)
+function drawHandles(canvasControl, handles) {
+    for (const handle of handles) {
+        switch (handle.type) {
+            case HANDLE_TYPES.VERTEX:
+                drawCorner(canvasControl, handle)
                 break;
-
-            // EDGE handles have no visual representation
+            // HANDLE_TYPES.EDGE has no visual representation
+            case HANDLE_TYPES.CELL:
+                drawCellHandle(canvasControl, handle.cell);
+                break;
         }
-    })
+    }
 }
 
-function drawCorner(canvasControl, corner) {
+function drawCorner(canvasControl, handle) {
+    const { x, y, size, radius } = handle.geometry(canvasControl);
+
     const context = canvasControl.context;
 
     context.beginPath();
     context.fillStyle = 'white';
     context.strokeStyle = SELECTION_COLOR;
     context.lineWidth = 1;
+    context.setLineDash([]);
 
     // Rounded rectangle path
     context.roundRect(
-        corner.x - corner.size / 2,
-        corner.y - corner.size / 2,
-        corner.size,
-        corner.size,
-        CORNER_RADIUS,
+        x - size / 2,
+        y - size / 2,
+        size,
+        size,
+        radius,
     );
 
     context.fill();
     context.stroke();
 }
 
-function cornerRegion(canvasControl, cellArea, corner) {
-    let x, y; // in world units
-    let xPadding, yPadding; // in screen units
-    let cursor;
+function drawCellHandle(canvasControl, cell) {
+    const context = canvasControl.context;
 
-    switch (corner) {
-        case HANDLES.TOP_LEFT_CORNER:
-            x = cellArea.x;
-            y = cellArea.y;
-            xPadding = -BOUNDING_BOX_PADDING;
-            yPadding = -BOUNDING_BOX_PADDING;
-            cursor = 'nwse-resize';
-            break;
-        case HANDLES.TOP_RIGHT_CORNER:
-            x = cellArea.x + cellArea.width;
-            y = cellArea.y;
-            xPadding = BOUNDING_BOX_PADDING;
-            yPadding = -BOUNDING_BOX_PADDING;
-            cursor = 'nesw-resize';
-            break;
-        case HANDLES.BOTTOM_LEFT_CORNER:
-            x = cellArea.x;
-            y = cellArea.y + cellArea.height;
-            xPadding = -BOUNDING_BOX_PADDING;
-            yPadding = BOUNDING_BOX_PADDING;
-            cursor = 'nesw-resize';
-            break;
-        case HANDLES.BOTTOM_RIGHT_CORNER:
-            x = cellArea.x + cellArea.width;
-            y = cellArea.y + cellArea.height;
-            xPadding = BOUNDING_BOX_PADDING;
-            yPadding = BOUNDING_BOX_PADDING;
-            cursor = 'nwse-resize';
-            break;
-    }
+    context.lineWidth = SHAPE_OUTLINE_WIDTH;
+    context.setLineDash([]);
+    context.strokeStyle = SELECTION_COLOR;
 
-    const screenPosition = canvasControl.worldToScreen(x, y)
-    return {
-        x: screenPosition.x + xPadding,
-        y: screenPosition.y + yPadding,
-        size: CORNER_SIZE, // in screen units
-        cursor: cursor
-    }
-}
+    context.beginPath();
+    context.roundRect(
+        ...buildScreenRect(canvasControl, cell.xywh, SHAPE_BOX_PADDING),
+        HANDLE_CELL_RADIUS
+    )
 
-function edgeRegion(canvasControl, cellArea, edge) {
-    let screen1, screen2; // in screen units
-    let x1, x2, y1, y2; // in screen units
-    let cursor;
-
-    switch (edge) {
-        case HANDLES.TOP_EDGE:
-            screen1 = canvasControl.worldToScreen(cellArea.x, cellArea.y);
-            screen2 = canvasControl.worldToScreen(cellArea.x + cellArea.width, cellArea.y);
-            x1 = screen1.x - BOUNDING_BOX_PADDING;
-            x2 = screen2.x + BOUNDING_BOX_PADDING;
-            y1 = screen1.y - EDGE_WIDTH / 2 - BOUNDING_BOX_PADDING;
-            y2 = screen2.y + EDGE_WIDTH / 2 - BOUNDING_BOX_PADDING;
-            cursor = 'ns-resize';
-            break;
-        case HANDLES.LEFT_EDGE:
-            screen1 = canvasControl.worldToScreen(cellArea.x, cellArea.y);
-            screen2 = canvasControl.worldToScreen(cellArea.x, cellArea.y + cellArea.height);
-            x1 = screen1.x - EDGE_WIDTH / 2 - BOUNDING_BOX_PADDING;
-            x2 = screen2.x + EDGE_WIDTH / 2 - BOUNDING_BOX_PADDING;
-            y1 = screen1.y - BOUNDING_BOX_PADDING;
-            y2 = screen2.y + BOUNDING_BOX_PADDING;
-            cursor = 'ew-resize';
-            break;
-        case HANDLES.RIGHT_EDGE:
-            screen1 = canvasControl.worldToScreen(cellArea.x + cellArea.width, cellArea.y);
-            screen2 = canvasControl.worldToScreen(cellArea.x + cellArea.width, cellArea.y + cellArea.height);
-            x1 = screen1.x - EDGE_WIDTH / 2 + BOUNDING_BOX_PADDING;
-            x2 = screen2.x + EDGE_WIDTH / 2 + BOUNDING_BOX_PADDING;
-            y1 = screen1.y - BOUNDING_BOX_PADDING;
-            y2 = screen2.y + BOUNDING_BOX_PADDING;
-            cursor = 'ew-resize';
-            break;
-        case HANDLES.BOTTOM_EDGE:
-            screen1 = canvasControl.worldToScreen(cellArea.x, cellArea.y + cellArea.height);
-            screen2 = canvasControl.worldToScreen(cellArea.x + cellArea.width, cellArea.y + cellArea.height);
-            x1 = screen1.x - BOUNDING_BOX_PADDING;
-            x2 = screen2.x + BOUNDING_BOX_PADDING;
-            y1 = screen1.y - EDGE_WIDTH / 2 + BOUNDING_BOX_PADDING;
-            y2 = screen2.y + EDGE_WIDTH / 2 + BOUNDING_BOX_PADDING;
-            cursor = 'ns-resize';
-            break;
-    }
-
-    return {x1, x2, y1, y2, cursor};
+    context.stroke();
 }

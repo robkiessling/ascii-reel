@@ -2,28 +2,24 @@
 // Note: This is in a priority order - the earlier handles are checked for mouse events before later handles
 import {transformValues} from "../../utils/objects.js";
 
-export const HANDLES = {
-    // Vertexes:
+export const HANDLE_TYPES = {
+    VERTEX: 'vertex',
+    EDGE: 'edge',
+    CELL: 'cell',
+    BODY: 'body',
+}
+export const VERTEX_CORNERS = {
     TOP_LEFT_CORNER: 'top-left-corner',
     TOP_RIGHT_CORNER: 'top-right-corner',
     BOTTOM_LEFT_CORNER: 'bottom-left-corner',
-    BOTTOM_RIGHT_CORNER: 'bottom-right-corner',
-
+    BOTTOM_RIGHT_CORNER: 'bottom-right-corner'
+}
+export const EDGE_SIDES = {
     TOP_EDGE: 'top-edge',
     LEFT_EDGE: 'left-edge',
     RIGHT_EDGE: 'right-edge',
-    BOTTOM_EDGE: 'bottom-edge',
-
-    // Entire body:
-    BODY: 'body',
-
-    // Cells:
-    CELL: 'cell'
+    BOTTOM_EDGE: 'bottom-edge'
 }
-
-export const TRANSLATABLE_PROPS = [
-    'topLeft'
-]
 
 export const REORDER_ACTIONS = {
     BRING_TO_FRONT: "bringToFront",
@@ -111,31 +107,6 @@ export const SHARED_SHAPE_PROPS = [
     TEXT_ALIGN_V_PROP
 ]; // todo textPadding
 
-
-// switch(handle) {
-//     case HANDLES.TOP_LEFT:
-//         break;
-//     case HANDLES.TOP_CENTER:
-//         break;
-//     case HANDLES.TOP_RIGHT:
-//         break;
-//     case HANDLES.CENTER_LEFT:
-//         break;
-//     case HANDLES.CENTER_CENTER:
-//         break;
-//     case HANDLES.CENTER_RIGHT:
-//         break;
-//     case HANDLES.BOTTOM_LEFT:
-//         break;
-//     case HANDLES.BOTTOM_CENTER:
-//         break;
-//     case HANDLES.BOTTOM_RIGHT:
-//         break;
-//     default:
-//         throw new Error(`Invalid handle: ${handle}`);
-// }
-
-
 export const BRUSH_TYPES = {
     SQUARE: 'square',
     CIRCLE: 'circle',
@@ -151,3 +122,12 @@ export const BRUSHES = {
     'circle-10': { type: BRUSH_TYPES.CIRCLE, size: 10 },
 }
 
+
+// Drawing
+
+export const SHAPE_OUTLINE_WIDTH = 2;
+export const SHAPE_BOX_PADDING = 2;
+export const SHAPE_DASHED_OUTLINE_LENGTH = 5;
+export const HANDLE_CORNER_SIZE = 8;
+export const HANDLE_CORNER_RADIUS = 2;
+export const HANDLE_CELL_RADIUS = 5;

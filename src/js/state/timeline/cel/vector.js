@@ -3,7 +3,7 @@ import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {deserializeShape} from "../../../geometry/shapes/deserialize.js";
 import {transformValues} from "../../../utils/objects.js";
-import {REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
+import {HANDLE_TYPES, REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
 
 /**
  * Vector Cel
@@ -185,7 +185,17 @@ export default class VectorCel {
         }
     }
 
-    checkHitbox(cell, forShapeIds) {
+    /**
+     * Retrieves all the shapes that are above a given shape
+     * @param {string} shapeId - ID of the shape
+     * @returns {string[]} - Array of shape ids
+     */
+    getShapeIdsAbove(shapeId) {
+        const index = this.shapesOrder.indexOf(shapeId);
+        return index === -1 ? [] : this.shapesOrder.slice(index + 1);
+    }
+
+    testShapeHitboxes(cell, forShapeIds) {
         // Find first shape that has a handle at that cell, iterating in reverse order (top shape is checked first)
         for (let i = this.shapesOrder.length - 1; i >= 0; i--) {
             const shapeId = this.shapesOrder[i]
@@ -193,13 +203,14 @@ export default class VectorCel {
 
             if (forShapeIds !== undefined && !forShapeIds.includes(shapeId)) continue;
 
-            if (shape.checkHitbox(cell)) return shape;
+            const bodyHandle = shape.handles.body.at(0);
+            if (bodyHandle && bodyHandle.matches({ cell })) return bodyHandle;
         }
 
         return null;
     }
 
-    checkMarquee(cellArea) {
+    testMarquee(cellArea) {
         // Find all shapes that fit in the cellArea bounds
         const shapes = [];
         this.shapes().forEach(shape => {

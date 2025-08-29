@@ -3,6 +3,9 @@ import CellArea from "../../geometry/cell_area.js";
 import {arraysEqual} from "../../utils/arrays.js";
 import {resizeBoundingBox} from "../../geometry/shapes/algorithms/box_sizing.js";
 import VertexArea from "../../geometry/vertex_area.js";
+import {EDGE_SIDES, HANDLE_TYPES, VERTEX_CORNERS} from "../../geometry/shapes/constants.js";
+import {BodyHandle, EdgeHandle, HandleCollection, VertexHandle} from "../../geometry/shapes/handle.js";
+import BoxShape from "../../geometry/shapes/box_shape.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -12,13 +15,37 @@ import VertexArea from "../../geometry/vertex_area.js";
  *
  * This also handles resizing when multiple shapes are selected.
  */
-export default class ShapeSelection {
+export default class ShapeSelector {
 
     get boundingArea() {
         if (state.numSelectedShapes() === 1) return state.selectedShapes()[0].boundingArea;
 
         return CellArea.mergeCellAreas(state.selectedShapes().map(shape => shape.boundingArea))
     }
+
+    /**
+     *
+     * @returns {HandleCollection}
+     */
+    get handles() {
+        const boundingArea = this.boundingArea;
+
+        return new HandleCollection([
+            ...BoxShape.vertexHandles(null, boundingArea),
+            ...BoxShape.edgeHandles(null, boundingArea),
+            ...state.selectedShapes().map(shape => shape.handles.body.at(0))
+        ])
+    }
+
+    // get handles() {
+    //     const boundingArea = this.boundingArea;
+    //
+    //     return new HandleCollection([
+    //         ...BoxShape.vertexHandles(null, boundingArea),
+    //         ...BoxShape.edgeHandles(null, boundingArea),
+    //     ])
+    // }
+
 
     get boundingVertexArea() {
         const area = this.boundingArea;
@@ -114,13 +141,21 @@ export default class ShapeSelection {
         this._oldBounds = this.boundingVertexArea;
         state.updateSelectedShapes(shape => shape.beginResize());
     }
-    resize(handleType, roundedCell) {
+    resize(handle, cell, roundedCell) {
         this._resizeOccurred = true;
 
         if (state.numSelectedShapes() === 0) return;
 
-        const newBounds = resizeBoundingBox(this._oldBounds, handleType, roundedCell)
-        state.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds));
+        switch (handle.type) {
+            case HANDLE_TYPES.VERTEX:
+            case HANDLE_TYPES.EDGE:
+                const newBounds = resizeBoundingBox(this._oldBounds, handle, roundedCell)
+                state.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds));
+                break;
+            case HANDLE_TYPES.CELL:
+                state.updateSelectedShapes(shape => shape.dragCellHandle(handle, cell))
+                break;
+        }
     }
 
     /**

@@ -1,4 +1,4 @@
-import {HANDLES} from "../constants.js";
+import {EDGE_SIDES, HANDLE_TYPES, VERTEX_CORNERS} from "../constants.js";
 import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
 import VertexArea from "../../vertex_area.js";
@@ -17,7 +17,7 @@ import VertexArea from "../../vertex_area.js";
  * proportional transforms.
  *
  * @param {VertexArea} oldBox - original CellArea before box resizing
- * @param handle - the box handle being dragged
+ * @param {VertexHandle|EdgeHandle|BodyHandle|CellHandle} handle - the box handle being dragged
  * @param {Cell} newPosition - New position of the dragged handle
  * @returns {VertexArea} // todo vertex this could be a VertexArea?
  */
@@ -31,44 +31,52 @@ export function resizeBoundingBox(oldBox, handle, newPosition) {
     // this direction.
     let anchorPushback = { row: 0, col: 0 };
 
-    switch(handle) {
-        case HANDLES.TOP_LEFT_CORNER:
-            anchor = oldBox.bottomRight;
-            anchorPushback = { row: -1, col: -1 }
+    switch(handle.type) {
+        case HANDLE_TYPES.VERTEX:
+            switch(handle.corner) {
+                case VERTEX_CORNERS.TOP_LEFT_CORNER:
+                    anchor = oldBox.bottomRight;
+                    anchorPushback = { row: -1, col: -1 }
+                    break;
+                case VERTEX_CORNERS.TOP_RIGHT_CORNER:
+                    anchor = oldBox.bottomLeft;
+                    anchorPushback = { row: -1, col: 1 }
+                    break;
+                case VERTEX_CORNERS.BOTTOM_LEFT_CORNER:
+                    anchor = oldBox.topRight;
+                    anchorPushback = { row: 1, col: -1 }
+                    break;
+                case VERTEX_CORNERS.BOTTOM_RIGHT_CORNER:
+                    anchor = oldBox.topLeft;
+                    anchorPushback = { row: 1, col: 1 }
+                    break;
+            }
             break;
-        case HANDLES.TOP_RIGHT_CORNER:
-            anchor = oldBox.bottomLeft;
-            anchorPushback = { row: -1, col: 1 }
-            break;
-        case HANDLES.BOTTOM_LEFT_CORNER:
-            anchor = oldBox.topRight;
-            anchorPushback = { row: 1, col: -1 }
-            break;
-        case HANDLES.BOTTOM_RIGHT_CORNER:
-            anchor = oldBox.topLeft;
-            anchorPushback = { row: 1, col: 1 }
-            break;
-        case HANDLES.TOP_EDGE:
-            // Setting anchor to bottomLeft. It could be any point on the bottom row, but we pick bottomLeft and
-            // then lock the newPosition to the right side so the box width stays constant.
-            anchor = oldBox.bottomLeft;
-            anchorPushback = { row: -1, col: 0 }
-            newPosition.col = oldBox.topRight.col; // Lock to right edge
-            break;
-        case HANDLES.LEFT_EDGE:
-            anchor = oldBox.topRight;
-            anchorPushback = { row: 0, col: -1 }
-            newPosition.row = oldBox.bottomLeft.row; // Lock to bottom edge
-            break;
-        case HANDLES.RIGHT_EDGE:
-            anchor = oldBox.topLeft;
-            anchorPushback = { row: 0, col: 1 }
-            newPosition.row = oldBox.bottomRight.row; // Lock to bottom edge
-            break;
-        case HANDLES.BOTTOM_EDGE:
-            anchor = oldBox.topLeft;
-            anchorPushback = { row: 1, col: 0 }
-            newPosition.col = oldBox.bottomRight.col; // Lock to right edge
+        case HANDLE_TYPES.EDGE:
+            switch(handle.side) {
+                case EDGE_SIDES.TOP_EDGE:
+                    // Setting anchor to bottomLeft. It could be any point on the bottom row, but we pick bottomLeft and
+                    // then lock the newPosition to the right side so the box width stays constant.
+                    anchor = oldBox.bottomLeft;
+                    anchorPushback = { row: -1, col: 0 }
+                    newPosition.col = oldBox.topRight.col; // Lock to right edge
+                    break;
+                case EDGE_SIDES.LEFT_EDGE:
+                    anchor = oldBox.topRight;
+                    anchorPushback = { row: 0, col: -1 }
+                    newPosition.row = oldBox.bottomLeft.row; // Lock to bottom edge
+                    break;
+                case EDGE_SIDES.RIGHT_EDGE:
+                    anchor = oldBox.topLeft;
+                    anchorPushback = { row: 0, col: 1 }
+                    newPosition.row = oldBox.bottomRight.row; // Lock to bottom edge
+                    break;
+                case EDGE_SIDES.BOTTOM_EDGE:
+                    anchor = oldBox.topLeft;
+                    anchorPushback = { row: 1, col: 0 }
+                    newPosition.col = oldBox.bottomRight.col; // Lock to right edge
+                    break;
+            }
             break;
         default:
             throw new Error(`Invalid handle: ${handle}`);

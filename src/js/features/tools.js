@@ -668,6 +668,7 @@ function setupOrderMenu() {
         dropdown: true,
         dropdownBtnIcon: 'tools.shapes.order',
         dropdownBtnTooltip: 'tools.shapes.order',
+        closeDropdownOnSelect: false,
         items: Object.values(REORDER_ACTIONS).map(action => {
             const actionId = `tools.shapes.${action}`;
             return {

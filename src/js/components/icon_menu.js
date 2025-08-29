@@ -6,6 +6,7 @@ const DEFAULT_OPTIONS = {
     items: [],
     visible: () => true,
     disabled: () => false,
+    closeDropdownOnSelect: true,
 }
 
 /**
@@ -36,6 +37,8 @@ export default class IconMenu {
      *   match whatever value is selected (based on item icon). If defined, button icon will be set to a static value
      * @param {string} [options.dropdownBtnTooltip] - (Only applicable if dropdown:true) If undefined, button will not
      *   have a tooltip. If defined, button tooltip will be set to a static value.
+     * @param {boolean} [options.closeDropdownOnSelect=true] - (Only applicable if dropdown:true) If true, dropdown
+     *   menu will be closed after a selection is made.
      * @param {() => Object} [options.getValue] - Callback to get the current value of the select. If provided,
      *   the current selected option will be highlighted. If no callback is provided, items will just function like buttons
      * @param {() => boolean} [options.visible] - Callback that controls whether the entire menu is visible. Default: always visible
@@ -141,7 +144,7 @@ export default class IconMenu {
             const $option = $(evt.currentTarget);
             if ($option.hasClass('disabled')) return; // have to manually abort; pointer events are allowed so tooltips work when disabled
 
-            this._toggleDropdown(false);
+            if (this.options.closeDropdownOnSelect) this._toggleDropdown(false);
             this.options.onSelect($option.data('value'));
             this.refresh();
         });

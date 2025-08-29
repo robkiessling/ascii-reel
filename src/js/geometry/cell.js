@@ -59,6 +59,12 @@ export default class Cell extends PixelRect {
         return this;
     }
 
+    translateTo(cell) {
+        this.row = cell.row;
+        this.col = cell.col;
+        return this;
+    }
+
     // Note: Diagonal is considered adjacent
     isAdjacentTo(cell) {
         return (cell.row !== this.row || cell.col !== this.col) && // Has to be a different cell

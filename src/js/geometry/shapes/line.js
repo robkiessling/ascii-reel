@@ -1,9 +1,10 @@
-import {CHAR_PROP, COLOR_PROP, HANDLES, SHAPE_TYPES, STROKE_PROPS, TRANSLATABLE_PROPS} from "./constants.js";
+import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_PROPS} from "./constants.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
 import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import CellCache from "./cell_cache.js";
+import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 
 
 export default class Line extends Shape {
@@ -63,12 +64,22 @@ export default class Line extends Shape {
             hitbox.addCell(cell); // use absolute position for hitbox
         })
 
+        const handles = new HandleCollection([
+            ...this.props.path.map((cell, i) => new CellHandle(this, cell, i)),
+            new BodyHandle(this, cell => hitbox.hasCell(cell))
+        ])
+
         this._cache = {
             boundingArea,
             origin: boundingArea.topLeft,
             glyphs,
-            hitbox: cell => hitbox.hasCell(cell)
+            handles
         }
+    }
+
+    dragCellHandle(handle, position, options) {
+        this.props.path[handle.pointIndex].translateTo(position);
+        this._clearCache();
     }
 
     translate(rowOffset, colOffset) {

@@ -1,8 +1,7 @@
 import { nanoid } from 'nanoid'
 import {create2dArray} from "../../utils/arrays.js";
-import {CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP, TRANSLATABLE_PROPS} from "./constants.js";
+import {CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP} from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
-import Cell from "../cell.js";
 
 export default class Shape {
     constructor(id, type, props = {}) {
@@ -67,6 +66,10 @@ export default class Shape {
         this._resizeSnapshot = undefined;
     }
 
+    dragCellHandle(handle, position, options) {
+        throw new Error(`dragCellHandle must be implemented by subclass`)
+    }
+
 
     _cacheGeometry() {
         throw new Error("_cacheGeometry must be implemented by subclass");
@@ -76,9 +79,20 @@ export default class Shape {
         this._cache = {};
     }
 
+    /**
+     * @returns {CellArea}
+     */
     get boundingArea() {
         if (this._cache.boundingArea === undefined) this._cacheGeometry();
         return this._cache.boundingArea;
+    }
+
+    /**
+     * @returns {HandleCollection}
+     */
+    get handles() {
+        if (this._cache.handles === undefined) this._cacheGeometry();
+        return this._cache.handles;
     }
 
     // Returns { glyphs: [[]], origin: Cell }
@@ -88,15 +102,6 @@ export default class Shape {
             glyphs: this._cache.glyphs,
             origin: this._cache.origin
         };
-    }
-
-    /**
-     * Hitbox is the area where if clicked on the shape will be selected. This varies from shape to shape; e.g. for
-     * rectangles if the rectangle is not filled the hitbox is just the outer area.
-     */
-    checkHitbox(cell) {
-        if (this._cache.hitbox === undefined) this._cacheGeometry();
-        return this._cache.hitbox(cell);
     }
 
     fitsInside(cellArea) {
@@ -136,12 +141,7 @@ export default class Shape {
         // TODO
     }
     translate(rowOffset, colOffset) {
-        TRANSLATABLE_PROPS.forEach(prop => {
-            if (this.props[prop] !== undefined) {
-                this.props[prop].translate(rowOffset, colOffset);
-            }
-        })
-        this._clearCache();
+        throw new Error("translate must be implemented by subclass");
     }
 
     updateColorIndexes(callback) {

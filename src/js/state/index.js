@@ -29,7 +29,7 @@ export {
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph,
     getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape, deleteCurrentCelShape,
     reorderCurrentCelShapes, canReorderCurrentCelShapes,
-    checkCurrentCelHitbox, checkCurrentCelMarquee,
+    getCurrentCelShapeIdsAbove, testCurrentCelShapeHitboxes, testCurrentCelMarquee,
     charInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, colorSwap, hasCharContent

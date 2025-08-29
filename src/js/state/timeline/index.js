@@ -244,11 +244,14 @@ export function canReorderCurrentCelShapes(shapeIds, action) {
     return celController.canReorderCelShapes(currentCel(), shapeIds, action);
 }
 
-export function checkCurrentCelHitbox(cell, forShapeIds) {
-    return currentCel().checkHitbox(cell, forShapeIds);
+export function getCurrentCelShapeIdsAbove(shapeId) {
+    return currentCel().getShapeIdsAbove(shapeId);
 }
-export function checkCurrentCelMarquee(cellArea) {
-    return currentCel().checkMarquee(cellArea)
+export function testCurrentCelShapeHitboxes(cell, forShapeIds) {
+    return currentCel().testShapeHitboxes(cell, forShapeIds);
+}
+export function testCurrentCelMarquee(cellArea) {
+    return currentCel().testMarquee(cellArea)
 }
 
 /**
