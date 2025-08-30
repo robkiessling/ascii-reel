@@ -18,6 +18,13 @@ const ICON_DATA = {
     'tools.shapes.lineStroke.elbow-arrow-unicode': { type: PRE, content: '┌───▶\n│    \n│    ' },
     'tools.shapes.lineStroke.elbow-line-monochar': { type: PRE, content: 'AAAAA\nA    \nA    ' },
 
+    'tools.shapes.lineStroke.elbow-line-ascii-vh': { type: PRE, content: '+----\n|    \n|    ' },
+    'tools.shapes.lineStroke.elbow-line-ascii-hv': { type: PRE, content: '    |\n    |\n+----' },
+    'tools.shapes.lineStroke.elbow-line-unicode-vh': { type: PRE, content: '┌────\n│    \n│    ' },
+    'tools.shapes.lineStroke.elbow-line-unicode-hv': { type: PRE, content: '    │\n    │\n────┘' },
+    'tools.shapes.lineStroke.elbow-line-monochar-vh': { type: PRE, content: 'AAAAA\nA    \nA    ' },
+    'tools.shapes.lineStroke.elbow-line-monochar-hv': { type: PRE, content: '    A\n    A\nAAAAA' },
+
     'tools.shapes.rectStroke.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
     'tools.shapes.rectStroke.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
     'tools.shapes.rectStroke.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },

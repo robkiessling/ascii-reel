@@ -58,11 +58,12 @@ export const STROKE_OPTIONS = {
     [SHAPE_TYPES.LINE]: {
         STRAIGHT_ADAPTIVE: 'straight-adaptive',
         STRAIGHT_MONOCHAR: 'straight-monochar',
-        ELBOW_LINE_ASCII: 'elbow-line-ascii',
-        ELBOW_ARROW_ASCII: 'elbow-arrow-ascii',
-        ELBOW_LINE_UNICODE: 'elbow-line-unicode',
-        ELBOW_ARROW_UNICODE: 'elbow-arrow-unicode',
-        ELBOW_LINE_MONOCHAR: 'elbow-line-monochar',
+        ELBOW_LINE_ASCII_VH: 'elbow-line-ascii-vh',
+        ELBOW_LINE_ASCII_HV: 'elbow-line-ascii-hv',
+        ELBOW_LINE_UNICODE_VH: 'elbow-line-unicode-vh',
+        ELBOW_LINE_UNICODE_HV: 'elbow-line-unicode-hv',
+        ELBOW_LINE_MONOCHAR_VH: 'elbow-line-monochar-vh',
+        ELBOW_LINE_MONOCHAR_HV: 'elbow-line-monochar-hv',
     },
     [SHAPE_TYPES.ELLIPSE]: {
         OUTLINE_MONOCHAR: 'outline-monochar',
@@ -76,6 +77,14 @@ export const FILL_OPTIONS = {
     EMPTY: 'empty',
     WHITESPACE: 'whitespace',
     MONOCHAR: 'monochar',
+}
+
+export const ARROWHEAD_PROP = 'arrowhead';
+export const ARROWHEAD_OPTIONS = {
+    NONE: 'none',
+    START: 'start',
+    END: 'end',
+    START_AND_END: 'startAndEnd'
 }
 
 export const CHAR_PROP = 'char';

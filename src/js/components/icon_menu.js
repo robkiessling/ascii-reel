@@ -6,6 +6,7 @@ const DEFAULT_OPTIONS = {
     items: [],
     visible: () => true,
     disabled: () => false,
+    onRefresh: (/* iconMenu */) => {},
     closeDropdownOnSelect: true,
 }
 
@@ -31,7 +32,8 @@ export default class IconMenu {
      *   - `value` will be the value returned by onSelect
      *   - `tooltip`/`icon` will be used for icon/tooltip constant lookups.
      *   - `disabled` (optional) callback to determine if individual item is disabled
-     * @param {(Object) => void} options.onSelect - Callback when menu item is selected
+     * @param {(string) => void} options.onSelect - Callback when menu item is selected
+     * @param {(IconMenu) => void} options.onRefresh - Callback when menu is refreshed
      * @param {boolean} [options.dropdown=false] - If false, renders as a menu bar. If true, renders as dropdown
      * @param {string} [options.dropdownBtnIcon] - (Only applicable if dropdown:true) If undefined, button icon will
      *   match whatever value is selected (based on item icon). If defined, button icon will be set to a static value
@@ -65,6 +67,11 @@ export default class IconMenu {
 
     refresh() {
         this.options.dropdown ? this._refreshDropdown() : this._refreshBar();
+        this.options.onRefresh(this);
+    }
+
+    isVisible() {
+        return !!this.options.visible();
     }
 
 
@@ -98,7 +105,7 @@ export default class IconMenu {
     }
 
     _refreshBar() {
-        let visible = !!this.options.visible();
+        let visible = this.isVisible();
         this.$container.toggle(visible);
         this.$container.toggleClass('disabled', !!this.options.disabled())
 
@@ -173,7 +180,7 @@ export default class IconMenu {
     }
 
     _refreshDropdown() {
-        let visible = !!this.options.visible();
+        let visible = this.isVisible();
         this.$container.toggle(visible);
         this.$container.toggleClass('disabled', !!this.options.disabled())
         this._toggleDocumentListener(false)

@@ -1,10 +1,11 @@
-import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_PROPS} from "./constants.js";
+import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_OPTIONS, STROKE_PROPS} from "./constants.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
 import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import CellCache from "./cell_cache.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
+import {elbowPath} from "./algorithms/line_elbow.js";
 
 
 export default class Line extends Shape {
@@ -57,12 +58,29 @@ export default class Line extends Shape {
 
         const stroke = this.props[STROKE_PROPS[SHAPE_TYPES.LINE]]
 
-        // monochar only uses first and last path point
-        this.props.path.at(0).lineTo(this.props.path.at(-1)).forEach(cell => {
-            const relativeCell = cell.relativeTo(boundingArea.topLeft);
-            this._setGlyph(glyphs, relativeCell, this.props[CHAR_PROP], this.props[COLOR_PROP]);
-            hitbox.addCell(cell); // use absolute position for hitbox
-        })
+        switch(stroke) {
+            case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
+                this.props.path.at(0).lineTo(this.props.path.at(-1)).forEach(cell => {
+                    const relativeCell = cell.relativeTo(boundingArea.topLeft);
+                    this._setGlyph(glyphs, relativeCell, this.props[CHAR_PROP], this.props[COLOR_PROP]);
+                    hitbox.addCell(cell); // use absolute position for hitbox
+                });
+                break;
+            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_VH:
+            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_VH:
+            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_MONOCHAR_VH:
+            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_HV:
+            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_HV:
+            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_MONOCHAR_HV:
+                elbowPath(this.props.path.at(0), this.props.path.at(-1), stroke, this.props[CHAR_PROP], (cell, char) => {
+                    const relativeCell = cell.relativeTo(boundingArea.topLeft);
+                    this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
+                    hitbox.addCell(cell); // use absolute position for hitbox
+                })
+                break;
+            default:
+                throw new Error(`Invalid stroke: ${stroke}`)
+        }
 
         const handles = new HandleCollection([
             ...this.props.path.map((cell, i) => new CellHandle(this, cell, i)),

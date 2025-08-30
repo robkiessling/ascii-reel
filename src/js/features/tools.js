@@ -526,8 +526,8 @@ function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
     // Style dropdowns for each shape type
-    const $styleActions = $('#shape-style').find('.group-actions')
-    Object.values(SHAPE_TYPES).forEach(shapeType => setupStyleMenu($('<div>').appendTo($styleActions), shapeType));
+    const $styleActions = $('#shape-stroke-menu-group').find('.group-actions')
+    Object.values(SHAPE_TYPES).forEach(shapeType => setupStrokeMenu($('<div>').appendTo($styleActions), shapeType));
 
     setupFillMenu();
 
@@ -561,7 +561,7 @@ function setupShapeProperties() {
     );
 }
 
-function setupStyleMenu($menu, shapeType) {
+function setupStrokeMenu($menu, shapeType) {
     const strokeProp = STROKE_PROPS[shapeType];
 
     const styleMenu = new IconMenu($menu, {
@@ -590,6 +590,8 @@ function setupStyleMenu($menu, shapeType) {
 }
 
 function setupTextAlignMenu($menu, prop, options) {
+    const $menuGroup = $('#shape-text-align');
+
     const menu = new IconMenu($menu, {
         dropdown: true,
         dropdownBtnTooltip: `tools.shapes.${prop}`,
@@ -607,6 +609,7 @@ function setupTextAlignMenu($menu, prop, options) {
         },
         getValue: () => state.selectedShapeProps()[prop][0],
         onSelect: newValue => vectorSelection.updateSelectedShapes(shape => shape.updateProp(prop, newValue)),
+        onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
             placement: 'right'
         }
@@ -630,8 +633,8 @@ function selectedShapesUseCharPicker() {
 }
 
 function setupFillMenu() {
-    const $propGroup = $('#shape-fill');
-    const $menu = $('<div>').appendTo($propGroup.find('.group-actions'));
+    const $menuGroup = $('#shape-fill-menu-group');
+    const $menu = $('<div>').appendTo($menuGroup.find('.group-actions'));
 
     const menu = new IconMenu($menu, {
         dropdown: true,
@@ -646,6 +649,7 @@ function setupFillMenu() {
         visible: () => state.selectedShapeProps()[FILL_PROP].length,
         getValue: () => state.selectedShapeProps()[FILL_PROP][0],
         onSelect: newValue => vectorSelection.updateSelectedShapes(shape => shape.updateProp(FILL_PROP, newValue)),
+        onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
             placement: 'right'
         }
@@ -692,9 +696,10 @@ function refreshShapeProperties() {
     $shapeProperties.toggle(isVisible);
 
     if (isVisible) {
-        shapeSubMenus.forEach(subMenu => subMenu.refresh());
+        shapeSubMenus.forEach(subMenu => subMenu.refresh()); // Also handles showing/hiding menu icon thru onRefresh callback
 
-        // Note: shape char/color pickers are handled by primary refreshCharPicker/refreshColorPicker
+        $shapeProperties.find('#shape-color-menu-group').toggle(state.isMultiColored())
+        $shapeProperties.find('#shape-char-menu-group').toggle(selectedShapesUseCharPicker())
 
         $shapeProperties.find('.action-button').each((i, element) => {
             const $element = $(element);
@@ -702,10 +707,6 @@ function refreshShapeProperties() {
             $element.html(getIconHTML(actionId))
             $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
         });
-
-        $shapeProperties.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
-
-        // todo iterate thru property-groups, and check if they have any visible actions
     } else {
         shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
         // todo hide tooltips for other stuff like shape char picker
@@ -958,8 +959,6 @@ function refreshCharPicker() {
     selectChar(char, false);
 
     $charPicker.toggleClass('animated-border', isQuickSwapEnabled());
-
-    $('#shape-char-group').toggle(selectedShapesUseCharPicker())
 }
 
 export function isCharPickerOpen() {
