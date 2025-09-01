@@ -5,9 +5,9 @@ import CellArea from "../cell_area.js";
 import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import CellCache from "./cell_cache.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
-import {elbowPath} from "./algorithms/line_elbow.js";
 import {forEachAdjPair} from "../../utils/arrays.js";
 import BoxShape from "./box_shape.js";
+import {straightAsciiLine} from "./algorithms/ascii_line.js";
 
 
 export default class Line extends Shape {
@@ -83,28 +83,51 @@ export default class Line extends Shape {
 
         const stroke = this.props[STROKE_PROPS[SHAPE_TYPES.LINE]]
 
+        const setGlyph = (absCell, char, color) => {
+            const relativeCell = absCell.relativeTo(boundingArea.topLeft);
+            this._setGlyph(glyphs, relativeCell, char, color);
+            hitbox.addCell(absCell);
+        }
+
         switch(stroke) {
             case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
                 forEachAdjPair(this.props.path, (a, b) => {
-                    a.lineTo(b).forEach(cell => {
+                    a.lineTo(b).forEach(cell => setGlyph(cell, this.props[CHAR_PROP], this.props[COLOR_PROP]))
+                })
+                break;
+            case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
+                const cornerChar = '+';
+                setGlyph(this.props.path.at(0), cornerChar, this.props[COLOR_PROP])
+                forEachAdjPair(this.props.path, (a, b) => {
+                    straightAsciiLine(a, b, (cell, char) => {
                         const relativeCell = cell.relativeTo(boundingArea.topLeft);
-                        this._setGlyph(glyphs, relativeCell, this.props[CHAR_PROP], this.props[COLOR_PROP]);
+                        this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
                         hitbox.addCell(cell); // use absolute position for hitbox
-                    });
+                    })
+                    setGlyph(b, cornerChar, this.props[COLOR_PROP])
                 })
                 break;
-            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_VH:
-            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_VH:
-            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_MONOCHAR_VH:
-            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_HV:
-            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_HV:
-            case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_MONOCHAR_HV:
-                elbowPath(this.props.path.at(0), this.props.path.at(-1), stroke, this.props[CHAR_PROP], (cell, char) => {
-                    const relativeCell = cell.relativeTo(boundingArea.topLeft);
-                    this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
-                    hitbox.addCell(cell); // use absolute position for hitbox
-                })
-                break;
+            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
+            //     forEachAdjPair(this.props.path, (a, b, i) => {
+            //         straightAsciiLine(a, b, (cell, char) => {
+            //             const relativeCell = cell.relativeTo(boundingArea.topLeft);
+            //             this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
+            //             hitbox.addCell(cell); // use absolute position for hitbox
+            //         }, i === 0, true)
+            //     })
+            //     break;
+            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_VH:
+            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_VH:
+            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_MONOCHAR_VH:
+            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_HV:
+            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_HV:
+            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_MONOCHAR_HV:
+            //     elbowPath(this.props.path.at(0), this.props.path.at(-1), stroke, this.props[CHAR_PROP], (cell, char) => {
+            //         const relativeCell = cell.relativeTo(boundingArea.topLeft);
+            //         this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
+            //         hitbox.addCell(cell); // use absolute position for hitbox
+            //     })
+            //     break;
             default:
                 throw new Error(`Invalid stroke: ${stroke}`)
         }

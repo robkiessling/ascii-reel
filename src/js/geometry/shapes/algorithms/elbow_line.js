@@ -1,3 +1,7 @@
+/**
+ * Note: We don't draw elbow lines anymore, so this file is not in use
+ */
+
 import {SHAPE_TYPES, STROKE_OPTIONS} from "../constants.js";
 import Cell from "../../cell.js";
 import {isObject} from "../../../utils/objects.js";

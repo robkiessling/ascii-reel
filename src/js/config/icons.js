@@ -12,19 +12,6 @@ const ICON_DATA = {
     'tools.shapes.lineStroke.straight-adaptive': { type: PRE, content: "  _,-\n-'   " },
     'tools.shapes.lineStroke.straight-monochar': { type: PRE, content: '    AA\n  AA  \nAA    ' },
 
-    'tools.shapes.lineStroke.elbow-line-ascii': { type: PRE, content: '+----\n|    \n|    ' },
-    'tools.shapes.lineStroke.elbow-arrow-ascii': { type: PRE, content: '+--->\n|    \n|    ' },
-    'tools.shapes.lineStroke.elbow-line-unicode': { type: PRE, content: '┌────\n│    \n│    ' },
-    'tools.shapes.lineStroke.elbow-arrow-unicode': { type: PRE, content: '┌───▶\n│    \n│    ' },
-    'tools.shapes.lineStroke.elbow-line-monochar': { type: PRE, content: 'AAAAA\nA    \nA    ' },
-
-    'tools.shapes.lineStroke.elbow-line-ascii-vh': { type: PRE, content: '+----\n|    \n|    ' },
-    'tools.shapes.lineStroke.elbow-line-ascii-hv': { type: PRE, content: '    |\n    |\n+----' },
-    'tools.shapes.lineStroke.elbow-line-unicode-vh': { type: PRE, content: '┌────\n│    \n│    ' },
-    'tools.shapes.lineStroke.elbow-line-unicode-hv': { type: PRE, content: '    │\n    │\n────┘' },
-    'tools.shapes.lineStroke.elbow-line-monochar-vh': { type: PRE, content: 'AAAAA\nA    \nA    ' },
-    'tools.shapes.lineStroke.elbow-line-monochar-hv': { type: PRE, content: '    A\n    A\nAAAAA' },
-
     'tools.shapes.rectStroke.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
     'tools.shapes.rectStroke.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
     'tools.shapes.rectStroke.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },
