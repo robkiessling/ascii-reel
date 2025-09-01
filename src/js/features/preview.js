@@ -11,6 +11,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {STRINGS} from "../config/strings.js";
 import {getDynamicColor} from "../config/colors.js";
 import Minimizer from "../components/minimizer.js";
+import {MOUSE} from "../io/mouse.js";
 
 const MAX_FPS = 30;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
@@ -31,12 +32,12 @@ export function init() {
             eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: zoomY })
         },
         onMouseDown: ({currentPoint, mouseDownButton}) => {
-            if (mouseDownButton === 1 || mouseDownButton === 2) {
+            if (mouseDownButton === MOUSE.LEFT || mouseDownButton === MOUSE.MIDDLE) {
                 eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target: currentPoint })
             }
         },
         onMouseMove: ({currentPoint, mouseDownButton, isDragging}) => {
-            if (isDragging && (mouseDownButton === 1 || mouseDownButton === 2)) {
+            if (isDragging && (mouseDownButton === MOUSE.LEFT || mouseDownButton === MOUSE.MIDDLE)) {
                 eventBus.emit(EVENTS.CANVAS.PAN_TO_TARGET, { target: currentPoint })
             }
         }

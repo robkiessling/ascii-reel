@@ -775,7 +775,7 @@ export default class CanvasControl {
 
                 isDragging = true;
                 originalPoint = this.screenToWorld(evt.offsetX, evt.offsetY);
-                mouseDownButton = evt.which;
+                mouseDownButton = evt.button;
 
                 if (this.options.onMouseDown) runCallback(this.options.onMouseDown, evt, true)
             })
@@ -785,7 +785,8 @@ export default class CanvasControl {
             }
 
             $(document).on('mouseup', evt => {
-                if (evt.which !== mouseDownButton) return; // Ignore multiple mouse buttons being pressed at the same time
+                // Ignore multiple mouse buttons being pressed at the same time
+                if (evt.button !== mouseDownButton) return;
 
                 if (this.options.onMouseUp) runCallback(this.options.onMouseUp, evt, true)
 

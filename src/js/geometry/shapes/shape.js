@@ -32,14 +32,67 @@ export default class Shape {
         this._clearCache();
     }
 
-    // Initial draw always deals with Cells, not vertexes.
-    handleInitialDraw(cell, modifiers) {
+    // ------------------------------------------------------ Initial draw
+
+    /**
+     * Called during initial shape drawing on any mousedown. For most shapes, this is only
+     * called once to place the starting anchor. But some shapes, such as multi-point lines,
+     * will have this called multiple times.
+     * @param {Cell} cell - Location of mousedown
+     */
+    handleDrawMousedown(cell) {
         if (!this._initialDraw) {
             this._initialDraw = {
-                start: cell.clone()
+                anchor: cell.clone(), // Original mousedown cell (unchanging)
+                hover: cell.clone(), // Represents current cell being hovered over (will rapidly update)
+                path: [cell.clone()], // If multiple mousedowns occur, stores the path they create
+                multiPointDrawing: false // Whether this drawing uses multiple points (true) or just 2 (false)
             }
         }
-        this._initialDraw.end = cell.clone();
+
+        // Add further mousedown cells to path (if they are different than previous path cell)
+        if (this._initialDraw.multiPointDrawing && !cell.equals(this._initialDraw.path.at(-1))) {
+            this._initialDraw.path.push(cell.clone());
+        }
+
+        this._convertInitialDrawToProps();
+    }
+
+    /**
+     * Called during initial shape drawing as mouse is moved across canvas.
+     * @param {Cell} cell - mouse hover location
+     * @param modifiers
+     */
+    handleDrawMousemove(cell, modifiers) {
+        this._initialDraw.hover.translateTo(cell);
+
+        this._convertInitialDrawToProps();
+    }
+
+    /**
+     * Called during initial shape drawing on mouseup. Returns a boolean that signals whether the
+     * shape is finished (true) or unfinished (false).
+     * @param {Cell} cell - Mouseup location
+     * @returns {boolean} - True if drawing is finished, false if drawing needs to continue
+     */
+    handleDrawMouseup(cell) {
+        return true; // Default: immediately finish on mouseup
+    }
+
+    /**
+     * Called once initial shape drawing is finished. Most shapes do not need any further processing,
+     * but this can be overridden to add post-processing.
+     */
+    finishDraw() {
+        // Default: Do nothing
+    }
+
+    /**
+     * Converts the initial draw state into a shape's standard props.
+     * @private
+     */
+    _convertInitialDrawToProps() {
+        throw new Error(`_convertInitialDrawToProps must be implemented by subclass`)
     }
 
     // ------------------------------------------------------ Resizing

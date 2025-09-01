@@ -36,6 +36,7 @@ import {defer} from "../utils/utilities.js";
 import IconMenu from "../components/icon_menu.js";
 import Ellipse from "../geometry/shapes/ellipse.js";
 import Line from "../geometry/shapes/line.js";
+import {MOUSE} from "../io/mouse.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -110,27 +111,24 @@ function setupEventBus() {
         prevCell = undefined;
 
         switch(tool) {
-            // case 'select':
-            //     selectShape(cell, mouseEvent, canvasControl);
-            //     break;
             case 'eraser':
-                startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'eraser' })
+                handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'eraser' })
                 break;
             case 'paint-brush':
-                startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'paint-brush' })
+                handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'paint-brush' })
                 break;
             case 'draw-freeform':
                 // todo pass cell pixel, not entire canvasControl
-                startDrawing(PolygonFactory.createFreeform, cell, mouseEvent, { canvas: canvasControl })
+                handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { canvas: canvasControl })
                 break;
             case 'draw-rect':
-                startDrawing(Rect.beginRect, cell, mouseEvent);
+                handleDrawMousedown(Rect.beginRect, cell, mouseEvent);
                 break;
             case 'draw-line':
-                startDrawing(Line.beginLine, cell, mouseEvent);
+                handleDrawMousedown(Line.beginLine, cell, mouseEvent);
                 break;
             case 'draw-ellipse':
-                startDrawing(Ellipse.beginEllipse, cell, mouseEvent);
+                handleDrawMousedown(Ellipse.beginEllipse, cell, mouseEvent);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
@@ -169,9 +167,6 @@ function setupEventBus() {
         const tool = toolForMouseButton(mouseDownButton);
         $canvasContainer.css('cursor', cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl));
 
-        if (!isDragging) return;
-        if (mouseEvent.buttons === 0) return; // Catch firefox mousemove bug where mouseEvent.which is 1 when no buttons pressed
-
         // Keep track of whether the mousemove has reached a new cell (helps with performance, so we can just redraw
         // when a new cell is reached, not on every pixel change)
         const isNewCell = !prevCell || !prevCell.equals(cell);
@@ -179,24 +174,29 @@ function setupEventBus() {
         switch(tool) {
             case 'eraser':
             case 'paint-brush':
-                if (isNewCell) updateDrawing(cell, mouseEvent);
+                if (isDragging && isNewCell) handleDrawMousemove(cell, mouseEvent);
                 break;
             case 'draw-freeform':
                 // Intentionally not checking if isNewCell; we update the char based on pixels not cells
-                updateDrawing(cell, mouseEvent);
+                if (isDragging) handleDrawMousemove(cell, mouseEvent);
+                break;
+            case 'draw-line':
+                // Intentionally not checking if isDragging; mouseup can occur between points on polyline
+                if (isNewCell) handleDrawMousemove(cell, mouseEvent);
                 break;
             case 'draw-rect':
-            case 'draw-line':
             case 'draw-ellipse':
-                if (isNewCell) updateDrawing(cell, mouseEvent);
+                if (isDragging && isNewCell) handleDrawMousemove(cell, mouseEvent);
                 break;
             case 'pan':
-                eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
-                    delta: [originalPoint.x - currentPoint.x, originalPoint.y - currentPoint.y]
-                })
+                if (isDragging) {
+                    eventBus.emit(EVENTS.CANVAS.PAN_DELTA, {
+                        delta: [originalPoint.x - currentPoint.x, originalPoint.y - currentPoint.y]
+                    })
+                }
                 break;
             case 'move-all':
-                if (isNewCell) updateMoveAll(cell, isNewCell);
+                if (isDragging && isNewCell) updateMoveAll(cell, isNewCell);
                 break;
         }
 
@@ -205,6 +205,8 @@ function setupEventBus() {
 
     eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, canvasControl, isDragging, mouseDownButton }) => {
         const tool = toolForMouseButton(mouseDownButton);
+
+        // Draw cursor according to state tool (not toolForMouseButton which will be outdated soon) and as if isDragging was false
         $canvasContainer.css('cursor', cursorStyle(state.getConfig('tool'), false, mouseEvent, cell, canvasControl));
 
         if (!isDragging) return;
@@ -216,10 +218,22 @@ function setupEventBus() {
             case 'draw-rect':
             case 'draw-line':
             case 'draw-ellipse':
-                finishDrawing();
+                handleDrawMouseup(cell, mouseEvent);
                 break;
             case 'move-all':
                 finishMoveAll();
+                break;
+            default:
+                return; // Ignore all other tools
+        }
+    });
+
+    eventBus.on(EVENTS.CANVAS.DBLCLICK, ({ mouseEvent }) => {
+        const tool = toolForMouseButton(mouseEvent.button);
+
+        switch(tool) {
+            case 'draw-line':
+                finishDrawing();
                 break;
             default:
                 return; // Ignore all other tools
@@ -235,7 +249,7 @@ function setupEventBus() {
             case 'draw-ellipse':
                 // Immediately affects the drawing (e.g. for draw-line it could change the right-angle route) without
                 // waiting for another mousemove
-                updateDrawing(prevCell, { shiftKey: shiftKey });
+                handleDrawMousemove(prevCell, { shiftKey: shiftKey });
                 break;
         }
     })
@@ -255,10 +269,10 @@ function setupEventBus() {
 
 function toolForMouseButton(mouseButton) {
     switch(mouseButton) {
-        case 2:
-            return 'pan'; // Middle-click
-        case 3:
-            return 'eraser'; // Right-click
+        case MOUSE.MIDDLE:
+            return 'pan';
+        case MOUSE.RIGHT:
+            return 'eraser';
         default:
             return state.getConfig('tool')
     }
@@ -822,32 +836,44 @@ function getDrawingModifiersTooltip(tool, drawType) {
     return result;
 }
 
-function startDrawing(factory, cell, mouseEvent, options = {}) {
-    vectorSelection.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
+function handleDrawMousedown(factory, cell, mouseEvent, options = {}) {
+    if (!drawingContent) {
+        vectorSelection.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
 
-    drawingContent = factory(cell, $.extend({ // todo rename drawingShape?
-        drawPreset: state.getConfig('drawTypes')[state.getConfig('tool')],
-        colorIndex: state.primaryColorIndex(),
-        char: state.getConfig('primaryChar'),
-        // hoveredCells: hoveredCells, // todo this should be based on line thickness, don't pass hoveredCells fn
-        // canvasDimensions: state.getConfig('dimensions'),
-    }, options));
+        drawingContent = factory(cell, $.extend({ // todo rename drawingShape?
+            drawPreset: state.getConfig('drawTypes')[state.getConfig('tool')],
+            colorIndex: state.primaryColorIndex(),
+            char: state.getConfig('primaryChar'),
+            // hoveredCells: hoveredCells, // todo this should be based on line thickness, don't pass hoveredCells fn
+            // canvasDimensions: state.getConfig('dimensions'),
+        }, options));
+    }
 
-    updateDrawing(cell, mouseEvent);
+    drawingContent.handleDrawMousedown(cell);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
-function updateDrawing(cell, mouseEvent) {
+function handleDrawMousemove(cell, mouseEvent) {
     if (!drawingContent) return;
     if (!cell) return;
 
-    drawingContent.handleInitialDraw(cell, getDrawingModifiers(mouseEvent));
+    drawingContent.handleDrawMousemove(cell, getDrawingModifiers(mouseEvent));
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+}
+
+function handleDrawMouseup(cell, mouseEvent) {
+    if (!drawingContent) return;
+
+    if (!drawingContent.handleDrawMouseup(cell)) return;
+
+    finishDrawing();
 }
 
 function finishDrawing() {
     if (!drawingContent) return;
 
+    drawingContent.finishDraw();
     state.addCurrentCelShape(drawingContent);
 
     drawingContent = null;

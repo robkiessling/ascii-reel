@@ -111,6 +111,14 @@ export function arraysEqual(a, b) {
     return a.every((val, index) => val === b[index]);
 }
 
+// Iterates through each adjacent pair of elements in the array and calls the callback.
+// E.g. for an array with 3 items: A B and C, the callback is called two times: once for (A, B) and once for (B, C).
+export function forEachAdjPair(array, callback) {
+    for (let i = 0; i < array.length - 1; i++) {
+        callback(array[i], array[i + 1], i);
+    }
+}
+
 
 /**
  * Moves specified elements one step forward or backward without disrupting their relative order or swapping over

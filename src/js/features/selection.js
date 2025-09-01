@@ -13,6 +13,7 @@ import {create2dArray, translateGlyphs} from "../utils/arrays.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../utils/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
+import {MOUSE} from "../io/mouse.js";
 
 
 // -------------------------------------------------------------------------------- Main API
@@ -259,7 +260,7 @@ function setupEventBus() {
     let moveStep, hasMoved;
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
-        if (mouseEvent.which !== 1) return; // Only apply to left-click
+        if (mouseEvent.button !== MOUSE.LEFT) return;
 
         const tool = state.getConfig('tool')
 

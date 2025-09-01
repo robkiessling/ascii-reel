@@ -6,6 +6,8 @@ import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import CellCache from "./cell_cache.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import {elbowPath} from "./algorithms/line_elbow.js";
+import {forEachAdjPair} from "../../utils/arrays.js";
+import BoxShape from "./box_shape.js";
 
 
 export default class Line extends Shape {
@@ -35,9 +37,32 @@ export default class Line extends Shape {
         return result;
     }
 
-    handleInitialDraw(cell, modifiers) {
-        super.handleInitialDraw(cell, modifiers);
-        this.props.path = [this._initialDraw.start, this._initialDraw.end];
+    handleDrawMouseup(cell) {
+        // If already in a multi-point drawing, return false (shape is not finished)
+        if (this._initialDraw.multiPointDrawing) return false;
+
+        // If not yet in a multi-point drawing, determine if a multi-point drawing should be started.
+        // If mouseup occurs on the starting point of the line, user wants to start a multi-point drawing
+        if (cell.equals(this._initialDraw.anchor)) {
+            this._initialDraw.multiPointDrawing = true;
+            return false; // shape is not finished
+        } else {
+            return true; // shape is finished
+        }
+    }
+
+    finishDraw() {
+        if (this._initialDraw.multiPointDrawing) {
+            // When finished, set props according to final path (does not include latest hover cell)
+            this.props.path = this._initialDraw.path;
+            this._clearCache();
+        }
+    }
+
+    _convertInitialDrawToProps() {
+        // During draw, include the latest hover cell as the final step in the path
+        this.props.path = [...this._initialDraw.path, this._initialDraw.hover];
+
         this._clearCache();
     }
 
@@ -60,11 +85,13 @@ export default class Line extends Shape {
 
         switch(stroke) {
             case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
-                this.props.path.at(0).lineTo(this.props.path.at(-1)).forEach(cell => {
-                    const relativeCell = cell.relativeTo(boundingArea.topLeft);
-                    this._setGlyph(glyphs, relativeCell, this.props[CHAR_PROP], this.props[COLOR_PROP]);
-                    hitbox.addCell(cell); // use absolute position for hitbox
-                });
+                forEachAdjPair(this.props.path, (a, b) => {
+                    a.lineTo(b).forEach(cell => {
+                        const relativeCell = cell.relativeTo(boundingArea.topLeft);
+                        this._setGlyph(glyphs, relativeCell, this.props[CHAR_PROP], this.props[COLOR_PROP]);
+                        hitbox.addCell(cell); // use absolute position for hitbox
+                    });
+                })
                 break;
             case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_VH:
             case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_VH:
@@ -84,6 +111,11 @@ export default class Line extends Shape {
 
         const handles = new HandleCollection([
             ...this.props.path.map((cell, i) => new CellHandle(this, cell, i)),
+
+            // Only including box handles if line has more than 2 points
+            ...(this.props.path.length > 2 ? BoxShape.vertexHandles(this, boundingArea) : []),
+            ...(this.props.path.length > 2 ? BoxShape.edgeHandles(this, boundingArea) : []),
+
             new BodyHandle(this, cell => hitbox.hasCell(cell))
         ])
 

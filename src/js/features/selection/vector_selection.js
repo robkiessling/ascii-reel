@@ -12,6 +12,7 @@ import CellArea from "../../geometry/cell_area.js";
 import ShapeSelector from "./shape_selector.js";
 import VectorMarquee from "./vector_marquee.js";
 import {arraysEqual} from "../../utils/arrays.js";
+import {MOUSE} from "../../io/mouse.js";
 
 export function init() {
     setupEventBus();
@@ -25,7 +26,7 @@ function setupEventBus() {
     let moveStep;
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
-        if (mouseEvent.which !== 1) return; // Only apply to left-click
+        if (mouseEvent.button !== MOUSE.LEFT) return;
 
         const tool = state.getConfig('tool')
 

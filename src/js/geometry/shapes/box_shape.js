@@ -30,10 +30,8 @@ export default class BoxShape extends Shape {
         return result;
     }
 
-    handleInitialDraw(cell, modifiers) {
-        super.handleInitialDraw(cell, modifiers);
-
-        const area = CellArea.fromCells([this._initialDraw.start, this._initialDraw.end]);
+    _convertInitialDrawToProps() {
+        const area = CellArea.fromCells([this._initialDraw.anchor, this._initialDraw.hover]);
 
         this.props.topLeft = area.topLeft;
         this.props.numRows = area.numRows;
@@ -54,7 +52,7 @@ export default class BoxShape extends Shape {
     }
 
     translate(rowOffset, colOffset) {
-        this.props.topLeft.translate(colOffset, colOffset);
+        this.props.topLeft.translate(rowOffset, colOffset);
         this._clearCache();
     }
 
