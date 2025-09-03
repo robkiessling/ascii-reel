@@ -39,8 +39,9 @@ export default class Shape {
      * called once to place the starting anchor. But some shapes, such as multi-point lines,
      * will have this called multiple times.
      * @param {Cell} cell - Location of mousedown
+     * @param {Object} options
      */
-    handleDrawMousedown(cell) {
+    handleDrawMousedown(cell, options) {
         if (!this._initialDraw) {
             this._initialDraw = {
                 anchor: cell.clone(), // Original mousedown cell (unchanging)
@@ -61,9 +62,9 @@ export default class Shape {
     /**
      * Called during initial shape drawing as mouse is moved across canvas.
      * @param {Cell} cell - mouse hover location
-     * @param modifiers
+     * @param {Object} [options] - additional options
      */
-    handleDrawMousemove(cell, modifiers) {
+    handleDrawMousemove(cell, options) {
         this._initialDraw.hover.translateTo(cell);
 
         this._convertInitialDrawToProps();

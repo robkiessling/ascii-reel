@@ -7,6 +7,7 @@ import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
 import {hoverColor, HOVER_CELL_OPACITY, PRIMARY_COLOR, SELECTION_COLOR, checkerboardColors} from "../config/colors.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR, isMonospaceUnsafeChar} from "../config/chars.js";
+import Point from "../geometry/point.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 3;
@@ -121,8 +122,10 @@ export default class CanvasControl {
             this._fillCheckerboard();
         }
         else {
-            this.context.fillStyle = color;
-            this.context.fillRect(...CellArea.drawableArea().xywh);
+            this._withTemporaryContext(() => {
+                this.context.fillStyle = color;
+                this.context.fillRect(...CellArea.drawableArea().xywh);
+            })
         }
     }
 
@@ -196,9 +199,11 @@ export default class CanvasControl {
     }
 
     highlightPolygons(polygons) {
-        // Note: selection canvas overall opacity is set in css, that way I don't have to care about overlapping opacities
-        this.context.fillStyle = SELECTION_COLOR;
-        polygons.forEach(polygon => polygon.draw(this.context));
+        this._withTemporaryContext(() => {
+            // Note: selection canvas overall opacity is set in css, that way I don't have to care about overlapping opacities
+            this.context.fillStyle = SELECTION_COLOR;
+            polygons.forEach(polygon => polygon.draw(this.context));
+        });
     }
 
     /**
@@ -235,126 +240,142 @@ export default class CanvasControl {
     }
 
     _toggleCaretIBeam(show, cell, caretColor) {
-        if (show) {
-            this.context.strokeStyle = caretColor;
-            this.context.lineWidth = CARET_I_BEAM_WIDTH;
+        this._withTemporaryContext(() => {
+            if (show) {
+                this.context.strokeStyle = caretColor;
+                this.context.lineWidth = CARET_I_BEAM_WIDTH;
 
-            this.context.beginPath();
-            cell = cell.clone();
-            this.context.moveTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y + OUTLINE_WIDTH);
-            cell.translate(1, 0);
-            this.context.lineTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y - OUTLINE_WIDTH);
-            this.context.stroke();
-        } else {
-            // Reduce rect size by half an outline width
-            const innerRect = new PixelRect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
-            this.context.clearRect(...innerRect.xywh);
-        }
+                this.context.beginPath();
+                cell = cell.clone();
+                this.context.moveTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y + OUTLINE_WIDTH);
+                cell.translate(1, 0);
+                this.context.lineTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y - OUTLINE_WIDTH);
+                this.context.stroke();
+            } else {
+                // Reduce rect size by half an outline width
+                const innerRect = new PixelRect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
+                this.context.clearRect(...innerRect.xywh);
+            }
+        });
     }
 
     _toggleCaretBlock(show, cell) {
-        if (show) {
-            this.context.strokeStyle = CARET_BLOCK_COLOR;
-            this.context.fillStyle = CARET_BLOCK_COLOR;
-            this.context.lineWidth = CARET_BLOCK_LINE_WIDTH;
+        this._withTemporaryContext(() => {
+            if (show) {
+                this.context.strokeStyle = CARET_BLOCK_COLOR;
+                this.context.fillStyle = CARET_BLOCK_COLOR;
+                this.context.lineWidth = CARET_BLOCK_LINE_WIDTH;
 
-            this.context.fillRect(...cell.xywh);
-        } else {
-            // Clearing a rect that is a little larger than the cell -- for some reason there are sometimes stray pixels
-            // right along the cell edge at certain zoom levels
-            const outerRect = new PixelRect(cell.x - OUTLINE_WIDTH / 2, cell.y - OUTLINE_WIDTH / 2, cell.width + OUTLINE_WIDTH, cell.height + OUTLINE_WIDTH);
-            this.context.clearRect(...outerRect.xywh);
-        }
+                this.context.fillRect(...cell.xywh);
+            } else {
+                // Clearing a rect that is a little larger than the cell -- for some reason there are sometimes stray pixels
+                // right along the cell edge at certain zoom levels
+                const outerRect = new PixelRect(cell.x - OUTLINE_WIDTH / 2, cell.y - OUTLINE_WIDTH / 2, cell.width + OUTLINE_WIDTH, cell.height + OUTLINE_WIDTH);
+                this.context.clearRect(...outerRect.xywh);
+            }
+        });
     }
 
     highlightCell(cell) {
-        this.context.fillStyle = hoverColor;
-        this.context.globalAlpha = HOVER_CELL_OPACITY;
-        this.context.fillRect(...cell.xywh);
+        this._withTemporaryContext(() => {
+            this.context.fillStyle = hoverColor;
+            this.context.globalAlpha = HOVER_CELL_OPACITY;
+            this.context.fillRect(...cell.xywh);
+        });
     }
 
     outlinePolygon(polygon, isDashed) {
-        this.context.lineWidth = OUTLINE_WIDTH;
+        this._withTemporaryContext(() => {
+            this.context.lineWidth = OUTLINE_WIDTH;
 
-        if (isDashed) {
-            this._outlineInterval = setIntervalUsingRAF(() => {
-                this._drawDashedOutline(polygon);
-            }, 1000 / DASH_OUTLINE_FPS, true);
-        }
-        else {
-            this.context.setLineDash([]);
-            this.context.strokeStyle = SELECTION_COLOR;
-            polygon.stroke(this.context);
-        }
+            if (isDashed) {
+                this._outlineInterval = setIntervalUsingRAF(() => {
+                    this._drawDashedOutline(polygon);
+                }, 1000 / DASH_OUTLINE_FPS, true);
+            }
+            else {
+                this.context.setLineDash([]);
+                this.context.strokeStyle = SELECTION_COLOR;
+                polygon.stroke(this.context);
+            }
+        });
     }
 
     _drawDashedOutline(polygon) {
-        const now = new Date();
-        const offset = (now.getMilliseconds() / 1000.0) * DASH_OUTLINE_LENGTH * 2;
+        this._withTemporaryContext(() => {
+            const now = new Date();
+            const offset = (now.getMilliseconds() / 1000.0) * DASH_OUTLINE_LENGTH * 2;
 
-        this.context.lineDashOffset = offset;
-        this.context.setLineDash([DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH]);
-        this.context.strokeStyle = 'white';
-        polygon.stroke(this.context);
+            this.context.lineDashOffset = offset;
+            this.context.setLineDash([DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH]);
+            this.context.strokeStyle = 'white';
+            polygon.stroke(this.context);
 
-        this.context.lineDashOffset = offset + DASH_OUTLINE_LENGTH;
-        this.context.setLineDash([DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH]);
-        this.context.strokeStyle = 'black';
-        polygon.stroke(this.context);
+            this.context.lineDashOffset = offset + DASH_OUTLINE_LENGTH;
+            this.context.setLineDash([DASH_OUTLINE_LENGTH, DASH_OUTLINE_LENGTH]);
+            this.context.strokeStyle = 'black';
+            polygon.stroke(this.context);
+        });
     }
 
     drawWindow(rect) {
-        this.context.strokeStyle = WINDOW_BORDER_COLOR;
-        const scaledBorder = WINDOW_BORDER_WIDTH / this._camera.zoom;
-        this.context.lineWidth = scaledBorder;
-        this.context.strokeRect(
-            rect.x - scaledBorder / 2, // Need to move the whole window outwards by 50% of the border width
-            rect.y - scaledBorder / 2,
-            rect.width + scaledBorder,
-            rect.height + scaledBorder
-        )
+        this._withTemporaryContext(() => {
+            this.context.strokeStyle = WINDOW_BORDER_COLOR;
+            const scaledBorder = WINDOW_BORDER_WIDTH / this._camera.zoom;
+            this.context.lineWidth = scaledBorder;
+            this.context.strokeRect(
+                rect.x - scaledBorder / 2, // Need to move the whole window outwards by 50% of the border width
+                rect.y - scaledBorder / 2,
+                rect.width + scaledBorder,
+                rect.height + scaledBorder
+            )
+        });
     }
 
     drawGrid(width, spacing, color) {
         if (!spacing) return;
 
-        this.context.strokeStyle = color;
-        this.context.lineWidth = width / this._camera.zoom;
+        this._withTemporaryContext(() => {
+            this.context.strokeStyle = color;
+            this.context.lineWidth = width / this._camera.zoom;
 
-        for (let r = 0; r < numRows() + 1; r += spacing) {
-            this.context.beginPath();
-            this.context.moveTo(Cell.x(0), Cell.y(r));
-            this.context.lineTo(Cell.x(numCols()), Cell.y(r));
-            this.context.stroke();
-        }
+            for (let r = 0; r < numRows() + 1; r += spacing) {
+                this.context.beginPath();
+                this.context.moveTo(Cell.x(0), Cell.y(r));
+                this.context.lineTo(Cell.x(numCols()), Cell.y(r));
+                this.context.stroke();
+            }
 
-        for (let c = 0; c < numCols() + 1; c += spacing) {
-            this.context.beginPath();
-            this.context.moveTo(Cell.x(c), Cell.y(0));
-            this.context.lineTo(Cell.x(c), Cell.y(numRows()));
-            this.context.stroke();
-        }
+            for (let c = 0; c < numCols() + 1; c += spacing) {
+                this.context.beginPath();
+                this.context.moveTo(Cell.x(c), Cell.y(0));
+                this.context.lineTo(Cell.x(c), Cell.y(numRows()));
+                this.context.stroke();
+            }
+        });
     }
 
     _fillCheckerboard() {
-        // First, draw a checkerboard over full area (checkerboard does not change depending on zoom; this way we have
-        // a static number of checkers and performance is consistent).
-        this._usingFullArea(fullArea => this._drawCheckerboard(fullArea));
+        this._withTemporaryContext(() => {
+            // First, draw a checkerboard over full area (checkerboard does not change depending on zoom; this way we have
+            // a static number of checkers and performance is consistent).
+            this._usingFullArea(fullArea => this._drawCheckerboard(fullArea));
 
-        // Clear the 4 edges between the drawable area and the full area
-        const drawableArea = CellArea.drawableArea();
-        const topLeft = this.screenToWorld(0, 0);
-        const bottomRight = this.screenToWorld(this.outerWidth, this.outerHeight);
-        this.context.clearRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, drawableArea.y - topLeft.y);
-        this.context.clearRect(topLeft.x, topLeft.y, drawableArea.x - topLeft.x, bottomRight.y - topLeft.y);
-        this.context.clearRect(
-            drawableArea.x + drawableArea.width, topLeft.y,
-            bottomRight.x - (drawableArea.x + drawableArea.width), bottomRight.y - topLeft.y
-        );
-        this.context.clearRect(
-            topLeft.x, drawableArea.y + drawableArea.height,
-            bottomRight.x - topLeft.x, bottomRight.y - (drawableArea.y + drawableArea.height)
-        );
+            // Clear the 4 edges between the drawable area and the full area
+            const drawableArea = CellArea.drawableArea();
+            const topLeft = this.screenToWorld(0, 0);
+            const bottomRight = this.screenToWorld(this.outerWidth, this.outerHeight);
+            this.context.clearRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, drawableArea.y - topLeft.y);
+            this.context.clearRect(topLeft.x, topLeft.y, drawableArea.x - topLeft.x, bottomRight.y - topLeft.y);
+            this.context.clearRect(
+                drawableArea.x + drawableArea.width, topLeft.y,
+                bottomRight.x - (drawableArea.x + drawableArea.width), bottomRight.y - topLeft.y
+            );
+            this.context.clearRect(
+                topLeft.x, drawableArea.y + drawableArea.height,
+                bottomRight.x - topLeft.x, bottomRight.y - (drawableArea.y + drawableArea.height)
+            );
+        });
     }
 
     _drawCheckerboard(area) {
@@ -387,6 +408,36 @@ export default class CanvasControl {
         this.context.fill();
     }
 
+
+    // Just used for debugging freeform path->char conversions
+    drawShapePaths(shapes) {
+        shapes.forEach(shape => {
+            if (shape.type !== 'freeform') return;
+
+            this._withTemporaryContext(() => {
+                const { path } = shape.props;
+
+                if (path.length > 0) {
+                    const [first, ...rest] = path;
+
+                    this.context.strokeStyle = 'red';
+                    this.context.beginPath();
+                    this.context.moveTo(first.x, first.y);
+                    for (const point of rest) this.context.lineTo(point.x, point.y);
+                    this.context.stroke();
+
+                    this.context.fillStyle = 'red';
+                    const RADIUS = 1.5;
+                    for (const point of path) {
+                        this.context.beginPath();
+                        this.context.arc(point.x, point.y, RADIUS, 0, Math.PI * 2);
+                        this.context.fill();
+                    }
+                }
+            });
+        })
+    }
+
     // -------------------------------------------------------------- Helpers
 
     // Can be used to help debug: only logs lines for one canvas control (use this.log instead of console.log)
@@ -402,6 +453,15 @@ export default class CanvasControl {
         // }
     }
 
+    // Runs a callback in a "temporary" context transaction; any context updates will be rolled back upon completion.
+    _withTemporaryContext(callback) {
+        this.context.save();
+        try {
+            callback();
+        } finally {
+            this.context.restore();
+        }
+    }
 
     // -------------------------------------------------------------- Camera helpers
     /**
@@ -464,7 +524,7 @@ export default class CanvasControl {
      * @param {function(PixelRect)} callback - Callback is passed the full area PixelRect as its parameter
      */
     _usingFullArea(callback) {
-        this._inTemporaryContext(() => {
+        this._withTemporaryCamera(() => {
             this._resetCamera();
             callback(new PixelRect(0, 0, this.outerWidth, this.outerHeight));
         })
@@ -475,7 +535,7 @@ export default class CanvasControl {
      * @param callback
      * @private
      */
-    _inTemporaryContext(callback) {
+    _withTemporaryCamera(callback) {
         const originalCamera = structuredClone(this._camera);
 
         callback();
@@ -505,13 +565,13 @@ export default class CanvasControl {
      *
      * @param {number} screenX - The X coordinate in screen pixels
      * @param {number} screenY - The Y coordinate in screen pixels
-     * @returns {{ x: number, y: number }} The corresponding point in world space
+     * @returns {Point} The corresponding point in world space
      */
     screenToWorld(screenX, screenY) {
-        return {
-            x: (screenX + this._camera.panX) / this._camera.zoom,
-            y: (screenY + this._camera.panY) / this._camera.zoom
-        };
+        return new Point(
+            (screenX + this._camera.panX) / this._camera.zoom,
+            (screenY + this._camera.panY) / this._camera.zoom
+        )
     }
 
     /**
@@ -522,37 +582,13 @@ export default class CanvasControl {
      *
      * @param {number} worldX - The X coordinate in world space
      * @param {number} worldY - The Y coordinate in world space
-     * @returns {{ x: number, y: number }} The corresponding point in screen space (pixels)
+     * @returns {Point} The corresponding point in screen space (pixels)
      */
     worldToScreen(worldX, worldY) {
-        return {
-            x: worldX * this._camera.zoom - this._camera.panX,
-            y: worldY * this._camera.zoom - this._camera.panY
-        };
-    }
-
-    cellAtScreenXY(x, y) {
-        const point = this.screenToWorld(x, y);
-        const row = Math.floor(point.y / fontHeight);
-        const col = Math.floor(point.x / fontWidth);
-        return new Cell(row, col);
-    }
-
-    roundedCellAtScreenXY(x, y) {
-        const point = this.screenToWorld(x, y);
-        const row = Math.round(point.y / fontHeight);
-        const col = Math.round(point.x / fontWidth);
-        return new Cell(row, col);
-    }
-
-    // Getting the caret positioning is slightly different than just getting the corresponding cell; we round the x
-    // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
-    // click on the right half of a character, it will round up to the next character
-    caretAtScreenXY(x, y) {
-        const point = this.screenToWorld(x, y);
-        const row = Math.floor(point.y / fontHeight);
-        const col = Math.round(point.x / fontWidth);
-        return new Cell(row, col);
+        return new Point(
+            worldX * this._camera.zoom - this._camera.panX,
+            worldY * this._camera.zoom - this._camera.panY
+        )
     }
 
     /**
@@ -600,7 +636,7 @@ export default class CanvasControl {
             this._panBoundaries = this.currentViewRect();
         }
         else {
-            this._inTemporaryContext(() => {
+            this._withTemporaryCamera(() => {
                 this.zoomOutToMax();
                 this._panBoundaries = this.currentViewRect();
             })
@@ -761,7 +797,7 @@ export default class CanvasControl {
 
         const runCallback = (callback, evt, includeMouseDownArgs = false) => {
             if (!this.initialized) return;
-            const cell = this.cellAtScreenXY(evt.offsetX, evt.offsetY);
+            const cell = this.screenToWorld(evt.offsetX, evt.offsetY).cell;
             const currentPoint = this.screenToWorld(evt.offsetX, evt.offsetY);
 
             const callbackArgs = {evt, cell, currentPoint};

@@ -80,52 +80,31 @@ export default class Line extends Shape {
         const boundingArea = CellArea.fromCells(this.props.path);
         const glyphs = this._initGlyphs(boundingArea);
         const hitbox = new CellCache();
-
         const stroke = this.props[STROKE_PROPS[SHAPE_TYPES.LINE]]
 
-        const setGlyph = (absCell, char, color) => {
+        const setGlyph = (absCell, char) => {
             const relativeCell = absCell.relativeTo(boundingArea.topLeft);
-            this._setGlyph(glyphs, relativeCell, char, color);
-            hitbox.addCell(absCell);
+            this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
+            hitbox.add(absCell);
         }
 
         switch(stroke) {
             case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
                 forEachAdjPair(this.props.path, (a, b) => {
-                    a.lineTo(b).forEach(cell => setGlyph(cell, this.props[CHAR_PROP], this.props[COLOR_PROP]))
+                    a.lineTo(b).forEach(cell => setGlyph(cell, this.props[CHAR_PROP]))
                 })
                 break;
             case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
                 const cornerChar = '+';
-                setGlyph(this.props.path.at(0), cornerChar, this.props[COLOR_PROP])
+                setGlyph(this.props.path.at(0), cornerChar)
                 forEachAdjPair(this.props.path, (a, b) => {
-                    straightAsciiLine(a, b, (cell, char) => {
-                        const relativeCell = cell.relativeTo(boundingArea.topLeft);
-                        this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
-                        hitbox.addCell(cell); // use absolute position for hitbox
-                    })
-                    setGlyph(b, cornerChar, this.props[COLOR_PROP])
+                    straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char))
+                    setGlyph(b, cornerChar)
                 })
                 break;
             // case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
             //     forEachAdjPair(this.props.path, (a, b, i) => {
-            //         straightAsciiLine(a, b, (cell, char) => {
-            //             const relativeCell = cell.relativeTo(boundingArea.topLeft);
-            //             this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
-            //             hitbox.addCell(cell); // use absolute position for hitbox
-            //         }, i === 0, true)
-            //     })
-            //     break;
-            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_VH:
-            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_VH:
-            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_MONOCHAR_VH:
-            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_ASCII_HV:
-            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_UNICODE_HV:
-            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_LINE_MONOCHAR_HV:
-            //     elbowPath(this.props.path.at(0), this.props.path.at(-1), stroke, this.props[CHAR_PROP], (cell, char) => {
-            //         const relativeCell = cell.relativeTo(boundingArea.topLeft);
-            //         this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
-            //         hitbox.addCell(cell); // use absolute position for hitbox
+            //         straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char), i === 0, true);
             //     })
             //     break;
             default:
@@ -139,7 +118,7 @@ export default class Line extends Shape {
             ...(this.props.path.length > 2 ? BoxShape.vertexHandles(this, boundingArea) : []),
             ...(this.props.path.length > 2 ? BoxShape.edgeHandles(this, boundingArea) : []),
 
-            new BodyHandle(this, cell => hitbox.hasCell(cell))
+            new BodyHandle(this, cell => hitbox.has(cell))
         ])
 
         this._cache = {

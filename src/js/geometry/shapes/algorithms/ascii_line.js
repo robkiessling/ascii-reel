@@ -10,14 +10,19 @@ const DEBUG = false;
  * A char is chosen based on these two pixels (using the slope between them, etc.)
  */
 class AdaptiveChar {
-    constructor(cell, startPixel) {
+    constructor(cell, startPixel, endPixel) {
         this.cell = cell;
         this.startPixel = startPixel;
+        this.endPixel = endPixel;
+        this._calculateProps();
     }
 
     update(endPixel) {
         this.endPixel = endPixel;
+        this._calculateProps();
+    }
 
+    _calculateProps() {
         this.rise = this.endPixel.y - this.startPixel.y;
         this.run = this.endPixel.x - this.startPixel.x;
         this.distance = Math.hypot(this.rise, this.run)
@@ -25,7 +30,7 @@ class AdaptiveChar {
         this.avgX = (this.startPixel.x + this.endPixel.x) / 2;
         this.avgY = (this.startPixel.y + this.endPixel.y) / 2;
 
-        this.char = this._recalculateChar();
+        this.char = this._calculateChar();
 
         if (DEBUG) {
             console.log(`[${this.cell}]`,
@@ -46,11 +51,15 @@ class AdaptiveChar {
      * This function allows us to just keep the cell that the majority of the line passed through.
      */
     shouldPrune() {
-        return this.distance < 0.5;
+        if (Math.abs(this.slope) > 0.85) {
+            return this.distance < 0.7;
+        } else {
+            return this.distance < 0.5;
+        }
     }
 
     // Calculate which char to use based on various factors (slope, avgY position, etc.)
-    _recalculateChar() {
+    _calculateChar() {
         let absSlope = Math.abs(this.slope);
 
         // This handles the initial char on mousedown (before any mousemove). We set slope equal to zero so that a
@@ -59,6 +68,8 @@ class AdaptiveChar {
 
         if (absSlope > 3) {
             // Handles vertical slopes (between 3 and infinity)
+            if (this.startPixel.x < 0.05 && this.endPixel.x < 0.05) return ')';
+            if (this.startPixel.x > 0.95 && this.endPixel.x > 0.95) return '(';
             return '|';
         }
         else if (absSlope > 0.85) {
@@ -253,14 +264,31 @@ export function straightAsciiLine(fromCell, toCell, callback, inclusiveStart = f
     interpolator.interpolate(inclusiveStart, inclusiveEnd, (cell, startPixel, endPixel) => {
         if (DEBUG) { console.log(`  interpolated: ${cell}`, startPixel, endPixel); }
 
-        const adaptiveChar = new AdaptiveChar(cell, startPixel);
-        adaptiveChar.update(endPixel);
+        const adaptiveChar = new AdaptiveChar(cell, startPixel, endPixel);
         callback(adaptiveChar.cell, adaptiveChar.char);
     })
 }
 
 
+export function traversedCellsToChars(traversedCells, callback) {
+    let prevUsedCell; // Keep track of the previous cell that has something drawn to it
 
+    for (const [i, traversedCell] of traversedCells.entries()) {
+        const adaptiveChar = new AdaptiveChar(traversedCell, traversedCell.normalizedEntry, traversedCell.normalizedExit);
 
+        // Check if char should be pruned (due to its size). This is only done if we have more than 2 cells so we don't
+        // prune during initial draw stroke
+        if (adaptiveChar.shouldPrune() && traversedCells.length > 2) {
+            // If there is no previously used cell, allow prune
+            if (!prevUsedCell) continue;
 
+            // If there is a previously used cell, only prune if the next cell is adjacent to it. I.e. if we prune
+            // the cell, the line will still be connected.
+            const nextCell = traversedCells[i + 1];
+            if (nextCell && (nextCell.equals(prevUsedCell) || nextCell.isAdjacentTo(prevUsedCell))) continue;
+        }
 
+        callback(adaptiveChar.cell, adaptiveChar.char)
+        prevUsedCell = adaptiveChar.cell;
+    }
+}

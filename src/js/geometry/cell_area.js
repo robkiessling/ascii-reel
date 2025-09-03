@@ -47,6 +47,10 @@ export default class CellArea extends PixelRect {
         return new CellArea(new Cell(top, left), new Cell(bottom, right));
     }
 
+    static fromPoints(points) {
+        return CellArea.fromCells(points.map(point => point.cell));
+    }
+
     get x() {
         return this.topLeft.x;
     }

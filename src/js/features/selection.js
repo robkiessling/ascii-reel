@@ -323,7 +323,7 @@ function setupEventBus() {
                     break;
                 case 'text-editor':
                     if (state.getConfig('caretStyle') === 'I-beam') {
-                        cell = canvasControl.caretAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
+                        cell = canvasControl.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
                     }
 
                     if (polygons.length === 0) {
@@ -346,7 +346,7 @@ function setupEventBus() {
 
         if (isDrawing) {
             if (state.getConfig('tool') === 'text-editor' && state.getConfig('caretStyle') === 'I-beam') {
-                cell = canvasControl.caretAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
+                cell = canvasControl.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
             }
             lastPolygon().end = cell;
             eventBus.emit(EVENTS.SELECTION.CHANGED);

@@ -32,8 +32,8 @@ export default class VectorMarquee {
 
     get boundingArea() {
         const [x, y, width, height] = this.xywh;
-        const topLeft = this.canvasControl.cellAtScreenXY(x, y);
-        const bottomRight = this.canvasControl.cellAtScreenXY(x + width, y + height);
+        const topLeft = this.canvasControl.screenToWorld(x, y).cell;
+        const bottomRight = this.canvasControl.screenToWorld(x + width, y + height).cell;
         return new CellArea(topLeft, bottomRight);
     }
 

@@ -14,7 +14,7 @@
 import CanvasControl from "../components/canvas_control.js";
 import * as selection from "./selection.js";
 import * as vectorSelection from "./selection/vector_selection.js";
-import {hoveredCells} from "./tools.js";
+import {drawingContent, hoveredCells} from "./tools.js";
 import * as state from "../state/index.js";
 import {majorGridColor, minorGridColor, PRIMARY_COLOR} from "../config/colors.js";
 import * as tools from "./tools.js";
@@ -25,6 +25,8 @@ import {EMPTY_CHAR} from "../config/chars.js";
 
 const ONION_OPACITY = 0.3;
 const NON_CURRENT_LAYER_OPACITY = 0.5;
+
+const DRAW_DEBUG_PATHS = false;
 
 let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
 let hoveredCell;
@@ -218,6 +220,11 @@ function redrawCharCanvas() {
         }
     });
 
+    if (DRAW_DEBUG_PATHS) {
+        charCanvas.drawShapePaths(state.getCurrentCelShapes());
+        if (drawingContent) charCanvas.drawShapePaths([drawingContent]);
+    }
+
     // 3. Draw current layer at normal opacity
     charCanvas.drawGlyphs(currentGlyphs, {
         showWhitespace: state.getConfig('showWhitespace'),
@@ -282,7 +289,7 @@ function showHoverForTool() {
     switch(state.getConfig('tool')) {
         case 'text-editor':
             // If text-editor is in I-beam mode, not showing hover because clicking on a cell does not necessarily
-            // go to that cell (it gets rounded up/down -- see caretAtScreenXY)
+            // go to that cell (it gets rounded up/down -- see Point.caretCell)
             return state.getConfig('caretStyle') !== 'I-beam';
         case 'pan':
         case 'move-all':

@@ -224,7 +224,9 @@ export function setCurrentCelGlyph(row, col, char, color) {
     celController.setCelGlyph(currentCel(), row, col, char, color);
 }
 
-
+export function getCurrentCelShapes() {
+    return celController.getCelShapes(currentCel());
+}
 export function getCurrentCelShape(shapeId) {
     return celController.getCelShape(currentCel(), shapeId);
 }

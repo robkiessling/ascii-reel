@@ -27,7 +27,7 @@ export {
     // cels
     iterateCelsForCurrentLayer, iterateCels,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph,
-    getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape, deleteCurrentCelShape,
+    getCurrentCelShapes, getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape, deleteCurrentCelShape,
     reorderCurrentCelShapes, canReorderCurrentCelShapes,
     getCurrentCelShapeIdsAbove, testCurrentCelShapeHitboxes, testCurrentCelMarquee,
     charInBounds, layeredGlyphs, translateCel,

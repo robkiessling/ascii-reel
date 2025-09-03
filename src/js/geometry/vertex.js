@@ -1,8 +1,8 @@
 import {fontHeight, fontWidth} from "../config/font.js";
-import Pixel from "./pixel.js";
+import Point from "./point.js";
 import Cell from "./cell.js";
 
-export default class Vertex extends Pixel {
+export default class Vertex extends Point {
     constructor(row, col) {
         super();
         this.row = row;

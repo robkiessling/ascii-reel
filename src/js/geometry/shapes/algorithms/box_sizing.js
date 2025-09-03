@@ -2,6 +2,7 @@ import {EDGE_SIDES, HANDLE_TYPES, VERTEX_CORNERS} from "../constants.js";
 import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
 import VertexArea from "../../vertex_area.js";
+import Point from "../../point.js";
 
 
 /**
@@ -108,7 +109,8 @@ export function translateAreaWithBoxResizing(cellArea, oldBox, newBox) {
     const newCellArea = CellArea.fromOriginAndDimensions(newTopLeft, newDimensions.numRows, newDimensions.numCols);
     return {
         area: newCellArea,
-        cellMapper: buildCellMapper(cellArea, newCellArea, flipRow, flipCol)
+        cellMapper: buildCellMapper(cellArea, newCellArea, flipRow, flipCol),
+        pointMapper: buildPointMapper(cellArea, newCellArea, flipRow, flipCol)
     };
 }
 
@@ -165,6 +167,20 @@ function calculateNewTopLeft(oldPosition, dimensions, oldBox, newBox) {
     };
 }
 
+function buildPointMapper(oldCellArea, newCellArea, flipRow, flipCol) {
+    return oldPoint => {
+        let xPct = (oldPoint.x - oldCellArea.x) / oldCellArea.width;
+        let yPct = (oldPoint.y - oldCellArea.y) / oldCellArea.height;
+
+        xPct = flipCol ? (1 - xPct) : xPct;
+        yPct = flipRow ? (1 - yPct) : yPct;
+
+        return new Point(
+            newCellArea.x + xPct * newCellArea.width,
+            newCellArea.y + yPct * newCellArea.height
+        );
+    }
+}
 
 function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
     // If the oldCellArea is 1 dimensional, we have to choose where to map things.

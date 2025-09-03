@@ -11,6 +11,7 @@ import {SHAPE_TYPES} from "./constants.js";
 import Rect from "./rect.js";
 import Ellipse from "./ellipse.js";
 import Line from "./line.js";
+import Freeform from "./freeform.js";
 
 export function deserializeShape(data) {
     switch (data.type) {
@@ -20,6 +21,8 @@ export function deserializeShape(data) {
             return new Ellipse(data.id, data.type, Ellipse.deserializeProps(data.props));
         case SHAPE_TYPES.LINE:
             return new Line(data.id, data.type, Line.deserializeProps(data.props));
+        case SHAPE_TYPES.FREEFORM:
+            return new Freeform(data.id, data.type, Freeform.deserializeProps(data.props));
         default:
             throw new Error(`Unsupported shape type ${data.type}`);
     }

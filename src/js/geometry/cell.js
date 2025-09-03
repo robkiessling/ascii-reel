@@ -22,6 +22,12 @@ export default class Cell extends PixelRect {
     static y(row) {
         return row * fontHeight;
     }
+    static get width() {
+        return fontWidth;
+    }
+    static get height() {
+        return fontHeight;
+    }
 
     // Convert to/from its object representation (so we can store it in json state)
     static deserialize(data) {

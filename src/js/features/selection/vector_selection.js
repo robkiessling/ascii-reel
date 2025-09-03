@@ -97,7 +97,7 @@ function dragHandle(canvasControl, mouseEvent, cell, moveStep) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
         case HANDLE_TYPES.CELL:
-            const roundedCell = canvasControl.roundedCellAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY);
+            const roundedCell = canvasControl.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).roundedCell;
             shapeSelector.resize(draggedHandle, cell, roundedCell)
             break;
         case HANDLE_TYPES.BODY:
