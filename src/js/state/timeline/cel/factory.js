@@ -1,5 +1,6 @@
 import RasterCel from "./raster.js";
 import VectorCel from "./vector.js";
+import {LAYER_TYPES} from "../../constants.js";
 
 /**
  * Cel
@@ -12,9 +13,9 @@ export default class CelFactory {
 
     static blank(layerType) {
         switch(layerType) {
-            case 'raster':
+            case LAYER_TYPES.RASTER:
                 return RasterCel.blank();
-            case 'vector':
+            case LAYER_TYPES.VECTOR:
                 return VectorCel.blank();
             default:
                 throw new Error(`Invalid layerType '${layerType}'`)
@@ -23,9 +24,9 @@ export default class CelFactory {
 
     static deserialize(celData, options) {
         switch(celData.layerType) {
-            case 'raster':
+            case LAYER_TYPES.RASTER:
                 return RasterCel.deserialize(celData, options);
-            case 'vector':
+            case LAYER_TYPES.VECTOR:
                 return VectorCel.deserialize(celData, options);
             default:
                 throw new Error(`Invalid layerType '${celData.layerType}' in ${celData}`)

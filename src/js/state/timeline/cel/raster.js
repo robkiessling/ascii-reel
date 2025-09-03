@@ -4,6 +4,7 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {charInBounds, COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT, getOffsetPosition} from "../cels.js";
 import {addToCache} from "../../unicode.js";
 import pako from "pako";
+import {LAYER_TYPES} from "../../constants.js";
 
 const ENCODED_EMPTY_CHAR = "\0";
 
@@ -20,7 +21,7 @@ const ENCODED_EMPTY_CHAR = "\0";
  */
 export default class RasterCel {
     constructor(chars, colors) {
-        this.layerType = 'raster';
+        this.layerType = LAYER_TYPES.RASTER;
         this.chars = chars || [];
         this.colors = colors || [];
     }

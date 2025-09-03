@@ -45,10 +45,8 @@
 
                     <div class="standard-tool-row">
                         <div class="standard-tool-column">
-                            <div class="standard-tool" data-tool="select"><span class="ri ri-fw ri-cursor-line"></span></div>
-                        </div>
-                        <div class="standard-tool-column">
-                            <div class="standard-tool" data-tool="text-editor"><span class="ri ri-fw ri-text"></span></div>
+                            <div class="standard-tool vector-tool" data-tool="select"><span class="ri ri-fw ri-cursor-line"></span></div>
+                            <div class="standard-tool raster-tool" data-tool="text-editor"><span class="ri ri-fw ri-input-field"></span></div>
                         </div>
                     </div>
 
@@ -62,16 +60,18 @@
                             <div class="standard-tool" data-tool="eraser"><span class="ri ri-fw ri-eraser-line"></span></div>
                             <div class="standard-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
 
-                            <div class="standard-tool" data-tool="fill-char">
+                            <div class="standard-tool raster-tool" data-tool="fill-char">
                                 <span class="ri ri-fw ri-paint-fill ri-paint-fill-no-droplet"></span>
                                 <span class="picked-char">A</span>
                             </div>
+
+                            <div class="standard-tool vector-tool" data-tool="text-box"><span class="ri ri-fw ri-t-box-line"></span></div>
                         </div>
                     </div>
 
-                    <div class="spacer"></div>
+                    <div class="spacer raster-tool"></div>
 
-                    <div class="standard-tool-row">
+                    <div class="standard-tool-row raster-tool">
                         <div class="standard-tool-column">
                             <div class="standard-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
                             <div class="standard-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
@@ -93,9 +93,9 @@
                         </div>
                     </div>
 
-                    <div class="spacer color-tool"></div>
+                    <div class="spacer color-tool raster-tool"></div>
 
-                    <div class="standard-tool-row color-tool">
+                    <div class="standard-tool-row color-tool raster-tool">
                         <div class="standard-tool-column">
                             <div class="standard-tool" data-tool="paint-brush"><span class="ri ri-fw ri-brush-line"></span></div>
                             <div class="standard-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
@@ -282,6 +282,7 @@
                     </div>
                 </div>
                 <div class="layer-template layer">
+                    <span class="layer-type ri ri-fw"></span>
                     <span class="layer-name"></span>
                     <button class="toggle-visibility">
                         <span class="ri ri-fw"></span>
@@ -442,7 +443,7 @@
     <div id="grid-dialog" title="Grid Settings" class="dialog-form">
         <div id="major-grid-settings">
             <label>
-                <input type="checkbox" class="enable-grid"> Show Major Grid
+                <input type="checkbox" class="enable-grid"> Enable Major Grid
             </label>
             <div class="grid-settings">
                 <label>
@@ -456,7 +457,7 @@
 
         <div id="minor-grid-settings">
             <label>
-                <input type="checkbox" class="enable-grid"> Show Minor Grid
+                <input type="checkbox" class="enable-grid"> Enable Minor Grid
             </label>
             <div class="grid-settings">
                 <label>
@@ -467,11 +468,21 @@
         </div>
     </div>
 
-    <div id="edit-layer-dialog" title="Edit Layer">
+    <div id="edit-layer-dialog" class="dialog-form">
+        <input type="hidden" name="is-new-layer">
+        <div class="label-header">Name:</div>
         <label>
-            Name<br>
-            <input type="text" class="name highlight">
+            <input type="text" name="layer-name" class="highlight long">
         </label>
+        <div class="label-header mt-1">Layer Type:</div>
+        <label>
+            <input type="radio" name="layer-type" value="raster" checked /> Raster
+        </label>
+        <label>
+            <input type="radio" name="layer-type" value="vector" /> Vector
+        </label>
+        <div class="rasterize-warning info-popup"></div>
+        <div class="vectorize-warning info-popup"></div>
     </div>
 
     <div id="unicode-dialog" title="Unicode Reference" class="dialog-form">

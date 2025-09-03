@@ -11,6 +11,7 @@ import * as celController from './cels.js';
 import ArrayRange, {create2dArray, mergeGlyphs, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
+import {LAYER_TYPES} from "../constants.js";
 
 export function deserialize(data = {}, options = {}) {
     layerController.deserialize(data.layerController, options);
@@ -64,7 +65,7 @@ function validate() {
 export function newRasterCelTimeline(celContent = {}) {
     return {
         layerController: {
-            layers: [{ id: 1, name: 'Layer 1', type: 'raster' }]
+            layers: [{ id: 1, name: 'Layer 1', type: LAYER_TYPES.RASTER }]
         },
         frameController: {
             frames: [{ id: 1 }]
@@ -73,7 +74,7 @@ export function newRasterCelTimeline(celContent = {}) {
             cels: {
                 [celController.getCelId(1, 1)]: $.extend({}, {
                     id: celController.getCelId(1, 1),
-                    layerType: 'raster'
+                    layerType: LAYER_TYPES.RASTER
                 }, celContent)
             }
         }
@@ -82,7 +83,7 @@ export function newRasterCelTimeline(celContent = {}) {
 export function newVectorCelTimeline(celContent = {}) {
     return {
         layerController: {
-            layers: [{ id: 1, name: 'Layer 1', type: 'vector' }]
+            layers: [{ id: 1, name: 'Layer 1', type: LAYER_TYPES.VECTOR }]
         },
         frameController: {
             frames: [{ id: 1 }]
@@ -91,7 +92,7 @@ export function newVectorCelTimeline(celContent = {}) {
             cels: {
                 [celController.getCelId(1, 1)]: $.extend({}, {
                     id: celController.getCelId(1, 1),
-                    layerType: 'vector'
+                    layerType: LAYER_TYPES.VECTOR
                 }, celContent)
             }
         }
@@ -141,8 +142,8 @@ export function deleteFrames(range) {
 
 // --------------------------------------------------------------------------- Layers API
 export {
-    layers as layers, layerIndex, changeLayerIndex, currentLayer, currentLayerType, updateLayer, reorderLayer,
-    toggleLayerVisibility
+    layers as layers, layerAt, layerIndex, changeLayerIndex, currentLayer, currentLayerType, reorderLayer,
+    nextLayerName, toggleLayerVisibility
 } from './layers.js'
 
 export function createLayer(index, data) {
@@ -150,6 +151,16 @@ export function createLayer(index, data) {
 
     // create blank cels for all frames
     frameController.frames().forEach(frame => celController.createCel(layer, frame));
+}
+
+export function updateLayer(layer, updates) {
+    if (layer.type !== updates.type) {
+        // Special handling when changing layer type:
+        if (updates.type === LAYER_TYPES.VECTOR) throw new Error(`Cannot change layerType to vector`)
+        if (updates.type === LAYER_TYPES.RASTER) celIdsForLayer(layer).forEach(celId => celController.rasterizeCel(celId));
+    }
+
+    layerController.updateLayer(layer, updates)
 }
 
 export function deleteLayer(index) {

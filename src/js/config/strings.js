@@ -251,7 +251,16 @@ export const STRINGS = {
     'layers.delete-layer.name': 'Delete Layer',
     'layers.delete-layer.description': 'Deletes the current layer.',
     'layers.toggle-visibility-lock.name': 'Toggle Layer Visibility',
-    'layers.toggle-visibility-lock.description': 'When locked, only the current layer is shown in the main canvas. When unlocked, you can manually show/hide all layers.',
+    'layers.toggle-visibility-lock.description': 'When locked, only the current layer is shown in the main canvas. ' +
+        'When unlocked, you can manually show/hide all layers.',
+    'layers.layerType.vector.name': 'Vector Layer',
+    'layers.layerType.vector.description': "In vector layers, shapes are preserved as editable objects, allowing you to continually modify or resize them. " +
+        'Vector layers are ideal for diagrams, flowcharts, schematics, and other structured layouts.',
+    'layers.layerType.vectorize.warning': 'Raster layers cannot be converted to vector layers.',
+    'layers.layerType.raster.name': 'Raster Layer',
+    'layers.layerType.raster.description': 'In raster layers, each grid cell is independent and holds its own character. ' +
+        'You can freely erase, overwrite, or repaint any part of the canvas. Raster layers are ideal for detailed editing and creating ASCII art.',
+    'layers.layerType.rasterize.warning': 'This layer will be rasterized: it will appear the same, but all shapes will be converted to raw characters.',
 
     'preview.open-popup.name': 'Preview Popup',
     'preview.open-popup.description': 'Opens the preview in a resizeable popup window.',

@@ -38,6 +38,7 @@ import Ellipse from "../geometry/shapes/ellipse.js";
 import Line from "../geometry/shapes/line.js";
 import {MOUSE} from "../io/mouse.js";
 import Freeform from "../geometry/shapes/freeform.js";
+import {LAYER_TYPES} from "../state/constants.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -119,8 +120,6 @@ function setupEventBus() {
                 handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'paint-brush' })
                 break;
             case 'draw-freeform':
-                // todo pass cell pixel, not entire canvasControl
-                // handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { canvas: canvasControl })
                 handleDrawMousedown(Freeform.beginFreeform, cell, canvasControl, mouseEvent);
                 break;
             case 'draw-rect':
@@ -280,7 +279,14 @@ function setupStandardTools() {
         const tool = $element.data('tool');
         const actionData = {
             callback: () => changeTool(tool),
-            enabled: () => state.isMultiColored() ? true : !state.MULTICOLOR_TOOLS.has(tool),
+            enabled: () => {
+                if (state.MULTICOLOR_TOOLS.has(tool) && !state.isMultiColored()) return false;
+                if (state.layers()) {
+                    if (state.RASTER_TOOLS.has(tool) && state.currentLayerType() !== LAYER_TYPES.RASTER) return false;
+                    if (state.VECTOR_TOOLS.has(tool) && state.currentLayerType() !== LAYER_TYPES.VECTOR) return false;
+                }
+                return true;
+            },
         }
 
         // Some tools have custom shortcuts
@@ -316,7 +322,17 @@ function setupStandardTools() {
 }
 
 function refreshStandardTools() {
-    $standardTools.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
+    $standardTools.find('.color-tool, .raster-tool, .vector-tool').toggleClass('hidden', false);
+    if (state.currentLayerType() !== LAYER_TYPES.RASTER) $standardTools.find('.raster-tool').toggleClass('hidden', true);
+    if (state.currentLayerType() !== LAYER_TYPES.VECTOR) $standardTools.find('.vector-tool').toggleClass('hidden', true);
+    if (!state.isMultiColored()) $standardTools.find('.color-tool').toggleClass('hidden', true);
+
+    // The following can be used if we want to disable raster/vector tools (instead of showing/hiding them above)
+    // $standardTools.find('.standard-tool').each((i, element) => {
+    //     const $tool = $(element);
+    //     const tool = $tool.data('tool');
+    //     $tool.toggleClass('disabled', !actions.isActionEnabled(actionIdForStandardTool(tool)))
+    // })
 
     $standardTools.find('.standard-tool').removeClass('selected');
     $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');

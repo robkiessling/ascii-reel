@@ -16,7 +16,6 @@ import Minimizer from "../components/minimizer.js";
 let $container, $list;
 let simpleBar, frameComponents, actionButtons;
 let minimizer;
-let ticksTooltips;
 
 export function init() {
     $container = $('#frame-controller');
@@ -159,7 +158,7 @@ function setupSortable() {
 }
 
 function setupTicksTooltips() {
-    ticksTooltips = delegate($container.get(0), {
+    delegate($container.get(0), {
         target: '.frame-ticks',
         allowHTML: true,
         interactive: true,

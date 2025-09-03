@@ -3,13 +3,15 @@ import {COLOR_FORMAT, DEFAULT_COLOR} from "./palette.js";
 import {pick} from "../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
 import {BRUSHES, DEFAULT_STROKES} from "../geometry/shapes/constants.js";
+import {LAYER_TYPES} from "./constants.js";
+import * as timeline from "./timeline/index.js";
 
 // TODO There are a lot of strings that should be constants
 // TODO Organize this better? E.g. projectSettings could contain certain keys
 export const DEFAULT_STATE = {
     name: '',
     projectType: 'animation',
-    layerType: 'raster', // or 'vector'
+    layerType: LAYER_TYPES.RASTER,
     colorMode: 'monochrome',
     createdAt: undefined,
     dimensions: [15, 30], // [numRows, numCols]
@@ -52,6 +54,22 @@ const CONFIG_KEYS_SAVED_TO_HISTORY = [
 // These tools are only available if colorMode is multicolor
 export const MULTICOLOR_TOOLS = new Set(['paint-brush', 'color-swap', 'fill-color', 'eyedropper'])
 
+// These tools are only available depending on layerType
+export const RASTER_TOOLS = new Set([
+    'text-editor', 'fill-char', 'selection-rect', 'selection-lasso', 'selection-line', 'selection-wand',
+    'paint-brush', 'color-swap', 'fill-color', 'eyedropper'
+])
+export const VECTOR_TOOLS = new Set(['select', 'text-box']);
+
+// Tool fallbacks for when the current tool isn't valid for the current layer type
+const VECTOR_TOOL_TO_RASTER_FALLBACK = {
+    default: 'text-editor',
+    'text-box': 'fill-char'
+}
+const RASTER_TOOL_TO_VECTOR_FALLBACK = {
+    default: 'select',
+    'fill-char': 'text-box',
+}
 
 let state = {};
 
@@ -130,4 +148,24 @@ export function isAnimationProject() {
 
 export function isMultiColored() {
     return getConfig('colorMode') === 'multicolor';
+}
+
+// Certain tools are only available in certain modes. This ensures the current tool is valid
+export function toolFallback() {
+    switch(timeline.currentLayerType()) {
+        case LAYER_TYPES.RASTER:
+            if (getConfig('colorMode') === 'monochrome' && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
+                setConfig('tool', VECTOR_TOOL_TO_RASTER_FALLBACK.default)
+            } else if (VECTOR_TOOLS.has(getConfig('tool'))) {
+                setConfig('tool', VECTOR_TOOL_TO_RASTER_FALLBACK[getConfig('tool')] || VECTOR_TOOL_TO_RASTER_FALLBACK.default)
+            }
+            break;
+        case LAYER_TYPES.VECTOR:
+            if (getConfig('colorMode') === 'monochrome' && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
+                setConfig('tool', RASTER_TOOL_TO_VECTOR_FALLBACK.default)
+            } else if (RASTER_TOOLS.has(getConfig('tool'))) {
+                setConfig('tool', RASTER_TOOL_TO_VECTOR_FALLBACK[getConfig('tool')] || RASTER_TOOL_TO_VECTOR_FALLBACK.default)
+            }
+            break;
+    }
 }

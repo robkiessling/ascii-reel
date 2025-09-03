@@ -10,8 +10,11 @@ import {createDialog} from "../utils/dialogs.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Minimizer from "../components/minimizer.js";
+import {LAYER_TYPES} from "../state/constants.js";
+import {delegateTips, standardTip} from "../components/tooltips.js";
 
-let $container, $template, $list, $editDialog, $editName;
+let $container, $template, $list,
+    $editDialog, $editName, $editType, $isNewLayer, $rasterizeWarning, $vectorizeWarning;
 let simpleBar, layerComponents, minimizer;
 
 export function init() {
@@ -71,6 +74,11 @@ function setupList() {
     $list.off('dblclick', '.layer').on('dblclick', '.layer', evt => {
         actions.callAction('layers.edit-layer');
     });
+
+    delegateTips($list, '.layer-type', $element => `layers.layerType.${$element.data('layer-type')}`, {
+        placement: 'left',
+        offset: [0, 23]
+    })
 }
 
 function setupSortable() {
@@ -95,12 +103,7 @@ function setupActions() {
         eventBus.emit(EVENTS.REFRESH.ALL);
     })
 
-    actions.registerAction('layers.add-layer', () => {
-        const layerIndex = state.layerIndex() + 1; // Add blank layer right after current layer
-        state.createLayer(layerIndex);
-        selectLayer(layerIndex);
-    });
-
+    actions.registerAction('layers.add-layer', () => addLayer());
     actions.registerAction('layers.edit-layer', () => editLayer());
 
     actions.registerAction('layers.delete-layer', {
@@ -151,19 +154,65 @@ function setupLayerEditor() {
     $editDialog = $("#edit-layer-dialog");
     createDialog($editDialog, () => saveLayer());
 
-    $editName = $editDialog.find('.name');
+    $editName = $editDialog.find('[name="layer-name"]');
+    $editType = $editDialog.find('[name="layer-type"]');
+    $isNewLayer = $editDialog.find('[name="is-new-layer"]');
+    $rasterizeWarning = $editDialog.find('.rasterize-warning').text(STRINGS['layers.layerType.rasterize.warning']);
+    $vectorizeWarning = $editDialog.find('.vectorize-warning').text(STRINGS['layers.layerType.vectorize.warning']);
+
+    $editType.each((i, element) => {
+        const $input = $(element);
+        const $label = $input.closest('label');
+        standardTip($label, `layers.layerType.${$input.val()}`, {
+            placement: 'left'
+        })
+    })
+
+    $editType.on('change', () => {
+        if ($isNewLayer.val() === 'true') {
+            $rasterizeWarning.toggle(false);
+            $vectorizeWarning.toggle(false);
+        } else {
+            const oldType = state.currentLayer().type;
+            const newType = $editType.filter(':checked').val()
+            $rasterizeWarning.toggle(oldType === LAYER_TYPES.VECTOR && newType === LAYER_TYPES.RASTER)
+            $vectorizeWarning.toggle(oldType === LAYER_TYPES.RASTER)
+        }
+    })
+}
+
+function addLayer() {
+    $isNewLayer.val(true);
+
+    $editName.val(state.nextLayerName());
+    $editType.filter(`[value="${state.currentLayer().type}"]`).prop('checked', true).trigger('change');
+    $editType.prop('disabled', false);
+    $editDialog.dialog('option', 'title', STRINGS['layers.add-layer.name']).dialog('open');
 }
 
 function editLayer() {
+    $isNewLayer.val(false);
+
     const layer = state.currentLayer();
     $editName.val(layer.name);
-    $editDialog.dialog('open');
+    $editType.filter(`[value="${layer.type}"]`).prop('checked', true).trigger('change');
+    $editType.prop('disabled', layer.type === LAYER_TYPES.RASTER);
+    $editDialog.dialog('option', 'title', STRINGS['layers.edit-layer.name']).dialog('open');
 }
 
 function saveLayer() {
-    state.updateLayer(state.currentLayer(), {
-        name: $editName.val()
-    });
+    const layerProps = {
+        name: $editName.val() ? $editName.val() : undefined, // Use default if left blank
+        type: $editType.filter(':checked').val(),
+    }
+
+    if ($isNewLayer.val() === 'true') {
+        const layerIndex = state.layerIndex() + 1; // Add new layer right after current layer
+        state.createLayer(layerIndex, layerProps);
+        selectLayer(layerIndex);
+    } else {
+        state.updateLayer(state.currentLayer(), layerProps);
+    }
 
     $editDialog.dialog("close");
 
@@ -187,19 +236,21 @@ function selectLayer(index) {
 
 class LayerComponent {
     constructor($template, $parent, layer, index) {
+        this._layer = layer;
+
         this._$container = $template.clone().removeClass('layer-template');
         this._$container.prependTo($parent);
         this._$container.show();
 
         this._$container.toggleClass('selected', index === state.layerIndex());
         this._$container.find('.layer-name').html(layer.name);
+        this._setupLayerType();
 
         this._$container.find('.toggle-visibility').off('click').on('click', () => {
             state.toggleLayerVisibility(this._layer);
             eventBus.emit(EVENTS.REFRESH.ALL);
         })
 
-        this._layer = layer;
 
         this.refresh();
     }
@@ -210,5 +261,20 @@ class LayerComponent {
             .find('.ri')
             .toggleClass('ri-eye-line', this._layer.visible)
             .toggleClass('ri-eye-off-line', !this._layer.visible);
+    }
+
+    _setupLayerType() {
+        switch (this._layer.type) {
+            case LAYER_TYPES.RASTER:
+                this._$container.find('.layer-type')
+                    .addClass('ri-grid-line')
+                    .attr('data-layer-type', this._layer.type);
+                break;
+            case LAYER_TYPES.VECTOR:
+                this._$container.find('.layer-type')
+                    .addClass('ri-shape-line')
+                    .attr('data-layer-type', this._layer.type);
+                break;
+        }
     }
 }

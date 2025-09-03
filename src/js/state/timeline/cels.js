@@ -4,6 +4,8 @@ import {numCols, numRows, getConfig, setConfig} from "../config.js";
 import {mod} from "../../utils/numbers.js";
 import {DEFAULT_COLOR} from "../palette.js";
 import CelFactory from "./cel/factory.js";
+import {LAYER_TYPES} from "../constants.js";
+import RasterCel from "./cel/raster.js";
 
 export function getCelGlyphs(cel, ...args) { return cel.glyphs(...args) }
 export function setCelGlyph(cel, ...args) { return cel.setGlyph(...args) }
@@ -78,13 +80,20 @@ export function deleteCel(celId) {
     delete state.cels[celId]
 }
 
+export function rasterizeCel(celId) {
+    const vectorCel = cel(celId);
+    if (vectorCel.layerType !== LAYER_TYPES.VECTOR) throw new Error(`Cannot rasterize ${celId} - it is not a vector cel`)
+    const { chars, colors } = vectorCel.glyphs();
+    state.cels[celId] = new RasterCel(chars, colors);
+}
+
 /**
  * Returns the cel for either a celId or a layer & frame combination.
  * @param {string|Object} celIdOrLayer - Can be a celId string or a Layer object. If it is a celId string, simply returns
  *   the cel for that given id. If it is a Layer object, must also provide a Frame object as second parameter. The cel
  *   for that given layer & frame is returned.
  * @param {Object} [frame] - Frame object (only applicable if celIdOrLayer was a Layer object)
- * @returns {Object} - The cel at the given layer/frame
+ * @returns {RasterCel|VectorCel} - The cel at the given layer/frame
  */
 export function cel(celIdOrLayer, frame) {
     if (arguments.length === 1 && typeof celIdOrLayer === 'string') {

@@ -31,7 +31,7 @@
     border: 3px solid transparent;
     box-sizing: border-box;
 
-    &:hover:not(.selected) {
+    &:hover:not(.disabled):not(.active) {
       cursor: pointer;
       background: var(--color-surface-hover);
     }
@@ -39,6 +39,11 @@
     &.selected {
       border-color: var(--color-primary);
       background: var(--color-surface-hover);
+    }
+
+    &.disabled {
+      color: var(--color-font-heavy-muted);
+      cursor: default;
     }
   }
 

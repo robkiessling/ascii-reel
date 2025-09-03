@@ -30,7 +30,7 @@ export function confirmDialog(title, description, onAccept, acceptText = 'Ok') {
 
 // Creates a dialog popup with custom content ($dialog will already exist in HTML)
 export function createDialog($dialog, onAccept, acceptText = 'Save', overrides = {}) {
-    $dialog.dialog($.extend({
+    return $dialog.dialog($.extend({
         autoOpen: false,
         width: 350,
         classes: {

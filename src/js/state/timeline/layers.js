@@ -1,3 +1,4 @@
+import {LAYER_TYPES} from "../constants.js";
 
 const DEFAULT_STATE = {
     layers: [],
@@ -7,7 +8,7 @@ const DEFAULT_STATE = {
 const LAYER_DEFAULTS = {
     name: 'Layer',
     visible: true,
-    type: 'vector'
+    type: LAYER_TYPES.VECTOR
 }
 
 let state = {};
@@ -56,6 +57,17 @@ export function currentLayerType() {
 }
 
 export function createLayer(index, data) {
+    const layer = $.extend(true, {}, LAYER_DEFAULTS, {
+        id: ++idSequence,
+        name: nextLayerName()
+    }, data);
+
+    state.layers.splice(index, 0, layer);
+
+    return layer;
+}
+
+export function nextLayerName() {
     let max = 0;
 
     state.layers.map(layer => layer.name).forEach(name => {
@@ -66,14 +78,7 @@ export function createLayer(index, data) {
         }
     });
 
-    const layer = $.extend(true, {}, LAYER_DEFAULTS, {
-        id: ++idSequence,
-        name: `Layer ${max + 1}`
-    }, data);
-
-    state.layers.splice(index, 0, layer);
-
-    return layer;
+    return `Layer ${max + 1}`
 }
 
 export function deleteLayer(index) {

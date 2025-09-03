@@ -9,14 +9,15 @@ import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {LAYER_TYPES} from "./constants.js";
 
 export {
     numRows, numCols, setConfig, getConfig, fontFamily, getName, updateDrawType,
-    isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
+    isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, RASTER_TOOLS, VECTOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {
     // layers
-    layers, layerIndex, currentLayer, createLayer, deleteLayer, updateLayer,
+    layers, layerIndex, currentLayer, currentLayerType, createLayer, nextLayerName, deleteLayer,
     reorderLayer, toggleLayerVisibility,
 
     // frames
@@ -296,9 +297,7 @@ export function validateColorMode() {
 
         timeline.convertToMonochrome(charColor);
         palette.convertToMonochrome(charColor);
-        if (config.MULTICOLOR_TOOLS.has(config.getConfig('tool'))) {
-            config.setConfig('tool', 'text-editor'); // ensure tool is not one of the color-related ones
-        }
+        config.toolFallback();
         config.setConfig('primaryColor', charColor)
     }
     else {
@@ -339,11 +338,11 @@ export function validateProjectType() {
     }
 }
 
-// --------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------- Timeline API overrides
 
 export function changeFrameIndex(newIndex) {
     if (timeline.frameIndex() !== newIndex) {
-        if (timeline.currentLayerType() === 'vector') selection.deselectAllShapes();
+        if (timeline.currentLayerType() === LAYER_TYPES.VECTOR) selection.deselectAllShapes();
 
         timeline.changeFrameIndex(newIndex);
     }
@@ -351,9 +350,23 @@ export function changeFrameIndex(newIndex) {
 
 export function changeLayerIndex(newIndex) {
     if (timeline.layerIndex() !== newIndex) {
-        if (timeline.currentLayerType() === 'vector') selection.deselectAllShapes();
+        if (!timeline.currentLayer() || timeline.currentLayerType() === LAYER_TYPES.VECTOR) selection.deselectAllShapes();
 
         timeline.changeLayerIndex(newIndex);
+        config.toolFallback();
+    }
+}
+
+export function updateLayer(layer, updates) {
+    if (layer.type !== updates.type) {
+        // Special handling when changing layer type:
+        if (updates.type === LAYER_TYPES.VECTOR) {} // this should never happen, but we could make this deselect raster selection
+        if (updates.type === LAYER_TYPES.RASTER) selection.deselectAllShapes();
+
+        timeline.updateLayer(layer, updates);
+        config.toolFallback();
+    } else {
+        timeline.updateLayer(layer, updates);
     }
 }
 

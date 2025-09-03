@@ -4,6 +4,7 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {deserializeShape} from "../../../geometry/shapes/deserialize.js";
 import {transformValues} from "../../../utils/objects.js";
 import {HANDLE_TYPES, REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
+import {LAYER_TYPES} from "../../constants.js";
 
 /**
  * Vector Cel
@@ -15,7 +16,7 @@ import {HANDLE_TYPES, REORDER_ACTIONS} from "../../../geometry/shapes/constants.
  */
 export default class VectorCel {
     constructor(shapesById, shapesOrder) {
-        this.layerType = 'vector';
+        this.layerType = LAYER_TYPES.VECTOR;
         this.shapesById = shapesById || {};
         this.shapesOrder = shapesOrder || [];
     }
