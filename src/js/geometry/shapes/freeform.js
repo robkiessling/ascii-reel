@@ -7,8 +7,7 @@ import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import Point from "../point.js";
 import BoxShape from "./box_shape.js";
 import CellCache from "./cell_cache.js";
-import {getTraversedCells} from "./algorithms/freeform_segments.js";
-import {traversedCellsToChars} from "./algorithms/ascii_line.js";
+import {freeformAsciiPath} from "./algorithms/traverse_freeform.js";
 
 
 export default class Freeform extends Shape {
@@ -90,7 +89,7 @@ export default class Freeform extends Shape {
 
         switch(stroke) {
             case STROKE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_ADAPTIVE:
-                traversedCellsToChars(getTraversedCells(this.props.path), (cell, char) => {
+                freeformAsciiPath(this.props.path, (cell, char) => {
                     const relativeCell = cell.relativeTo(boundingArea.topLeft);
                     this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
                     hitbox.add(cell); // use absolute position for hitbox
@@ -98,7 +97,7 @@ export default class Freeform extends Shape {
                 break;
             case STROKE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_MONOCHAR:
                 // TODO Do not prune for monochar?
-                traversedCellsToChars(getTraversedCells(this.props.path), (cell, char) => {
+                freeformAsciiPath(this.props.path, (cell, char) => {
                     const relativeCell = cell.relativeTo(boundingArea.topLeft);
                     this._setGlyph(glyphs, relativeCell, this.props[CHAR_PROP], this.props[COLOR_PROP]);
                     hitbox.add(cell); // use absolute position for hitbox

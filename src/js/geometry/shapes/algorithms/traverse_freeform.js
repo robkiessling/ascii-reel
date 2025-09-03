@@ -1,24 +1,35 @@
 import Cell from "../../cell.js";
+import TraversedCell from "../../traversed_cell.js";
+import {charForTraversedCell} from "./char_approximation.js";
 
-export class TraversedCell extends Cell {
-    constructor(row, col, entry, exit) {
-        super(row, col);
-        this.entry = entry;
-        this.exit = exit;
-    }
+/**
+ * Calculates the line between each pair of adjacent points in the given array of points, and finds the best ascii
+ * characters to fit each line segment. Will ignore cells that the path only slightly overlaps to reduce noise.
+ * @param {Array<Point>} points
+ * @param {(cell: TraversedCell, char: string) => void} callback - Callback called for each cell in the drawn path
+ */
+export function freeformAsciiPath(points, callback) {
+    const traversedCells = getTraversedCells(points);
 
-    get normalizedEntry() {
-        return {
-            x: this.entry.x / Cell.width,
-            y: this.entry.y / Cell.height,
+    let prevUsedCell; // Keep track of the previous cell that has something drawn to it
+
+    for (const [i, traversedCell] of traversedCells.entries()) {
+        const { char, disposable } = charForTraversedCell(traversedCell);
+
+        // Check if char should be pruned (due to its size). This is only done if we have more than 2 cells so we don't
+        // prune during initial draw stroke
+        if (disposable && traversedCells.length > 2) {
+            // If there is no previously used cell, allow prune
+            if (!prevUsedCell) continue;
+
+            // If there is a previously used cell, only prune if the next cell is adjacent to it. I.e. if we prune
+            // the cell, the line will still be connected.
+            const nextCell = traversedCells[i + 1];
+            if (nextCell && (nextCell.equals(prevUsedCell) || nextCell.isAdjacentTo(prevUsedCell))) continue;
         }
-    }
 
-    get normalizedExit() {
-        return {
-            x: this.exit.x / Cell.width,
-            y: this.exit.y / Cell.height,
-        }
+        callback(traversedCell, char)
+        prevUsedCell = traversedCell;
     }
 }
 
@@ -28,10 +39,10 @@ export class TraversedCell extends Cell {
  * be included as separate TraversedCells. If many points are within one cell, there will only be one TraversedCell
  * representing all of those points combined. The exception is if the points path leaves a given cell and then returns
  * to it again; that second returning will be a new TraversedCell.
- * @param {Point[]} points
- * @returns {TraversedCell[]}
+ * @param {Array<Point>} points
+ * @returns {Array<TraversedCell>}
  */
-export function getTraversedCells(points) {
+function getTraversedCells(points) {
     const result = [];
 
     for (let i = 0; i < points.length - 1; i++) {
@@ -68,11 +79,7 @@ export function getTraversedCells(points) {
  *
  * @param {Point} p0 - The start point in world coordinates.
  * @param {Point} p1 - The end point in world coordinates.
- * @returns {Array<{ row: number, col: number, entry, exit }>} Array of segments, where each segment has:
- *   - row/col of the cell it is in
- *   - entry {x, y} and exit {x, y} points in cell-local coordinates (values between 0 and 1)
- *
- * @returns {Array<TraversedCell>} - Array of
+ * @returns {Array<TraversedCell>}
  */
 function getTraversedSegments(p0, p1) {
     const result = [];

@@ -7,7 +7,7 @@ import CellCache from "./cell_cache.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import {forEachAdjPair} from "../../utils/arrays.js";
 import BoxShape from "./box_shape.js";
-import {straightAsciiLine} from "./algorithms/ascii_line.js";
+import {straightAsciiLine} from "./algorithms/traverse_straight.js";
 
 
 export default class Line extends Shape {
