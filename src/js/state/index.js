@@ -17,7 +17,7 @@ export {
 } from './config.js'
 export {
     // layers
-    layers, layerIndex, currentLayer, currentLayerType, createLayer, nextLayerName, deleteLayer,
+    layers, layerIndex, currentLayer, currentLayerType, nextLayerName,
     reorderLayer, toggleLayerVisibility,
 
     // frames
@@ -46,11 +46,18 @@ export {
     pushHistory, endHistoryModification, modifyHistory, isDirty, markClean
 } from './history.js'
 export {
+    rasterSelectionShapes, addRasterSelectionShape, hasRasterSelection, hasRasterTarget, emptyRasterSelection,
+    selectAllRaster, getSelectedRasterValues, getSelectedRasterCellArea, getSelectedRasterRect, getSelectedRasterCells,
+    getConnectedRasterCells, getMovableRasterContent, startMovingRasterContent, finishMovingRasterContent, updateMovableRasterContent,
+    getCaretPosition, caretCell, moveCaretTo, moveRasterDelta, moveRasterInDirection, extendRasterInDirection, flipRasterSelection,
+
     selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
-    selectShape, deselectShape, deselectAllShapes,
+    selectShape, deselectShape,
     setShapeCursor, getShapeCursor,
     selectedShapes, selectedShapeTypes, selectedShapeProps,
-    updateSelectedShapes, deleteSelectedShapes, reorderSelectedShapes, canReorderSelectedShapes
+    updateSelectedShapes, deleteSelectedShapes, reorderSelectedShapes, canReorderSelectedShapes,
+
+    clearSelection
 } from './selection/index.js'
 
 export function init() {
@@ -342,7 +349,7 @@ export function validateProjectType() {
 
 export function changeFrameIndex(newIndex) {
     if (timeline.frameIndex() !== newIndex) {
-        if (timeline.currentLayerType() === LAYER_TYPES.VECTOR) selection.deselectAllShapes();
+        if (timeline.currentLayerType() === LAYER_TYPES.VECTOR) selection.clearSelection();
 
         timeline.changeFrameIndex(newIndex);
     }
@@ -350,24 +357,39 @@ export function changeFrameIndex(newIndex) {
 
 export function changeLayerIndex(newIndex) {
     if (timeline.layerIndex() !== newIndex) {
-        if (!timeline.currentLayer() || timeline.currentLayerType() === LAYER_TYPES.VECTOR) selection.deselectAllShapes();
+        if (!timeline.currentLayer() || timeline.currentLayerType() !== timeline.layerAt(newIndex).type) selection.clearSelection();
 
         timeline.changeLayerIndex(newIndex);
         config.toolFallback();
     }
 }
 
+export function createLayer(index, data) {
+    timeline.createLayer(index, data);
+    changeLayerIndex(index);
+}
+
 export function updateLayer(layer, updates) {
     if (layer.type !== updates.type) {
-        // Special handling when changing layer type:
-        if (updates.type === LAYER_TYPES.VECTOR) {} // this should never happen, but we could make this deselect raster selection
-        if (updates.type === LAYER_TYPES.RASTER) selection.deselectAllShapes();
-
+        selection.clearSelection();
         timeline.updateLayer(layer, updates);
         config.toolFallback();
     } else {
         timeline.updateLayer(layer, updates);
     }
+}
+
+export function deleteLayer(index) {
+    timeline.deleteLayer(index);
+
+    const newIndex = Math.min(timeline.layerIndex(), timeline.layers().length - 1)
+
+    // Note: When a layer is deleted, the active layer may remain at the same numeric index even though the underlying
+    //       layer has changed. To ensure `changeLayerIndex(newIndex)` always runs its side-effects, we temporarily set
+    //       the index to -1 (an invalid value) so the subsequent call is guaranteed to be treated as a change.
+    timeline.changeLayerIndex(-1);
+
+    changeLayerIndex(newIndex);
 }
 
 

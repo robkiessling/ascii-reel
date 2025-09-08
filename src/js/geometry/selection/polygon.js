@@ -2,9 +2,9 @@ import Cell from "../cell.js";
 
 /**
  * SelectionPolygon is the base class for many types of selection shapes. All polygons have a start value (where the
- * user first clicked) and an end value (where the user's mouse position was at time of mouseup).
+ * user first clicked) and an end value (where the user's mouse position currently is or was at time of mouseup).
  *
- * Subclasses must implement 'iterateCells', and 'draw'
+ * Subclasses must implement 'iterateCells', 'draw', and static 'type' field
  */
 export default class SelectionPolygon {
     constructor(startCell, endCell = undefined, options = {}) {
@@ -12,6 +12,20 @@ export default class SelectionPolygon {
         this.end = endCell === undefined ? startCell.clone() : endCell;
         this.options = options;
         this.completed = false;
+    }
+
+    get type() {
+        return this.constructor.type;
+    }
+
+    serialize() {
+        return { type: this.type, start: this.start.serialize(), end: this.end.serialize() };
+    }
+
+    static deserialize(data) {
+        const shape = new this(Cell.deserialize(data.start), Cell.deserialize(data.end));
+        shape.completed = true;
+        return shape;
     }
 
     set start(cell) {

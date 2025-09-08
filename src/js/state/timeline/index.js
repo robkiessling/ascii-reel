@@ -151,6 +151,8 @@ export function createLayer(index, data) {
 
     // create blank cels for all frames
     frameController.frames().forEach(frame => celController.createCel(layer, frame));
+
+
 }
 
 export function updateLayer(layer, updates) {

@@ -54,10 +54,12 @@ export function pushHistory(options = {}) {
     // If modifiable option is a match, we just update the current slice and return
     if (history.length && options.modifiable && options.modifiable === history[historyIndex].options.modifiable) {
         history[historyIndex] = snapshot;
+        logState(`modified history (${options.modifiable}): `, snapshot);
         return;
     }
 
     endHistoryModification();
+    logState('pushed history: ', snapshot);
 
     history.push(snapshot);
     historyIndex = historyIndex === undefined ? 0 : historyIndex + 1;
@@ -74,6 +76,7 @@ function loadStateFromHistory(newIndex, oldIndex) {
 
     const newState = history[newIndex];
     const oldState = history[oldIndex];
+    logState('popped history: ', newState);
 
     deserialize(structuredClone(newState.state), { replace: true, history: true })
 
@@ -121,7 +124,14 @@ export function endHistoryModification() {
 export function modifyHistory(callback) {
     if (history.length) {
         callback(history[historyIndex].state)
+        logState('modified history (manual): ', history[historyIndex]);
     }
+}
+
+function logState(prefix, snapshot) {
+    // TODO [undo/redo issue]
+    // const loggableState = JSON.stringify(snapshot.state.selection.rasterSelection.selectionShapes, undefined, 2)
+    // console.log(prefix, loggableState);
 }
 
 // -------------------------------------------------------------------------------- Dirty / Clean

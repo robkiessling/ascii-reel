@@ -2,12 +2,14 @@ import Cell from "../cell.js";
 import * as state from "../../state/index.js";
 import CellArea from "../cell_area.js";
 import SelectionPolygon from "./polygon.js";
+import {SELECTION_SHAPE_TYPES} from "./constants.js";
 
 /**
  * A selection of cells in a rectangular shape. Supports the following options:
  * - outline: (boolean) If true, only the cells along the border of the rectangle are included
  */
 export default class SelectionRect extends SelectionPolygon {
+    static type = SELECTION_SHAPE_TYPES.RECT;
 
     static drawableArea() {
         return new SelectionRect(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));

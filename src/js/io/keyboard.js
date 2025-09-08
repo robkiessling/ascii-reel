@@ -1,11 +1,9 @@
-import * as selection from "../features/selection.js";
+import * as rasterSelection from "../features/selection/raster_selection.js";
+import * as vectorSelection from "../features/selection/vector_selection.js";
 import * as state from "../state/index.js";
 import * as tools from "../features/tools.js";
 import * as actions from "./actions.js";
-import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
-import {toggleQuickSwap} from "../features/tools.js";
-import * as vectorSelection from "../features/selection/vector_selection.js";
 
 const $document = $(document);
 
@@ -82,7 +80,7 @@ function setupKeydownListener() {
 function handleEscapeKey() {
     state.endHistoryModification();
 
-    selection.clear();
+    rasterSelection.clear();
 
     if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
     if (tools.isQuickSwapEnabled()) tools.toggleQuickSwap(false);
@@ -91,8 +89,8 @@ function handleEscapeKey() {
 function handleTabKey(e) {
     state.endHistoryModification();
 
-    if (selection.caretCell()) {
-        selection.handleTabKey(e.shiftKey);
+    if (rasterSelection.caretCell()) {
+        rasterSelection.handleTabKey(e.shiftKey);
     }
     else {
         actions.callActionByShortcut({ char: 'Tab' })
@@ -100,20 +98,20 @@ function handleTabKey(e) {
 }
 
 function handleEnterKey(e) {
-    selection.handleEnterKey(e.shiftKey);
+    rasterSelection.handleEnterKey(e.shiftKey);
 }
 
 function handleBackspaceKey(char) {
-    handleChar(EMPTY_CHAR, () => selection.handleBackspaceKey(char === 'Delete'))
+    handleChar(EMPTY_CHAR, () => rasterSelection.handleBackspaceKey(char === 'Delete'))
 }
 
 function handleArrowKey(e, arrowKey) {
     const direction = arrowKeyToDirection(arrowKey);
 
-    if (selection.hasTarget()) {
+    if (rasterSelection.hasTarget()) {
         state.endHistoryModification();
 
-        selection.handleArrowKey(direction, e.shiftKey);
+        rasterSelection.handleArrowKey(direction, e.shiftKey);
     }
     else if (vectorSelection.caretCell()) {
         state.endHistoryModification();
@@ -150,7 +148,7 @@ function arrowKeyToDirection(arrowKey) {
 }
 
 function handleSingleCharKey(char, moveCaret = true) {
-    handleChar(char, () => selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCaret))
+    handleChar(char, () => rasterSelection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCaret))
 }
 
 function handleChar(char, selectionUpdater) {
@@ -162,10 +160,10 @@ function handleChar(char, selectionUpdater) {
 
     if (tools.isQuickSwapEnabled()) tools.selectChar(char);
 
-    if (selection.caretCell()) {
+    if (rasterSelection.caretCell()) {
         selectionUpdater()
     } else if (tools.isQuickSwapEnabled()) {
-        if (selection.hasSelection()) selectionUpdater()
+        if (rasterSelection.hasSelection()) selectionUpdater()
     } else {
         actions.callActionByShortcut({ char: char })
     }
@@ -277,6 +275,6 @@ function setupCompositionListener() {
 
         // Since we didn't move the caret in compositionupdate (moveCaret=false), we move the caret now that
         // composition is finished
-        selection.moveInDirection('right', { updateCaretOrigin: false })
+        rasterSelection.moveInDirection('right', { updateCaretOrigin: false })
     })
 }

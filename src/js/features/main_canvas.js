@@ -12,7 +12,7 @@
  */
 
 import CanvasControl from "../components/canvas_control.js";
-import * as selection from "./selection.js";
+import * as rasterSelection from "./selection/raster_selection.js";
 import * as vectorSelection from "./selection/vector_selection.js";
 import {drawingContent, hoveredCells} from "./tools.js";
 import * as state from "../state/index.js";
@@ -186,8 +186,8 @@ function redrawCharCanvas() {
     const currentGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend(true, {}, layeredGlyphsOptions, {
         layers: [state.currentLayer()],
         movableContent: {
-            glyphs: selection.movableContent,
-            origin: selection.movableContent ? selection.getSelectedCellArea().topLeft : null
+            glyphs: rasterSelection.movableContent(),
+            origin: rasterSelection.movableContent() ? rasterSelection.getSelectedCellArea().topLeft : null
         },
         drawingContent: tools.drawingContent ? tools.drawingContent.rasterize() : undefined,
     }));
@@ -265,15 +265,15 @@ function redrawSelection() {
     selectionCanvas.clear();
     selectionBorderCanvas.clear();
 
-    selectionCanvas.highlightPolygons(selection.polygons);
+    selectionCanvas.highlightPolygons(rasterSelection.selectionShapes());
 
-    if (selection.hasSelection() && !selection.isDrawing && !selection.caretCell()) {
-        selectionBorderCanvas.outlinePolygon(selection.getSelectedRect(), selection.movableContent)
+    if (rasterSelection.hasSelection() && !rasterSelection.isDrawing() && !rasterSelection.caretCell()) {
+        selectionBorderCanvas.outlinePolygon(rasterSelection.getSelectedRect(), rasterSelection.movableContent())
     }
 
-    if (selection.caretCell()) {
+    if (rasterSelection.caretCell()) {
         const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(selection.caretCell(), state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
+        caretCanvas.startCaretAnimation(rasterSelection.caretCell(), state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
     }
 
     vectorSelection.drawShapeSelection(selectionCanvas);
@@ -303,7 +303,7 @@ function showHoverForTool() {
 function redrawHover() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell && !selection.isDrawing && !selection.isMoving && showHoverForTool()) {
+    if (hoveredCell && !rasterSelection.isDrawing() && !rasterSelection.isMoving() && showHoverForTool()) {
         hoveredCells(hoveredCell).forEach(cell => {
             if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
         })
@@ -315,7 +315,7 @@ function redrawHover() {
 function refreshCanvasDetails() {
     $canvasDetails.canvasDimensionsValue.html(`[${state.numCols()}x${state.numRows()}]`);
 
-    const selectedArea = selection.getSelectedCellArea();
+    const selectedArea = rasterSelection.getSelectedCellArea();
     $canvasDetails.selectedDimensions.toggle(!!selectedArea);
     $canvasDetails.selectedDimensionsValue.html(selectedArea ? `${selectedArea.numRows}x${selectedArea.numCols}` : '&nbsp;');
 

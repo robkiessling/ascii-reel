@@ -2,7 +2,7 @@
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
 
-import * as selection from "../features/selection.js";
+import * as rasterSelection from "../features/selection/raster_selection.js";
 import * as state from "../state/index.js";
 import * as actions from "./actions.js";
 import {translateGlyphs} from "../utils/arrays.js";
@@ -15,29 +15,29 @@ let copiedText = null;
 export function init() {
     actions.registerAction('clipboard.cut', {
         callback: () => cut(),
-        enabled: () => selection.hasSelection() && !selection.movableContent
+        enabled: () => rasterSelection.hasSelection() && !rasterSelection.movableContent()
     });
     actions.registerAction('clipboard.copy', {
         callback: () => copy(),
-        enabled: () => selection.hasSelection() && !selection.movableContent
+        enabled: () => rasterSelection.hasSelection() && !rasterSelection.movableContent()
     });
     actions.registerAction('clipboard.paste', {
         callback: () => paste(),
-        enabled: () => selection.hasTarget() && !selection.movableContent
+        enabled: () => rasterSelection.hasTarget() && !rasterSelection.movableContent()
     });
     actions.registerAction('clipboard.paste-in-selection', {
         callback: () => paste(true),
-        enabled: () => selection.hasSelection() && !selection.movableContent
+        enabled: () => rasterSelection.hasSelection() && !rasterSelection.movableContent()
     });
 }
 
 
 function cut() {
     // If we're moving content, immediately finish it so that it's more intuitive as to what is being cut
-    if (selection.movableContent) { selection.finishMovingContent(); }
+    if (rasterSelection.movableContent()) { rasterSelection.finishMovingContent(); }
 
     copySelection();
-    selection.empty();
+    rasterSelection.empty();
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
     state.pushHistory();
 }
@@ -56,7 +56,7 @@ function copy() {
  * - Otherwise, paste content relative to topLeft of selection
  */
 function paste(limitToSelection) {
-    if (!selection.hasTarget()) {
+    if (!rasterSelection.hasTarget()) {
         // There is nowhere to paste the text
         return;
     }
@@ -74,7 +74,7 @@ function paste(limitToSelection) {
 }
 
 function copySelection() {
-    copiedSelection = selection.getSelectedValues();
+    copiedSelection = rasterSelection.getSelectedValues();
     copiedText = convertGlyphsToText(copiedSelection);
     writeClipboard(copiedText);
 }
@@ -92,38 +92,38 @@ export function copyChar(char) {
 function pasteGlyphs(glyphs, limitToSelection = false) {
     // If there is no selection area, that means there is simply a caret to paste at (this only happens when using the
     // text-editor tool).
-    const pasteAtCaret = !selection.hasSelection();
+    const pasteAtCaret = !rasterSelection.hasSelection();
 
     if (glyphs.chars.length === 1 && glyphs.chars[0].length === 1) {
         // Special case: only one char of text was copied. Apply that char to entire selection
         const char = glyphs.chars[0][0];
         const color = glyphs.colors[0][0];
 
-        (pasteAtCaret ? [selection.caretCell()] : selection.getSelectedCells()).forEach(cell => {
+        (pasteAtCaret ? [rasterSelection.caretCell()] : rasterSelection.getSelectedCells()).forEach(cell => {
             state.setCurrentCelGlyph(cell.row, cell.col, char, color);
         });
     }
     else {
         // Paste glyphs at topLeft of selected area
-        const topLeft = pasteAtCaret ? selection.caretCell() : selection.getSelectedCellArea().topLeft;
+        const topLeft = pasteAtCaret ? rasterSelection.caretCell() : rasterSelection.getSelectedCellArea().topLeft;
         translateGlyphs(glyphs, topLeft, (r, c, char, color) => {
             // Copied empty cells do not override existing cells (if you want to override existing cells to make them
             // blank, original copy should have spaces not empty cells)
             if (char === EMPTY_CHAR) return;
 
-            if (!limitToSelection || selection.isSelectedCell({row: r, col: c})) {
+            if (!limitToSelection || rasterSelection.isSelectedCell({row: r, col: c})) {
                 state.setCurrentCelGlyph(r, c, char, color);
             }
         });
     }
 
-    if (selection.caretCell()) {
-        selection.moveInDirection('down', {
+    if (rasterSelection.caretCell()) {
+        rasterSelection.moveInDirection('down', {
             amount: glyphs.chars.length - 1,
             updateCaretOrigin: false,
             wrapCaretPosition: false,
         });
-        selection.moveInDirection('right', {
+        rasterSelection.moveInDirection('right', {
             amount: glyphs.chars.at(-1).length,
             updateCaretOrigin: false,
             wrapCaretPosition: false,

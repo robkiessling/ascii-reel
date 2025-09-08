@@ -13,6 +13,7 @@ import ShapeSelector from "./shape_selector.js";
 import VectorMarquee from "./vector_marquee.js";
 import {arraysEqual} from "../../utils/arrays.js";
 import {MOUSE} from "../../io/mouse.js";
+import {hasSelectedShapes} from "../../state/index.js";
 
 export function init() {
     setupEventBus();
@@ -161,6 +162,8 @@ export function getHandle(cell, mouseEvent, canvasControl) {
 }
 
 export function deleteSelectedShapes() {
+    if (!state.hasSelectedShapes()) return; // Do not emit event or push history
+
     state.deleteSelectedShapes();
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -168,13 +171,17 @@ export function deleteSelectedShapes() {
 }
 
 export function deselectAllShapes(allowHistoryPush = true) {
+    if (!state.hasSelectedShapes()) return; // Do not emit event or push history
+
     const hasStateChange = state.hasSelectedShapes();
-    state.deselectAllShapes();
+    state.clearSelection();
     eventBus.emit(EVENTS.SELECTION.CHANGED);
     if (allowHistoryPush && hasStateChange) state.pushHistory();
 }
 
 export function reorderSelectedShapes(action) {
+    if (!state.hasSelectedShapes()) return; // Do not emit event or push history
+
     state.reorderSelectedShapes(action);
     eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -182,6 +189,8 @@ export function reorderSelectedShapes(action) {
 }
 
 export function updateSelectedShapes(updater) {
+    if (!state.hasSelectedShapes()) return; // Do not emit event or push history
+
     state.updateSelectedShapes(updater);
     eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -190,6 +199,8 @@ export function updateSelectedShapes(updater) {
 
 // For rapid updates that affect shape display but should not be committed to history
 export function rapidUpdateSelectedShapes(updater) {
+    if (!state.hasSelectedShapes()) return; // Do not emit event or push history
+
     state.updateSelectedShapes(updater);
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }

@@ -1,5 +1,6 @@
 import Cell from "../cell.js";
 import SelectionRect from "./rect.js";
+import {SELECTION_SHAPE_TYPES} from "./constants.js";
 
 /**
  * SelectionText is similar to SelectionRect, but it can occupy 0 width. Similar to selecting text in a text editor,
@@ -8,6 +9,7 @@ import SelectionRect from "./rect.js";
  * subtract 1 from the end column once the user highlights more than 1 cell.
  */
 export default class SelectionText extends SelectionRect {
+    static type = SELECTION_SHAPE_TYPES.TEXT;
 
     get bottomRight() {
         let maxRow = Math.max(this.start.row, this.end.row);

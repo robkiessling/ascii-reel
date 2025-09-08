@@ -17,15 +17,17 @@ const DEFAULT_STATE = {
 let state = {};
 
 export function deserialize(data = {}, options = {}) {
+    const newShapeIds = new Set(data.shapeIds || []); // Convert Array to Set
+
     if (options.replace) {
         state = {
             ...data,
-            shapeIds: new Set(data.shapeIds)
+            shapeIds: newShapeIds
         }
         return;
     }
 
-    state = $.extend(true, {}, DEFAULT_STATE, { ...data, shapeIds: new Set(data.shapeIds) });
+    state = $.extend(true, {}, DEFAULT_STATE, { ...data, shapeIds: newShapeIds });
 }
 
 export function serialize(options = {}) {

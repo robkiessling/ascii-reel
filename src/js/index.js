@@ -13,11 +13,11 @@ import { init as initPalette } from "./features/palette.js";
 import { init as initPreview, resize as resizePreview } from "./features/preview.js";
 import { init as initUnicode } from "./features/unicode.js";
 import { init as initMainCanvas, resize as resizeMainCanvas } from './features/main_canvas.js';
-import { init as initSelection, clear as performClearSelection, syncTextEditorCaretPosition } from './features/selection.js';
+import { init as initRasterSelection, clear as performClearSelection, syncTextEditorCaretPosition } from './features/selection/raster_selection.js'
 import { init as initVectorSelection } from './features/selection/vector_selection.js';
 import {
     init as initState, isValid as isStateValid,
-    loadFromStorage, markClean, loadNewState
+    loadFromStorage, markClean, loadNewState, modifyHistory, serialize
 } from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./features/frames.js";
 import { init as initLayers } from "./features/layers.js";
@@ -43,7 +43,7 @@ initMainCanvas();
 initFrames();
 initLayers();
 initSidebar();
-initSelection();
+initRasterSelection();
 initVectorSelection();
 initLocalStorage();
 
@@ -80,7 +80,8 @@ function setupEventBus() {
     
     // History state-change listener:
     eventBus.on(EVENTS.HISTORY.CHANGED, ({ requiresResize, recalculateFont, recalculateColors }) => {
-        syncTextEditorCaretPosition();
+        // TODO [undo/redo issue]
+        // syncTextEditorCaretPosition();
 
         if (recalculateFont) calculateFontRatio()
         if (recalculateColors) recalculateCanvasColors()
@@ -91,6 +92,11 @@ function setupEventBus() {
         else {
             eventBus.emit(EVENTS.REFRESH.ALL);
         }
+    })
+
+    eventBus.on(EVENTS.SELECTION.CHANGED, () => {
+        // TODO [undo/redo issue]
+        // modifyHistory(historySlice => historySlice.selection = serialize({ history: true }).selection)
     })
 
     eventBus.on(EVENTS.FILE.SAVED, () => markClean());

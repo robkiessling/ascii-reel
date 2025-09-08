@@ -42,13 +42,12 @@ export const DEFAULT_STATE = {
     },
     shapeStrokes: DEFAULT_STROKES,
     lastExportOptions: null,
-    caretPosition: {},
     caretStyle: 'I-beam', // vs. block
 }
 
 // Only the following config keys are saved to history; undo/redo will not affect the other config
 const CONFIG_KEYS_SAVED_TO_HISTORY = [
-    'font', 'dimensions', 'background', 'caretPosition', 'projectType', 'colorMode'
+    'font', 'dimensions', 'background', 'projectType', 'colorMode'
 ]
 
 // These tools are only available if colorMode is multicolor

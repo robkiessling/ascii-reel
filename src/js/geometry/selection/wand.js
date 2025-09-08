@@ -2,6 +2,8 @@ import * as state from "../../state/index.js";
 import Cell from "../cell.js";
 import SelectionPolygon from "./polygon.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
+import {SELECTION_SHAPE_TYPES} from "./constants.js";
+import CellArea from "../cell_area.js";
 
 /**
  * SelectionWand starts with a single cell and then finds all connected cells of the same color.
@@ -10,6 +12,19 @@ import {EMPTY_CHAR} from "../../config/chars.js";
  * - colorblind (boolean) If true, finds connected cells regardless of color.
  */
 export default class SelectionWand extends SelectionPolygon {
+    static type = SELECTION_SHAPE_TYPES.WAND;
+
+    serialize() {
+        return { type: this.type, cells: this._cells.map(cell => cell.serialize()) };
+    }
+
+    static deserialize(data) {
+        const wand = new SelectionWand(null, null);
+        wand._cells = data.cells.map(cell => Cell.deserialize(cell));
+        wand._cacheEndpoints();
+        wand.completed = true;
+        return wand;
+    }
 
     get cells() {
         return this._cells;

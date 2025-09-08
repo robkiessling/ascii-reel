@@ -22,6 +22,14 @@ export default class CellArea extends PixelRect {
         this.bottomRight = bottomRight;
     }
 
+    serialize() {
+        return { topLeft: this.topLeft.serialize(), bottomRight: this.bottomRight.serialize() }
+    }
+
+    static deserialize(data) {
+        return new CellArea(Cell.deserialize(data.topLeft), Cell.deserialize(data.bottomRight));
+    }
+
     static drawableArea() {
         return new CellArea(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
     }

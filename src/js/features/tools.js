@@ -6,7 +6,7 @@
  */
 
 import * as state from '../state/index.js';
-import * as selection from './selection.js';
+import * as rasterSelection from './selection/raster_selection.js';
 import * as vectorSelection from "./selection/vector_selection.js";
 import * as actions from "../io/actions.js";
 import tippy from 'tippy.js';
@@ -83,7 +83,7 @@ function refresh() {
 
 export function changeTool(newTool) {
     state.setConfig('tool', newTool);
-    selection.clear();
+    rasterSelection.clear();
     vectorSelection.deselectAllShapes();
     refresh();
 }
@@ -371,23 +371,23 @@ function setupSelectionTools() {
         actions.registerAction(actionIdForSelectionTool(tool), {
             callback: callback,
             enabled: () => {
-                if (disableOnMove && selection.movableContent) { return false; }
+                if (disableOnMove && rasterSelection.movableContent()) { return false; }
                 return true;
             },
             shortcutAbbr: shortcutAbbr
         });
     }
     
-    registerAction('move', () => selection.toggleMovingContent(), false, `${modifierAbbr('metaKey')}Click`);
-    registerAction('flip-v', e => selection.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
-    registerAction('flip-h', e => selection.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
-    registerAction('clone', () => selection.cloneToAllFrames());
+    registerAction('move', () => rasterSelection.toggleMovingContent(), false, `${modifierAbbr('metaKey')}Click`);
+    registerAction('flip-v', e => rasterSelection.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
+    registerAction('flip-h', e => rasterSelection.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
+    registerAction('clone', () => rasterSelection.cloneToAllFrames());
     registerAction('fill-char', () => fillSelection(state.getConfig('primaryChar'), undefined));
     registerAction('fill-color', () => fillSelection(undefined, state.primaryColorIndex()));
     registerAction('convert-to-whitespace', () => replaceInSelection(EMPTY_CHAR, WHITESPACE_CHAR));
     registerAction('convert-to-empty', () => replaceInSelection(WHITESPACE_CHAR, EMPTY_CHAR));
     registerAction('resize', () => resizeToSelection());
-    registerAction('close', () => selection.clear(), true, 'Esc');
+    registerAction('close', () => rasterSelection.clear(), true, 'Esc');
 
     $selectionTools.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
         const $element = $(evt.currentTarget);
@@ -408,11 +408,11 @@ function actionIdForSelectionTool(tool) {
 }
 
 function refreshSelectionTools() {
-    const isVisible = selection.hasSelection() && !selection.caretCell();
+    const isVisible = rasterSelection.hasSelection() && !rasterSelection.caretCell();
     $selectionTools.toggle(isVisible);
     if (!isVisible) selectionTooltips.tooltips.forEach(tooltip => tooltip.hide())
 
-    $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selection.movableContent);
+    $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!rasterSelection.movableContent());
 
     $selectionTools.find('.sub-tool').each((i, element) => {
         const $element = $(element);
@@ -425,7 +425,7 @@ function refreshSelectionTools() {
 }
 
 function fillSelection(char, color) {
-    selection.getSelectedCells().forEach(cell => {
+    rasterSelection.getSelectedCells().forEach(cell => {
         state.setCurrentCelGlyph(cell.row, cell.col, char, color);
     });
 
@@ -434,7 +434,7 @@ function fillSelection(char, color) {
 }
 
 function replaceInSelection(findChar, replaceChar) {
-    selection.getSelectedCells().forEach(cell => {
+    rasterSelection.getSelectedCells().forEach(cell => {
         if (state.getCurrentCelGlyph(cell.row, cell.col)[0] === findChar) {
             state.setCurrentCelGlyph(cell.row, cell.col, replaceChar);
         }
@@ -445,7 +445,7 @@ function replaceInSelection(findChar, replaceChar) {
 }
 
 function resizeToSelection() {
-    const area = selection.getSelectedCellArea().bindToDrawableArea();
+    const area = rasterSelection.getSelectedCellArea().bindToDrawableArea();
     state.resize([area.numRows, area.numCols], area.topLeft.row, area.topLeft.col);
     eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
     state.pushHistory({ requiresResize: true });
@@ -740,7 +740,7 @@ function refreshShapeProperties() {
 function fillConnectedCells(cell, char, colorIndex, options) {
     if (!cell.isInBounds()) return;
 
-    selection.getConnectedCells(cell, options).forEach(cell => {
+    rasterSelection.getConnectedCells(cell, options).forEach(cell => {
         state.setCurrentCelGlyph(cell.row, cell.col, char, colorIndex);
     })
 
@@ -1026,7 +1026,7 @@ export function selectChar(char, triggerUpdates = true) {
 let quickSwapEnabled = false;
 
 export function isQuickSwapEnabled() {
-    if (selection.hasSelection() && !selection.caretCell()) return true;
+    if (rasterSelection.hasSelection() && !rasterSelection.caretCell()) return true;
     return quickSwapEnabled;
 }
 
@@ -1126,12 +1126,12 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl) {
             const handle = vectorSelection.getHandle(cell, mouseEvent, canvasControl);
             return handle ? handle.cursor : 'default';
         case 'text-editor':
-            return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? grab : 'text';
+            return rasterSelection.isSelectedCell(cell) && rasterSelection.allowMovement(tool, mouseEvent) ? grab : 'text';
         case 'selection-rect':
         case 'selection-line':
         case 'selection-lasso':
         case 'selection-wand':
-            return selection.isSelectedCell(cell) && selection.allowMovement(tool, mouseEvent) ? grab : 'cell';
+            return rasterSelection.isSelectedCell(cell) && rasterSelection.allowMovement(tool, mouseEvent) ? grab : 'cell';
         case 'draw-freeform':
         case 'draw-rect':
         case 'draw-line':

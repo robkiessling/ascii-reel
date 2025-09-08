@@ -109,7 +109,8 @@ function setupActions() {
     actions.registerAction('layers.delete-layer', {
         callback: () => {
             state.deleteLayer(state.layerIndex());
-            selectLayer(Math.min(state.layerIndex(), state.layers().length - 1));
+            eventBus.emit(EVENTS.REFRESH.ALL);
+            state.pushHistory()
         },
         enabled: () => state.layers() && state.layers().length > 1
     });
@@ -209,7 +210,7 @@ function saveLayer() {
     if ($isNewLayer.val() === 'true') {
         const layerIndex = state.layerIndex() + 1; // Add new layer right after current layer
         state.createLayer(layerIndex, layerProps);
-        selectLayer(layerIndex);
+        // selectLayer(layerIndex);
     } else {
         state.updateLayer(state.currentLayer(), layerProps);
     }
