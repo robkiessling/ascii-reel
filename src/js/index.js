@@ -13,11 +13,11 @@ import { init as initPalette } from "./features/palette.js";
 import { init as initPreview, resize as resizePreview } from "./features/preview.js";
 import { init as initUnicode } from "./features/unicode.js";
 import { init as initMainCanvas, resize as resizeMainCanvas } from './features/main_canvas.js';
-import { init as initRasterSelection, clear as performClearSelection, syncTextEditorCaretPosition } from './features/selection/raster_selection.js'
+import { init as initRasterSelection, clear as performClearSelection } from './features/selection/raster_selection.js'
 import { init as initVectorSelection } from './features/selection/vector_selection.js';
 import {
     init as initState, isValid as isStateValid,
-    loadFromStorage, markClean, loadNewState, modifyHistory, serialize
+    loadFromStorage, markClean, loadNewState, modifyHistory, serialize, pushHistory
 } from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./features/frames.js";
 import { init as initLayers } from "./features/layers.js";
@@ -55,7 +55,7 @@ function setupEventBus() {
         calculateFontRatio();
         recalculateCanvasColors();
 
-        eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
+        eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: false, resetZoom: true })
     })
 
     $(window).on('resize', debounce(() => eventBus.emit(EVENTS.RESIZE.ALL)));
@@ -80,9 +80,6 @@ function setupEventBus() {
     
     // History state-change listener:
     eventBus.on(EVENTS.HISTORY.CHANGED, ({ requiresResize, recalculateFont, recalculateColors }) => {
-        // TODO [undo/redo issue]
-        // syncTextEditorCaretPosition();
-
         if (recalculateFont) calculateFontRatio()
         if (recalculateColors) recalculateCanvasColors()
 
@@ -97,6 +94,9 @@ function setupEventBus() {
     eventBus.on(EVENTS.SELECTION.CHANGED, () => {
         // TODO [undo/redo issue]
         // modifyHistory(historySlice => historySlice.selection = serialize({ history: true }).selection)
+
+        // This almost works, but movable content is janky
+        // pushHistory({ modifiable: 'selection' })
     })
 
     eventBus.on(EVENTS.FILE.SAVED, () => markClean());

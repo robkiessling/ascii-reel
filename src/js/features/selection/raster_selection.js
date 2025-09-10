@@ -158,7 +158,7 @@ function setupEventBus() {
         if (movableContent()) finishMovingContent()
     })
 
-    let moveStep, hasMoved;
+    let hasMoved;
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
@@ -180,12 +180,13 @@ function setupEventBus() {
         // prevCell = undefined;
         prevCell = cell;
 
+        // If there is a selection and you fill it with a char, it will be modifiable:producesText. Then, if you move
+        // the selection to a new spot, we want to end history modification so another char fill starts a new slice.
         state.endHistoryModification();
 
         // If user clicks on the selection, we begin the 'moving' process (moving the selection area).
         if (isSelectedCell(cell) && allowMovement(tool, mouseEvent)) {
             _isMoving = true;
-            // moveStep = cell;
             hasMoved = false;
 
             if (mouseEvent.metaKey && !movableContent()) {
@@ -247,7 +248,6 @@ function setupEventBus() {
     });
 
     eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvasControl }) => {
-        // TODO This could be more efficient, could just trigger refreshes if cell is different than last?
         const isNewCell = !prevCell || !prevCell.equals(cell);
         if (!isNewCell) return;
 
@@ -259,15 +259,11 @@ function setupEventBus() {
             eventBus.emit(EVENTS.SELECTION.CHANGED);
         }
         else if (_isMoving) {
-            // moveDelta(cell.row - moveStep.row, cell.col - moveStep.col);
             moveDelta(cell.row - prevCell.row, cell.col - prevCell.col);
 
             // Keep track of whether we've moved to a new cell. Note: moving to a new cell and then moving back
             // will still count as movement (hasMoved:true).
-            // if (!moveStep.equals(cell)) hasMoved = true;
             hasMoved = true;
-
-            // moveStep = cell;
         }
 
         prevCell = cell;
@@ -341,19 +337,11 @@ export function moveCaretTo(cell, updateOrigin = true) {
         caretOrigin = cell;
 
         // Update the current history slice so that if you undo to the slice, the caret will be at the most recent position
-        // TODO Figure this out
+        // TODO [undo/redo issue]
         // state.modifyHistory(historySlice => historySlice.selection = state.serialize({ history: true }).selection)
     }
 
     eventBus.emit(EVENTS.SELECTION.CHANGED);
-}
-
-export function syncTextEditorCaretPosition() {
-    if (state.getConfig('tool') !== 'text-editor') return;
-
-    const cell = state.getCaretPosition();
-    console.log(`sync: ${cell}`)
-    if (cell) moveCaretTo(cell, false);
 }
 
 
@@ -428,15 +416,18 @@ export function handleEnterKey(shiftKey) {
     }
     else {
         if (caretCell()) {
-            // Push a state to the history where the caret is at the end of the current line -- that way when
-            // you undo, the first undo just jumps back to the previous line with caret at end.
-            state.pushHistory();
 
             // 'Enter' key differs from 'ArrowDown' in that the caret will go to the start of the next line (like Excel)
             let col = caretOrigin.col,
                 row = caretCell().row + 1;
             if (row >= state.numRows()) row = 0
             moveCaretTo(new Cell(row, col));
+
+            // TODO [undo/redo issue]
+            // Push a state to the history where the caret is at the end of the current line -- that way when
+            // you undo, the first undo just jumps back to the previous line with caret at end.
+            state.pushHistory();
+
             return;
         }
 

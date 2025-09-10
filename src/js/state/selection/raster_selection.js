@@ -13,8 +13,7 @@ import {mirrorCharHorizontally, mirrorCharVertically} from "../../utils/strings.
 
 const DEFAULT_STATE = {
     selectionShapes: [],
-    movableContent: null,
-    caretPosition: {}
+    movableContent: null
 }
 
 let state = {};
@@ -244,10 +243,6 @@ export function updateMovableContent(char, color) {
 
 // -------------------------------------------------------------------------------- Caret
 
-export function getCaretPosition() {
-    return Cell.deserialize(state.caretPosition);
-}
-
 // We show a blinking caret if using the text-editor tool and a single 1x1 square is selected
 export function caretCell() {
     if (getConfig('tool') !== 'text-editor') return null;
@@ -270,8 +265,6 @@ export function moveCaretTo(cell) {
     } else {
         state.selectionShapes = [new SelectionRect(cell)];
     }
-
-    state.caretPosition = cell.serialize();
 }
 
 

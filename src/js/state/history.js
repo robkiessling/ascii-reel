@@ -130,7 +130,7 @@ export function modifyHistory(callback) {
 
 function logState(prefix, snapshot) {
     // TODO [undo/redo issue]
-    // const loggableState = JSON.stringify(snapshot.state.selection.rasterSelection.selectionShapes, undefined, 2)
+    // const loggableState = JSON.stringify(snapshot.state.selection.rasterSelection, undefined, 2)
     // console.log(prefix, loggableState);
 }
 

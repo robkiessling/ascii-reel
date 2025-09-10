@@ -49,7 +49,7 @@ export {
     rasterSelectionShapes, addRasterSelectionShape, hasRasterSelection, hasRasterTarget, emptyRasterSelection,
     selectAllRaster, getSelectedRasterValues, getSelectedRasterCellArea, getSelectedRasterRect, getSelectedRasterCells,
     getConnectedRasterCells, getMovableRasterContent, startMovingRasterContent, finishMovingRasterContent, updateMovableRasterContent,
-    getCaretPosition, caretCell, moveCaretTo, moveRasterDelta, moveRasterInDirection, extendRasterInDirection, flipRasterSelection,
+    caretCell, moveCaretTo, moveRasterDelta, moveRasterInDirection, extendRasterInDirection, flipRasterSelection,
 
     selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
     selectShape, deselectShape,

@@ -109,6 +109,8 @@ function handleArrowKey(e, arrowKey) {
     const direction = arrowKeyToDirection(arrowKey);
 
     if (rasterSelection.hasTarget()) {
+        // If there is a selection and you fill it with a char, it will be modifiable:producesText. Then, if you move
+        // the selection to a new spot, we want to end history modification so another char fill starts a new slice.
         state.endHistoryModification();
 
         rasterSelection.handleArrowKey(direction, e.shiftKey);

@@ -30,7 +30,6 @@ export {
     startMovingContent as startMovingRasterContent,
     finishMovingContent as finishMovingRasterContent,
     updateMovableContent as updateMovableRasterContent,
-    getCaretPosition,
     caretCell,
     moveCaretTo,
     moveDelta as moveRasterDelta,
