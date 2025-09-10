@@ -1,4 +1,5 @@
 import Cell from "../cell.js";
+import equal from "fast-deep-equal";
 
 /**
  * SelectionPolygon is the base class for many types of selection shapes. All polygons have a start value (where the
@@ -16,6 +17,10 @@ export default class SelectionPolygon {
 
     get type() {
         return this.constructor.type;
+    }
+
+    equals(otherPolygon) {
+        return equal(this.serialize(), otherPolygon.serialize());
     }
 
     serialize() {

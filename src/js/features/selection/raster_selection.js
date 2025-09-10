@@ -63,7 +63,10 @@ export function hasTarget() {
 export function clear(refresh = true) {
     if (movableContent()) { finishMovingContent(); }
     state.clearSelection();
-    if (refresh) eventBus.emit(EVENTS.SELECTION.CHANGED);
+    if (refresh) {
+        eventBus.emit(EVENTS.SELECTION.CHANGED);
+        saveSelectionHistory();
+    }
 }
 
 export function empty() {
@@ -76,8 +79,11 @@ export function selectAll() {
         tools.changeTool('text-editor');
     }
 
-    state.selectAllRaster();
-    eventBus.emit(EVENTS.SELECTION.CHANGED);
+    if (state.canSelectAllRaster()) {
+        state.selectAllRaster();
+        eventBus.emit(EVENTS.SELECTION.CHANGED);
+        saveSelectionHistory();
+    }
 }
 
 // Returns true if the given Cell is part of the selection
@@ -105,9 +111,10 @@ export function setSelectionToSingleChar(char, color, moveCaret = true) {
         updateMovableContent(char, color);
     }
     else if (caretCell()) {
-        // Update caret cell and then move to next cell
+        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
+        // saveSelectionTextHistory later
         state.setCurrentCelGlyph(caretCell().row, caretCell().col, char, color);
-        if (moveCaret) moveInDirection('right', { updateCaretOrigin: false });
+        if (moveCaret) moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
     }
     else if (hasSelection()) {
         // Update entire selection
@@ -120,7 +127,7 @@ export function setSelectionToSingleChar(char, color, moveCaret = true) {
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory({ modifiable: 'producesText' })
+    saveSelectionTextHistory();
 }
 
 // --------------------------------------------------------------------------------
@@ -155,7 +162,7 @@ function setupEventBus() {
     // If we're in the middle of moving content and the user presses undo, it can be jarring. So we always finish the
     // current move and then undo it.
     eventBus.on(EVENTS.HISTORY.BEFORE_CHANGE, () => {
-        if (movableContent()) finishMovingContent()
+        // if (movableContent()) finishMovingContent()
     })
 
     let hasMoved;
@@ -177,12 +184,7 @@ function setupEventBus() {
                 return; // Ignore all other tools
         }
 
-        // prevCell = undefined;
         prevCell = cell;
-
-        // If there is a selection and you fill it with a char, it will be modifiable:producesText. Then, if you move
-        // the selection to a new spot, we want to end history modification so another char fill starts a new slice.
-        state.endHistoryModification();
 
         // If user clicks on the selection, we begin the 'moving' process (moving the selection area).
         if (isSelectedCell(cell) && allowMovement(tool, mouseEvent)) {
@@ -195,6 +197,7 @@ function setupEventBus() {
             }
 
             eventBus.emit(EVENTS.SELECTION.CHANGED);
+            saveSelectionHistory();
             return;
         }
 
@@ -244,19 +247,23 @@ function setupEventBus() {
             }
 
             eventBus.emit(EVENTS.SELECTION.CHANGED);
+            saveSelectionHistory();
         }
     });
 
     eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvasControl }) => {
+        // Special text-editor cell rounding to better mirror a real text editor -- see Cell.caretCell
+        if (_isDrawing && state.getConfig('tool') === 'text-editor' && state.getConfig('caretStyle') === 'I-beam') {
+            cell = canvasControl.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
+        }
+
         const isNewCell = !prevCell || !prevCell.equals(cell);
         if (!isNewCell) return;
 
         if (_isDrawing) {
-            if (state.getConfig('tool') === 'text-editor' && state.getConfig('caretStyle') === 'I-beam') {
-                cell = canvasControl.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
-            }
             lastSelectionShape().end = cell;
             eventBus.emit(EVENTS.SELECTION.CHANGED);
+            saveSelectionHistory();
         }
         else if (_isMoving) {
             moveDelta(cell.row - prevCell.row, cell.col - prevCell.col);
@@ -276,6 +283,7 @@ function setupEventBus() {
             lastSelectionShape().complete();
             _isDrawing = false;
             eventBus.emit(EVENTS.SELECTION.CHANGED);
+            saveSelectionHistory();
         }
         else if (_isMoving) {
             _isMoving = false;
@@ -289,6 +297,7 @@ function setupEventBus() {
             else {
                 eventBus.emit(EVENTS.SELECTION.CHANGED)
                 if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+                saveSelectionHistory();
             }
         }
     });
@@ -303,13 +312,14 @@ export function toggleMovingContent() {
 export function startMovingContent() {
     state.startMovingRasterContent();
     eventBus.emit(EVENTS.REFRESH.ALL);
+    saveDistinctHistory();
 }
 
 export function finishMovingContent() {
     state.finishMovingRasterContent();
 
     eventBus.emit(EVENTS.REFRESH.ALL);
-    state.pushHistory();
+    saveDistinctHistory();
 }
 
 export function updateMovableContent(char, color) {
@@ -317,13 +327,12 @@ export function updateMovableContent(char, color) {
 }
 
 // --------------------------------------------------------------------------------
-let caretOrigin; // Where to move from on return key
 
 export function caretCell() {
     return state.caretCell();
 }
 
-export function moveCaretTo(cell, updateOrigin = true) {
+export function moveCaretTo(cell, updateOrigin = true, history = true) {
     if (state.getConfig('tool') !== 'text-editor') {
         console.warn('Can only call moveCaretTo if tool is text-editor')
         return;
@@ -334,7 +343,7 @@ export function moveCaretTo(cell, updateOrigin = true) {
     state.moveCaretTo(cell);
 
     if (updateOrigin) {
-        caretOrigin = cell;
+        state.updateRasterCaretOrigin(cell);
 
         // Update the current history slice so that if you undo to the slice, the caret will be at the most recent position
         // TODO [undo/redo issue]
@@ -342,6 +351,7 @@ export function moveCaretTo(cell, updateOrigin = true) {
     }
 
     eventBus.emit(EVENTS.SELECTION.CHANGED);
+    if (history) saveSelectionHistory();
 }
 
 
@@ -367,8 +377,7 @@ export function handleArrowKey(direction, shiftKey) {
                 moveCaretTo(nextCaretPosition(firstSelectionShape().bottomRight, 'right', 1, false));
                 break;
             case 'down':
-                const right = nextCaretPosition(firstSelectionShape().bottomRight, 'right', 1, false);
-                moveCaretTo(nextCaretPosition(right, 'down', 1, false));
+                moveCaretTo(nextCaretPosition(firstSelectionShape().bottomLeft, 'down', 1, false));
                 break;
             default:
                 console.warn(`Invalid direction: ${direction}`);
@@ -384,12 +393,14 @@ export function handleBackspaceKey(isDelete) {
         updateMovableContent(EMPTY_CHAR, 0);
     }
     else if (caretCell()) {
+        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
+        // saveSelectionTextHistory later
         if (isDelete) {
             state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
-            moveInDirection('right', { updateCaretOrigin: false });
+            moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
         }
         else {
-            moveInDirection('left', { updateCaretOrigin: false });
+            moveInDirection('left', { updateCaretOrigin: false, saveHistory: false });
             state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
         }
     }
@@ -398,7 +409,7 @@ export function handleBackspaceKey(isDelete) {
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory({ modifiable: 'producesText' });
+    saveSelectionTextHistory();
 }
 
 export function handleTabKey(shiftKey) {
@@ -418,15 +429,15 @@ export function handleEnterKey(shiftKey) {
         if (caretCell()) {
 
             // 'Enter' key differs from 'ArrowDown' in that the caret will go to the start of the next line (like Excel)
-            let col = caretOrigin.col,
+            let col = state.getRasterCaretOriginCol(),
                 row = caretCell().row + 1;
             if (row >= state.numRows()) row = 0
-            moveCaretTo(new Cell(row, col));
+            moveCaretTo(new Cell(row, col), true, false);
 
-            // TODO [undo/redo issue]
-            // Push a state to the history where the caret is at the end of the current line -- that way when
-            // you undo, the first undo just jumps back to the previous line with caret at end.
-            state.pushHistory();
+            // Store a new history snapshot at the start of the new line. This way the caret jumps from end of line ->
+            // start of line -> end of prev line -> start of prev line -> etc. In other words, there are 2 jump
+            // positions per line.
+            saveDistinctHistory();
 
             return;
         }
@@ -452,6 +463,7 @@ function moveDelta(rowDelta, colDelta) {
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+    saveSelectionHistory();
 }
 
 /**
@@ -461,17 +473,19 @@ function moveDelta(rowDelta, colDelta) {
  * @param {number} [options.amount=1] - Number of cells to move the selection
  * @param {boolean} [options.updateCaretOrigin=true] - Whether to update the caretOrigin (where carriage return takes you)
  * @param {boolean} [options.wrapCaretPosition=true] - Whether to wrap the caret if it goes out of bounds
+ * @param {boolean} [options.saveHistory=true] - Whether to save this selection move to history.
  */
 export function moveInDirection(direction, options = {}) {
     const amount = options.amount === undefined ? 1 : options.amount;
 
     const updateCaretOrigin = options.updateCaretOrigin === undefined ? true : options.updateCaretOrigin;
     const wrapCaretPosition = options.wrapCaretPosition === undefined ? true : options.wrapCaretPosition;
+    const saveHistory = options.saveHistory === undefined ? true : options.saveHistory;
 
     if (!hasTarget()) return;
 
     if (caretCell()) {
-        moveCaretTo(nextCaretPosition(caretCell(), direction, amount, wrapCaretPosition), updateCaretOrigin);
+        moveCaretTo(nextCaretPosition(caretCell(), direction, amount, wrapCaretPosition), updateCaretOrigin, saveHistory);
         return;
     }
 
@@ -479,6 +493,7 @@ export function moveInDirection(direction, options = {}) {
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+    if (saveHistory) saveSelectionHistory();
 }
 
 export function extendInDirection(direction, amount = 1) {
@@ -489,6 +504,7 @@ export function extendInDirection(direction, amount = 1) {
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+    saveSelectionHistory();
 }
 
 function nextCaretPosition(currentPosition, direction, amount, wrapCaretPosition = true) {
@@ -543,14 +559,14 @@ export function flipVertically(mirrorChars) {
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
-    state.pushHistory();
+    saveDistinctHistory();
 }
 export function flipHorizontally(mirrorChars) {
     state.flipRasterSelection(true, false, mirrorChars);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
-    state.pushHistory();
+    saveDistinctHistory();
 }
 
 // -------------------------------------------------------------------------------- Cloning
@@ -563,5 +579,36 @@ export function cloneToAllFrames() {
     });
 
     eventBus.emit(EVENTS.REFRESH.ALL);
+    saveDistinctHistory();
+}
+
+
+// -------------------------------------------------------------------------------- History Management
+
+/**
+ * Saves a selection move/resize into history with a modifiable flag. Subsequent movements update this same
+ * snapshot instead of creating new ones, so only the final selection position is stored in history.
+ */
+function saveSelectionHistory() {
+    state.pushHistory({ modifiable: 'rasterSelection' });
+}
+
+/**
+ * Saves a selection change where both movement and text edits are involved. Uses a separate modifiable key so
+ * text edits are tracked independently of pure selection movements.
+ */
+function saveSelectionTextHistory() {
+    state.pushHistory({ modifiable: 'rasterSelectionText' });
+}
+
+/**
+ * Saves an immutable history snapshot of the current selection state. No modifiable flag means it always
+ * creates a new slice in time. This is useful for editor states that must remain distinct, e.g. caret
+ * position when starting a new line needs to be its own distinct space.
+ *
+ * Note: This type of history saving is common throughout the app - it is just less common in this raster
+ * selection file so I'm giving it its own function.
+ */
+function saveDistinctHistory() {
     state.pushHistory();
 }

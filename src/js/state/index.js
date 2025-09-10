@@ -47,9 +47,10 @@ export {
 } from './history.js'
 export {
     rasterSelectionShapes, addRasterSelectionShape, hasRasterSelection, hasRasterTarget, emptyRasterSelection,
-    selectAllRaster, getSelectedRasterValues, getSelectedRasterCellArea, getSelectedRasterRect, getSelectedRasterCells,
+    selectAllRaster, canSelectAllRaster, getSelectedRasterValues, getSelectedRasterCellArea, getSelectedRasterRect, getSelectedRasterCells,
     getConnectedRasterCells, getMovableRasterContent, startMovingRasterContent, finishMovingRasterContent, updateMovableRasterContent,
-    caretCell, moveCaretTo, moveRasterDelta, moveRasterInDirection, extendRasterInDirection, flipRasterSelection,
+    caretCell, moveCaretTo, updateRasterCaretOrigin, getRasterCaretOriginCol, moveRasterDelta, moveRasterInDirection,
+    extendRasterInDirection, flipRasterSelection,
 
     selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
     selectShape, deselectShape,

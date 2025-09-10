@@ -122,11 +122,13 @@ function pasteGlyphs(glyphs, limitToSelection = false) {
             amount: glyphs.chars.length - 1,
             updateCaretOrigin: false,
             wrapCaretPosition: false,
+            saveHistory: false // Do not want selection move to save history; we push full history state at end of this function
         });
         rasterSelection.moveInDirection('right', {
             amount: glyphs.chars.at(-1).length,
             updateCaretOrigin: false,
             wrapCaretPosition: false,
+            saveHistory: false // Do not want selection move to save history; we push full history state at end of this function
         });
     }
 

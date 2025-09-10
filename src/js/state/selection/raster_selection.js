@@ -13,7 +13,8 @@ import {mirrorCharHorizontally, mirrorCharVertically} from "../../utils/strings.
 
 const DEFAULT_STATE = {
     selectionShapes: [],
-    movableContent: null
+    movableContent: null,
+    caretOriginCol: null, // Which col to move to upon return key
 }
 
 let state = {};
@@ -71,6 +72,11 @@ export function selectAll() {
     state.selectionShapes = [SelectionRect.drawableArea()];
 }
 
+// Returns false if user is already selecting-all
+export function canSelectAll() {
+    return state.selectionShapes.length !== 1 || !state.selectionShapes[0].equals(SelectionRect.drawableArea())
+}
+
 
 // -------------------------------------------------------------------------------- Selection Results
 
@@ -98,7 +104,7 @@ export function selectAll() {
  *      }
  */
 export function getSelectedValues() {
-    if (!hasSelection()) return [[]];
+    if (!hasSelection()) return { chars: [[]], colors: [[]] };
     if (state.movableContent) return state.movableContent;
 
     // Start with 2d arrays of undefined elements
@@ -265,6 +271,14 @@ export function moveCaretTo(cell) {
     } else {
         state.selectionShapes = [new SelectionRect(cell)];
     }
+}
+
+export function updateCaretOrigin(cell) {
+    state.caretOriginCol = cell.col;
+}
+
+export function getCaretOriginCol() {
+    return state.caretOriginCol;
 }
 
 

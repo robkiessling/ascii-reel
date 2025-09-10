@@ -3,6 +3,7 @@ import {hasCharContent} from "./timeline/index.js";
 import {eventBus, EVENTS} from '../events/events.js'
 import {deserialize, serialize} from "./index.js";
 
+const DEBUG = false;
 
 // -------------------------------------------------------------------------------- History (undo / redo)
 // Implementing undo/redo using the memento pattern https://en.wikipedia.org/wiki/Memento_pattern
@@ -40,8 +41,6 @@ export function setupActions() {
  * @param {boolean} [options.recalculateColors] - If true, undoing/redoing to this slice will recalculate the canvas colors.
  */
 export function pushHistory(options = {}) {
-    // console.log("push history", options);
-
     // Remove anything in the future (all "redo" states are removed)
     if (historyIndex !== undefined) history.splice(historyIndex + 1, history.length);
 
@@ -54,12 +53,12 @@ export function pushHistory(options = {}) {
     // If modifiable option is a match, we just update the current slice and return
     if (history.length && options.modifiable && options.modifiable === history[historyIndex].options.modifiable) {
         history[historyIndex] = snapshot;
-        logState(`modified history (${options.modifiable}): `, snapshot);
+        logState(`modified history [${historyIndex}] (${options.modifiable}): `, snapshot);
         return;
     }
 
     endHistoryModification();
-    logState('pushed history: ', snapshot);
+    logState(`pushed history [${historyIndex === undefined ? 0 : historyIndex + 1}]: `, snapshot);
 
     history.push(snapshot);
     historyIndex = historyIndex === undefined ? 0 : historyIndex + 1;
@@ -97,6 +96,7 @@ function canUndo() {
 function undo() {
     if (canUndo()) {
         endHistoryModification();
+        log(`undo: ${historyIndex} -> ${historyIndex - 1}`)
         loadStateFromHistory(historyIndex - 1, historyIndex);
         historyIndex -= 1;
     }
@@ -108,6 +108,7 @@ function canRedo() {
 
 function redo() {
     if (canRedo()) {
+        log(`redo: ${historyIndex} -> ${historyIndex + 1}`)
         loadStateFromHistory(historyIndex + 1, historyIndex);
         historyIndex += 1;
     }
@@ -116,6 +117,7 @@ function redo() {
 // Ends further modifications to the current history slice. See pushHistory for more info.
 export function endHistoryModification() {
     if (history.length) {
+        log(`endHistoryModification [${historyIndex}]`)
         history[historyIndex].options.modifiable = undefined;
     }
 }
@@ -128,10 +130,19 @@ export function modifyHistory(callback) {
     }
 }
 
+// -------------------------------------------------------------------------------- Logging / debugging
+
 function logState(prefix, snapshot) {
-    // TODO [undo/redo issue]
-    // const loggableState = JSON.stringify(snapshot.state.selection.rasterSelection, undefined, 2)
-    // console.log(prefix, loggableState);
+    if (DEBUG) {
+        const loggableState = JSON.stringify(snapshot.state.selection.rasterSelection, undefined, 2)
+        log(prefix, loggableState);
+    }
+}
+
+function log(message) {
+    if (DEBUG) {
+        console.log(message);
+    }
 }
 
 // -------------------------------------------------------------------------------- Dirty / Clean
