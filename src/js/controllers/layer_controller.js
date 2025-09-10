@@ -5,7 +5,7 @@
 import SimpleBar from "simplebar";
 import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
-import {hideCanvasMessage, showCanvasMessage} from "./main_canvas.js";
+import {hideCanvasMessage, showCanvasMessage} from "./canvas_controller.js";
 import {createDialog} from "../utils/dialogs.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";

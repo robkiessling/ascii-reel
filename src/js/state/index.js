@@ -182,7 +182,7 @@ export function loadFromTxt(txtContent, fileName) {
 
 // When making breaking state changes, increment this version and provide migrations so that files loaded from local
 // storage or disk still work.
-const CURRENT_VERSION = 7;
+const CURRENT_VERSION = 8;
 
 /**
  * Migrates a state object to the latest version. A state object might be out-of-date if it was saved from an earlier
@@ -197,8 +197,10 @@ function migrateState(state) {
     if (state.version === 4) migrateToV5(state);
     if (state.version === 5) migrateToV6(state);
     if (state.version === 6) migrateToV7(state);
+    if (state.version === 7) migrateToV8(state);
+    // After adding a new migration here, remember to update CURRENT_VERSION above
 
-    if (state.version !== CURRENT_VERSION) console.error("Version error in state migration: ", state.version);
+    if (state.version !== CURRENT_VERSION) throw new Error(`Version error in state migration: ${state.version}`);
 }
 
 function migrateToV2(state) {
@@ -293,6 +295,28 @@ function migrateToV7(state) {
     }
 
     state.version = 7
+}
+
+function migrateToV8(state) {
+    Object.keys(state.timeline).forEach(key => {
+        switch(key) {
+            case 'layerController':
+                state.timeline.layerData = state.timeline.layerController;
+                break;
+            case 'frameController':
+                state.timeline.frameData = state.timeline.frameController;
+                break;
+            case 'celController':
+                state.timeline.celData = state.timeline.celController;
+                break;
+        }
+    })
+
+    delete state.timeline.layerController;
+    delete state.timeline.frameController;
+    delete state.timeline.celController;
+
+    state.version = 8;
 }
 
 

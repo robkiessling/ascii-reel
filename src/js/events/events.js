@@ -101,7 +101,7 @@ export const EVENTS = {
         PAN_DELTA: 'canvas:pan-delta', /* Event data: { delta } */
         PAN_TO_TARGET: 'canvas:pan-to-target', /* Event data: { target } */
 
-        /* Event data: { mouseEvent, cell, tool, canvasControl } */
+        /* Event data: { mouseEvent, cell, tool, canvas } */
         MOUSEDOWN: 'canvas:mousedown',
         MOUSEMOVE: 'canvas:mousemove',
         MOUSEUP: 'canvas:mouseup',

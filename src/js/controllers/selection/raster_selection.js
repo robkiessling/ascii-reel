@@ -1,7 +1,7 @@
 import * as actions from "../../io/actions.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js"
-import * as tools from "../tools.js";
+import * as tools from "../tool_controller.js";
 import CellCache from "../../geometry/shapes/cell_cache.js";
 import {MOUSE} from "../../io/mouse.js";
 import SelectionRect from "../../geometry/selection/rect.js";
@@ -178,7 +178,7 @@ function setupEventBus() {
     let hasMoved;
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
 
-    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas }) => {
         if (mouseEvent.button !== MOUSE.LEFT) return;
 
         const tool = state.getConfig('tool')
@@ -242,7 +242,7 @@ function setupEventBus() {
                     break;
                 case 'text-editor':
                     if (state.getConfig('caretStyle') === 'I-beam') {
-                        cell = canvasControl.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
+                        cell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
                     }
 
                     if (!hasTarget()) {
@@ -261,10 +261,10 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvasControl }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas }) => {
         // Special text-editor cell rounding to better mirror a real text editor -- see Cell.caretCell
         if (_isDrawing && state.getConfig('tool') === 'text-editor' && state.getConfig('caretStyle') === 'I-beam') {
-            cell = canvasControl.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
+            cell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
         }
 
         const isNewCell = !prevCell || !prevCell.equals(cell);

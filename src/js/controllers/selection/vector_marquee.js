@@ -3,8 +3,8 @@ import CellArea from "../../geometry/cell_area.js";
 
 export default class VectorMarquee {
 
-    constructor({canvasControl, startX, startY, onUpdate, onFinish}) {
-        this.canvasControl = canvasControl;
+    constructor({canvas, startX, startY, onUpdate, onFinish}) {
+        this.canvas = canvas;
         this.startX = startX;
         this.startY = startY;
         this.onUpdate = onUpdate;
@@ -32,8 +32,8 @@ export default class VectorMarquee {
 
     get boundingArea() {
         const [x, y, width, height] = this.xywh;
-        const topLeft = this.canvasControl.screenToWorld(x, y).cell;
-        const bottomRight = this.canvasControl.screenToWorld(x + width, y + height).cell;
+        const topLeft = this.canvas.screenToWorld(x, y).cell;
+        const bottomRight = this.canvas.screenToWorld(x + width, y + height).cell;
         return new CellArea(topLeft, bottomRight);
     }
 

@@ -27,10 +27,10 @@ export default class VectorCel {
         return cel;
     }
 
-    static deserialize(celData, options = {}) {
+    static deserialize(data, options = {}) {
         const cel = new this(
-            transformValues(celData.shapesById || {}, (id, shapeData) => deserializeShape(shapeData)),
-            celData.shapesOrder
+            transformValues(data.shapesById || {}, (id, shapeData) => deserializeShape(shapeData)),
+            data.shapesOrder
         );
 
         if (!options.replace) {

@@ -1,7 +1,7 @@
-import * as rasterSelection from "../features/selection/raster_selection.js";
-import * as vectorSelection from "../features/selection/vector_selection.js";
+import * as rasterSelection from "../controllers/selection/raster_selection.js";
+import * as vectorSelection from "../controllers/selection/vector_selection.js";
 import * as state from "../state/index.js";
-import * as tools from "../features/tools.js";
+import * as tools from "../controllers/tool_controller.js";
 import * as actions from "./actions.js";
 import {EMPTY_CHAR} from "../config/chars.js";
 

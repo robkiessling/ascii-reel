@@ -5,7 +5,7 @@
 import SimpleBar from "simplebar";
 import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
-import CanvasControl from "../components/canvas_control.js";
+import Canvas from "../components/canvas.js";
 import ArrayRange from "../utils/arrays.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
@@ -360,9 +360,9 @@ class FrameComponent {
             </div>
         `).appendTo($parent);
 
-        this._canvasController = new CanvasControl(this._$container.find('canvas'), {});
-        this._canvasController.resize();
-        this._canvasController.zoomToFit();
+        this._canvas = new Canvas(this._$container.find('canvas'), {});
+        this._canvas.resize();
+        this._canvas.zoomToFit();
 
         this._frame = frame;
 
@@ -370,8 +370,8 @@ class FrameComponent {
     }
 
     redrawGlyphs() {
-        this._canvasController.clear();
-        this._canvasController.drawBackground(state.getConfig('background'));
-        this._canvasController.drawGlyphs(state.layeredGlyphs(this._frame));
+        this._canvas.clear();
+        this._canvas.drawBackground(state.getConfig('background'));
+        this._canvas.drawGlyphs(state.layeredGlyphs(this._frame));
     }
 }

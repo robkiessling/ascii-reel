@@ -61,8 +61,8 @@ export class VertexHandle extends Handle {
         }
     }
 
-    geometry(canvasControl) {
-        let { x, y } = canvasControl.worldToScreen(this.vertex.x, this.vertex.y)
+    geometry(canvas) {
+        let { x, y } = canvas.worldToScreen(this.vertex.x, this.vertex.y)
 
         switch (this.corner) {
             case VERTEX_CORNERS.TOP_LEFT_CORNER:
@@ -90,8 +90,8 @@ export class VertexHandle extends Handle {
         }
     }
 
-    matches({mouseEvent, canvasControl}) {
-        const { x, y, size } = this.geometry(canvasControl);
+    matches({mouseEvent, canvas}) {
+        const { x, y, size } = this.geometry(canvas);
 
         return (Math.abs(mouseEvent.offsetX - x) <= size / 2) &&
             (Math.abs(mouseEvent.offsetY - y) <= size / 2)
@@ -125,9 +125,9 @@ export class EdgeHandle extends Handle {
         }
     }
 
-    geometry(canvasControl) {
-        let { x: x1, y: y1 } = canvasControl.worldToScreen(this.vertex1.x, this.vertex1.y)
-        let { x: x2, y: y2 } = canvasControl.worldToScreen(this.vertex2.x, this.vertex2.y)
+    geometry(canvas) {
+        let { x: x1, y: y1 } = canvas.worldToScreen(this.vertex1.x, this.vertex1.y)
+        let { x: x2, y: y2 } = canvas.worldToScreen(this.vertex2.x, this.vertex2.y)
 
         switch (this.side) {
             case EDGE_SIDES.TOP_EDGE:
@@ -161,8 +161,8 @@ export class EdgeHandle extends Handle {
         return { x1, y1, x2, y2 }
     }
 
-    matches({mouseEvent, canvasControl}) {
-        const { x1, y1, x2, y2 } = this.geometry(canvasControl);
+    matches({mouseEvent, canvas}) {
+        const { x1, y1, x2, y2 } = this.geometry(canvas);
         return mouseEvent.offsetX >= x1 && mouseEvent.offsetX <= x2 &&
             mouseEvent.offsetY >= y1 && mouseEvent.offsetY <= y2
     }
@@ -202,9 +202,9 @@ export class CellHandle extends Handle {
         return this.cell.equals(cell)
     }
 
-    geometry(canvasControl) {
-        let { x: x1, y: y1 } = canvasControl.worldToScreen(this.vertex1.x, this.vertex1.y)
-        let { x: x2, y: y2 } = canvasControl.worldToScreen(this.vertex2.x, this.vertex2.y)
+    geometry(canvas) {
+        let { x: x1, y: y1 } = canvas.worldToScreen(this.vertex1.x, this.vertex1.y)
+        let { x: x2, y: y2 } = canvas.worldToScreen(this.vertex2.x, this.vertex2.y)
 
         switch (this.side) {
             case EDGE_SIDES.TOP_EDGE:

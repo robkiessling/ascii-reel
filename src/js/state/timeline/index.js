@@ -5,29 +5,29 @@
  * - cels
  */
 
-import * as frameController from './frames.js';
-import * as layerController from './layers.js';
-import * as celController from './cels.js';
+import * as frameData from './frames.js';
+import * as layerData from './layers.js';
+import * as celData from './cels.js';
 import ArrayRange, {create2dArray, mergeGlyphs, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {LAYER_TYPES} from "../constants.js";
 
 export function deserialize(data = {}, options = {}) {
-    layerController.deserialize(data.layerController, options);
-    frameController.deserialize(data.frameController, options);
-    celController.deserialize(data.celController, options); // note: must come after config load, since it depends on dimensions
+    layerData.deserialize(data.layerData, options);
+    frameData.deserialize(data.frameData, options);
+    celData.deserialize(data.celData, options); // note: must come after config load, since it depends on dimensions
 
     if (!options.replace) {
         validate();
-        celController.vacuumColorTable();
+        celData.vacuumColorTable();
     }
 }
 export function serialize(options = {}) {
     return {
-        layerController: layerController.serialize(options),
-        frameController: frameController.serialize(options),
-        celController: celController.serialize(options),
+        layerData: layerData.serialize(options),
+        frameData: frameData.serialize(options),
+        celData: celData.serialize(options),
     }
 }
 
@@ -35,28 +35,28 @@ function validate() {
     // Ensures all the cels referenced by frames/layers exist, and prunes any unused cels.
     // This should only be needed if the file was manually modified outside the app.
     const usedCelIds = new Set();
-    frameController.frames().forEach(frame => {
-        layerController.layers().forEach(layer => {
-            const celId = celController.getCelId(layer.id, frame.id);
-            if (!celController.cel(layer, frame)) {
+    frameData.frames().forEach(frame => {
+        layerData.layers().forEach(layer => {
+            const celId = celData.getCelId(layer.id, frame.id);
+            if (!celData.cel(layer, frame)) {
                 console.warn(`No cel found for (${celId}) -- inserting blank cel`)
-                celController.createCel(layer, frame);
+                celData.createCel(layer, frame);
             }
             usedCelIds.add(celId)
         })
     })
-    celController.iterateAllCelIds(celId => {
+    celData.iterateAllCelIds(celId => {
         if (!usedCelIds.has(celId)) {
             console.warn(`Cel (${celId}) is unused in frames/layers -- deleting cel`)
-            celController.deleteCel(celId)
+            celData.deleteCel(celId)
         }
     })
 
-    if (layerController.layers().length === 0) {
+    if (layerData.layers().length === 0) {
         console.warn(`No layers found; creating new layer`)
         createLayer(0)
     }
-    if (frameController.frames().length === 0) {
+    if (frameData.frames().length === 0) {
         console.warn(`No frames found; creating new frame`)
         createFrame(0)
     }
@@ -64,16 +64,16 @@ function validate() {
 
 export function newRasterCelTimeline(celContent = {}) {
     return {
-        layerController: {
+        layerData: {
             layers: [{ id: 1, name: 'Layer 1', type: LAYER_TYPES.RASTER }]
         },
-        frameController: {
+        frameData: {
             frames: [{ id: 1 }]
         },
-        celController: {
+        celData: {
             cels: {
-                [celController.getCelId(1, 1)]: $.extend({}, {
-                    id: celController.getCelId(1, 1),
+                [celData.getCelId(1, 1)]: $.extend({}, {
+                    id: celData.getCelId(1, 1),
                     layerType: LAYER_TYPES.RASTER
                 }, celContent)
             }
@@ -82,16 +82,16 @@ export function newRasterCelTimeline(celContent = {}) {
 }
 export function newVectorCelTimeline(celContent = {}) {
     return {
-        layerController: {
+        layerData: {
             layers: [{ id: 1, name: 'Layer 1', type: LAYER_TYPES.VECTOR }]
         },
-        frameController: {
+        frameData: {
             frames: [{ id: 1 }]
         },
-        celController: {
+        celData: {
             cels: {
-                [celController.getCelId(1, 1)]: $.extend({}, {
-                    id: celController.getCelId(1, 1),
+                [celData.getCelId(1, 1)]: $.extend({}, {
+                    id: celData.getCelId(1, 1),
                     layerType: LAYER_TYPES.VECTOR
                 }, celContent)
             }
@@ -101,11 +101,11 @@ export function newVectorCelTimeline(celContent = {}) {
 
 export function convertToDrawing() {
     // Delete all but the first frame
-    const numFrames = frameController.frames().length;
+    const numFrames = frameData.frames().length;
     if (numFrames > 1) deleteFrames(new ArrayRange(1, numFrames - 1))
 
-    frameController.frameRangeSelection(null);
-    frameController.changeFrameIndex(0);
+    frameData.frameRangeSelection(null);
+    frameData.changeFrameIndex(0);
 }
 
 // --------------------------------------------------------------------------- Frames API
@@ -116,27 +116,27 @@ export {
 } from './frames.js'
 
 export function createFrame(index, data) {
-    const frame = frameController.createFrame(index, data);
+    const frame = frameData.createFrame(index, data);
 
     // create blank cels for all layers
-    layerController.layers().forEach(layer => celController.createCel(layer, frame));
+    layerData.layers().forEach(layer => celData.createCel(layer, frame));
 }
 
 export function duplicateFrames(range) {
-    frameController.duplicateFrames(range).forEach(({ originalFrame, dupFrame }) => {
-        layerController.layers().forEach(layer => {
-            const originalCel = celController.cel(layer, originalFrame);
-            celController.duplicateCel(layer, dupFrame, originalCel);
+    frameData.duplicateFrames(range).forEach(({ originalFrame, dupFrame }) => {
+        layerData.layers().forEach(layer => {
+            const originalCel = celData.cel(layer, originalFrame);
+            celData.duplicateCel(layer, dupFrame, originalCel);
         });
     })
 }
 
 export function deleteFrames(range) {
     range.iterate(frameIndex => {
-        celIdsForFrame(frameController.frames()[frameIndex]).forEach(celId => celController.deleteCel(celId));
+        celIdsForFrame(frameData.frames()[frameIndex]).forEach(celId => celData.deleteCel(celId));
     });
 
-    frameController.deleteFrames(range)
+    frameData.deleteFrames(range)
 }
 
 
@@ -147,10 +147,10 @@ export {
 } from './layers.js'
 
 export function createLayer(index, data) {
-    const layer = layerController.createLayer(index, data);
+    const layer = layerData.createLayer(index, data);
 
     // create blank cels for all frames
-    frameController.frames().forEach(frame => celController.createCel(layer, frame));
+    frameData.frames().forEach(frame => celData.createCel(layer, frame));
 
 
 }
@@ -159,15 +159,15 @@ export function updateLayer(layer, updates) {
     if (layer.type !== updates.type) {
         // Special handling when changing layer type:
         if (updates.type === LAYER_TYPES.VECTOR) throw new Error(`Cannot change layerType to vector`)
-        if (updates.type === LAYER_TYPES.RASTER) celIdsForLayer(layer).forEach(celId => celController.rasterizeCel(celId));
+        if (updates.type === LAYER_TYPES.RASTER) celIdsForLayer(layer).forEach(celId => celData.rasterizeCel(celId));
     }
 
-    layerController.updateLayer(layer, updates)
+    layerData.updateLayer(layer, updates)
 }
 
 export function deleteLayer(index) {
-    celIdsForLayer(layerController.layerAt(index)).forEach(celId => celController.deleteCel(celId));
-    layerController.deleteLayer(index);
+    celIdsForLayer(layerData.layerAt(index)).forEach(celId => celData.deleteCel(celId));
+    layerData.deleteLayer(index);
 }
 
 
@@ -180,23 +180,23 @@ export {
 } from './cels.js'
 
 function currentCel() {
-    return celController.cel(layerController.currentLayer(), frameController.currentFrame());
+    return celData.cel(layerData.currentLayer(), frameData.currentFrame());
 }
 
 function celIdsForLayer(layer) {
-    return frameController.frames().map(frame => celController.getCelId(layer.id, frame.id));
+    return frameData.frames().map(frame => celData.getCelId(layer.id, frame.id));
 }
 
 export function iterateCelsForCurrentLayer(callback) {
-    celIdsForLayer(layerController.currentLayer()).forEach(celId => callback(celController.cel(celId)));
+    celIdsForLayer(layerData.currentLayer()).forEach(celId => callback(celData.cel(celId)));
 }
 
 function celIdsForFrame(frame) {
-    return layerController.layers().map(layer => celController.getCelId(layer.id, frame.id));
+    return layerData.layers().map(layer => celData.getCelId(layer.id, frame.id));
 }
 
 export function iterateCelsForCurrentFrame(callback) {
-    celIdsForFrame(frameController.currentFrame()).forEach(celId => callback(celController.cel(celId)));
+    celIdsForFrame(frameData.currentFrame()).forEach(celId => callback(celData.cel(celId)));
 }
 
 /**
@@ -208,7 +208,7 @@ export function iterateCelsForCurrentFrame(callback) {
 export function iterateCels(allLayers, allFrames, celCallback) {
     if (allLayers && allFrames) {
         // Apply to all cels
-        celController.iterateAllCels(celCallback);
+        celData.iterateAllCels(celCallback);
     }
     else if (!allLayers && allFrames) {
         // Apply to all frames of a single layer
@@ -226,37 +226,37 @@ export function iterateCels(allLayers, allFrames, celCallback) {
 
 // This function returns the glyph as a 2d array: [char, color]
 export function getCurrentCelGlyph(row, col) {
-    if (!celController.charInBounds(row, col)) return [];
+    if (!celData.charInBounds(row, col)) return [];
 
-    const celGlyphs = celController.getCelGlyphs(currentCel());
+    const celGlyphs = celData.getCelGlyphs(currentCel());
     return [celGlyphs.chars[row][col], celGlyphs.colors[row][col]];
 }
 
 // If the char or color parameter is undefined, that parameter will not be overridden
 export function setCurrentCelGlyph(row, col, char, color) {
-    celController.setCelGlyph(currentCel(), row, col, char, color);
+    celData.setCelGlyph(currentCel(), row, col, char, color);
 }
 
 export function getCurrentCelShapes() {
-    return celController.getCelShapes(currentCel());
+    return celData.getCelShapes(currentCel());
 }
 export function getCurrentCelShape(shapeId) {
-    return celController.getCelShape(currentCel(), shapeId);
+    return celData.getCelShape(currentCel(), shapeId);
 }
 export function addCurrentCelShape(shape) {
-    celController.addCelShape(currentCel(), shape)
+    celData.addCelShape(currentCel(), shape)
 }
 export function updateCurrentCelShape(shapeId, updater) {
-    celController.updateCelShape(currentCel(), shapeId, updater);
+    celData.updateCelShape(currentCel(), shapeId, updater);
 }
 export function deleteCurrentCelShape(shapeId) {
-    celController.deleteCelShape(currentCel(), shapeId);
+    celData.deleteCelShape(currentCel(), shapeId);
 }
 export function reorderCurrentCelShapes(shapeIds, action) {
-    celController.reorderCelShapes(currentCel(), shapeIds, action)
+    celData.reorderCelShapes(currentCel(), shapeIds, action)
 }
 export function canReorderCurrentCelShapes(shapeIds, action) {
-    return celController.canReorderCelShapes(currentCel(), shapeIds, action);
+    return celData.canReorderCelShapes(currentCel(), shapeIds, action);
 }
 
 export function getCurrentCelShapeIdsAbove(shapeId) {
@@ -291,15 +291,15 @@ export function layeredGlyphs(frame, options = {}) {
     const colors = create2dArray(numRows(), numCols(), 0);
 
     let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
-    const isCurrentFrame = frame.id === frameController.currentFrame().id;
+    const isCurrentFrame = frame.id === frameData.currentFrame().id;
 
-    for (l = 0; l < layerController.layers().length; l++) {
-        layer = layerController.layerAt(l);
-        isCurrentLayer = l === layerController.layerIndex();
+    for (l = 0; l < layerData.layers().length; l++) {
+        layer = layerData.layerAt(l);
+        isCurrentLayer = l === layerData.layerIndex();
 
         if (layerIds && !layerIds.has(layer.id)) continue;
 
-        const glyphs = celController.getCelGlyphs(celController.cel(layer, frame));
+        const glyphs = celData.getCelGlyphs(celData.cel(layer, frame));
         celChars = glyphs.chars;
         celColors = glyphs.colors;
         const offset = options.offset && options.offset.amount;
@@ -312,8 +312,8 @@ export function layeredGlyphs(frame, options = {}) {
                 c = celC;
 
                 if (offset && (options.offset.modifiers.allLayers || isCurrentLayer)) {
-                    ({ r, c } = celController.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap));
-                    if (!celController.charInBounds(r, c)) continue;
+                    ({ r, c } = celData.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap));
+                    if (!celData.charInBounds(r, c)) continue;
                 }
 
                 chars[r][c] = celChars[celR][celC];
@@ -355,6 +355,6 @@ export function layeredGlyphs(frame, options = {}) {
 
 export function colorSwap(oldColorIndex, newColorIndex, options = {}) {
     iterateCels(options.allLayers, options.allFrames, cel => {
-        celController.colorSwapCel(cel, oldColorIndex, newColorIndex);
+        celData.colorSwapCel(cel, oldColorIndex, newColorIndex);
     });
 }

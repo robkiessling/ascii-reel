@@ -1,5 +1,5 @@
 /**
- * This is the UI component for the main canvas editor in the center of the page. It contains a stack of CanvasControls:
+ * This is the UI component for the main canvas editor in the center of the page. It contains a stack of Canvases:
  * - charCanvas: The canvas that renders chars
  * - hoveredCellCanvas: The canvas that renders a rectangular box over the hovered cell. This is its own canvas so we
  *   can rapidly update it as the mouse moves without having to re-render any of the chars, selection polygons, etc.
@@ -11,13 +11,13 @@
  *   selection polygons that would have been on the selectionCanvas but that needed full opacity.
  */
 
-import CanvasControl from "../components/canvas_control.js";
+import Canvas from "../components/canvas.js";
 import * as rasterSelection from "./selection/raster_selection.js";
 import * as vectorSelection from "./selection/vector_selection.js";
-import {drawingContent, hoveredCells} from "./tools.js";
+import {drawingContent, hoveredCells} from "./tool_controller.js";
 import * as state from "../state/index.js";
 import {majorGridColor, minorGridColor, PRIMARY_COLOR} from "../config/colors.js";
-import * as tools from "./tools.js";
+import * as tools from "./tool_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
 import {EMPTY_CHAR} from "../config/chars.js";
@@ -33,31 +33,31 @@ let hoveredCell;
 let $canvasMessage, $canvasDetails;
 
 export function init() {
-    charCanvas = new CanvasControl($('#char-canvas'), {});
-    selectionBorderCanvas = new CanvasControl($('#selection-border-canvas'), {});
-    hoveredCellCanvas = new CanvasControl($('#hovered-cell-canvas'), {});
+    charCanvas = new Canvas($('#char-canvas'), {});
+    selectionBorderCanvas = new Canvas($('#selection-border-canvas'), {});
+    hoveredCellCanvas = new Canvas($('#hovered-cell-canvas'), {});
 
     // selection-canvas is on the top of the canvas stack, so it handles all the mouse events
-    selectionCanvas = new CanvasControl($('#selection-canvas'), {
+    selectionCanvas = new Canvas($('#selection-canvas'), {
         onMouseDown: ({evt, cell, currentPoint, mouseDownButton}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEDOWN, {
-                mouseEvent: evt, canvasControl: selectionCanvas, cell, currentPoint, mouseDownButton
+                mouseEvent: evt, canvas: selectionCanvas, cell, currentPoint, mouseDownButton
             })
         },
         onMouseMove: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEMOVE, {
-                mouseEvent: evt, canvasControl: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton
+                mouseEvent: evt, canvas: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton
             })
             eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
         },
         onMouseUp: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEUP, {
-                mouseEvent: evt, canvasControl: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton
+                mouseEvent: evt, canvas: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton
             })
         },
 
         onDblClick: ({evt, cell}) => {
-            eventBus.emit(EVENTS.CANVAS.DBLCLICK, { mouseEvent: evt, cell: cell, canvasControl: selectionCanvas })
+            eventBus.emit(EVENTS.CANVAS.DBLCLICK, { mouseEvent: evt, cell: cell, canvas: selectionCanvas })
         },
         onMouseEnter: ({cell}) => {
             eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
@@ -109,16 +109,16 @@ function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => redrawCharCanvas())
 
     eventBus.on(EVENTS.CANVAS.ZOOM_DELTA, ({delta, target}) => {
-        iterateCanvases(canvasControl => canvasControl.zoomDelta(delta, target))
+        iterateCanvases(canvas => canvas.zoomDelta(delta, target))
     })
     eventBus.on(EVENTS.CANVAS.ZOOM_TO_FIT, () => {
-        iterateCanvases(canvasControl => canvasControl.zoomToFit())
+        iterateCanvases(canvas => canvas.zoomToFit())
     })
     eventBus.on(EVENTS.CANVAS.PAN_TO_TARGET, ({target}) => {
-        iterateCanvases(canvasControl => canvasControl.panToTarget(target))
+        iterateCanvases(canvas => canvas.panToTarget(target))
     })
     eventBus.on(EVENTS.CANVAS.PAN_DELTA, ({delta, ignoreZoom}) => {
-        iterateCanvases(canvasControl => canvasControl.panBy(...delta, ignoreZoom))
+        iterateCanvases(canvas => canvas.panBy(...delta, ignoreZoom))
     })
 
     eventBus.on(EVENTS.CANVAS.HOVERED, ({cell}) => {

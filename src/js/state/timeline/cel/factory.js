@@ -22,14 +22,14 @@ export default class CelFactory {
         }
     }
 
-    static deserialize(celData, options) {
-        switch(celData.layerType) {
+    static deserialize(data, options) {
+        switch(data.layerType) {
             case LAYER_TYPES.RASTER:
-                return RasterCel.deserialize(celData, options);
+                return RasterCel.deserialize(data, options);
             case LAYER_TYPES.VECTOR:
-                return VectorCel.deserialize(celData, options);
+                return VectorCel.deserialize(data, options);
             default:
-                throw new Error(`Invalid layerType '${celData.layerType}' in ${celData}`)
+                throw new Error(`Invalid layerType '${data.layerType}' in ${data}`)
         }
     }
 

@@ -2,7 +2,7 @@ import * as state from "../../state/index.js";
 import * as actions from "../../io/actions.js";
 import {STRINGS} from "../../config/strings.js";
 import {createDialog} from "../../utils/dialogs.js";
-import {canZoomIn, canZoomOut} from "../main_canvas.js";
+import {canZoomIn, canZoomOut} from "../canvas_controller.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 
 const GRID_SPACING_LIMITS = [1, 1000];

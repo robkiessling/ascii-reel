@@ -46,13 +46,13 @@ const ZOOM_BOOST_THRESHOLD = 10; // Maximum delta where boosting applies
 /**
  * Handles all the setup around a <canvas> element, drawing to the canvas, and zooming/translating the canvas view.
  */
-export default class CanvasControl {
+export default class Canvas {
     constructor($canvas, options = {}) {
         this.$canvas = $canvas;
         this.options = options;
 
-        this.canvas = this.$canvas.get(0);
-        this.context = this.canvas.getContext("2d", {
+        this.canvasElement = this.$canvas.get(0);
+        this.context = this.canvasElement.getContext("2d", {
             willReadFrequently: options.willReadFrequently
         });
 
@@ -67,17 +67,17 @@ export default class CanvasControl {
      */
     resize(resetZoom = false) {
         // Reset any width/height attributes that may have been set previously
-        this.canvas.removeAttribute('width');
-        this.canvas.removeAttribute('height');
-        this.canvas.style.width = "100%";
-        this.canvas.style.height = "100%";
+        this.canvasElement.removeAttribute('width');
+        this.canvasElement.removeAttribute('height');
+        this.canvasElement.style.width = "100%";
+        this.canvasElement.style.height = "100%";
 
         // Fix canvas PPI https://stackoverflow.com/a/65124939
         this._dpr = window.devicePixelRatio;
-        this.canvas.width = this.outerWidth * this._dpr;
-        this.canvas.height = this.outerHeight * this._dpr;
-        this.canvas.style.width = this.outerWidth + "px";
-        this.canvas.style.height = this.outerHeight + "px";
+        this.canvasElement.width = this.outerWidth * this._dpr;
+        this.canvasElement.height = this.outerHeight * this._dpr;
+        this.canvasElement.style.width = this.outerWidth + "px";
+        this.canvasElement.style.height = this.outerHeight + "px";
 
         if (resetZoom || !this.initialized) {
             this._resetCamera();

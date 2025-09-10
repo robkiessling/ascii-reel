@@ -106,9 +106,9 @@ function setupEventBus() {
 
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
 
-    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvasControl, mouseDownButton }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas, mouseDownButton }) => {
         const tool = toolForMouseButton(mouseDownButton);
-        $canvasContainer.css('cursor', cursorStyle(tool, true, mouseEvent, cell, canvasControl));
+        $canvasContainer.css('cursor', cursorStyle(tool, true, mouseEvent, cell, canvas));
 
         prevCell = undefined;
 
@@ -120,16 +120,16 @@ function setupEventBus() {
                 handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'paint-brush' })
                 break;
             case 'draw-freeform':
-                handleDrawMousedown(Freeform.beginFreeform, cell, canvasControl, mouseEvent);
+                handleDrawMousedown(Freeform.beginFreeform, cell, canvas, mouseEvent);
                 break;
             case 'draw-rect':
-                handleDrawMousedown(Rect.beginRect, cell, canvasControl, mouseEvent);
+                handleDrawMousedown(Rect.beginRect, cell, canvas, mouseEvent);
                 break;
             case 'draw-line':
-                handleDrawMousedown(Line.beginLine, cell, canvasControl, mouseEvent);
+                handleDrawMousedown(Line.beginLine, cell, canvas, mouseEvent);
                 break;
             case 'draw-ellipse':
-                handleDrawMousedown(Ellipse.beginEllipse, cell, canvasControl, mouseEvent);
+                handleDrawMousedown(Ellipse.beginEllipse, cell, canvas, mouseEvent);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
@@ -164,9 +164,9 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvasControl, isDragging, originalPoint, currentPoint, mouseDownButton }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas, isDragging, originalPoint, currentPoint, mouseDownButton }) => {
         const tool = toolForMouseButton(mouseDownButton);
-        $canvasContainer.css('cursor', cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl));
+        $canvasContainer.css('cursor', cursorStyle(tool, isDragging, mouseEvent, cell, canvas));
 
         // Keep track of whether the mousemove has reached a new cell (helps with performance, so we can just redraw
         // when a new cell is reached, not on every pixel change)
@@ -180,17 +180,17 @@ function setupEventBus() {
             case 'draw-freeform':
                 // Intentionally not checking if isNewCell; we update the char based on pixels not cells
                 if (isDragging) {
-                    const cellPixel = canvasControl.cellPixelAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY, true);
-                    handleDrawMousemove(cell, canvasControl, mouseEvent, { cellPixel });
+                    const cellPixel = canvas.cellPixelAtScreenXY(mouseEvent.offsetX, mouseEvent.offsetY, true);
+                    handleDrawMousemove(cell, canvas, mouseEvent, { cellPixel });
                 }
                 break;
             case 'draw-line':
                 // Intentionally not checking if isDragging; mouseup can occur between points on polyline
-                if (isNewCell) handleDrawMousemove(cell, canvasControl, mouseEvent);
+                if (isNewCell) handleDrawMousemove(cell, canvas, mouseEvent);
                 break;
             case 'draw-rect':
             case 'draw-ellipse':
-                if (isDragging && isNewCell) handleDrawMousemove(cell, canvasControl, mouseEvent);
+                if (isDragging && isNewCell) handleDrawMousemove(cell, canvas, mouseEvent);
                 break;
             case 'pan':
                 if (isDragging) {
@@ -207,11 +207,11 @@ function setupEventBus() {
         prevCell = cell;
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, canvasControl, isDragging, mouseDownButton }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, canvas, isDragging, mouseDownButton }) => {
         const tool = toolForMouseButton(mouseDownButton);
 
         // Draw cursor according to state tool (not toolForMouseButton which will be outdated soon) and as if isDragging was false
-        $canvasContainer.css('cursor', cursorStyle(state.getConfig('tool'), false, mouseEvent, cell, canvasControl));
+        $canvasContainer.css('cursor', cursorStyle(state.getConfig('tool'), false, mouseEvent, cell, canvas));
 
         if (!isDragging) return;
 
@@ -841,7 +841,7 @@ function getDrawingModifiersTooltip(tool, drawType) {
     return result;
 }
 
-function handleDrawMousedown(factory, cell, canvasControl, mouseEvent, options = {}) {
+function handleDrawMousedown(factory, cell, canvas, mouseEvent, options = {}) {
     if (!drawingContent) {
         vectorSelection.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
 
@@ -854,15 +854,15 @@ function handleDrawMousedown(factory, cell, canvasControl, mouseEvent, options =
         }, options));
     }
 
-    drawingContent.handleDrawMousedown(cell, { point: mousePoint(canvasControl, mouseEvent) });
+    drawingContent.handleDrawMousedown(cell, { point: mousePoint(canvas, mouseEvent) });
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
-function handleDrawMousemove(cell, canvasControl, mouseEvent, options = {}) {
+function handleDrawMousemove(cell, canvas, mouseEvent, options = {}) {
     if (!drawingContent) return;
     if (!cell) return;
 
-    drawingContent.handleDrawMousemove(cell, { point: mousePoint(canvasControl, mouseEvent) });
+    drawingContent.handleDrawMousemove(cell, { point: mousePoint(canvas, mouseEvent) });
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -886,8 +886,8 @@ function finishDrawing() {
     state.pushHistory();
 }
 
-function mousePoint(canvasControl, mouseEvent) {
-    return canvasControl.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY)
+function mousePoint(canvas, mouseEvent) {
+    return canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY)
 }
 
 
@@ -1118,12 +1118,12 @@ function refreshColorPicker() {
 
 // -------------------------------------------------------------------------------- Misc.
 
-function cursorStyle(tool, isDragging, mouseEvent, cell, canvasControl) {
+function cursorStyle(tool, isDragging, mouseEvent, cell, canvas) {
     const grab = isDragging ? 'grabbing' : 'grab'
 
     switch (tool) {
         case 'select':
-            const handle = vectorSelection.getHandle(cell, mouseEvent, canvasControl);
+            const handle = vectorSelection.getHandle(cell, mouseEvent, canvas);
             return handle ? handle.cursor : 'default';
         case 'text-editor':
             return rasterSelection.isSelectedCell(cell) && rasterSelection.allowMovement(tool, mouseEvent) ? grab : 'text';

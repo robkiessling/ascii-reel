@@ -3,7 +3,7 @@ import * as state from "../state/index.js";
 import {exportFile} from "./file_system.js";
 import {importAnimated_GIF, importJSZip} from "../utils/lazy_loaders.js";
 import {fontRatio} from "../config/font.js";
-import CanvasControl from "../components/canvas_control.js";
+import Canvas from "../components/canvas.js";
 import {defer, setIntervalUsingRAF} from "../utils/utilities.js";
 import {hideFullScreenLoader, showFullScreenLoader} from "../utils/overlays.js";
 
@@ -588,7 +588,7 @@ function buildFrameSeparator(options, index, newLineChar) {
 
 
 const $exportCanvasContainer = $('#export-canvas-container')
-const exportCanvas = new CanvasControl($('#export-canvas'), {
+const exportCanvas = new Canvas($('#export-canvas'), {
     willReadFrequently: true
 });
 

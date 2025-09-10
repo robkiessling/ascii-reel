@@ -2,7 +2,7 @@
 import "regenerator-runtime/runtime.js";
 import "core-js/stable.js";
 
-import * as rasterSelection from "../features/selection/raster_selection.js";
+import * as rasterSelection from "../controllers/selection/raster_selection.js";
 import * as state from "../state/index.js";
 import * as actions from "./actions.js";
 import {translateGlyphs} from "../utils/arrays.js";

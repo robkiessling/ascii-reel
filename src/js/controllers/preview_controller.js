@@ -3,10 +3,10 @@
  */
 
 import * as state from "../state/index.js";
-import CanvasControl from "../components/canvas_control.js";
+import Canvas from "../components/canvas.js";
 import * as actions from "../io/actions.js";
 import {setIntervalUsingRAF} from "../utils/utilities.js";
-import {getCurrentViewRect} from "./main_canvas.js";
+import {getCurrentViewRect} from "./canvas_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {STRINGS} from "../config/strings.js";
 import {getDynamicColor} from "../config/colors.js";
@@ -26,7 +26,7 @@ let minimizer;
 
 export function init() {
     $container = $('#preview-container');
-    previewCanvas = new CanvasControl($('#preview-canvas'), {
+    previewCanvas = new Canvas($('#preview-canvas'), {
         onWheel: ({zoomY, evt}) => {
             if (evt.shiftKey) return;
             eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: zoomY })
@@ -203,8 +203,8 @@ function openPopup() {
     `;
     popup.document.body.innerHTML = '<canvas id="canvas">';
 
-    // Set up the CanvasControl in the popup (it will be updated at the same time as the normal preview canvas)
-    popupCanvas = new CanvasControl($(popup.document.getElementById("canvas")), {});
+    // Set up the Canvas in the popup (it will be updated at the same time as the normal preview canvas)
+    popupCanvas = new Canvas($(popup.document.getElementById("canvas")), {});
     popupCanvas.resize(true);
     popupCanvas.zoomToFit();
 

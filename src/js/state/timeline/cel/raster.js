@@ -32,16 +32,16 @@ export default class RasterCel {
         return cel;
     }
 
-    static deserialize(celData, options = {}) {
+    static deserialize(data, options = {}) {
         let cel;
 
         if (options && options.decompress) {
             cel = new this(
-                decodeChars(celData.chars, options.rowLength),
-                decodeColors(celData.colors, options.rowLength, options.colorDepth)
+                decodeChars(data.chars, options.rowLength),
+                decodeColors(data.colors, options.rowLength, options.colorDepth)
             )
         } else {
-            cel = new this(celData.chars, celData.colors);
+            cel = new this(data.chars, data.colors);
         }
 
         if (!options.replace) {
