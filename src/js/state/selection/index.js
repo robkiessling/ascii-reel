@@ -42,11 +42,22 @@ export {
 } from './raster_selection.js'
 
 export {
-    selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
-    selectShape, deselectShape,
-    setShapeCursor, getShapeCursor,
-    selectedShapes, selectedShapeTypes, selectedShapeProps,
-    updateSelectedShapes, deleteSelectedShapes, reorderSelectedShapes, canReorderSelectedShapes
+    selectedShapeIds,
+    setSelectedShapeIds,
+    numSelectedShapes,
+    hasSelectedShapes,
+    isShapeSelected,
+    selectShape,
+    deselectShape,
+    setShapeCursor,
+    getShapeCursor,
+    selectedShapes,
+    selectedShapeTypes,
+    selectedShapeProps,
+    updateSelectedShapes,
+    deleteSelectedShapes,
+    reorderSelectedShapes,
+    canReorderSelectedShapes
 } from './vector_selection.js'
 
 export function clearSelection() {

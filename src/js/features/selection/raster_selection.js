@@ -61,9 +61,19 @@ export function hasTarget() {
 }
 
 export function clear(refresh = true) {
-    if (movableContent()) { finishMovingContent(); }
-    state.clearSelection();
-    if (refresh) {
+    let hasChanges = false;
+
+    if (movableContent()) {
+        finishMovingContent();
+        hasChanges = true;
+    }
+
+    if (hasSelection()) {
+        state.clearSelection();
+        hasChanges = true;
+    }
+
+    if (hasChanges && refresh) {
         eventBus.emit(EVENTS.SELECTION.CHANGED);
         saveSelectionHistory();
     }
