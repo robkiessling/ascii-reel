@@ -67,16 +67,16 @@ export function empty() {
     });
 }
 
-// Select entire canvas
-export function selectAll() {
-    state.selectionShapes = [SelectionRect.drawableArea()];
-}
 
 // Returns false if user is already selecting-all
 export function canSelectAll() {
     return state.selectionShapes.length !== 1 || !state.selectionShapes[0].equals(SelectionRect.drawableArea())
 }
 
+// Select entire canvas
+export function selectAll() {
+    state.selectionShapes = [SelectionRect.drawableArea()];
+}
 
 // -------------------------------------------------------------------------------- Selection Results
 
@@ -102,6 +102,7 @@ export function canSelectAll() {
  *             [0, 0, undefined, undefined, 0]
  *          ]
  *      }
+ * @returns {{ chars: string[][], colors: number[][] }}
  */
 export function getSelectedValues() {
     if (!hasSelection()) return { chars: [[]], colors: [[]] };
@@ -284,7 +285,6 @@ export function getCaretOriginCol() {
 
 // -------------------------------------------------------------------------------- Translating shapes
 
-// todo rename translateSelection
 export function moveDelta(rowDelta, colDelta, moveStart, moveEnd) {
     state.selectionShapes.forEach(shape => shape.translate(rowDelta, colDelta, moveStart, moveEnd));
 }

@@ -266,7 +266,7 @@ function redrawSelection() {
 
     selectionCanvas.highlightPolygons(selectionController.raster.selectionShapes());
 
-    if (selectionController.raster.hasSelection() && !selectionController.raster.isDrawing() && !selectionController.raster.caretCell()) {
+    if (selectionController.raster.hasSelection() && !selectionController.raster.isDrawing && !selectionController.raster.caretCell()) {
         selectionBorderCanvas.outlinePolygon(selectionController.raster.getSelectedRect(), selectionController.raster.movableContent())
     }
 
@@ -302,7 +302,7 @@ function showHoverForTool() {
 function redrawHover() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell && !selectionController.raster.isDrawing() && !selectionController.raster.isMoving() && showHoverForTool()) {
+    if (hoveredCell && !selectionController.raster.isDrawing && !selectionController.raster.isMoving && showHoverForTool()) {
         hoveredCells(hoveredCell).forEach(cell => {
             if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
         })

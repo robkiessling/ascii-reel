@@ -14,60 +14,26 @@ import Cell from "../../geometry/cell.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import {translateGlyphs} from "../../utils/arrays.js";
 
-// TODO Redo this?
-// Re-exports everything from raster selection state.
-// This file will then override any functions that it needs to add events to, add additional ui logic too, etc.
-// All other controllers should use raster selection methods from this controller file, not the state
-export * from "../../state/selection/raster_selection.js";
-
-const rasterState = state.selection.raster;
-
-
-
-let _isDrawing = false; // Only true when mouse is down and polygon is being drawn
-let _isMoving = false; // Only true when mouse is down and polygon is being moved
-let caches;
-
-function clearCaches() {
-    caches = {};
-}
-
-export function isDrawing() {
-    return _isDrawing;
-}
-export function isMoving() {
-    return _isMoving;
-}
+/**
+ * Raster selection controller.
+ *
+ * - Re-exports all raster selection state methods so they are available here.
+ * - Adds orchestration (history, events, extra logic) by overriding specific methods.
+ * - Other controllers and UI code should always use this controller, not call raster state directly.
+ */
 
 export function init() {
     actions.registerAction('selection.select-all', () => selectAll());
-
     setupEventBus();
-
     clearCaches();
 }
 
-function movableContent() {
-    return rasterState.movableContent();
-}
-function selectionShapes() {
-    return rasterState.selectionShapes();
-}
-function addSelectionShape(shape) {
-    return rasterState.addSelectionShape(shape);
-}
-function firstSelectionShape() {
-    return selectionShapes().at(0)
-}
-function lastSelectionShape() {
-    return selectionShapes().at(-1)
-}
-function hasSelection() {
-    return rasterState.hasSelection();
-}
-function hasTarget() {
-    return rasterState.hasTarget();
-}
+export function selectionShapes() { return state.selection.raster.selectionShapes(); }
+export function addSelectionShape(shape) { return state.selection.raster.addSelectionShape(shape); }
+export function hasSelection() { return state.selection.raster.hasSelection(); }
+export function hasTarget() { return state.selection.raster.hasTarget(); }
+function firstSelectionShape() { return selectionShapes().at(0) }
+function lastSelectionShape() { return selectionShapes().at(-1) }
 
 export function clear(refresh = true) {
     let hasChanges = false;
@@ -88,263 +54,57 @@ export function clear(refresh = true) {
     }
 }
 
+export function empty() { return state.selection.raster.empty(); }
+export function canSelectAll() { return state.selection.raster.canSelectAll(); }
+
 export function selectAll() {
     // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
     if (!['text-editor', 'selection-rect'].includes(state.getConfig('tool'))) {
         tools.changeTool('text-editor');
     }
 
-    if (rasterState.canSelectAll()) {
-        rasterState.selectAll();
+    if (canSelectAll()) {
+        state.selection.raster.selectAll();
         eventBus.emit(EVENTS.SELECTION.CHANGED);
         saveSelectionHistory();
     }
 }
 
-// Returns true if the given Cell is part of the selection
-export function isSelectedCell(cell) {
-    if (caches.selectedCells === undefined) {
-        caches.selectedCells = new CellCache();
-        getSelectedCells().map(cell => caches.selectedCells.add(cell));
-    }
+// -------------------------------------------------------------------------------- Selection Results
 
-    return caches.selectedCells.has(cell);
-}
+export function getSelectedValues() { return state.selection.raster.getSelectedValues(); }
+export function getSelectedCellArea() { return state.selection.raster.getSelectedCellArea(); }
+export function getSelectedRect() { return state.selection.raster.getSelectedRect(); }
+export function getSelectedCells() { return state.selection.raster.getSelectedCells(); }
+export function getConnectedCells(cell, options) { return state.selection.raster.getConnectedCells(cell, options); }
 
-export function allowMovement(tool, mouseEvent) {
-    if (_isDrawing) return false;
 
-    // In text-editor tool, holding shift and clicking will modify the polygon instead of move it
-    if (tool === 'text-editor' && mouseEvent.shiftKey) return false;
+// -------------------------------------------------------------------------------- Moving Content
 
-    return true;
-}
-
-export function setSelectionToSingleChar(char, color, moveCaret = true) {
-    if (movableContent()) {
-        // Update entire movable content
-        updateMovableContent(char, color);
-    }
-    else if (caretCell()) {
-        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
-        // saveSelectionTextHistory later
-        state.setCurrentCelGlyph(caretCell().row, caretCell().col, char, color);
-        if (moveCaret) moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
-    }
-    else if (hasSelection()) {
-        // Update entire selection
-        getSelectedCells().forEach(cell => {
-            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
-        });
-    }
-    else {
-        return; // No modifications were made: do not trigger refresh
-    }
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    saveSelectionTextHistory();
-}
-
-// --------------------------------------------------------------------------------
-
-export function getSelectedValues() {
-    return rasterState.getSelectedValues();
-}
-
-export function getSelectedCellArea() {
-    return rasterState.getSelectedCellArea();
-}
-
-export function getSelectedRect() {
-    return rasterState.getSelectedRect();
-}
-
-export function getSelectedCells() {
-    return rasterState.getSelectedCells();
-}
-
-export function getConnectedCells(cell, options) {
-    return rasterState.getConnectedCells(cell, options);
-}
-
-// -------------------------------------------------------------------------------- Events
-
-function setupEventBus() {
-    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED], () => {
-        clearCaches()
-    }, 1) // Higher than default priority because this must happen before other callbacks
-
-    // If we're in the middle of moving content and the user presses undo, it can be jarring. So we always finish the
-    // current move and then undo it.
-    eventBus.on(EVENTS.HISTORY.BEFORE_CHANGE, () => {
-        // if (movableContent()) finishMovingContent()
-    })
-
-    let hasMoved;
-    let prevCell; // Used to keep track of whether the mousemove is entering a new cell
-
-    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas }) => {
-        if (mouseEvent.button !== MOUSE.LEFT) return;
-
-        const tool = state.getConfig('tool')
-
-        switch(tool) {
-            case 'selection-rect':
-            case 'selection-line':
-            case 'selection-lasso':
-            case 'selection-wand':
-            case 'text-editor':
-                break;
-            default:
-                return; // Ignore all other tools
-        }
-
-        prevCell = cell;
-
-        // If user clicks on the selection, we begin the 'moving' process (moving the selection area).
-        if (isSelectedCell(cell) && allowMovement(tool, mouseEvent)) {
-            _isMoving = true;
-            hasMoved = false;
-
-            if (mouseEvent.metaKey && !movableContent()) {
-                startMovingContent();
-                return;
-            }
-
-            eventBus.emit(EVENTS.SELECTION.CHANGED);
-            saveSelectionHistory();
-            return;
-        }
-
-        // If user clicks anywhere on the canvas (without the multiple-select key down) we want to clear everything
-        // and start a new polygon
-        if (!shouldModifyAction('tools.standard.selection.multiple', mouseEvent)) clear();
-
-        if (cell.isInBounds()) {
-            _isDrawing = true;
-
-            switch(tool) {
-                case 'selection-rect':
-                    addSelectionShape(new SelectionRect(cell, undefined, {
-                        outline: shouldModifyAction('tools.standard.selection-rect.outline', mouseEvent)
-                    }))
-                    break;
-                case 'selection-line':
-                    addSelectionShape(new SelectionLine(cell));
-                    break;
-                case 'selection-lasso':
-                    addSelectionShape(new SelectionLasso(cell));
-                    break;
-                case 'selection-wand':
-                    const wand = new SelectionWand(cell, undefined, {
-                        diagonal: shouldModifyAction('tools.standard.selection-wand.diagonal', mouseEvent),
-                        charblind: true,
-                        colorblind: shouldModifyAction('tools.standard.selection-wand.colorblind', mouseEvent)
-                    });
-                    wand.complete();
-                    addSelectionShape(wand);
-                    break;
-                case 'text-editor':
-                    if (state.getConfig('caretStyle') === 'I-beam') {
-                        cell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
-                    }
-
-                    if (!hasTarget()) {
-                        moveCaretTo(cell)
-                    }
-                    else {
-                        // This case only happens if there is already a selection and the user holds shift and clicks on a
-                        // new cell. We extend the current selection to that cell since that is how editors usually work.
-                        firstSelectionShape().end = cell;
-                    }
-                    break;
-            }
-
-            eventBus.emit(EVENTS.SELECTION.CHANGED);
-            saveSelectionHistory();
-        }
-    });
-
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas }) => {
-        // Special text-editor cell rounding to better mirror a real text editor -- see Cell.caretCell
-        if (_isDrawing && state.getConfig('tool') === 'text-editor' && state.getConfig('caretStyle') === 'I-beam') {
-            cell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
-        }
-
-        const isNewCell = !prevCell || !prevCell.equals(cell);
-        if (!isNewCell) return;
-
-        if (_isDrawing) {
-            lastSelectionShape().end = cell;
-            eventBus.emit(EVENTS.SELECTION.CHANGED);
-            saveSelectionHistory();
-        }
-        else if (_isMoving) {
-            moveDelta(cell.row - prevCell.row, cell.col - prevCell.col);
-
-            // Keep track of whether we've moved to a new cell. Note: moving to a new cell and then moving back
-            // will still count as movement (hasMoved:true).
-            hasMoved = true;
-        }
-
-        prevCell = cell;
-    });
-
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ cell }) => {
-        const tool = state.getConfig('tool')
-
-        if (_isDrawing) {
-            lastSelectionShape().complete();
-            _isDrawing = false;
-            eventBus.emit(EVENTS.SELECTION.CHANGED);
-            saveSelectionHistory();
-        }
-        else if (_isMoving) {
-            _isMoving = false;
-
-            // For text-editor, if you click somewhere in the selected area (and we're not trying to move the underlying
-            // content or the selected area) it will immediately place the caret into that spot, removing the selection.
-            if (tool === 'text-editor' && !movableContent() && !hasMoved) {
-                clear();
-                moveCaretTo(cell);
-            }
-            else {
-                eventBus.emit(EVENTS.SELECTION.CHANGED)
-                if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
-                saveSelectionHistory();
-            }
-        }
-    });
-}
-
-// --------------------------------------------------------------------------------
+export function movableContent() { return state.selection.raster.movableContent(); }
 
 export function toggleMovingContent() {
     movableContent() ? finishMovingContent() : startMovingContent();
 }
 
 export function startMovingContent() {
-    rasterState.startMovingContent();
+    state.selection.raster.startMovingContent();
     eventBus.emit(EVENTS.REFRESH.ALL);
     saveDistinctHistory();
 }
 
 export function finishMovingContent() {
-    rasterState.finishMovingContent();
+    state.selection.raster.finishMovingContent();
 
     eventBus.emit(EVENTS.REFRESH.ALL);
     saveDistinctHistory();
 }
 
-export function updateMovableContent(char, color) {
-    rasterState.updateMovableContent(char, color);
-}
+export function updateMovableContent(char, color) { state.selection.raster.updateMovableContent(char, color); }
 
-// --------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------- Caret
 
-export function caretCell() {
-    return rasterState.caretCell();
-}
+export function caretCell() { return state.selection.raster.caretCell(); }
 
 export function moveCaretTo(cell, updateOrigin = true, history = true) {
     if (state.getConfig('tool') !== 'text-editor') {
@@ -354,10 +114,10 @@ export function moveCaretTo(cell, updateOrigin = true, history = true) {
 
     if (movableContent()) { finishMovingContent(); } // Cannot move content and show caret at the same time
 
-    rasterState.moveCaretTo(cell);
+    state.selection.raster.moveCaretTo(cell);
 
     if (updateOrigin) {
-        rasterState.updateCaretOrigin(cell);
+        state.selection.raster.updateCaretOrigin(cell);
 
         // Update the current history slice so that if you undo to the slice, the caret will be at the most recent position
         // TODO [undo/redo issue]
@@ -369,111 +129,14 @@ export function moveCaretTo(cell, updateOrigin = true, history = true) {
 }
 
 
-// -------------------------------------------------------------------------------- Keyboard
-
-export function handleArrowKey(direction, shiftKey) {
-    // If holding shift, arrow keys extend the current selection
-    if (shiftKey) {
-        extendInDirection(direction, 1)
-        return;
-    }
-
-    // If in text-editor and there is a selection, jump caret to start/end of the selection area
-    if (state.getConfig('tool') === 'text-editor' && !caretCell() && !movableContent()) {
-        switch(direction) {
-            case 'left':
-                moveCaretTo(firstSelectionShape().topLeft);
-                break;
-            case 'up':
-                moveCaretTo(nextCaretPosition(firstSelectionShape().topLeft, 'up', 1, false));
-                break;
-            case 'right':
-                moveCaretTo(nextCaretPosition(firstSelectionShape().bottomRight, 'right', 1, false));
-                break;
-            case 'down':
-                moveCaretTo(nextCaretPosition(firstSelectionShape().bottomLeft, 'down', 1, false));
-                break;
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-        }
-        return;
-    }
-
-    moveInDirection(direction);
-}
-
-export function handleBackspaceKey(isDelete) {
-    if (movableContent()) {
-        updateMovableContent(EMPTY_CHAR, 0);
-    }
-    else if (caretCell()) {
-        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
-        // saveSelectionTextHistory later
-        if (isDelete) {
-            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
-            moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
-        }
-        else {
-            moveInDirection('left', { updateCaretOrigin: false, saveHistory: false });
-            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
-        }
-    }
-    else {
-        rasterState.empty();
-    }
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    saveSelectionTextHistory();
-}
-
-export function handleTabKey(shiftKey) {
-    if (shiftKey) {
-        // If shift key is pressed, we move in opposite direction
-        moveInDirection('left', { updateCaretOrigin: false });
-    } else {
-        moveInDirection('right', { updateCaretOrigin: false })
-    }
-}
-
-export function handleEnterKey(shiftKey) {
-    if (movableContent()) {
-        finishMovingContent();
-    }
-    else {
-        if (caretCell()) {
-
-            // 'Enter' key differs from 'ArrowDown' in that the caret will go to the start of the next line (like Excel)
-            let col = rasterState.getCaretOriginCol(),
-                row = caretCell().row + 1;
-            if (row >= state.numRows()) row = 0
-            moveCaretTo(new Cell(row, col), true, false);
-
-            // Store a new history snapshot at the start of the new line. This way the caret jumps from end of line ->
-            // start of line -> end of prev line -> start of prev line -> etc. In other words, there are 2 jump
-            // positions per line.
-            saveDistinctHistory();
-
-            return;
-        }
-
-        if (shiftKey) {
-            // If shift key is pressed, we move in opposite direction
-            moveInDirection('up')
-        } else {
-            moveInDirection('down')
-        }
-    }
-}
-
-
-// -------------------------------------------------------------------------------- Translating/Modifying Polygons
+// -------------------------------------------------------------------------------- Translating shapes
 
 function moveDelta(rowDelta, colDelta) {
     if (!hasSelection()) {
         return;
     }
 
-    rasterState.moveDelta(rowDelta, colDelta);
+    state.selection.raster.moveDelta(rowDelta, colDelta);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
@@ -503,7 +166,7 @@ export function moveInDirection(direction, options = {}) {
         return;
     }
 
-    rasterState.moveInDirection(direction, amount);
+    state.selection.raster.moveInDirection(direction, amount);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
@@ -514,7 +177,7 @@ export function extendInDirection(direction, amount = 1) {
     if (!hasTarget()) return;
     if (movableContent()) return; // Cannot extend while moving content
 
-    rasterState.extendInDirection(direction, amount);
+    state.selection.raster.extendInDirection(direction, amount);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
@@ -569,18 +232,322 @@ function nextCaretPosition(currentPosition, direction, amount, wrapCaretPosition
 }
 
 export function flipVertically(mirrorChars) {
-    rasterState.flipSelection(false, true, mirrorChars);
+    state.selection.raster.flipSelection(false, true, mirrorChars);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
     saveDistinctHistory();
 }
 export function flipHorizontally(mirrorChars) {
-    rasterState.flipSelection(true, false, mirrorChars);
+    state.selection.raster.flipSelection(true, false, mirrorChars);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
     saveDistinctHistory();
+}
+
+
+
+// -------------------------------------------------------------------------------- Keyboard
+
+export function handleArrowKey(direction, shiftKey) {
+    // If holding shift, arrow keys extend the current selection
+    if (shiftKey) {
+        extendInDirection(direction, 1)
+        return;
+    }
+
+    // If in text-editor and there is a selection, jump caret to start/end of the selection area
+    if (state.getConfig('tool') === 'text-editor' && !caretCell() && !movableContent()) {
+        switch(direction) {
+            case 'left':
+                moveCaretTo(firstSelectionShape().topLeft);
+                break;
+            case 'up':
+                moveCaretTo(nextCaretPosition(firstSelectionShape().topLeft, 'up', 1, false));
+                break;
+            case 'right':
+                moveCaretTo(nextCaretPosition(firstSelectionShape().bottomRight, 'right', 1, false));
+                break;
+            case 'down':
+                moveCaretTo(nextCaretPosition(firstSelectionShape().bottomLeft, 'down', 1, false));
+                break;
+            default:
+                console.warn(`Invalid direction: ${direction}`);
+        }
+        return;
+    }
+
+    moveInDirection(direction);
+}
+
+export function handleBackspaceKey(isDelete) {
+    if (movableContent()) {
+        updateMovableContent(EMPTY_CHAR, 0);
+    }
+    else if (caretCell()) {
+        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
+        // saveSelectionTextHistory later
+        if (isDelete) {
+            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
+            moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
+        }
+        else {
+            moveInDirection('left', { updateCaretOrigin: false, saveHistory: false });
+            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
+        }
+    }
+    else {
+        empty();
+    }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveSelectionTextHistory();
+}
+
+export function handleTabKey(shiftKey) {
+    if (shiftKey) {
+        // If shift key is pressed, we move in opposite direction
+        moveInDirection('left', { updateCaretOrigin: false });
+    } else {
+        moveInDirection('right', { updateCaretOrigin: false })
+    }
+}
+
+export function handleEnterKey(shiftKey) {
+    if (movableContent()) {
+        finishMovingContent();
+    }
+    else {
+        if (caretCell()) {
+
+            // 'Enter' key differs from 'ArrowDown' in that the caret will go to the start of the next line (like Excel)
+            let col = state.selection.raster.getCaretOriginCol(),
+                row = caretCell().row + 1;
+            if (row >= state.numRows()) row = 0
+            moveCaretTo(new Cell(row, col), true, false);
+
+            // Store a new history snapshot at the start of the new line. This way the caret jumps from end of line ->
+            // start of line -> end of prev line -> start of prev line -> etc. In other words, there are 2 jump
+            // positions per line.
+            saveDistinctHistory();
+
+            return;
+        }
+
+        if (shiftKey) {
+            // If shift key is pressed, we move in opposite direction
+            moveInDirection('up')
+        } else {
+            moveInDirection('down')
+        }
+    }
+}
+
+
+
+// Returns true if the given Cell is part of the selection
+export function isSelectedCell(cell) {
+    if (caches.selectedCells === undefined) {
+        caches.selectedCells = new CellCache();
+        getSelectedCells().map(cell => caches.selectedCells.add(cell));
+    }
+
+    return caches.selectedCells.has(cell);
+}
+
+export function allowMovement(tool, mouseEvent) {
+    if (isDrawing) return false;
+
+    // In text-editor tool, holding shift and clicking will modify the polygon instead of move it
+    if (tool === 'text-editor' && mouseEvent.shiftKey) return false;
+
+    return true;
+}
+
+export function setSelectionToSingleChar(char, color, moveCaret = true) {
+    if (movableContent()) {
+        // Update entire movable content
+        updateMovableContent(char, color);
+    }
+    else if (caretCell()) {
+        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
+        // saveSelectionTextHistory later
+        state.setCurrentCelGlyph(caretCell().row, caretCell().col, char, color);
+        if (moveCaret) moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
+    }
+    else if (hasSelection()) {
+        // Update entire selection
+        getSelectedCells().forEach(cell => {
+            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
+        });
+    }
+    else {
+        return; // No modifications were made: do not trigger refresh
+    }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveSelectionTextHistory();
+}
+
+
+
+// -------------------------------------------------------------------------------- Events
+
+export let isDrawing = false; // Only true when mouse is down and polygon is being drawn
+export let isMoving = false; // Only true when mouse is down and polygon is being moved
+let caches;
+
+function clearCaches() {
+    caches = {};
+}
+
+function setupEventBus() {
+    eventBus.on([EVENTS.REFRESH.ALL, EVENTS.SELECTION.CHANGED], () => {
+        clearCaches()
+    }, 1) // Higher than default priority because this must happen before other callbacks
+
+    // If we're in the middle of moving content and the user presses undo, it can be jarring. So we always finish the
+    // current move and then undo it.
+    eventBus.on(EVENTS.HISTORY.BEFORE_CHANGE, () => {
+        // if (movableContent()) finishMovingContent()
+    })
+
+    let hasMoved;
+    let prevCell; // Used to keep track of whether the mousemove is entering a new cell
+
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas }) => {
+        if (mouseEvent.button !== MOUSE.LEFT) return;
+
+        const tool = state.getConfig('tool')
+
+        switch(tool) {
+            case 'selection-rect':
+            case 'selection-line':
+            case 'selection-lasso':
+            case 'selection-wand':
+            case 'text-editor':
+                break;
+            default:
+                return; // Ignore all other tools
+        }
+
+        prevCell = cell;
+
+        // If user clicks on the selection, we begin the 'moving' process (moving the selection area).
+        if (isSelectedCell(cell) && allowMovement(tool, mouseEvent)) {
+            isMoving = true;
+            hasMoved = false;
+
+            if (mouseEvent.metaKey && !movableContent()) {
+                startMovingContent();
+                return;
+            }
+
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
+            saveSelectionHistory();
+            return;
+        }
+
+        // If user clicks anywhere on the canvas (without the multiple-select key down) we want to clear everything
+        // and start a new polygon
+        if (!shouldModifyAction('tools.standard.selection.multiple', mouseEvent)) clear();
+
+        if (cell.isInBounds()) {
+            isDrawing = true;
+
+            switch(tool) {
+                case 'selection-rect':
+                    addSelectionShape(new SelectionRect(cell, undefined, {
+                        outline: shouldModifyAction('tools.standard.selection-rect.outline', mouseEvent)
+                    }))
+                    break;
+                case 'selection-line':
+                    addSelectionShape(new SelectionLine(cell));
+                    break;
+                case 'selection-lasso':
+                    addSelectionShape(new SelectionLasso(cell));
+                    break;
+                case 'selection-wand':
+                    const wand = new SelectionWand(cell, undefined, {
+                        diagonal: shouldModifyAction('tools.standard.selection-wand.diagonal', mouseEvent),
+                        charblind: true,
+                        colorblind: shouldModifyAction('tools.standard.selection-wand.colorblind', mouseEvent)
+                    });
+                    wand.complete();
+                    addSelectionShape(wand);
+                    break;
+                case 'text-editor':
+                    if (state.getConfig('caretStyle') === 'I-beam') {
+                        cell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
+                    }
+
+                    if (!hasTarget()) {
+                        moveCaretTo(cell)
+                    }
+                    else {
+                        // This case only happens if there is already a selection and the user holds shift and clicks on a
+                        // new cell. We extend the current selection to that cell since that is how editors usually work.
+                        firstSelectionShape().end = cell;
+                    }
+                    break;
+            }
+
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
+            saveSelectionHistory();
+        }
+    });
+
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas }) => {
+        // Special text-editor cell rounding to better mirror a real text editor -- see Cell.caretCell
+        if (isDrawing && state.getConfig('tool') === 'text-editor' && state.getConfig('caretStyle') === 'I-beam') {
+            cell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
+        }
+
+        const isNewCell = !prevCell || !prevCell.equals(cell);
+        if (!isNewCell) return;
+
+        if (isDrawing) {
+            lastSelectionShape().end = cell;
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
+            saveSelectionHistory();
+        }
+        else if (isMoving) {
+            moveDelta(cell.row - prevCell.row, cell.col - prevCell.col);
+
+            // Keep track of whether we've moved to a new cell. Note: moving to a new cell and then moving back
+            // will still count as movement (hasMoved:true).
+            hasMoved = true;
+        }
+
+        prevCell = cell;
+    });
+
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ cell }) => {
+        const tool = state.getConfig('tool')
+
+        if (isDrawing) {
+            lastSelectionShape().complete();
+            isDrawing = false;
+            eventBus.emit(EVENTS.SELECTION.CHANGED);
+            saveSelectionHistory();
+        }
+        else if (isMoving) {
+            isMoving = false;
+
+            // For text-editor, if you click somewhere in the selected area (and we're not trying to move the underlying
+            // content or the selected area) it will immediately place the caret into that spot, removing the selection.
+            if (tool === 'text-editor' && !movableContent() && !hasMoved) {
+                clear();
+                moveCaretTo(cell);
+            }
+            else {
+                eventBus.emit(EVENTS.SELECTION.CHANGED)
+                if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
+                saveSelectionHistory();
+            }
+        }
+    });
 }
 
 // -------------------------------------------------------------------------------- Cloning
