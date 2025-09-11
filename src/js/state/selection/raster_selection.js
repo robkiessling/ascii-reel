@@ -210,7 +210,7 @@ export function getConnectedCells(cell, options) {
 
 // -------------------------------------------------------------------------------- Moving Content
 
-export function getMovableContent() {
+export function movableContent() {
     return state.movableContent;
 }
 

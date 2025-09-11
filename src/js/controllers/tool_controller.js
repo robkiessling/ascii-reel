@@ -6,8 +6,7 @@
  */
 
 import * as state from '../state/index.js';
-import * as rasterSelection from './selection/raster_selection.js';
-import * as vectorSelection from "./selection/vector_selection.js";
+import * as selectionController from "./selection/index.js";
 import * as actions from "../io/actions.js";
 import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
@@ -83,8 +82,8 @@ function refresh() {
 
 export function changeTool(newTool) {
     state.setConfig('tool', newTool);
-    rasterSelection.clear();
-    vectorSelection.deselectAllShapes();
+    selectionController.raster.clear();
+    selectionController.vector.deselectAllShapes();
     refresh();
 }
 
@@ -247,7 +246,7 @@ function setupEventBus() {
     eventBus.on(EVENTS.PALETTE.COLOR_SELECTED, ({ color }) => {
         selectColor(color);
 
-        if (state.hasSelectedShapes()) {
+        if (state.selection.vector.hasSelectedShapes()) {
             shapeColorPicker.value(color)
         }
     })
@@ -371,23 +370,23 @@ function setupSelectionTools() {
         actions.registerAction(actionIdForSelectionTool(tool), {
             callback: callback,
             enabled: () => {
-                if (disableOnMove && rasterSelection.movableContent()) { return false; }
+                if (disableOnMove && selectionController.raster.movableContent()) { return false; }
                 return true;
             },
             shortcutAbbr: shortcutAbbr
         });
     }
     
-    registerAction('move', () => rasterSelection.toggleMovingContent(), false, `${modifierAbbr('metaKey')}Click`);
-    registerAction('flip-v', e => rasterSelection.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
-    registerAction('flip-h', e => rasterSelection.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
-    registerAction('clone', () => rasterSelection.cloneToAllFrames());
+    registerAction('move', () => selectionController.raster.toggleMovingContent(), false, `${modifierAbbr('metaKey')}Click`);
+    registerAction('flip-v', e => selectionController.raster.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
+    registerAction('flip-h', e => selectionController.raster.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
+    registerAction('clone', () => selectionController.raster.cloneToAllFrames());
     registerAction('fill-char', () => fillSelection(state.getConfig('primaryChar'), undefined));
     registerAction('fill-color', () => fillSelection(undefined, state.primaryColorIndex()));
     registerAction('convert-to-whitespace', () => replaceInSelection(EMPTY_CHAR, WHITESPACE_CHAR));
     registerAction('convert-to-empty', () => replaceInSelection(WHITESPACE_CHAR, EMPTY_CHAR));
     registerAction('resize', () => resizeToSelection());
-    registerAction('close', () => rasterSelection.clear(), true, 'Esc');
+    registerAction('close', () => selectionController.raster.clear(), true, 'Esc');
 
     $selectionTools.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
         const $element = $(evt.currentTarget);
@@ -408,11 +407,11 @@ function actionIdForSelectionTool(tool) {
 }
 
 function refreshSelectionTools() {
-    const isVisible = rasterSelection.hasSelection() && !rasterSelection.caretCell();
+    const isVisible = selectionController.raster.hasSelection() && !selectionController.raster.caretCell();
     $selectionTools.toggle(isVisible);
     if (!isVisible) selectionTooltips.tooltips.forEach(tooltip => tooltip.hide())
 
-    $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!rasterSelection.movableContent());
+    $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selectionController.raster.movableContent());
 
     $selectionTools.find('.sub-tool').each((i, element) => {
         const $element = $(element);
@@ -425,7 +424,7 @@ function refreshSelectionTools() {
 }
 
 function fillSelection(char, color) {
-    rasterSelection.getSelectedCells().forEach(cell => {
+    selectionController.raster.getSelectedCells().forEach(cell => {
         state.setCurrentCelGlyph(cell.row, cell.col, char, color);
     });
 
@@ -434,7 +433,7 @@ function fillSelection(char, color) {
 }
 
 function replaceInSelection(findChar, replaceChar) {
-    rasterSelection.getSelectedCells().forEach(cell => {
+    selectionController.raster.getSelectedCells().forEach(cell => {
         if (state.getCurrentCelGlyph(cell.row, cell.col)[0] === findChar) {
             state.setCurrentCelGlyph(cell.row, cell.col, replaceChar);
         }
@@ -445,7 +444,7 @@ function replaceInSelection(findChar, replaceChar) {
 }
 
 function resizeToSelection() {
-    const area = rasterSelection.getSelectedCellArea().bindToDrawableArea();
+    const area = selectionController.raster.getSelectedCellArea().bindToDrawableArea();
     state.resize([area.numRows, area.numCols], area.topLeft.row, area.topLeft.col);
     eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
     state.pushHistory({ requiresResize: true });
@@ -558,14 +557,14 @@ function setupShapeProperties() {
     setupOrderMenu();
 
     actions.registerAction('tools.shapes.delete', {
-        callback: () => vectorSelection.deleteSelectedShapes()
+        callback: () => selectionController.vector.deleteSelectedShapes()
     })
 
     actions.registerAction('tools.shapes.startCursor', {
         callback: () => {
-            vectorSelection.setShapeCursor(state.selectedShapes()[0].id, 0)
+            selectionController.vector.setShapeCursor(state.selection.vector.selectedShapes()[0].id, 0)
         },
-        enabled: () => state.selectedShapes().length
+        enabled: () => state.selection.vector.selectedShapes().length
     })
 
     $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {
@@ -595,10 +594,10 @@ function setupStrokeMenu($menu, shapeType) {
                 tooltip: `tools.shapes.${strokeProp}.${stroke}`,
             }
         }),
-        visible: () => state.selectedShapeTypes().includes(shapeType),
-        getValue: () => state.selectedShapeProps()[strokeProp][0],
+        visible: () => state.selection.vector.selectedShapeTypes().includes(shapeType),
+        getValue: () => state.selection.vector.selectedShapeProps()[strokeProp][0],
         onSelect: newValue => {
-            vectorSelection.updateSelectedShapes(shape => {
+            selectionController.vector.updateSelectedShapes(shape => {
                 if (shape.type === shapeType) shape.updateProp(strokeProp, newValue)
             });
         },
@@ -626,10 +625,10 @@ function setupTextAlignMenu($menu, prop, options) {
         visible: () => {
             // Show text-align if any selected shapes have non-zero text length
             // TODO or if cursor is currently in the shape
-            return state.selectedShapeProps()[TEXT_PROP].some(textProp => !!textProp);
+            return state.selection.vector.selectedShapeProps()[TEXT_PROP].some(textProp => !!textProp);
         },
-        getValue: () => state.selectedShapeProps()[prop][0],
-        onSelect: newValue => vectorSelection.updateSelectedShapes(shape => shape.updateProp(prop, newValue)),
+        getValue: () => state.selection.vector.selectedShapeProps()[prop][0],
+        onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(prop, newValue)),
         onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
             placement: 'right'
@@ -642,13 +641,13 @@ function setupTextAlignMenu($menu, prop, options) {
 function selectedShapesUseCharPicker() {
     let strokeUsesChar = false;
     Object.values(STROKE_PROPS).forEach(strokeProp => {
-        const strokes = state.selectedShapeProps()[strokeProp];
+        const strokes = state.selection.vector.selectedShapeProps()[strokeProp];
 
         // TODO This is basing monochar styles off of their key name... change to a real property
         if (strokes.some(stroke => stroke.includes('monochar'))) strokeUsesChar = true;
     })
 
-    const fillUsesChar = state.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
+    const fillUsesChar = state.selection.vector.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
 
     return strokeUsesChar || fillUsesChar;
 }
@@ -667,9 +666,9 @@ function setupFillMenu() {
                 tooltip: `tools.shapes.${FILL_PROP}.${option}`,
             }
         }),
-        visible: () => state.selectedShapeProps()[FILL_PROP].length,
-        getValue: () => state.selectedShapeProps()[FILL_PROP][0],
-        onSelect: newValue => vectorSelection.updateSelectedShapes(shape => shape.updateProp(FILL_PROP, newValue)),
+        visible: () => state.selection.vector.selectedShapeProps()[FILL_PROP].length,
+        getValue: () => state.selection.vector.selectedShapeProps()[FILL_PROP][0],
+        onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(FILL_PROP, newValue)),
         onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
             placement: 'right'
@@ -684,8 +683,8 @@ function setupOrderMenu() {
 
     Object.values(REORDER_ACTIONS).forEach(action => {
         actions.registerAction(`tools.shapes.${action}`, {
-            callback: () => vectorSelection.reorderSelectedShapes(action),
-            enabled: () => state.canReorderSelectedShapes(action),
+            callback: () => selectionController.vector.reorderSelectedShapes(action),
+            enabled: () => state.selection.vector.canReorderSelectedShapes(action),
         })
     })
 
@@ -713,7 +712,7 @@ function setupOrderMenu() {
 }
 
 function refreshShapeProperties() {
-    const isVisible = state.hasSelectedShapes();
+    const isVisible = state.selection.vector.hasSelectedShapes();
     $shapeProperties.toggle(isVisible);
 
     if (isVisible) {
@@ -740,7 +739,7 @@ function refreshShapeProperties() {
 function fillConnectedCells(cell, char, colorIndex, options) {
     if (!cell.isInBounds()) return;
 
-    rasterSelection.getConnectedCells(cell, options).forEach(cell => {
+    selectionController.raster.getConnectedCells(cell, options).forEach(cell => {
         state.setCurrentCelGlyph(cell.row, cell.col, char, colorIndex);
     })
 
@@ -843,7 +842,7 @@ function getDrawingModifiersTooltip(tool, drawType) {
 
 function handleDrawMousedown(factory, cell, canvas, mouseEvent, options = {}) {
     if (!drawingContent) {
-        vectorSelection.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
+        selectionController.vector.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
 
         drawingContent = factory(cell, $.extend({ // todo rename drawingShape?
             drawPreset: state.getConfig('drawTypes')[state.getConfig('tool')],
@@ -988,8 +987,8 @@ function setupCharPicker() {
 }
 
 function refreshCharPicker() {
-    const char = state.hasSelectedShapes() ?
-        state.selectedShapeProps()[CHAR_PROP][0] :
+    const char = state.selection.vector.hasSelectedShapes() ?
+        state.selection.vector.selectedShapeProps()[CHAR_PROP][0] :
         state.getConfig('primaryChar');
 
     selectChar(char, false);
@@ -1017,7 +1016,7 @@ export function selectChar(char, triggerUpdates = true) {
     eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
 
     if (triggerUpdates) {
-        vectorSelection.updateSelectedShapes(shape => shape.updateProp(CHAR_PROP, char));
+        selectionController.vector.updateSelectedShapes(shape => shape.updateProp(CHAR_PROP, char));
         // todo if not using monochar, switch shape to it
     }
 }
@@ -1026,7 +1025,7 @@ export function selectChar(char, triggerUpdates = true) {
 let quickSwapEnabled = false;
 
 export function isQuickSwapEnabled() {
-    if (rasterSelection.hasSelection() && !rasterSelection.caretCell()) return true;
+    if (selectionController.raster.hasSelection() && !selectionController.raster.caretCell()) return true;
     return quickSwapEnabled;
 }
 
@@ -1087,7 +1086,7 @@ function selectColor(colorStr, triggerUpdates = true) {
 
     if (triggerUpdates) {
         const colorIndex = state.colorIndex(colorStr);
-        vectorSelection.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+        selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
     }
 }
 
@@ -1103,12 +1102,12 @@ function selectColorFromPicker(colorStr, fromPicker) {
     eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
 
     const colorIndex = state.colorIndex(colorStr);
-    vectorSelection.rapidUpdateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+    selectionController.vector.rapidUpdateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
 }
 
 function refreshColorPicker() {
-    const color = state.hasSelectedShapes() ?
-        state.colorStr(state.selectedShapeProps()[COLOR_PROP][0]) :
+    const color = state.selection.vector.hasSelectedShapes() ?
+        state.colorStr(state.selection.vector.selectedShapeProps()[COLOR_PROP][0]) :
         state.getConfig('primaryColor');
 
     selectColor(color, false);
@@ -1123,15 +1122,15 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvas) {
 
     switch (tool) {
         case 'select':
-            const handle = vectorSelection.getHandle(cell, mouseEvent, canvas);
+            const handle = selectionController.vector.getHandle(cell, mouseEvent, canvas);
             return handle ? handle.cursor : 'default';
         case 'text-editor':
-            return rasterSelection.isSelectedCell(cell) && rasterSelection.allowMovement(tool, mouseEvent) ? grab : 'text';
+            return selectionController.raster.isSelectedCell(cell) && selectionController.raster.allowMovement(tool, mouseEvent) ? grab : 'text';
         case 'selection-rect':
         case 'selection-line':
         case 'selection-lasso':
         case 'selection-wand':
-            return rasterSelection.isSelectedCell(cell) && rasterSelection.allowMovement(tool, mouseEvent) ? grab : 'cell';
+            return selectionController.raster.isSelectedCell(cell) && selectionController.raster.allowMovement(tool, mouseEvent) ? grab : 'cell';
         case 'draw-freeform':
         case 'draw-rect':
         case 'draw-line':

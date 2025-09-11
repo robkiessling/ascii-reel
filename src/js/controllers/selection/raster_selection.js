@@ -14,6 +14,15 @@ import Cell from "../../geometry/cell.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import {translateGlyphs} from "../../utils/arrays.js";
 
+// TODO Redo this?
+// Re-exports everything from raster selection state.
+// This file will then override any functions that it needs to add events to, add additional ui logic too, etc.
+// All other controllers should use raster selection methods from this controller file, not the state
+export * from "../../state/selection/raster_selection.js";
+
+const rasterState = state.selection.raster;
+
+
 
 let _isDrawing = false; // Only true when mouse is down and polygon is being drawn
 let _isMoving = false; // Only true when mouse is down and polygon is being moved
@@ -38,26 +47,26 @@ export function init() {
     clearCaches();
 }
 
-export function movableContent() {
-    return state.getMovableRasterContent();
+function movableContent() {
+    return rasterState.movableContent();
 }
-export function selectionShapes() {
-    return state.rasterSelectionShapes();
+function selectionShapes() {
+    return rasterState.selectionShapes();
 }
 function addSelectionShape(shape) {
-    state.addRasterSelectionShape(shape);
+    return rasterState.addSelectionShape(shape);
 }
 function firstSelectionShape() {
-    return state.rasterSelectionShapes().at(0);
+    return selectionShapes().at(0)
 }
 function lastSelectionShape() {
-    return state.rasterSelectionShapes().at(-1);
+    return selectionShapes().at(-1)
 }
-export function hasSelection() {
-    return state.hasRasterSelection();
+function hasSelection() {
+    return rasterState.hasSelection();
 }
-export function hasTarget() {
-    return state.hasRasterTarget();
+function hasTarget() {
+    return rasterState.hasTarget();
 }
 
 export function clear(refresh = true) {
@@ -68,8 +77,8 @@ export function clear(refresh = true) {
         hasChanges = true;
     }
 
-    if (hasSelection()) {
-        state.clearSelection();
+    if (hasTarget()) {
+        state.selection.clearSelection();
         hasChanges = true;
     }
 
@@ -79,18 +88,14 @@ export function clear(refresh = true) {
     }
 }
 
-export function empty() {
-    state.emptyRasterSelection();
-}
-
 export function selectAll() {
     // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
     if (!['text-editor', 'selection-rect'].includes(state.getConfig('tool'))) {
         tools.changeTool('text-editor');
     }
 
-    if (state.canSelectAllRaster()) {
-        state.selectAllRaster();
+    if (rasterState.canSelectAll()) {
+        rasterState.selectAll();
         eventBus.emit(EVENTS.SELECTION.CHANGED);
         saveSelectionHistory();
     }
@@ -143,23 +148,23 @@ export function setSelectionToSingleChar(char, color, moveCaret = true) {
 // --------------------------------------------------------------------------------
 
 export function getSelectedValues() {
-    return state.getSelectedRasterValues();
+    return rasterState.getSelectedValues();
 }
 
 export function getSelectedCellArea() {
-    return state.getSelectedRasterCellArea();
+    return rasterState.getSelectedCellArea();
 }
 
 export function getSelectedRect() {
-    return state.getSelectedRasterRect();
+    return rasterState.getSelectedRect();
 }
 
 export function getSelectedCells() {
-    return state.getSelectedRasterCells();
+    return rasterState.getSelectedCells();
 }
 
 export function getConnectedCells(cell, options) {
-    return state.getConnectedRasterCells(cell, options)
+    return rasterState.getConnectedCells(cell, options);
 }
 
 // -------------------------------------------------------------------------------- Events
@@ -211,10 +216,9 @@ function setupEventBus() {
             return;
         }
 
-        // If user clicks anywhere on the canvas (without the multiple-select key down) we want to clear everything and start a new polygon
-        if (!shouldModifyAction('tools.standard.selection.multiple', mouseEvent)) {
-            clear();
-        }
+        // If user clicks anywhere on the canvas (without the multiple-select key down) we want to clear everything
+        // and start a new polygon
+        if (!shouldModifyAction('tools.standard.selection.multiple', mouseEvent)) clear();
 
         if (cell.isInBounds()) {
             _isDrawing = true;
@@ -320,26 +324,26 @@ export function toggleMovingContent() {
 }
 
 export function startMovingContent() {
-    state.startMovingRasterContent();
+    rasterState.startMovingContent();
     eventBus.emit(EVENTS.REFRESH.ALL);
     saveDistinctHistory();
 }
 
 export function finishMovingContent() {
-    state.finishMovingRasterContent();
+    rasterState.finishMovingContent();
 
     eventBus.emit(EVENTS.REFRESH.ALL);
     saveDistinctHistory();
 }
 
 export function updateMovableContent(char, color) {
-    state.updateMovableRasterContent(char, color);
+    rasterState.updateMovableContent(char, color);
 }
 
 // --------------------------------------------------------------------------------
 
 export function caretCell() {
-    return state.caretCell();
+    return rasterState.caretCell();
 }
 
 export function moveCaretTo(cell, updateOrigin = true, history = true) {
@@ -350,10 +354,10 @@ export function moveCaretTo(cell, updateOrigin = true, history = true) {
 
     if (movableContent()) { finishMovingContent(); } // Cannot move content and show caret at the same time
 
-    state.moveCaretTo(cell);
+    rasterState.moveCaretTo(cell);
 
     if (updateOrigin) {
-        state.updateRasterCaretOrigin(cell);
+        rasterState.updateCaretOrigin(cell);
 
         // Update the current history slice so that if you undo to the slice, the caret will be at the most recent position
         // TODO [undo/redo issue]
@@ -415,7 +419,7 @@ export function handleBackspaceKey(isDelete) {
         }
     }
     else {
-        empty();
+        rasterState.empty();
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -439,7 +443,7 @@ export function handleEnterKey(shiftKey) {
         if (caretCell()) {
 
             // 'Enter' key differs from 'ArrowDown' in that the caret will go to the start of the next line (like Excel)
-            let col = state.getRasterCaretOriginCol(),
+            let col = rasterState.getCaretOriginCol(),
                 row = caretCell().row + 1;
             if (row >= state.numRows()) row = 0
             moveCaretTo(new Cell(row, col), true, false);
@@ -469,7 +473,7 @@ function moveDelta(rowDelta, colDelta) {
         return;
     }
 
-    state.moveRasterDelta(rowDelta, colDelta);
+    rasterState.moveDelta(rowDelta, colDelta);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
@@ -499,7 +503,7 @@ export function moveInDirection(direction, options = {}) {
         return;
     }
 
-    state.moveRasterInDirection(direction, amount);
+    rasterState.moveInDirection(direction, amount);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
@@ -510,7 +514,7 @@ export function extendInDirection(direction, amount = 1) {
     if (!hasTarget()) return;
     if (movableContent()) return; // Cannot extend while moving content
 
-    state.extendRasterInDirection(direction, amount);
+    rasterState.extendInDirection(direction, amount);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
@@ -565,14 +569,14 @@ function nextCaretPosition(currentPosition, direction, amount, wrapCaretPosition
 }
 
 export function flipVertically(mirrorChars) {
-    state.flipRasterSelection(false, true, mirrorChars);
+    rasterState.flipSelection(false, true, mirrorChars);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
     saveDistinctHistory();
 }
 export function flipHorizontally(mirrorChars) {
-    state.flipRasterSelection(true, false, mirrorChars);
+    rasterState.flipSelection(true, false, mirrorChars);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)

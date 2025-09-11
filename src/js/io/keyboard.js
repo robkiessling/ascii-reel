@@ -1,5 +1,4 @@
-import * as rasterSelection from "../controllers/selection/raster_selection.js";
-import * as vectorSelection from "../controllers/selection/vector_selection.js";
+import * as selectionController from "../controllers/selection/index.js";
 import * as state from "../state/index.js";
 import * as tools from "../controllers/tool_controller.js";
 import * as actions from "./actions.js";
@@ -80,7 +79,7 @@ function setupKeydownListener() {
 function handleEscapeKey() {
     state.endHistoryModification();
 
-    rasterSelection.clear();
+    selectionController.raster.clear();
 
     if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
     if (tools.isQuickSwapEnabled()) tools.toggleQuickSwap(false);
@@ -89,8 +88,8 @@ function handleEscapeKey() {
 function handleTabKey(e) {
     state.endHistoryModification();
 
-    if (rasterSelection.caretCell()) {
-        rasterSelection.handleTabKey(e.shiftKey);
+    if (selectionController.raster.caretCell()) {
+        selectionController.raster.handleTabKey(e.shiftKey);
     }
     else {
         actions.callActionByShortcut({ char: 'Tab' })
@@ -98,23 +97,23 @@ function handleTabKey(e) {
 }
 
 function handleEnterKey(e) {
-    rasterSelection.handleEnterKey(e.shiftKey);
+    selectionController.raster.handleEnterKey(e.shiftKey);
 }
 
 function handleBackspaceKey(char) {
-    handleChar(EMPTY_CHAR, () => rasterSelection.handleBackspaceKey(char === 'Delete'))
+    handleChar(EMPTY_CHAR, () => selectionController.raster.handleBackspaceKey(char === 'Delete'))
 }
 
 function handleArrowKey(e, arrowKey) {
     const direction = arrowKeyToDirection(arrowKey);
 
-    if (rasterSelection.hasTarget()) {
-        rasterSelection.handleArrowKey(direction, e.shiftKey);
+    if (selectionController.raster.hasTarget()) {
+        selectionController.raster.handleArrowKey(direction, e.shiftKey);
     }
-    else if (vectorSelection.caretCell()) {
+    else if (selectionController.vector.caretCell()) {
         state.endHistoryModification(); // todo check this
 
-        vectorSelection.handleArrowKey(direction, e.shiftKey);
+        selectionController.vector.handleArrowKey(direction, e.shiftKey);
     }
     else {
         switch(direction) {
@@ -146,7 +145,7 @@ function arrowKeyToDirection(arrowKey) {
 }
 
 function handleSingleCharKey(char, moveCaret = true) {
-    handleChar(char, () => rasterSelection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCaret))
+    handleChar(char, () => selectionController.raster.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCaret))
 }
 
 function handleChar(char, selectionUpdater) {
@@ -158,10 +157,10 @@ function handleChar(char, selectionUpdater) {
 
     if (tools.isQuickSwapEnabled()) tools.selectChar(char);
 
-    if (rasterSelection.caretCell()) {
+    if (selectionController.raster.caretCell()) {
         selectionUpdater()
     } else if (tools.isQuickSwapEnabled()) {
-        if (rasterSelection.hasSelection()) selectionUpdater()
+        if (selectionController.raster.hasSelection()) selectionUpdater()
     } else {
         actions.callActionByShortcut({ char: char })
     }
@@ -273,7 +272,7 @@ function setupCompositionListener() {
 
         // Since we didn't move the caret in compositionupdate (moveCaret=false), we move the caret now that
         // composition is finished
-        rasterSelection.moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
+        selectionController.raster.moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
 
         // TODO technically we should do something like this, otherwise redo doesn't fully work when final char has accent
         // state.pushHistory({ modifiable: 'rasterSelectionText' })

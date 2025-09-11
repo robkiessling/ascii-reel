@@ -12,8 +12,7 @@
  */
 
 import Canvas from "../components/canvas.js";
-import * as rasterSelection from "./selection/raster_selection.js";
-import * as vectorSelection from "./selection/vector_selection.js";
+import * as selectionController from "./selection/index.js";
 import {drawingContent, hoveredCells} from "./tool_controller.js";
 import * as state from "../state/index.js";
 import {majorGridColor, minorGridColor, PRIMARY_COLOR} from "../config/colors.js";
@@ -186,8 +185,8 @@ function redrawCharCanvas() {
     const currentGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend(true, {}, layeredGlyphsOptions, {
         layers: [state.currentLayer()],
         movableContent: {
-            glyphs: rasterSelection.movableContent(),
-            origin: rasterSelection.movableContent() ? rasterSelection.getSelectedCellArea().topLeft : null
+            glyphs: selectionController.raster.movableContent(),
+            origin: selectionController.raster.movableContent() ? selectionController.raster.getSelectedCellArea().topLeft : null
         },
         drawingContent: tools.drawingContent ? tools.drawingContent.rasterize() : undefined,
     }));
@@ -265,21 +264,21 @@ function redrawSelection() {
     selectionCanvas.clear();
     selectionBorderCanvas.clear();
 
-    selectionCanvas.highlightPolygons(rasterSelection.selectionShapes());
+    selectionCanvas.highlightPolygons(selectionController.raster.selectionShapes());
 
-    if (rasterSelection.hasSelection() && !rasterSelection.isDrawing() && !rasterSelection.caretCell()) {
-        selectionBorderCanvas.outlinePolygon(rasterSelection.getSelectedRect(), rasterSelection.movableContent())
+    if (selectionController.raster.hasSelection() && !selectionController.raster.isDrawing() && !selectionController.raster.caretCell()) {
+        selectionBorderCanvas.outlinePolygon(selectionController.raster.getSelectedRect(), selectionController.raster.movableContent())
     }
 
-    if (rasterSelection.caretCell()) {
+    if (selectionController.raster.caretCell()) {
         const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(rasterSelection.caretCell(), state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
+        caretCanvas.startCaretAnimation(selectionController.raster.caretCell(), state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
     }
 
-    vectorSelection.drawShapeSelection(selectionCanvas);
-    if (vectorSelection.caretCell()) {
+    selectionController.vector.drawShapeSelection(selectionCanvas);
+    if (selectionController.vector.caretCell()) {
         const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(vectorSelection.caretCell(), state.getConfig('caretStyle'), () => PRIMARY_COLOR);
+        caretCanvas.startCaretAnimation(selectionController.vector.caretCell(), state.getConfig('caretStyle'), () => PRIMARY_COLOR);
     }
 
     refreshCanvasDetails();
@@ -303,7 +302,7 @@ function showHoverForTool() {
 function redrawHover() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell && !rasterSelection.isDrawing() && !rasterSelection.isMoving() && showHoverForTool()) {
+    if (hoveredCell && !selectionController.raster.isDrawing() && !selectionController.raster.isMoving() && showHoverForTool()) {
         hoveredCells(hoveredCell).forEach(cell => {
             if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
         })
@@ -315,7 +314,7 @@ function redrawHover() {
 function refreshCanvasDetails() {
     $canvasDetails.canvasDimensionsValue.html(`[${state.numCols()}x${state.numRows()}]`);
 
-    const selectedArea = rasterSelection.getSelectedCellArea();
+    const selectedArea = selectionController.raster.getSelectedCellArea();
     $canvasDetails.selectedDimensions.toggle(!!selectedArea);
     $canvasDetails.selectedDimensionsValue.html(selectedArea ? `${selectedArea.numRows}x${selectedArea.numCols}` : '&nbsp;');
 

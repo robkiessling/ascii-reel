@@ -13,8 +13,7 @@ import { init as initPalette } from "./controllers/palette_controller.js";
 import { init as initPreview, resize as resizePreview } from "./controllers/preview_controller.js";
 import { init as initUnicode } from "./controllers/unicode_controller.js";
 import { init as initCanvas, resize as resizeCanvas } from './controllers/canvas_controller.js';
-import { init as initRasterSelection, clear as performClearSelection } from './controllers/selection/raster_selection.js'
-import { init as initVectorSelection } from './controllers/selection/vector_selection.js';
+import { init as initSelection, clear as performClearSelection } from './controllers/selection/index.js'
 import { init as initState, isValid as isStateValid, loadFromStorage, markClean, loadNewState } from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./controllers/frame_controller.js";
 import { init as initLayers } from "./controllers/layer_controller.js";
@@ -40,8 +39,7 @@ initCanvas();
 initFrames();
 initLayers();
 initSidebar();
-initRasterSelection();
-initVectorSelection();
+initSelection();
 initLocalStorage();
 
 setupEventBus();

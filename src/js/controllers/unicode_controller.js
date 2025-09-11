@@ -6,7 +6,7 @@ import SimpleBar from "simplebar";
 import * as actions from "../io/actions.js";
 import * as state from "../state/index.js";
 import {copyChar} from "../io/clipboard.js";
-import * as rasterSelection from "./selection/raster_selection.js";
+import * as selectionController from "./selection/index.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {createDialog} from "../utils/dialogs.js";
 import {STRINGS} from "../config/strings.js";
@@ -31,7 +31,10 @@ export function init() {
         // TODO Is this useful?
         // copyChar(char);
 
-        rasterSelection.setSelectionToSingleChar(char, rasterSelection.caretCell() ? state.primaryColorIndex() : undefined);
+        selectionController.raster.setSelectionToSingleChar(
+            char,
+            selectionController.raster.caretCell() ? state.primaryColorIndex() : undefined
+        );
         eventBus.emit(EVENTS.UNICODE.CHAR_SELECTED, { char })
     });
 

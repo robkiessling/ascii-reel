@@ -45,21 +45,8 @@ export {
 export {
     pushHistory, endHistoryModification, modifyHistory, isDirty, markClean
 } from './history.js'
-export {
-    rasterSelectionShapes, addRasterSelectionShape, hasRasterSelection, hasRasterTarget, emptyRasterSelection,
-    selectAllRaster, canSelectAllRaster, getSelectedRasterValues, getSelectedRasterCellArea, getSelectedRasterRect, getSelectedRasterCells,
-    getConnectedRasterCells, getMovableRasterContent, startMovingRasterContent, finishMovingRasterContent, updateMovableRasterContent,
-    caretCell, moveCaretTo, updateRasterCaretOrigin, getRasterCaretOriginCol, moveRasterDelta, moveRasterInDirection,
-    extendRasterInDirection, flipRasterSelection,
 
-    selectedShapeIds, setSelectedShapeIds, numSelectedShapes, hasSelectedShapes, isShapeSelected,
-    selectShape, deselectShape,
-    setShapeCursor, getShapeCursor,
-    selectedShapes, selectedShapeTypes, selectedShapeProps,
-    updateSelectedShapes, deleteSelectedShapes, reorderSelectedShapes, canReorderSelectedShapes,
-
-    clearSelection
-} from './selection/index.js'
+export * as selection from './selection/index.js'
 
 export function init() {
     history.setupActions();

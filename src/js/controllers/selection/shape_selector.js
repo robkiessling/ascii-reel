@@ -18,9 +18,9 @@ import BoxShape from "../../geometry/shapes/box_shape.js";
 export default class ShapeSelector {
 
     get boundingArea() {
-        if (state.numSelectedShapes() === 1) return state.selectedShapes()[0].boundingArea;
+        if (state.selection.vector.numSelectedShapes() === 1) return state.selection.vector.selectedShapes()[0].boundingArea;
 
-        return CellArea.mergeCellAreas(state.selectedShapes().map(shape => shape.boundingArea))
+        return CellArea.mergeCellAreas(state.selection.vector.selectedShapes().map(shape => shape.boundingArea))
     }
 
     /**
@@ -33,7 +33,7 @@ export default class ShapeSelector {
         return new HandleCollection([
             ...BoxShape.vertexHandles(null, boundingArea),
             ...BoxShape.edgeHandles(null, boundingArea),
-            ...state.selectedShapes().map(shape => shape.handles.body.at(0))
+            ...state.selection.vector.selectedShapes().map(shape => shape.handles.body.at(0))
         ])
     }
 
@@ -62,23 +62,23 @@ export default class ShapeSelector {
         this.beginTranslate();
 
         if (shiftKey) {
-            if (state.isShapeSelected(shapeId)) {
+            if (state.selection.vector.isShapeSelected(shapeId)) {
                 // Flag shape for deselection, but do not deselect yet because we may be dragging
                 this._markPendingDeselection(shapeId);
                 return false;
             } else {
-                state.selectShape(shapeId);
+                state.selection.vector.selectShape(shapeId);
                 return true;
             }
-        } else if (state.numSelectedShapes() > 1 && state.isShapeSelected(shapeId)) {
+        } else if (state.selection.vector.numSelectedShapes() > 1 && state.selection.vector.isShapeSelected(shapeId)) {
             // If multiple shapes are already selected, mousedown (without shift) merely flags the shape for
             // selection; the shape will be selected on mouseup once it's confirmed we are not dragging
             this._markPendingSelection(shapeId);
             return false;
         } else {
             const newSelectedShapeIds = [shapeId];
-            const hasStateChange = !arraysEqual(state.selectedShapeIds(), newSelectedShapeIds);
-            state.setSelectedShapeIds(newSelectedShapeIds);
+            const hasStateChange = !arraysEqual(state.selection.vector.selectedShapeIds(), newSelectedShapeIds);
+            state.selection.vector.setSelectedShapeIds(newSelectedShapeIds);
             return hasStateChange;
         }
     }
@@ -103,11 +103,11 @@ export default class ShapeSelector {
         let hasStateChange = false;
 
         if (this._pendingDeselection) {
-            state.deselectShape(this._pendingDeselection);
+            state.selection.vector.deselectShape(this._pendingDeselection);
             hasStateChange = true;
         }
         if (this._pendingSelection) {
-            state.setSelectedShapeIds([this._pendingSelection]);
+            state.selection.vector.setSelectedShapeIds([this._pendingSelection]);
             hasStateChange = true;
         }
 
@@ -135,25 +135,25 @@ export default class ShapeSelector {
     beginResize() {
         this._resizeOccurred = false;
 
-        if (state.numSelectedShapes() === 0) return;
+        if (state.selection.vector.numSelectedShapes() === 0) return;
 
         if (this._oldBounds) throw new Error(`beginResize has already been called`);
         this._oldBounds = this.boundingVertexArea;
-        state.updateSelectedShapes(shape => shape.beginResize());
+        state.selection.vector.updateSelectedShapes(shape => shape.beginResize());
     }
     resize(handle, cell, roundedCell) {
         this._resizeOccurred = true;
 
-        if (state.numSelectedShapes() === 0) return;
+        if (state.selection.vector.numSelectedShapes() === 0) return;
 
         switch (handle.type) {
             case HANDLE_TYPES.VERTEX:
             case HANDLE_TYPES.EDGE:
                 const newBounds = resizeBoundingBox(this._oldBounds, handle, roundedCell)
-                state.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds));
+                state.selection.vector.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds));
                 break;
             case HANDLE_TYPES.CELL:
-                state.updateSelectedShapes(shape => shape.dragCellHandle(handle, cell))
+                state.selection.vector.updateSelectedShapes(shape => shape.dragCellHandle(handle, cell))
                 break;
         }
     }
@@ -163,7 +163,7 @@ export default class ShapeSelector {
      */
     finishResize() {
         this._oldBounds = undefined;
-        state.updateSelectedShapes(shape => shape.finishResize());
+        state.selection.vector.updateSelectedShapes(shape => shape.finishResize());
 
         return this._resizeOccurred;
     }
@@ -177,7 +177,7 @@ export default class ShapeSelector {
 
     translate(rowDelta, colDelta) {
         this._translateOccurred = true;
-        state.updateSelectedShapes(shape => shape.translate(rowDelta, colDelta));
+        state.selection.vector.updateSelectedShapes(shape => shape.translate(rowDelta, colDelta));
     }
 
     /**
