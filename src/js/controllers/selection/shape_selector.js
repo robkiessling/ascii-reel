@@ -1,10 +1,10 @@
-import * as state from "../../state/index.js";
+import * as selectionController from "./index.js";
 import CellArea from "../../geometry/cell_area.js";
 import {arraysEqual} from "../../utils/arrays.js";
 import {resizeBoundingBox} from "../../geometry/shapes/algorithms/box_sizing.js";
 import VertexArea from "../../geometry/vertex_area.js";
-import {EDGE_SIDES, HANDLE_TYPES, VERTEX_CORNERS} from "../../geometry/shapes/constants.js";
-import {BodyHandle, EdgeHandle, HandleCollection, VertexHandle} from "../../geometry/shapes/handle.js";
+import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
+import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
 
 /**
@@ -18,9 +18,9 @@ import BoxShape from "../../geometry/shapes/box_shape.js";
 export default class ShapeSelector {
 
     get boundingArea() {
-        if (state.selection.vector.numSelectedShapes() === 1) return state.selection.vector.selectedShapes()[0].boundingArea;
+        if (selectionController.vector.numSelectedShapes() === 1) return selectionController.vector.selectedShapes()[0].boundingArea;
 
-        return CellArea.mergeCellAreas(state.selection.vector.selectedShapes().map(shape => shape.boundingArea))
+        return CellArea.mergeCellAreas(selectionController.vector.selectedShapes().map(shape => shape.boundingArea))
     }
 
     /**
@@ -33,7 +33,7 @@ export default class ShapeSelector {
         return new HandleCollection([
             ...BoxShape.vertexHandles(null, boundingArea),
             ...BoxShape.edgeHandles(null, boundingArea),
-            ...state.selection.vector.selectedShapes().map(shape => shape.handles.body.at(0))
+            ...selectionController.vector.selectedShapes().map(shape => shape.handles.body.at(0))
         ])
     }
 
@@ -62,23 +62,23 @@ export default class ShapeSelector {
         this.beginTranslate();
 
         if (shiftKey) {
-            if (state.selection.vector.isShapeSelected(shapeId)) {
+            if (selectionController.vector.isShapeSelected(shapeId)) {
                 // Flag shape for deselection, but do not deselect yet because we may be dragging
                 this._markPendingDeselection(shapeId);
                 return false;
             } else {
-                state.selection.vector.selectShape(shapeId);
+                selectionController.vector.selectShape(shapeId);
                 return true;
             }
-        } else if (state.selection.vector.numSelectedShapes() > 1 && state.selection.vector.isShapeSelected(shapeId)) {
+        } else if (selectionController.vector.numSelectedShapes() > 1 && selectionController.vector.isShapeSelected(shapeId)) {
             // If multiple shapes are already selected, mousedown (without shift) merely flags the shape for
             // selection; the shape will be selected on mouseup once it's confirmed we are not dragging
             this._markPendingSelection(shapeId);
             return false;
         } else {
             const newSelectedShapeIds = [shapeId];
-            const hasStateChange = !arraysEqual(state.selection.vector.selectedShapeIds(), newSelectedShapeIds);
-            state.selection.vector.setSelectedShapeIds(newSelectedShapeIds);
+            const hasStateChange = !arraysEqual(selectionController.vector.selectedShapeIds(), newSelectedShapeIds);
+            selectionController.vector.setSelectedShapeIds(newSelectedShapeIds);
             return hasStateChange;
         }
     }
@@ -103,11 +103,11 @@ export default class ShapeSelector {
         let hasStateChange = false;
 
         if (this._pendingDeselection) {
-            state.selection.vector.deselectShape(this._pendingDeselection);
+            selectionController.vector.deselectShape(this._pendingDeselection);
             hasStateChange = true;
         }
         if (this._pendingSelection) {
-            state.selection.vector.setSelectedShapeIds([this._pendingSelection]);
+            selectionController.vector.setSelectedShapeIds([this._pendingSelection]);
             hasStateChange = true;
         }
 
@@ -135,25 +135,25 @@ export default class ShapeSelector {
     beginResize() {
         this._resizeOccurred = false;
 
-        if (state.selection.vector.numSelectedShapes() === 0) return;
+        if (selectionController.vector.numSelectedShapes() === 0) return;
 
         if (this._oldBounds) throw new Error(`beginResize has already been called`);
         this._oldBounds = this.boundingVertexArea;
-        state.selection.vector.updateSelectedShapes(shape => shape.beginResize());
+        selectionController.vector.updateSelectedShapes(shape => shape.beginResize());
     }
     resize(handle, cell, roundedCell) {
         this._resizeOccurred = true;
 
-        if (state.selection.vector.numSelectedShapes() === 0) return;
+        if (selectionController.vector.numSelectedShapes() === 0) return;
 
         switch (handle.type) {
             case HANDLE_TYPES.VERTEX:
             case HANDLE_TYPES.EDGE:
                 const newBounds = resizeBoundingBox(this._oldBounds, handle, roundedCell)
-                state.selection.vector.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds));
+                selectionController.vector.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds));
                 break;
             case HANDLE_TYPES.CELL:
-                state.selection.vector.updateSelectedShapes(shape => shape.dragCellHandle(handle, cell))
+                selectionController.vector.updateSelectedShapes(shape => shape.dragCellHandle(handle, cell))
                 break;
         }
     }
@@ -163,7 +163,7 @@ export default class ShapeSelector {
      */
     finishResize() {
         this._oldBounds = undefined;
-        state.selection.vector.updateSelectedShapes(shape => shape.finishResize());
+        selectionController.vector.updateSelectedShapes(shape => shape.finishResize());
 
         return this._resizeOccurred;
     }
@@ -177,7 +177,7 @@ export default class ShapeSelector {
 
     translate(rowDelta, colDelta) {
         this._translateOccurred = true;
-        state.selection.vector.updateSelectedShapes(shape => shape.translate(rowDelta, colDelta));
+        selectionController.vector.updateSelectedShapes(shape => shape.translate(rowDelta, colDelta));
     }
 
     /**

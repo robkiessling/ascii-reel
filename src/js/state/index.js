@@ -47,6 +47,7 @@ export {
 } from './history.js'
 
 export * as selection from './selection/index.js'
+// todo export the other slices like this ^ instead of writing every single method
 
 export function init() {
     history.setupActions();

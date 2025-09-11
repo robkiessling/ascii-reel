@@ -69,19 +69,6 @@ export function deselectAllShapes() {
     state.cursorShapeId = null;
 }
 
-export function setShapeCursor(shapeId, cursorIndex = 0) {
-    state.cursorShapeId = shapeId;
-    state.cursorIndex = cursorIndex;
-}
-export function getShapeCursor() {
-    if (state.cursorShapeId === null) return {};
-
-    return {
-        shape: getCurrentCelShape(state.cursorShapeId),
-        cursorIndex: state.cursorIndex,
-    }
-}
-
 export function selectedShapes() {
     return selectedShapeIds().map(shapeId => getCurrentCelShape(shapeId));
 }
@@ -106,14 +93,32 @@ export function selectedShapeProps() {
 export function updateSelectedShapes(updater) {
     selectedShapeIds().forEach(shapeId => updateCurrentCelShape(shapeId, updater));
 }
+
 export function deleteSelectedShapes() {
     selectedShapeIds().forEach(shapeId => deleteCurrentCelShape(shapeId));
     deselectAllShapes();
 }
-export function reorderSelectedShapes(action) {
-    reorderCurrentCelShapes(selectedShapeIds(), action)
-}
+
 export function canReorderSelectedShapes(action) {
     if (!hasSelectedShapes()) return false;
     return canReorderCurrentCelShapes(selectedShapeIds(), action)
 }
+
+export function reorderSelectedShapes(action) {
+    reorderCurrentCelShapes(selectedShapeIds(), action)
+}
+
+
+export function setShapeCursor(shapeId, cursorIndex = 0) {
+    state.cursorShapeId = shapeId;
+    state.cursorIndex = cursorIndex;
+}
+export function getShapeCursor() {
+    if (state.cursorShapeId === null) return {};
+
+    return {
+        shape: getCurrentCelShape(state.cursorShapeId),
+        cursorIndex: state.cursorIndex,
+    }
+}
+

@@ -14,9 +14,85 @@ import VectorMarquee from "./vector_marquee.js";
 import {arraysEqual} from "../../utils/arrays.js";
 import {MOUSE} from "../../io/mouse.js";
 
+/**
+ * Vector selection controller.
+ *
+ * - Re-exports all vector selection state methods so they are available here.
+ * - Adds orchestration (history, events, extra logic) by overriding specific methods.
+ * - Other controllers and UI code should always use this controller, not call vector state directly.
+ */
+
 export function init() {
     setupEventBus();
 }
+
+export function selectedShapeIds() { return state.selection.vector.selectedShapeIds() }
+export function setSelectedShapeIds(shapeIds) { return state.selection.vector.setSelectedShapeIds(shapeIds) }
+export function numSelectedShapes() { return state.selection.vector.numSelectedShapes() }
+export function hasSelectedShapes() { return state.selection.vector.hasSelectedShapes() }
+export function isShapeSelected(shapeId) { return state.selection.vector.isShapeSelected(shapeId) }
+export function selectShape(shapeId) { return state.selection.vector.selectShape(shapeId) }
+export function deselectShape(shapeId) { return state.selection.vector.deselectShape(shapeId) }
+
+export function deselectAllShapes(allowHistoryPush = true) {
+    if (!hasSelectedShapes()) return; // Do not emit event or push history
+
+    state.selection.clearSelection();
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
+    if (allowHistoryPush) state.pushHistory();
+}
+
+export function selectedShapes() { return state.selection.vector.selectedShapes() }
+export function selectedShapeTypes() { return state.selection.vector.selectedShapeTypes() }
+export function selectedShapeProps() { return state.selection.vector.selectedShapeProps() }
+
+export function updateSelectedShapes(updater) {
+    if (!hasSelectedShapes()) return; // Do not emit event or push history
+
+    state.selection.vector.updateSelectedShapes(updater);
+    eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
+}
+
+// For rapid updates that affect shape display but should not be committed to history
+export function rapidUpdateSelectedShapes(updater) {
+    if (!hasSelectedShapes()) return; // Do not emit event or push history
+
+    state.selection.vector.updateSelectedShapes(updater);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+}
+
+export function deleteSelectedShapes() {
+    if (!hasSelectedShapes()) return; // Do not emit event or push history
+
+    state.selection.vector.deleteSelectedShapes();
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
+}
+
+export function canReorderSelectedShapes(action) { return state.selection.vector.canReorderSelectedShapes(action) }
+
+export function reorderSelectedShapes(action) {
+    if (!hasSelectedShapes()) return; // Do not emit event or push history
+
+    state.selection.vector.reorderSelectedShapes(action);
+    eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory();
+}
+
+export function setShapeCursor(shapeId, atIndex, resetPreferredCol = true) {
+    if (resetPreferredCol) preferredCursorCol = undefined;
+    state.selection.vector.setShapeCursor(shapeId, atIndex);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+}
+
+export function getShapeCursor() { return state.selection.vector.getShapeCursor() }
+
+
+// -------------------------------------------------------------------------------- Events / Shape Selector
 
 let shapeSelector = new ShapeSelector();
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
@@ -141,7 +217,7 @@ export function getHandle(cell, mouseEvent, canvas) {
     // If a shape is currently being dragged, the handle is locked to the drag handle
     if (draggedHandle) return draggedHandle;
 
-    const shapes = state.selection.vector.selectedShapes();
+    const shapes = selectedShapes();
 
     if (shapes.length === 1) {
         // Check individual shape's non-body handles
@@ -160,56 +236,12 @@ export function getHandle(cell, mouseEvent, canvas) {
     return state.testCurrentCelShapeHitboxes(cell);
 }
 
-export function deleteSelectedShapes() {
-    if (!state.selection.vector.hasSelectedShapes()) return; // Do not emit event or push history
-
-    state.selection.vector.deleteSelectedShapes();
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory();
-}
-
-export function deselectAllShapes(allowHistoryPush = true) {
-    if (!state.selection.vector.hasSelectedShapes()) return; // Do not emit event or push history
-
-    const hasStateChange = state.selection.vector.hasSelectedShapes();
-    state.selection.clearSelection();
-    eventBus.emit(EVENTS.SELECTION.CHANGED);
-    if (allowHistoryPush && hasStateChange) state.pushHistory();
-}
-
-export function reorderSelectedShapes(action) {
-    if (!state.selection.vector.hasSelectedShapes()) return; // Do not emit event or push history
-
-    state.selection.vector.reorderSelectedShapes(action);
-    eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory();
-}
-
-export function updateSelectedShapes(updater) {
-    if (!state.selection.vector.hasSelectedShapes()) return; // Do not emit event or push history
-
-    state.selection.vector.updateSelectedShapes(updater);
-    eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory();
-}
-
-// For rapid updates that affect shape display but should not be committed to history
-export function rapidUpdateSelectedShapes(updater) {
-    if (!state.selection.vector.hasSelectedShapes()) return; // Do not emit event or push history
-
-    state.selection.vector.updateSelectedShapes(updater);
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-}
-
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.
 
 function createMarquee(canvas, mouseEvent) {
-    const isFreshMarquee = !state.selection.vector.hasSelectedShapes();
-    const originalSelection = state.selection.vector.selectedShapeIds();
+    const isFreshMarquee = !hasSelectedShapes();
+    const originalSelection = selectedShapeIds();
 
     marquee = new VectorMarquee({
         canvas,
@@ -221,15 +253,15 @@ function createMarquee(canvas, mouseEvent) {
             if (isFreshMarquee) {
                 // If fresh marquee, set selected shapes to match the covered shapes (this allows shapes to be
                 // added/removed as the marquee boundaries change)
-                state.selection.vector.setSelectedShapeIds(marqueeShapeIds);
+                setSelectedShapeIds(marqueeShapeIds);
             } else {
                 // If selection already exists, shapes will only be *added* to selection; if the marquee adds a rect
                 // and then the marquee is moved away, the rect remains added
-                marqueeShapeIds.forEach(shapeId => state.selection.vector.selectShape(shapeId));
+                marqueeShapeIds.forEach(shapeId => selectShape(shapeId));
             }
         },
         onFinish: () => {
-            const hasStateChange = !arraysEqual(originalSelection, state.selection.vector.selectedShapeIds())
+            const hasStateChange = !arraysEqual(originalSelection, selectedShapeIds())
             if (hasStateChange) state.pushHistory();
         }
     })
@@ -253,19 +285,13 @@ function finishMarquee(mouseEvent) {
 let preferredCursorCol;
 
 export function caretCell() {
-    let { shape, cursorIndex } = state.selection.vector.getShapeCursor();
+    let { shape, cursorIndex } = getShapeCursor();
     if (!shape) return null;
     return getTextLayout().getCellForCursorIndex(cursorIndex)
 }
 
 function getTextLayout() {
-    return state.selection.vector.getShapeCursor().shape.textLayout;
-}
-
-export function setShapeCursor(shapeId, atIndex, resetPreferredCol = true) {
-    if (resetPreferredCol) preferredCursorCol = undefined;
-    state.selection.vector.setShapeCursor(shapeId, atIndex);
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    return getShapeCursor().shape.textLayout;
 }
 
 function moveCursorInVertDir(vertOffset) {
@@ -289,16 +315,16 @@ function moveCursorInVertDir(vertOffset) {
         resetPreferredCol = true;
     }
 
-    setShapeCursor(state.selection.vector.getShapeCursor().shape.id, cursorIndex, resetPreferredCol);
+    setShapeCursor(getShapeCursor().shape.id, cursorIndex, resetPreferredCol);
 }
 
 function moveCursorInHorizDir(horizOffset) {
     const min = 0;
-    const max = state.selection.vector.getShapeCursor().shape.textLayout.maxCursorIndex;
-    let newIndex = state.selection.vector.getShapeCursor().cursorIndex + horizOffset;
+    const max = getShapeCursor().shape.textLayout.maxCursorIndex;
+    let newIndex = getShapeCursor().cursorIndex + horizOffset;
     if (newIndex < min) newIndex = min;
     if (newIndex > max) newIndex = max;
-    setShapeCursor(state.selection.vector.getShapeCursor().shape.id, newIndex, true);
+    setShapeCursor(getShapeCursor().shape.id, newIndex, true);
 }
 
 export function handleArrowKey(direction, shiftKey) {
@@ -326,7 +352,7 @@ export function handleArrowKey(direction, shiftKey) {
 
 export function drawShapeSelection(canvas) {
     canvas.inScreenSpace(() => {
-        const shapes = state.selection.vector.selectedShapes();
+        const shapes = selectedShapes();
 
         if (shapes.length === 0) {
             // no shapes to draw

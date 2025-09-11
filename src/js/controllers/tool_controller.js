@@ -8,10 +8,8 @@
 import * as state from '../state/index.js';
 import * as selectionController from "./selection/index.js";
 import * as actions from "../io/actions.js";
-import tippy from 'tippy.js';
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
-import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Cell from "../geometry/cell.js";
@@ -31,7 +29,6 @@ import {
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
 import {standardTip, standardTips} from "../components/tooltips.js";
-import {defer} from "../utils/utilities.js";
 import IconMenu from "../components/icon_menu.js";
 import Ellipse from "../geometry/shapes/ellipse.js";
 import Line from "../geometry/shapes/line.js";
@@ -246,7 +243,7 @@ function setupEventBus() {
     eventBus.on(EVENTS.PALETTE.COLOR_SELECTED, ({ color }) => {
         selectColor(color);
 
-        if (state.selection.vector.hasSelectedShapes()) {
+        if (selectionController.vector.hasSelectedShapes()) {
             shapeColorPicker.value(color)
         }
     })
@@ -562,9 +559,9 @@ function setupShapeProperties() {
 
     actions.registerAction('tools.shapes.startCursor', {
         callback: () => {
-            selectionController.vector.setShapeCursor(state.selection.vector.selectedShapes()[0].id, 0)
+            selectionController.vector.setShapeCursor(selectionController.vector.selectedShapes()[0].id, 0)
         },
-        enabled: () => state.selection.vector.selectedShapes().length
+        enabled: () => selectionController.vector.selectedShapes().length
     })
 
     $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {
@@ -594,8 +591,8 @@ function setupStrokeMenu($menu, shapeType) {
                 tooltip: `tools.shapes.${strokeProp}.${stroke}`,
             }
         }),
-        visible: () => state.selection.vector.selectedShapeTypes().includes(shapeType),
-        getValue: () => state.selection.vector.selectedShapeProps()[strokeProp][0],
+        visible: () => selectionController.vector.selectedShapeTypes().includes(shapeType),
+        getValue: () => selectionController.vector.selectedShapeProps()[strokeProp][0],
         onSelect: newValue => {
             selectionController.vector.updateSelectedShapes(shape => {
                 if (shape.type === shapeType) shape.updateProp(strokeProp, newValue)
@@ -625,9 +622,9 @@ function setupTextAlignMenu($menu, prop, options) {
         visible: () => {
             // Show text-align if any selected shapes have non-zero text length
             // TODO or if cursor is currently in the shape
-            return state.selection.vector.selectedShapeProps()[TEXT_PROP].some(textProp => !!textProp);
+            return selectionController.vector.selectedShapeProps()[TEXT_PROP].some(textProp => !!textProp);
         },
-        getValue: () => state.selection.vector.selectedShapeProps()[prop][0],
+        getValue: () => selectionController.vector.selectedShapeProps()[prop][0],
         onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(prop, newValue)),
         onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
@@ -641,13 +638,13 @@ function setupTextAlignMenu($menu, prop, options) {
 function selectedShapesUseCharPicker() {
     let strokeUsesChar = false;
     Object.values(STROKE_PROPS).forEach(strokeProp => {
-        const strokes = state.selection.vector.selectedShapeProps()[strokeProp];
+        const strokes = selectionController.vector.selectedShapeProps()[strokeProp];
 
         // TODO This is basing monochar styles off of their key name... change to a real property
         if (strokes.some(stroke => stroke.includes('monochar'))) strokeUsesChar = true;
     })
 
-    const fillUsesChar = state.selection.vector.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
+    const fillUsesChar = selectionController.vector.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
 
     return strokeUsesChar || fillUsesChar;
 }
@@ -666,8 +663,8 @@ function setupFillMenu() {
                 tooltip: `tools.shapes.${FILL_PROP}.${option}`,
             }
         }),
-        visible: () => state.selection.vector.selectedShapeProps()[FILL_PROP].length,
-        getValue: () => state.selection.vector.selectedShapeProps()[FILL_PROP][0],
+        visible: () => selectionController.vector.selectedShapeProps()[FILL_PROP].length,
+        getValue: () => selectionController.vector.selectedShapeProps()[FILL_PROP][0],
         onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(FILL_PROP, newValue)),
         onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
@@ -684,7 +681,7 @@ function setupOrderMenu() {
     Object.values(REORDER_ACTIONS).forEach(action => {
         actions.registerAction(`tools.shapes.${action}`, {
             callback: () => selectionController.vector.reorderSelectedShapes(action),
-            enabled: () => state.selection.vector.canReorderSelectedShapes(action),
+            enabled: () => selectionController.vector.canReorderSelectedShapes(action),
         })
     })
 
@@ -712,7 +709,7 @@ function setupOrderMenu() {
 }
 
 function refreshShapeProperties() {
-    const isVisible = state.selection.vector.hasSelectedShapes();
+    const isVisible = selectionController.vector.hasSelectedShapes();
     $shapeProperties.toggle(isVisible);
 
     if (isVisible) {
@@ -987,8 +984,8 @@ function setupCharPicker() {
 }
 
 function refreshCharPicker() {
-    const char = state.selection.vector.hasSelectedShapes() ?
-        state.selection.vector.selectedShapeProps()[CHAR_PROP][0] :
+    const char = selectionController.vector.hasSelectedShapes() ?
+        selectionController.vector.selectedShapeProps()[CHAR_PROP][0] :
         state.getConfig('primaryChar');
 
     selectChar(char, false);
@@ -1106,8 +1103,8 @@ function selectColorFromPicker(colorStr, fromPicker) {
 }
 
 function refreshColorPicker() {
-    const color = state.selection.vector.hasSelectedShapes() ?
-        state.colorStr(state.selection.vector.selectedShapeProps()[COLOR_PROP][0]) :
+    const color = selectionController.vector.hasSelectedShapes() ?
+        state.colorStr(selectionController.vector.selectedShapeProps()[COLOR_PROP][0]) :
         state.getConfig('primaryColor');
 
     selectColor(color, false);
