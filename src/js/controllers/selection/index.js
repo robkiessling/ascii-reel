@@ -1,8 +1,8 @@
-import * as vector from './vector_selection.js'
-import * as raster from './raster_selection.js'
+import * as vector from './vector_controller.js'
+import * as raster from './raster_controller.js'
 
-export * as raster from './raster_selection.js';
-export * as vector from './vector_selection.js';
+export * as raster from './raster_controller.js';
+export * as vector from './vector_controller.js';
 
 export function init() {
     raster.init();
