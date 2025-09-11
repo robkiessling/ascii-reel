@@ -9,6 +9,7 @@ import {
 import CellArea from "../cell_area.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import BoxShape from "./box_shape.js";
+import {xor} from "../../utils/utilities.js";
 
 export default class Ellipse extends BoxShape {
 
@@ -31,9 +32,7 @@ export default class Ellipse extends BoxShape {
     }
 
     _cacheGeometry() {
-        const state = this.props;
-
-        const boundingArea = CellArea.fromOriginAndDimensions(state.topLeft, state.numRows, state.numCols);
+        const boundingArea = CellArea.fromOriginAndDimensions(this.props.topLeft, this.props.numRows, this.props.numCols);
         const glyphs = this._initGlyphs(boundingArea);
 
         const strokeChar = this.props[CHAR_PROP];
@@ -41,8 +40,9 @@ export default class Ellipse extends BoxShape {
         const color = this.props[COLOR_PROP];
 
         this._setupEllipseRecord();
-        if (boundingArea.numRows <= 2 || boundingArea.numCols <= 2) {
-            // Avoid drawing an ellipse with a hole; just fill entire rectangle
+        if (boundingArea.numCells < 9) {
+            // Normal ellipse algorithm looks strange at very small sizes (it will be mostly empty space), so we just
+            // draw a rect outline
             boundingArea.iterateRelative((row, col) => this._markOutline(row, col));
         } else {
             this._plotSymmetric(boundingArea);
@@ -54,17 +54,17 @@ export default class Ellipse extends BoxShape {
 
         // const textLayout = this._applyTextLayout(glyphs, boundingArea);
 
-        const emptyBackground = fillChar === EMPTY_CHAR;
+        const hasEmptyBackground = fillChar === EMPTY_CHAR;
         const handles = this._buildHandleCollection(boundingArea, cell => {
             // if (textLayout && textLayout.doesCellOverlap(cell)) return true;
             if (outlineHitbox(cell)) return true
-            return !emptyBackground && fillHitbox(cell);
+            return !hasEmptyBackground && fillHitbox(cell);
         })
 
 
         this._cache = {
             boundingArea,
-            origin: state.topLeft,
+            origin: this.props.topLeft,
             glyphs,
             // textLayout
             handles,
@@ -85,8 +85,8 @@ export default class Ellipse extends BoxShape {
     _plotSymmetric(area) {
         let { rx, ry, cx, cy } = this._ellipseAttributes(area);
 
-        // If the ellipse has an even number of rows/cols, then ry & rx will be fractions (e.g. 3.5) instead of whole
-        // numbers. Since we are plotting on discrete 2d array, we need everything to be whole numbers. As a solution, I am
+        // If the ellipse has an even number of rows/cols, ry & rx will be fractions (e.g. 3.5) instead of whole numbers.
+        // Since we are plotting on a discrete 2d array, we need everything to be whole numbers. As a solution, I am
         // flooring the ry & rx and then manually padding the ellipse with an extra row/col to make up the lost halves.
         let xPad = 0, yPad = 0;
         if (!Number.isInteger(rx)) {
@@ -188,6 +188,7 @@ export default class Ellipse extends BoxShape {
      *
      * Note: using a thickness option of 1 does not guarantee the line will be one cell thick all the way around; there
      *       will likely be parts that are 0 or 2 cells thick depending on the grid resolution and ellipse size.
+     *       Use _plotSymmetric instead for exact stroke thickness.
      *
      * @param {CellArea} area - CellArea representing the bounding box of the ellipse
      * @param {number} [thickness=1] - How thick the outline should be

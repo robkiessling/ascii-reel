@@ -10,9 +10,6 @@ import {BodyHandle, EdgeHandle, HandleCollection, VertexHandle} from "./handle.j
  *
  * A BoxShape has a top-left Cell (`topLeft`) and dimensions (`numRows`, `numCols`)
  * that determine its position and size on the canvas/grid.
- *
- * This class encapsulates shared logic for shape layout, geometry,
- * and interactive resizing (e.g., resize handles, bounding box updates).
  */
 export default class BoxShape extends Shape {
 

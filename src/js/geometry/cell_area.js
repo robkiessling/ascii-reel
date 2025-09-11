@@ -80,6 +80,10 @@ export default class CellArea extends PixelRect {
         return this.bottomRight.col - this.topLeft.col + 1;
     }
 
+    get numCells() {
+        return this.numRows * this.numCols;
+    }
+
     get topRight() {
         return this.topLeft.clone().translate(0, this.numCols - 1);
     }
@@ -120,7 +124,8 @@ export default class CellArea extends PixelRect {
         }
     }
 
-    // Iterates through each cell, using the row/col of the cell relative to the CellArea origin (e.g. topLeft cell will be 0,0)
+    // Iterates through each cell, using the row/col of the cell relative to the CellArea origin
+    // E.g. the topLeft cell will be (0,0) regardless of where the cellArea is located on the grid
     iterateRelative(callback) {
         for (let r = 0; r < this.numRows; r++) {
             for (let c = 0; c < this.numCols; c++) {

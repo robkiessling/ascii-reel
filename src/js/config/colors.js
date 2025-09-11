@@ -17,7 +17,7 @@ export function getDynamicColor(cssProperty) {
 
 // ------------------------------------------------------------- Canvas Colors
 
-const MINOR_GRID_LIGHTNESS_DELTA = 0.125;
+const MINOR_GRID_LIGHTNESS_DELTA = 0.1;
 const MAJOR_GRID_LIGHTNESS_DELTA = 0.4;
 const HOVER_LIGHTNESS_DELTA = 0.5;
 export const HOVER_CELL_OPACITY = 0.25;

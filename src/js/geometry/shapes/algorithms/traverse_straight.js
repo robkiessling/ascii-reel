@@ -42,8 +42,7 @@ export function straightAsciiLine(fromCell, toCell, callback, inclusiveStart = f
  * - For the FG group, the line would start from the top-left of F and end at the bottom-right of G
  * Groups may have slightly different slopes: in this example CDE has a smaller slope since its run is longer than AB/FG.
  *
- * The lines that are drawn through each group are used to calculate the startPixel/endPixel of each cell within the
- * group (startPixel is the pixel where the line enters the cell, endPixel is the pixel where the line leaves the cell).
+ * The lines that are drawn through each group are used to calculate the entry/exit points of each cell within the group.
  *
  * TODO re-implement this using cell vertices... I think it might be cleaner
  */

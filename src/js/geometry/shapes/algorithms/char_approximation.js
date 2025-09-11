@@ -6,8 +6,8 @@ const DEBUG = false;
  * Chooses an ASCII character to best fit the line drawn between the entry and exit points of a TraversedCell.
  * @param {TraversedCell} traversedCell
  * @returns {{char: (string), disposable: boolean}} - `disposable` will be true if the line drawn through the
- *   cell is small. This means the char can likely be skipped during drawing. Note: It is up to the outside
- *   function to ensure that too many small chars aren't skipped in a row
+ *   cell is small. This means the char can likely be skipped during drawing. Note: It will be up to the outside
+ *   function to ensure that you don't skip too many sequential chars.
  */
 export function charForTraversedCell(traversedCell) {
     const entry = traversedCell.normalizedEntry;
@@ -43,7 +43,7 @@ function chooseChar(props) {
     let absSlope = Math.abs(slope);
 
     // This handles the initial char on mousedown (before any mousemove). We set slope equal to zero so that a
-    // char is chosen as if it was a horizontal line drawing (goes to final else case).
+    // char is chosen as if it was a horizontal line drawing (since it will go to final else case).
     if (rise === 0 && run === 0) absSlope = 0;
 
     if (absSlope > 3) {

@@ -3,7 +3,7 @@ import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
 import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
-import CellCache from "./cell_cache.js";
+import CellCache from "../cell_cache.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import {forEachAdjPair} from "../../utils/arrays.js";
 import BoxShape from "./box_shape.js";

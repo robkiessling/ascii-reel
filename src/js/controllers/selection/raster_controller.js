@@ -2,7 +2,7 @@ import * as actions from "../../io/actions.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js"
 import * as tools from "../tool_controller.js";
-import CellCache from "../../geometry/shapes/cell_cache.js";
+import CellCache from "../../geometry/cell_cache.js";
 import {MOUSE} from "../../io/mouse.js";
 import SelectionRect from "../../geometry/selection/rect.js";
 import {shouldModifyAction} from "../../io/actions.js";

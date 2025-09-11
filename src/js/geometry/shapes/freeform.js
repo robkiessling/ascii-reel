@@ -6,7 +6,7 @@ import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import Point from "../point.js";
 import BoxShape from "./box_shape.js";
-import CellCache from "./cell_cache.js";
+import CellCache from "../cell_cache.js";
 import {freeformAsciiPath} from "./algorithms/traverse_freeform.js";
 
 

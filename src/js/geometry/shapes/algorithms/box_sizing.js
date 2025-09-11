@@ -9,27 +9,28 @@ import Point from "../../point.js";
  * Using vector-based areas when resizing so that flipping works better. Flipping occurs over an edge BETWEEN
  * cells, not over a whole cell row.
  */
+
 /**
- * Returns a new rectangular CellArea after resizing the original CellArea using the given handle and its new position.
+ * Returns a new VertexArea after resizing the original VertexArea using the given handle's new position.
  *
  * This function interprets which edges or corners of the bounding box should move, based on which handle is
  * being dragged, and by how much. Handles may cause the box to flip (e.g. dragging topLeft past bottomRight),
- * but the returned box will preserve those inverted bounds — it's up to later logic to normalize or use it for
+ * but the returned box will preserve those inverted bounds. It's up to later logic to normalize or use it for
  * proportional transforms.
  *
- * @param {VertexArea} oldBox - original CellArea before box resizing
+ * @param {VertexArea} oldBox - original area before box resizing
  * @param {VertexHandle|EdgeHandle|BodyHandle|CellHandle} handle - the box handle being dragged
  * @param {Cell} newPosition - New position of the dragged handle
- * @returns {VertexArea} // todo vertex this could be a VertexArea?
+ * @returns {VertexArea}
  */
 export function resizeBoundingBox(oldBox, handle, newPosition) {
     newPosition = newPosition.clone(); // do not mutate parameter
 
-    // anchor is the corner/edge of the rectangle that is not moving (it is opposite of the handle)
+    // anchor is the corner/edge of the rectangle that is not moving (it will be opposite of the handle)
     let anchor;
 
-    // Prevent zero width or zero height boxes. If handle position overlaps anchor, handle will be pushed in
-    // this direction.
+    // This will be used to prevent zero width or zero height boxes. If the handle position overlaps the anchor, the
+    // handle will be pushed in this direction.
     let anchorPushback = { row: 0, col: 0 };
 
     switch(handle.type) {
@@ -90,9 +91,11 @@ export function resizeBoundingBox(oldBox, handle, newPosition) {
 }
 
 /**
- * We cannot simply take all the points of a rect (e.g. topLeft & bottomRight) or a Line and map them from oldBox
- * to newBox. If you do this, the difference between points may jitter as the shape is resized due to rounding.
- * This makes the shape's size fluctuate as you resize a group larger or smaller, which looks bad.
+ * We cannot simply take all the points of a rect (e.g. topLeft & bottomRight) or Line and proportionally map them from
+ * oldBox to newBox. If you do this, the difference between points may jitter as the shape is resized due to rounding
+ * (because we must round to discrete cell indices). In other words, the shape's size fluctuates as you resize a group,
+ * which looks bad.
+ *
  * I've found that the smoothest way to resize is to instead:
  * 1) Determine the dimensions of the new shape. By calculating this first, it guarantees that as you resize
  *    a shape, its dimensions smoothly get smaller/larger; its height will not jump from 3 to 4 back to 3, etc.
@@ -100,8 +103,9 @@ export function resizeBoundingBox(oldBox, handle, newPosition) {
  *    will be placed. I'm currently just using the topLeft of every shape's boundaries as the point, but in the
  *    future it may be better to choose the anchor closest to the drag handle.
  * 3) Now that we have the new anchor point and dimensions of the new shape, we know exactly where and how big
- *    the new area of the shape is. We can map every cell in the old shape to a cell in the new shape. Note that this
- *    step is not required for all shapes - e.g. for a rect we already have everything needed from steps 1 & 2.
+ *    the new area of the shape is. Now we can proportionally map every cell in the old shape to a cell in the new shape.
+ *    Note that this step is not required for all shapes - e.g. for a rect we already have everything needed from steps
+ *    1 & 2 (since a rect is just defined by its topLeft and dimensions).
  */
 export function translateAreaWithBoxResizing(cellArea, oldBox, newBox) {
     const newDimensions = calculateScaledDimensions(cellArea.numRows, cellArea.numCols, oldBox, newBox);
@@ -167,6 +171,7 @@ function calculateNewTopLeft(oldPosition, dimensions, oldBox, newBox) {
     };
 }
 
+// Proportionally map points from an oldCellArea to a newCellArea
 function buildPointMapper(oldCellArea, newCellArea, flipRow, flipCol) {
     return oldPoint => {
         let xPct = (oldPoint.x - oldCellArea.x) / oldCellArea.width;
@@ -182,10 +187,11 @@ function buildPointMapper(oldCellArea, newCellArea, flipRow, flipCol) {
     }
 }
 
+// Proportionally map cells from an oldCellArea to a newCellArea
 function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
-    // If the oldCellArea is 1 dimensional, we have to choose where to map things.
+    // If the oldCellArea is 1 dimensional, we have to choose where to map things for a larger newCellArea.
     // TODO This could be improved using fractional rows/cols?
-    const MAP_1D = 0.5; // map to the center of newCellArea
+    const MAP_1D = 0.5; // Choosing to map to the center of newCellArea
 
     return oldCell => {
         let rowPct = (oldCellArea.numRows > 1) ? (oldCell.row - oldCellArea.topLeft.row) / (oldCellArea.numRows - 1) : MAP_1D;
@@ -199,15 +205,6 @@ function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
         let newCol = (newCellArea.numCols > 1) ?
             Math.round(newCellArea.topLeft.col + colPct * (newCellArea.numCols - 1)) :
             newCellArea.topLeft.col;
-
-        // Clamp (defensive, handles floating-point/rounding drift)
-        // TODO Unsure if this is needed - haven't seen any issues without it
-        // const bottomRow = newCellArea.topLeft.row + newCellArea.numRows - 1;
-        // const rightCol  = newCellArea.topLeft.col + newCellArea.numCols - 1;
-        // if (newRow < newCellArea.topLeft.row) newRow = newCellArea.topLeft.row;
-        // if (newRow > bottomRow) newRow = bottomRow;
-        // if (newCol < newCellArea.topLeft.col) newCol = newCellArea.topLeft.col;
-        // if (newCol > rightCol) newCol = rightCol;
 
         return new Cell(newRow, newCol);
     }

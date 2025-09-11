@@ -22,8 +22,8 @@ export function freeformAsciiPath(points, callback) {
             // If there is no previously used cell, allow prune
             if (!prevUsedCell) continue;
 
-            // If there is a previously used cell, only prune if the next cell is adjacent to it. I.e. if we prune
-            // the cell, the line will still be connected.
+            // If there is a previously used cell, only prune if the next cell is adjacent to it. This is to ensure
+            // that if we prune the cell, the line will still be connected.
             const nextCell = traversedCells[i + 1];
             if (nextCell && (nextCell.equals(prevUsedCell) || nextCell.isAdjacentTo(prevUsedCell))) continue;
         }
@@ -35,10 +35,12 @@ export function freeformAsciiPath(points, callback) {
 
 /**
  * Given an array of points, returns an array of TraversedCells that represents how you would traverse cells
- * to go through all the points. If two sequential points are not in adjacent cells, all the cells between them will
- * be included as separate TraversedCells. If many points are within one cell, there will only be one TraversedCell
- * representing all of those points combined. The exception is if the points path leaves a given cell and then returns
- * to it again; that second returning will be a new TraversedCell.
+ * to go through all the points.
+ * - If two sequential points are not in adjacent cells, all the cells between them will be included as separate
+ *   TraversedCells. Each TraversedCell will have an entry/exit as if there were a straight line drawn between the points.
+ * - If many points are within one cell, there will only be one TraversedCell representing all of those points
+ *   combined. The exception is if the points path leaves a given cell and then returns to it again; that second
+ *   returning will be a new separate TraversedCell in the final array.
  * @param {Array<Point>} points
  * @returns {Array<TraversedCell>}
  */
@@ -66,7 +68,7 @@ function getTraversedCells(points) {
 
 
 /**
- * Returns the set of segments between two points, where a "segment" of a line is restricted to a single cell.
+ * Returns the set of segments between two points, where each "segment" is a piece of the line restricted to a single cell.
  * For example, if the two points were in the middle of cells (0,0) and (0,2) there would be 3 segments returned:
  * - The segment from the middle of (0,0) to the right edge of (0,0), with a distance of 0.5 cells
  * - The segment from the left edge of (0,1) to the right edge of (0,1), with a distance of 1 cell

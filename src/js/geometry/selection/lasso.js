@@ -12,7 +12,10 @@ export default class SelectionLasso extends SelectionPolygon {
     static type = SELECTION_SHAPE_TYPES.LASSO;
 
     serialize() {
-        return { type: this.type, areas: this._lassoAreas.map(area => area.serialize()) };
+        return {
+            type: this.type,
+            areas: (this._lassoAreas || []).map(area => area.serialize())
+        };
     }
 
     static deserialize(data) {

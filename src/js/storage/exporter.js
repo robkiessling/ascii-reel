@@ -349,7 +349,7 @@ async function exportPng(options, exportToActiveFile) {
         case 'current':
             blobPromise = lazyBlobPromise(() => {
                 renderExportFrame(state.currentFrame(), options);
-                return canvasToBlob(exportCanvas.canvas);
+                return canvasToBlob(exportCanvas.canvasElement);
             })
             return await exportFile(blobPromise, 'png', 'image/png', exportToActiveFile);
         case 'spritesheet':
@@ -363,7 +363,7 @@ async function exportPng(options, exportToActiveFile) {
 
                 for (const [index, frame] of state.expandedFrames().entries()) {
                     renderExportFrame(frame, options);
-                    zip.file(`${index}.png`, canvasToBlob(exportCanvas.canvas));
+                    zip.file(`${index}.png`, canvasToBlob(exportCanvas.canvasElement));
                 }
 
                 return zip.generateAsync({type:"blob"});
@@ -453,7 +453,7 @@ async function exportWebm(options, exportToActiveFile) {
         }, 1000 / options.fps, true);
 
         const chunks = []; // here we will store our recorded media chunks (Blobs)
-        const stream = exportCanvas.canvas.captureStream(); // grab our canvas MediaStream
+        const stream = exportCanvas.canvasElement.captureStream(); // grab our canvas MediaStream
         const rec = new MediaRecorder(stream); // init the recorder
 
         // every time the recorder has new data, we will store it in our array
@@ -607,8 +607,8 @@ function renderExportFrame(frame, options) {
 }
 
 // Converts canvas.toBlob's asynchronous callback-based function into a Promise for await support
-function canvasToBlob(canvas) {
-    return new Promise((resolve) => canvas.toBlob(resolve));
+function canvasToBlob(canvasElement) {
+    return new Promise((resolve) => canvasElement.toBlob(resolve));
 }
 
 

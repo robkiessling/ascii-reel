@@ -79,23 +79,21 @@ export default class Rect extends BoxShape {
     }
 
     _cacheGeometry() {
-        const state = this.props;
-
-        const boundingArea = CellArea.fromOriginAndDimensions(state.topLeft, state.numRows, state.numCols);
+        const boundingArea = CellArea.fromOriginAndDimensions(this.props.topLeft, this.props.numRows, this.props.numCols);
         const innerArea = boundingArea.innerArea();
         const glyphs = this._initGlyphs(boundingArea);
 
-        const stroke = state[STROKE_PROPS[SHAPE_TYPES.RECT]]
+        const stroke = this.props[STROKE_PROPS[SHAPE_TYPES.RECT]]
         let charSheet = CHAR_SHEETS[stroke];
-        if (isFunction(charSheet)) charSheet = charSheet(state[CHAR_PROP]);
+        if (isFunction(charSheet)) charSheet = charSheet(this.props[CHAR_PROP]);
         const fillChar = this._fillChar();
 
-        const lastRow = state.numRows - 1;
-        const lastCol = state.numCols - 1;
+        const lastRow = this.props.numRows - 1;
+        const lastCol = this.props.numCols - 1;
 
         boundingArea.iterateRelative((row, col) => {
             let char;
-            const colorIndex = state[COLOR_PROP];
+            const colorIndex = this.props[COLOR_PROP];
 
             if (col === 0) {
                 if (row === 0) { char = charSheet.TOP_LEFT; }
@@ -118,16 +116,16 @@ export default class Rect extends BoxShape {
 
         const textLayout = this._applyTextLayout(glyphs, boundingArea);
 
-        const emptyBackground = fillChar === EMPTY_CHAR;
+        const hasEmptyBackground = fillChar === EMPTY_CHAR;
         const handles = this._buildHandleCollection(boundingArea, cell => {
             if (textLayout && textLayout.doesCellOverlap(cell)) return true;
-            if (innerArea && innerArea.doesCellOverlap(cell) && emptyBackground) return false;
+            if (innerArea && innerArea.doesCellOverlap(cell) && hasEmptyBackground) return false;
             return boundingArea.doesCellOverlap(cell);
         })
 
         this._cache = {
             boundingArea,
-            origin: state.topLeft,
+            origin: this.props.topLeft,
             glyphs,
             textLayout,
             handles
