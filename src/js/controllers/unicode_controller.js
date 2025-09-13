@@ -31,7 +31,7 @@ export function init() {
         // TODO Is this useful?
         // copyChar(char);
 
-        selectionController.raster.setSelectionToSingleChar(
+        selectionController.raster.applyGlyph(
             char,
             selectionController.raster.caretCell() ? state.primaryColorIndex() : undefined
         );

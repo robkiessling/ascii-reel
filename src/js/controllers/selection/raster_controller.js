@@ -281,30 +281,6 @@ export function handleArrowKey(direction, shiftKey) {
     moveInDirection(direction);
 }
 
-export function handleBackspaceKey(isDelete) {
-    if (movableContent()) {
-        updateMovableContent(EMPTY_CHAR, 0);
-    }
-    else if (caretCell()) {
-        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
-        // saveSelectionTextHistory later
-        if (isDelete) {
-            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
-            moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
-        }
-        else {
-            moveInDirection('left', { updateCaretOrigin: false, saveHistory: false });
-            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
-        }
-    }
-    else {
-        empty();
-    }
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    saveSelectionTextHistory();
-}
-
 export function handleTabKey(shiftKey) {
     if (shiftKey) {
         // If shift key is pressed, we move in opposite direction
@@ -344,6 +320,77 @@ export function handleEnterKey(shiftKey) {
     }
 }
 
+/**
+ * Handles a keyboard key being pressed.
+ * @param {string} char - The char of the pressed keyboard key
+ * @param {boolean} [isComposing=false] - Whether the char is still being composed (for special characters, e.g. 'é')
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCharKey(char, isComposing = false) {
+    return applyGlyph(char, state.primaryColorIndex(), !isComposing);
+}
+
+/**
+ * Handles the backspace or delete keyboard key being pressed.
+ * @param {boolean} [isDelete=false] - True if it was a Delete keypress, false if it was a Backspace keypress.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleBackspaceKey(isDelete = false) {
+    if (movableContent()) {
+        updateMovableContent(EMPTY_CHAR, 0);
+    } else if (caretCell()) {
+        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
+        // saveSelectionTextHistory later
+        if (isDelete) {
+            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
+            moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
+        }
+        else {
+            moveInDirection('left', { updateCaretOrigin: false, saveHistory: false });
+            state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
+        }
+    } else if (hasSelection()){
+        // Update entire selection
+        empty();
+    } else {
+        return false; // No modifications were made: do not trigger refresh
+    }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveSelectionTextHistory();
+    return true;
+}
+
+/**
+ * Updates the selected area (or caret cell if using the text-editor tool) to be the provided glyph.
+ * @param {string} char - Char of glyph
+ * @param {number} color - Color index of glyph
+ * @param {boolean} [moveCaret=true] - Whether to move the caret to the next cell. Only applicable for text-editor tool.
+ * @returns {boolean} - Whether there was any updated content
+ */
+export function applyGlyph(char, color, moveCaret = true) {
+    if (movableContent()) {
+        // Update entire movable content
+        updateMovableContent(char, color);
+    } else if (caretCell()) {
+        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
+        // saveSelectionTextHistory later
+        state.setCurrentCelGlyph(caretCell().row, caretCell().col, char, color);
+        if (moveCaret) moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
+    } else if (hasSelection()) {
+        // Update entire selection
+        getSelectedCells().forEach(cell => {
+            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
+        });
+    } else {
+        return false; // No modifications were made: do not trigger refresh
+    }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveSelectionTextHistory();
+    return true;
+}
+
 
 
 // Returns true if the given Cell is part of the selection
@@ -364,32 +411,6 @@ export function allowMovement(tool, mouseEvent) {
 
     return true;
 }
-
-export function setSelectionToSingleChar(char, color, moveCaret = true) {
-    if (movableContent()) {
-        // Update entire movable content
-        updateMovableContent(char, color);
-    }
-    else if (caretCell()) {
-        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
-        // saveSelectionTextHistory later
-        state.setCurrentCelGlyph(caretCell().row, caretCell().col, char, color);
-        if (moveCaret) moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
-    }
-    else if (hasSelection()) {
-        // Update entire selection
-        getSelectedCells().forEach(cell => {
-            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
-        });
-    }
-    else {
-        return; // No modifications were made: do not trigger refresh
-    }
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    saveSelectionTextHistory();
-}
-
 
 
 // -------------------------------------------------------------------------------- Events

@@ -9,55 +9,55 @@ import {isObject} from "../utils/objects.js";
 let actions;
 
 // todo will move to preferences.js
-// Format: { char: 'x', modifiers: ['altKey', 'shiftKey'] } // modifiers are optional
+// Format: { key: 'x', modifiers: ['altKey', 'shiftKey'] } // modifiers are optional
 // If value is an array, that means the action has multiple shortcuts. The first element is displayed as the abbr.
 let cmdKey = isMacOS() ? 'metaKey' : 'ctrlKey';
 let actionIdToShortcut = {
-    'file.open': { char: 'o', modifiers: [cmdKey] },
-    'file.export-as': { char: 'e', modifiers: [cmdKey, 'shiftKey'] },
-    'file.export-active': { char: 'e', modifiers: [cmdKey] },
+    'file.open': { key: 'o', modifiers: [cmdKey] },
+    'file.export-as': { key: 'e', modifiers: [cmdKey, 'shiftKey'] },
+    'file.export-active': { key: 'e', modifiers: [cmdKey] },
 
     // Note: file.save is not shown in toolbar anywhere, it actually ends up calling either file.saveTo or file.saveAs
-    'file.save': { char: 's', modifiers: [cmdKey] },
+    'file.save': { key: 's', modifiers: [cmdKey] },
 
-    'clipboard.cut': { char: 'x', modifiers: [cmdKey] },
-    'clipboard.copy': { char: 'c', modifiers: [cmdKey] },
-    'clipboard.paste': { char: 'v', modifiers: [cmdKey] },
-    'clipboard.paste-in-selection': { char: 'v', modifiers: [cmdKey, 'shiftKey'] },
-    // 'tools.standard.text-editor': { char: 'e', modifiers: [cmdKey] },
-    'selection.select-all': { char: 'a', modifiers: [cmdKey] },
-    'state.undo': { char: 'z', modifiers: [cmdKey] },
-    'state.redo': { char: 'z', modifiers: [cmdKey, 'shiftKey'] },
+    'clipboard.cut': { key: 'x', modifiers: [cmdKey] },
+    'clipboard.copy': { key: 'c', modifiers: [cmdKey] },
+    'clipboard.paste': { key: 'v', modifiers: [cmdKey] },
+    'clipboard.paste-in-selection': { key: 'v', modifiers: [cmdKey, 'shiftKey'] },
+    // 'tools.standard.text-editor': { key: 'e', modifiers: [cmdKey] },
+    'selection.select-all': { key: 'a', modifiers: [cmdKey] },
+    'state.undo': { key: 'z', modifiers: [cmdKey] },
+    'state.redo': { key: 'z', modifiers: [cmdKey, 'shiftKey'] },
 
-    'frames.new-frame': { char: 'f', modifiers: [cmdKey, 'shiftKey'] }, // Not using 'n' since that is reserved for new window
-    'frames.duplicate-frame': { char: 'd', modifiers: [cmdKey, 'shiftKey'] },
+    'frames.new-frame': { key: 'f', modifiers: [cmdKey, 'shiftKey'] }, // Not using 'n' since that is reserved for new window
+    'frames.duplicate-frame': { key: 'd', modifiers: [cmdKey, 'shiftKey'] },
     'frames.delete-frame': [
-        { char: 'Delete', modifiers: [cmdKey] },
-        { char: 'Backspace', modifiers: [cmdKey] }
+        { key: 'Delete', modifiers: [cmdKey] },
+        { key: 'Backspace', modifiers: [cmdKey] }
     ],
-    'frames.toggle-onion': { char: 'o', modifiers: [cmdKey, 'shiftKey'] },
+    'frames.toggle-onion': { key: 'o', modifiers: [cmdKey, 'shiftKey'] },
 
-    'view.toggle-grid': { char: 'g', modifiers: [cmdKey, 'shiftKey'] },
-    'view.toggle-whitespace': { char: 'p', modifiers: [cmdKey, 'shiftKey'] },
-    'view.zoom-in': { displayChar: '+', char: '=', modifiers: [cmdKey] },
-    'view.zoom-out': { displayChar: '-', char: '-', modifiers: [cmdKey] },
-    'view.zoom-fit': { char: '0', modifiers: [cmdKey] },
+    'view.toggle-grid': { key: 'g', modifiers: [cmdKey, 'shiftKey'] },
+    'view.toggle-whitespace': { key: 'p', modifiers: [cmdKey, 'shiftKey'] },
+    'view.zoom-in': { displayKey: '+', key: '=', modifiers: [cmdKey] },
+    'view.zoom-out': { displayKey: '-', key: '-', modifiers: [cmdKey] },
+    'view.zoom-fit': { key: '0', modifiers: [cmdKey] },
 
-    'tools.standard.text-editor': { char: 't' },
-    'tools.standard.draw-freeform': { char: 'f' },
-    'tools.standard.eraser': { char: 'e' },
-    'tools.standard.draw-line': { char: 'l' },
-    'tools.standard.draw-rect': { char: 'r' },
-    'tools.standard.draw-ellipse': { char: 'o' },
-    'tools.standard.fill-char': { char: 'p' },
-    'tools.standard.selection-lasso': { char: 's' },
-    'tools.standard.selection-wand': { char: 'w' },
-    'tools.standard.pan': { char: 'h' },
-    'tools.standard.move-all': { char: 'm' },
-    'tools.standard.paint-brush': { char: 'b' },
-    'tools.standard.eyedropper': { char: 'y' },
-    'tools.standard.char-picker': { char: 'c' },
-    'tools.standard.quick-swap-char': { char: 'Tab' },
+    'tools.standard.text-editor': { key: 't' },
+    'tools.standard.draw-freeform': { key: 'f' },
+    'tools.standard.eraser': { key: 'e' },
+    'tools.standard.draw-line': { key: 'l' },
+    'tools.standard.draw-rect': { key: 'r' },
+    'tools.standard.draw-ellipse': { key: 'o' },
+    'tools.standard.fill-char': { key: 'p' },
+    'tools.standard.selection-lasso': { key: 's' },
+    'tools.standard.selection-wand': { key: 'w' },
+    'tools.standard.pan': { key: 'h' },
+    'tools.standard.move-all': { key: 'm' },
+    'tools.standard.paint-brush': { key: 'b' },
+    'tools.standard.eyedropper': { key: 'y' },
+    'tools.standard.char-picker': { key: 'c' },
+    'tools.standard.quick-swap-char': { key: 'Tab' },
 };
 
 let shortcutToActionId = {};
@@ -67,7 +67,7 @@ export function init() {
 
     for (let [actionId, shortcutData] of Object.entries(actionIdToShortcut)) {
         (Array.isArray(shortcutData) ? shortcutData : [shortcutData]).forEach(shortcut => {
-            const shortcutKey = getShortcutKey(shortcut);
+            const shortcutKey = getFullKey(shortcut);
             if (shortcutToActionId[shortcutKey]) console.warn(`There is already a shortcut for: ${shortcutKey}`);
             shortcutToActionId[shortcutKey] = actionId;
         })
@@ -152,7 +152,7 @@ export function callAction(id, callbackData) {
 }
 
 export function callActionByShortcut(shortcut, callbackData) {
-    const actionId = shortcutToActionId[getShortcutKey(shortcut)];
+    const actionId = shortcutToActionId[getFullKey(shortcut)];
     return actionId === undefined ? false : callAction(actionId, callbackData);
 }
 
@@ -337,7 +337,7 @@ function shortcutAbbr(shortcut) {
 
     if (isObject(shortcut)) {
         (shortcut.modifiers || []).forEach(modifier => result += modifierAbbr(modifier));
-        result += capitalizeFirstLetter(shortcut.displayChar ? shortcut.displayChar : shortcut.char)
+        result += capitalizeFirstLetter(shortcut.displayKey ? shortcut.displayKey : shortcut.key)
     }
     else {
         result += capitalizeFirstLetter(shortcut);
@@ -346,16 +346,17 @@ function shortcutAbbr(shortcut) {
     return result;
 }
 
-function getShortcutKey(shortcut) {
-    let char, modifiers;
+// Combines key with its modifiers into a single string value
+function getFullKey(shortcut) {
+    let key, modifiers;
 
     if (isObject(shortcut)) {
-        char = shortcut.char.toLowerCase();
+        key = shortcut.key.toLowerCase();
         modifiers = shortcut.modifiers;
     }
     else {
-        char = shortcut.toLowerCase();
+        key = shortcut.toLowerCase();
     }
 
-    return modifiers && modifiers.length ? `${modifiers.sort().join('-')}-${char}` : char;
+    return modifiers && modifiers.length ? `${modifiers.sort().join('-')}-${key}` : key;
 }

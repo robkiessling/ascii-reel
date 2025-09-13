@@ -14,26 +14,26 @@ export function init() {
 
 function setupKeydownListener() {
     $document.keydown(function(e) {
-        const char = e.key; // E.g. x X 1 Control Alt Shift Meta Enter [ { \ /
-        // console.log(char);
+        const key = e.key; // Keyboard key. E.g., 'a', 'A', '1', '[', 'Shift', 'Enter', 'Backspace', etc.
+        // console.log(key);
 
         if (useStandardKeyboard()) {
-            handleStandardKeyboard(char, e);
+            handleStandardKeyboard(key, e);
             return;
         }
 
-        if (char === 'Unidentified') {
+        if (key === 'Unidentified') {
             console.warn(`Unidentified key for event: ${e}`);
             return;
         }
 
-        // A 'Dead' char is received when composition starts (see composition section below)
-        if (char === 'Dead' || isComposing) return;
+        // A 'Dead' key is received when composition starts (see composition section below)
+        if (key === 'Dead' || isComposing) return;
 
         // Ascii Reel Shortcuts
         if (e.metaKey || e.ctrlKey || e.altKey) {
             const modifiers = ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'].filter(modifier => e[modifier]);
-            if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
+            if (actions.callActionByShortcut({ key, modifiers })) {
                 e.preventDefault();
                 return;
             }
@@ -43,11 +43,11 @@ function setupKeydownListener() {
         // a standard browser shortcut (e.g. cmd-R to reload). Return early (without preventing default) so that the
         // browser shortcut works as normal. Note: a few browser shortcuts are prevented, see handleBrowserShortcut.
         if (e.metaKey || e.ctrlKey) {
-            handleBrowserShortcut(e, char);
+            handleBrowserShortcut(e, key);
             return;
         }
 
-        switch (char) {
+        switch (key) {
             case 'Escape':
                 handleEscapeKey();
                 break;
@@ -59,17 +59,17 @@ function setupKeydownListener() {
                 break;
             case 'Backspace':
             case 'Delete':
-                handleBackspaceKey(char);
+                handleBackspaceKey(key);
                 break;
             case 'ArrowLeft':
             case 'ArrowUp':
             case 'ArrowRight':
             case 'ArrowDown':
-                handleArrowKey(e, char);
+                handleArrowKey(e, key);
                 break;
             default:
-                if (char.length !== 1) return; // Unrecognized input; let browser handle as normal
-                handleSingleCharKey(char);
+                if (key.length !== 1) return; // Unrecognized input; let browser handle as normal
+                handleCharKey(key);
         }
 
         e.preventDefault();
@@ -92,7 +92,7 @@ function handleTabKey(e) {
         selectionController.raster.handleTabKey(e.shiftKey);
     }
     else {
-        actions.callActionByShortcut({ char: 'Tab' })
+        actions.callActionByShortcut({ key: 'Tab' })
     }
 }
 
@@ -100,8 +100,16 @@ function handleEnterKey(e) {
     selectionController.raster.handleEnterKey(e.shiftKey);
 }
 
-function handleBackspaceKey(char) {
-    handleChar(EMPTY_CHAR, () => selectionController.raster.handleBackspaceKey(char === 'Delete'))
+function handleBackspaceKey(key) {
+    if (tools.handleCharKey(EMPTY_CHAR)) return;
+    if (selectionController.raster.handleBackspaceKey(key === 'Delete')) return;
+    actions.callActionByShortcut({ key });
+}
+
+function handleCharKey(char, isComposing = false) {
+    if (tools.handleCharKey(char, isComposing)) return;
+    if (selectionController.raster.handleCharKey(char, isComposing)) return;
+    actions.callActionByShortcut({ key: char });
 }
 
 function handleArrowKey(e, arrowKey) {
@@ -144,30 +152,8 @@ function arrowKeyToDirection(arrowKey) {
     }
 }
 
-function handleSingleCharKey(char, moveCaret = true) {
-    handleChar(char, () => selectionController.raster.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCaret))
-}
-
-function handleChar(char, selectionUpdater) {
-    if (tools.isCharPickerOpen()) {
-        tools.selectChar(char);
-        if (!isComposing) tools.toggleCharPicker(false);
-        return;
-    }
-
-    if (tools.isQuickSwapEnabled()) tools.selectChar(char);
-
-    if (selectionController.raster.caretCell()) {
-        selectionUpdater()
-    } else if (tools.isQuickSwapEnabled()) {
-        if (selectionController.raster.hasSelection()) selectionUpdater()
-    } else {
-        actions.callActionByShortcut({ char: char })
-    }
-}
-
-function handleStandardKeyboard(char, e) {
-    if (char === 'Enter') {
+function handleStandardKeyboard(key, e) {
+    if (key === 'Enter') {
         $document.trigger('keyboard:enter');
         e.preventDefault();
     }
@@ -181,8 +167,8 @@ const PREVENT_DEFAULT_BROWSER_SHORTCUTS = new Set([
 ])
 
 // A few browser shortcuts are prevented. See PREVENT_DEFAULT_BROWSER_SHORTCUTS for details.
-function handleBrowserShortcut(e, char) {
-    if (PREVENT_DEFAULT_BROWSER_SHORTCUTS.has(char)) {
+function handleBrowserShortcut(e, key) {
+    if (PREVENT_DEFAULT_BROWSER_SHORTCUTS.has(key)) {
         e.preventDefault();
     }
 }
@@ -261,18 +247,20 @@ function setupCompositionListener() {
         // We always take the last character, so even if composition failed we still print the failing char (e.g. "x")
         const char = str.charAt(str.length - 1)
 
-        // When writing the char, do not move the caret yet (moveCaret=false) because we might not be done composing
-        handleSingleCharKey(char, false);
+        // When isComposing is true, the char picker will not be closed yet, and the selection caret will not be moved yet
+        handleCharKey(char, true);
     });
 
     $document.on('compositionend', e => {
         isComposing = false;
 
-        if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
-
-        // Since we didn't move the caret in compositionupdate (moveCaret=false), we move the caret now that
-        // composition is finished
-        selectionController.raster.moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
+        // Now that composition is finished, manually close char picker and move caret (if cursorCell)
+        if (tools.isCharPickerOpen()) {
+            tools.toggleCharPicker(false);
+        }
+        if (selectionController.raster.caretCell()) {
+            selectionController.raster.moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
+        }
 
         // TODO technically we should do something like this, otherwise redo doesn't fully work when final char has accent
         // state.pushHistory({ modifiable: 'rasterSelectionText' })

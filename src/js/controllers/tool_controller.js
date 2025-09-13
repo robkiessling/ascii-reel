@@ -94,6 +94,31 @@ export function changeDrawType(toolKey, newDrawType) {
     }
 }
 
+/**
+ * Handles a keyboard key being pressed.
+ * @param {string} char - The char of the pressed keyboard key
+ * @param {boolean} [isComposing=false] - Whether the char is still being composed (for special characters, e.g. 'é')
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCharKey(char, isComposing = false) {
+    if (isCharPickerOpen()) {
+        applyPrimaryChar(char);
+        if (!isComposing) toggleCharPicker(false);
+        return true;
+    }
+
+    if (isQuickSwapEnabled()) {
+        applyPrimaryChar(char);
+
+        selectionController.raster.handleCharKey(char, isComposing)
+
+        // When there is a raster selection
+        return true;
+    }
+
+    return false;
+}
+
 
 // -------------------------------------------------------------------------------- Events
 
@@ -248,7 +273,7 @@ function setupEventBus() {
         }
     })
     eventBus.on(EVENTS.UNICODE.CHAR_SELECTED, ({ char }) => {
-        selectChar(char);
+        applyPrimaryChar(char);
     })
 }
 
@@ -943,8 +968,8 @@ function setupCharPicker() {
 
     primaryCharPicker = new CharPicker($charPicker, {
         initialValue: 'A',
-        onLoad: newValue => selectChar(newValue, false),
-        onChange: newValue => selectChar(newValue),
+        onLoad: newValue => setPrimaryChar(newValue),
+        onChange: newValue => applyPrimaryChar(newValue),
         onOpen: () => {
             charQuickSwapTooltip.disable();
         },
@@ -964,7 +989,7 @@ function setupCharPicker() {
 
     const $shapeChar = $('#shape-char');
     shapeCharPicker = new CharPicker($shapeChar, {
-        onChange: newValue => selectChar(newValue),
+        onChange: newValue => applyPrimaryChar(newValue),
         popupDirection: 'bottom',
         popupOffset: 22,
         tooltip: () => {
@@ -988,7 +1013,7 @@ function refreshCharPicker() {
         selectionController.vector.selectedShapeProps()[CHAR_PROP][0] :
         state.getConfig('primaryChar');
 
-    selectChar(char, false);
+    setPrimaryChar(char);
 
     $charPicker.toggleClass('animated-border', isQuickSwapEnabled());
 }
@@ -1005,17 +1030,18 @@ export function toggleCharPicker(open) {
     }
 }
 
-export function selectChar(char, triggerUpdates = true) {
+function applyPrimaryChar(char) {
+    setPrimaryChar(char);
+
+    // TODO MAYBE WRONG SPOT FOR THIS?
+    selectionController.vector.updateSelectedShapes(shape => shape.updateProp(CHAR_PROP, char));
+}
+
+function setPrimaryChar(char) {
     if (primaryCharPicker) primaryCharPicker.value(char, true);
     if (shapeCharPicker) shapeCharPicker.value(char, true);
-
     state.setConfig('primaryChar', char);
     eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
-
-    if (triggerUpdates) {
-        selectionController.vector.updateSelectedShapes(shape => shape.updateProp(CHAR_PROP, char));
-        // todo if not using monochar, switch shape to it
-    }
 }
 
 // "Quick Swap" is a toggle that lets the user instantly update the char picker's selected value by pressing a keyboard key
