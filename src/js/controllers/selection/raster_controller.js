@@ -106,7 +106,7 @@ export function updateMovableContent(char, color) { state.selection.raster.updat
 
 export function caretCell() { return state.selection.raster.caretCell(); }
 
-export function moveCaretTo(cell, updateOrigin = true, history = true) {
+export function moveCaretTo(cell, updateOrigin = true, saveHistory = true) {
     if (state.getConfig('tool') !== 'text-editor') {
         console.warn('Can only call moveCaretTo if tool is text-editor')
         return;
@@ -116,16 +116,10 @@ export function moveCaretTo(cell, updateOrigin = true, history = true) {
 
     state.selection.raster.moveCaretTo(cell);
 
-    if (updateOrigin) {
-        state.selection.raster.updateCaretOrigin(cell);
-
-        // Update the current history slice so that if you undo to the slice, the caret will be at the most recent position
-        // TODO [undo/redo issue]
-        // state.modifyHistory(historySlice => historySlice.selection = state.serialize({ history: true }).selection)
-    }
+    if (updateOrigin) state.selection.raster.updateCaretOrigin(cell);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED);
-    if (history) saveSelectionHistory();
+    if (saveHistory) saveSelectionHistory();
 }
 
 
@@ -141,6 +135,48 @@ function moveDelta(rowDelta, colDelta) {
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (movableContent()) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
     saveSelectionHistory();
+}
+
+/**
+ * Shifts the cursor cell and all content to the right of it one space right.
+ * @param {boolean} [reverse=false] If true, content will be shifted left
+ */
+function shiftContent(reverse = false) {
+    if (!caretCell()) throw new Error('shiftContent call requires caretCell');
+
+    const row = caretCell().row;
+    const colStart = reverse ? caretCell().col - 1 : caretCell().col;
+    const colEnd = state.numCols() - 1;
+
+    if (reverse) {
+        // Shift all content left
+        for (let col = colStart; col <= colEnd; col++) {
+            const glyphToRight = col === colEnd ? [EMPTY_CHAR, 0] : state.getCurrentCelGlyph(row, col + 1);
+            state.setCurrentCelGlyph(row, col, glyphToRight[0], glyphToRight[1]);
+        }
+
+        // Move cursor left
+        moveInDirection('left', {
+            wrapCaretPosition: false,
+            saveHistory: false
+        });
+    } else {
+        // Shift all content right
+        for (let col = colEnd; col >= colStart; col--) {
+            const glyphToLeft = col === colStart ? [EMPTY_CHAR, 0] : state.getCurrentCelGlyph(row, col - 1);
+            state.setCurrentCelGlyph(row, col, glyphToLeft[0], glyphToLeft[1])
+        }
+
+        // Move cursor right
+        moveInDirection('right', {
+            wrapCaretPosition: false,
+            saveHistory: false
+        });
+    }
+
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveSelectionTextHistory();
 }
 
 /**
@@ -250,11 +286,19 @@ export function flipHorizontally(mirrorChars) {
 
 // -------------------------------------------------------------------------------- Keyboard
 
+/**
+ * Handles an arrow key being pressed.
+ * @param {'left'|'right'|'up'|'down'} direction - Direction of arrow key
+ * @param {boolean} shiftKey - Whether the shift key was also down
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
 export function handleArrowKey(direction, shiftKey) {
+    if (!hasTarget()) return false;
+
     // If holding shift, arrow keys extend the current selection
     if (shiftKey) {
         extendInDirection(direction, 1)
-        return;
+        return true;
     }
 
     // If in text-editor and there is a selection, jump caret to start/end of the selection area
@@ -275,19 +319,28 @@ export function handleArrowKey(direction, shiftKey) {
             default:
                 console.warn(`Invalid direction: ${direction}`);
         }
-        return;
+        return true;
     }
 
     moveInDirection(direction);
+    return true;
 }
 
-export function handleTabKey(shiftKey) {
-    if (shiftKey) {
-        // If shift key is pressed, we move in opposite direction
-        moveInDirection('left', { updateCaretOrigin: false });
-    } else {
-        moveInDirection('right', { updateCaretOrigin: false })
+/**
+ * Handles the tab key being pressed.
+ * @param {boolean} [shiftKey=false] - Whether the shift key is pressed
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleTabKey(shiftKey = false) {
+    if (caretCell()) {
+        shiftContent(shiftKey);
+        return true;
     }
+
+    // TODO if there is a normal area selection, we could shift its contents?
+    //      What would the analogous be in vertical direction tho, Enter? But Enter is also used to finalize movableContent.
+
+    return false;
 }
 
 export function handleEnterKey(shiftKey) {

@@ -247,7 +247,7 @@ export function addCurrentCelShape(shape) {
     celData.addCelShape(currentCel(), shape)
 }
 export function updateCurrentCelShape(shapeId, updater) {
-    celData.updateCelShape(currentCel(), shapeId, updater);
+    return celData.updateCelShape(currentCel(), shapeId, updater);
 }
 export function deleteCurrentCelShape(shapeId) {
     celData.deleteCelShape(currentCel(), shapeId);

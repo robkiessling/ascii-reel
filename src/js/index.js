@@ -12,7 +12,7 @@ import { init as initActions } from "./io/actions.js";
 import { init as initPalette } from "./controllers/palette_controller.js";
 import { init as initPreview, resize as resizePreview } from "./controllers/preview_controller.js";
 import { init as initUnicode } from "./controllers/unicode_controller.js";
-import { init as initCanvas, resize as resizeCanvas } from './controllers/canvas_controller.js';
+import { init as initCanvas, resize as resizeCanvas, zoomToDefault } from './controllers/canvas_controller.js';
 import { init as initSelection, clear as performClearSelection } from './controllers/selection/index.js'
 import { init as initState, isValid as isStateValid, loadFromStorage, markClean, loadNewState } from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./controllers/frame_controller.js";
@@ -54,11 +54,15 @@ function setupEventBus() {
         recalculateCanvasColors();
 
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: false, resetZoom: true })
+
+        eventBus.emit(EVENTS.CANVAS.ZOOM_TO_DEFAULT);
     })
 
     $(window).on('resize', debounce(() => eventBus.emit(EVENTS.RESIZE.ALL)));
     
     // Resize listener: Resizes the components that depend on window size, then triggers a full refresh
+    // We use an index.js-level event listener (as opposed to each controller individually listening to this event) so
+    // we can ensure the correct processing order
     eventBus.on(EVENTS.RESIZE.ALL, ({ resetZoom, clearSelection }) => {
         if (!isStateValid()) return;
 
@@ -87,14 +91,6 @@ function setupEventBus() {
         else {
             eventBus.emit(EVENTS.REFRESH.ALL);
         }
-    })
-
-    eventBus.on(EVENTS.SELECTION.CHANGED, () => {
-        // TODO [undo/redo issue]
-        // modifyHistory(historySlice => historySlice.selection = serialize({ history: true }).selection)
-
-        // This almost works, but movable content is janky
-        // pushHistory({ modifiable: 'selection' })
     })
 
     eventBus.on(EVENTS.FILE.SAVED, () => markClean());

@@ -43,7 +43,7 @@ export {
     sortedChars, importChars, setUnicodeSetting, getUnicodeSetting
 } from './unicode.js'
 export {
-    pushHistory, endHistoryModification, modifyHistory, isDirty, markClean
+    pushHistory, endHistoryModification, isDirty, markClean
 } from './history.js'
 
 export * as selection from './selection/index.js'

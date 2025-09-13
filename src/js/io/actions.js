@@ -36,6 +36,8 @@ let actionIdToShortcut = {
         { key: 'Backspace', modifiers: [cmdKey] }
     ],
     'frames.toggle-onion': { key: 'o', modifiers: [cmdKey, 'shiftKey'] },
+    'frames.previous-frame': { key: ',' },
+    'frames.next-frame': { key: '.' },
 
     'view.toggle-grid': { key: 'g', modifiers: [cmdKey, 'shiftKey'] },
     'view.toggle-whitespace': { key: 'p', modifiers: [cmdKey, 'shiftKey'] },
@@ -57,7 +59,7 @@ let actionIdToShortcut = {
     'tools.standard.paint-brush': { key: 'b' },
     'tools.standard.eyedropper': { key: 'y' },
     'tools.standard.char-picker': { key: 'c' },
-    'tools.standard.quick-swap-char': { key: 'Tab' },
+    'tools.standard.quick-swap-char': { key: 'q' },
 };
 
 let shortcutToActionId = {};

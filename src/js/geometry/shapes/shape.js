@@ -27,9 +27,20 @@ export default class Shape {
         return structuredClone(props);
     }
 
+    /**
+     * Updates one of the shape's properties
+     * @param {string} prop - Property to update
+     * @param newValue - Value to set property to
+     * @returns {boolean} - Whether the property was actually updated. Note: uses === to test equality, so if your
+     *   value is, for example, a Cell, this will return true if though the Cells might be at the same location.
+     */
     updateProp(prop, newValue) {
-        this.props[prop] = newValue;
-        this._clearCache();
+        if (this.props[prop] !== newValue) {
+            this.props[prop] = newValue;
+            this._clearCache();
+            return true;
+        }
+        return false;
     }
 
     // ------------------------------------------------------ Initial draw

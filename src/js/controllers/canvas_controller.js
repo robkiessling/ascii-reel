@@ -107,18 +107,23 @@ function setupEventBus() {
 
     eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => redrawCharCanvas())
 
+    // These camera events have higher priority (1) so they always occur before preview canvas. This is important
+    // because preview canvas depends on these canvases for its highlighted window
     eventBus.on(EVENTS.CANVAS.ZOOM_DELTA, ({delta, target}) => {
         iterateCanvases(canvas => canvas.zoomDelta(delta, target))
-    })
+    }, 1)
     eventBus.on(EVENTS.CANVAS.ZOOM_TO_FIT, () => {
         iterateCanvases(canvas => canvas.zoomToFit())
-    })
+    }, 1)
+    eventBus.on(EVENTS.CANVAS.ZOOM_TO_DEFAULT, () => {
+        iterateCanvases(canvas => canvas.zoomToDefault())
+    }, 1)
     eventBus.on(EVENTS.CANVAS.PAN_TO_TARGET, ({target}) => {
         iterateCanvases(canvas => canvas.panToTarget(target))
-    })
+    }, 1)
     eventBus.on(EVENTS.CANVAS.PAN_DELTA, ({delta, ignoreZoom}) => {
         iterateCanvases(canvas => canvas.panBy(...delta, ignoreZoom))
-    })
+    }, 1)
 
     eventBus.on(EVENTS.CANVAS.HOVERED, ({cell}) => {
         hoveredCell = cell;

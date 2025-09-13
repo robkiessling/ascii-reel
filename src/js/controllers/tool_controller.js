@@ -95,6 +95,21 @@ export function changeDrawType(toolKey, newDrawType) {
 }
 
 /**
+ * Handles the escape key being pressed.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleEscapeKey() {
+    if (isCharPickerOpen()) {
+        toggleCharPicker(false);
+        return true;
+    }
+
+    // Turning off quick-swap does not consume the keyboard event
+    if (isQuickSwapEnabled()) toggleQuickSwap(false);
+    return false;
+}
+
+/**
  * Handles a keyboard key being pressed.
  * @param {string} char - The char of the pressed keyboard key
  * @param {boolean} [isComposing=false] - Whether the char is still being composed (for special characters, e.g. 'é')
@@ -620,7 +635,7 @@ function setupStrokeMenu($menu, shapeType) {
         getValue: () => selectionController.vector.selectedShapeProps()[strokeProp][0],
         onSelect: newValue => {
             selectionController.vector.updateSelectedShapes(shape => {
-                if (shape.type === shapeType) shape.updateProp(strokeProp, newValue)
+                return shape.type === shapeType && shape.updateProp(strokeProp, newValue);
             });
         },
         tooltipOptions: {
@@ -963,7 +978,8 @@ function setupCharPicker() {
         callback: () => toggleCharPicker(true),
     })
     actions.registerAction('tools.standard.quick-swap-char', {
-        callback: () => toggleQuickSwap(),
+        callback: () => toggleQuickSwap(true),
+        shortcutAbbr: `Q to enter, Esc to exit`
     })
 
     primaryCharPicker = new CharPicker($charPicker, {
@@ -1001,7 +1017,7 @@ function setupCharPicker() {
     })
 
     const $quickSwap = $charPicker.find('.char-well-corner-button');
-    $quickSwap.off('click').on('click', () => actions.callAction('tools.standard.quick-swap-char'))
+    $quickSwap.off('click').on('click', () => toggleQuickSwap());
 
     charQuickSwapTooltip = setupTooltips($quickSwap.toArray(), 'tools.standard.quick-swap-char', {
         offset: tooltipOffset('center-corner-button')
@@ -1048,7 +1064,7 @@ function setPrimaryChar(char) {
 let quickSwapEnabled = false;
 
 export function isQuickSwapEnabled() {
-    if (selectionController.raster.hasSelection() && !selectionController.raster.caretCell()) return true;
+    if (selectionController.raster.hasSelection()) return true;
     return quickSwapEnabled;
 }
 
@@ -1113,10 +1129,10 @@ function selectColor(colorStr, triggerUpdates = true) {
     }
 }
 
-// When one picker selects a color, we update the value in the other picker. We also call rapidUpdateSelectedShapes
-// (not the usual updateSelectedShapes) because the picker will trigger update events for every pixel that the mouse
-// moves while changing the color. We want the shapes to update in real time, but we do not commit the change
-// to history until the onDone is called
+// When one picker selects a color, we update the value in the other picker. We call updateSelectedShapes
+// with historyMode:false because the picker will trigger update events for every pixel that the mouse
+// moves over while changing the color. We want the shapes to update in real time, but we do not commit the
+// change to history until the picker's onDone is called.
 function selectColorFromPicker(colorStr, fromPicker) {
     if (fromPicker !== primaryColorPicker) primaryColorPicker.value(colorStr, true);
     if (fromPicker !== shapeColorPicker) shapeColorPicker.value(colorStr, true);
@@ -1125,7 +1141,7 @@ function selectColorFromPicker(colorStr, fromPicker) {
     eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
 
     const colorIndex = state.colorIndex(colorStr);
-    selectionController.vector.rapidUpdateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+    selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex), false);
 }
 
 function refreshColorPicker() {

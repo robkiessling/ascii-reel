@@ -65,7 +65,7 @@ function setupKeydownListener() {
             case 'ArrowUp':
             case 'ArrowRight':
             case 'ArrowDown':
-                handleArrowKey(e, key);
+                handleArrowKey(key, e);
                 break;
             default:
                 if (key.length !== 1) return; // Unrecognized input; let browser handle as normal
@@ -79,21 +79,15 @@ function setupKeydownListener() {
 function handleEscapeKey() {
     state.endHistoryModification();
 
-    selectionController.raster.clear();
+    if (tools.handleEscapeKey()) return;
 
-    if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
-    if (tools.isQuickSwapEnabled()) tools.toggleQuickSwap(false);
+    selectionController.clear();
 }
 
 function handleTabKey(e) {
-    state.endHistoryModification();
+    if (selectionController.raster.handleTabKey(e.shiftKey)) return;
 
-    if (selectionController.raster.caretCell()) {
-        selectionController.raster.handleTabKey(e.shiftKey);
-    }
-    else {
-        actions.callActionByShortcut({ key: 'Tab' })
-    }
+    actions.callActionByShortcut({ key: 'Tab' })
 }
 
 function handleEnterKey(e) {
@@ -112,31 +106,13 @@ function handleCharKey(char, isComposing = false) {
     actions.callActionByShortcut({ key: char });
 }
 
-function handleArrowKey(e, arrowKey) {
+function handleArrowKey(arrowKey, e) {
     const direction = arrowKeyToDirection(arrowKey);
 
-    if (selectionController.raster.hasTarget()) {
-        selectionController.raster.handleArrowKey(direction, e.shiftKey);
-    }
-    else if (selectionController.vector.caretCell()) {
-        state.endHistoryModification(); // todo check this
+    if (selectionController.raster.handleArrowKey(direction, e.shiftKey)) return;
+    if (selectionController.vector.handleArrowKey(direction, e.shiftKey)) return;
 
-        selectionController.vector.handleArrowKey(direction, e.shiftKey);
-    }
-    else {
-        switch(direction) {
-            case 'left':
-                return actions.callAction('frames.previous-frame')
-            case 'up':
-                return actions.callAction('frames.previous-frame')
-            case 'right':
-                return actions.callAction('frames.next-frame')
-            case 'down':
-                return actions.callAction('frames.next-frame')
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-        }
-    }
+    actions.callActionByShortcut({ key: arrowKey });
 }
 
 function arrowKeyToDirection(arrowKey) {

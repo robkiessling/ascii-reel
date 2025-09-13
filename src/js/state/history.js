@@ -122,14 +122,6 @@ export function endHistoryModification() {
     }
 }
 
-// Modifies the current history slice
-export function modifyHistory(callback) {
-    if (history.length) {
-        callback(history[historyIndex].state)
-        logState('modified history (manual): ', history[historyIndex]);
-    }
-}
-
 // -------------------------------------------------------------------------------- Logging / debugging
 
 function logState(prefix, snapshot) {

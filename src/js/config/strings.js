@@ -108,7 +108,7 @@ export const STRINGS = {
     'tools.standard.char-picker.description': 'Click to open the character picker. While open, pressing a key will select that character.',
     'tools.standard.quick-swap-char.name': 'Quick-Swap Mode',
     'tools.standard.quick-swap-char.description': 'While active, pressing any key selects that character instead of switching tools.\n\n' +
-        "If a raster canvas selection is active, Quick-Swap Mode is automatically enabled&mdash;pressing a key will fill the selection with the chosen character.",
+        "If a raster selection is active, Quick-Swap Mode is automatically enabled&mdash;pressing a key will fill the selection with the chosen character.",
 
     'tools.standard.color-picker.name': 'Selected Color',
     'tools.standard.color-picker.description': 'Click to open the color picker.',

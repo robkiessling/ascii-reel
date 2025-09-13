@@ -166,7 +166,8 @@ function setupActions() {
 function setupEventBus() {
     eventBus.on(
         [
-            EVENTS.CANVAS.ZOOM_DELTA, EVENTS.CANVAS.ZOOM_TO_FIT, EVENTS.CANVAS.PAN_DELTA, EVENTS.CANVAS.PAN_TO_TARGET
+            EVENTS.CANVAS.ZOOM_DELTA, EVENTS.CANVAS.ZOOM_TO_FIT, EVENTS.CANVAS.ZOOM_TO_DEFAULT,
+            EVENTS.CANVAS.PAN_DELTA, EVENTS.CANVAS.PAN_TO_TARGET
         ],
         () => redraw()
     )

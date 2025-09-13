@@ -142,8 +142,9 @@ export default class VectorCel {
     }
 
     updateShape(shapeId, updater) {
-        updater(this.shapesById[shapeId])
-        this._clearCachedGlyphs();
+        const updated = updater(this.shapesById[shapeId])
+        if (updated) this._clearCachedGlyphs();
+        return updated;
     }
     deleteShape(shapeId) {
         delete this.shapesById[shapeId];

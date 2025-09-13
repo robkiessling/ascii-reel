@@ -98,6 +98,7 @@ export const EVENTS = {
     CANVAS: {
         ZOOM_DELTA: 'canvas:zoom-delta', /* Event data: { delta, target } */
         ZOOM_TO_FIT: 'canvas:zoom-to-fit',
+        ZOOM_TO_DEFAULT: 'canvas:zoom-to-default',
         PAN_DELTA: 'canvas:pan-delta', /* Event data: { delta } */
         PAN_TO_TARGET: 'canvas:pan-to-target', /* Event data: { target } */
 

@@ -91,7 +91,13 @@ export function selectedShapeProps() {
 }
 
 export function updateSelectedShapes(updater) {
-    selectedShapeIds().forEach(shapeId => updateCurrentCelShape(shapeId, updater));
+    let updated = false;
+
+    selectedShapeIds().forEach(shapeId => {
+        if (updateCurrentCelShape(shapeId, updater)) updated = true;
+    });
+
+    return updated;
 }
 
 export function deleteSelectedShapes() {

@@ -46,21 +46,41 @@ export function selectedShapes() { return state.selection.vector.selectedShapes(
 export function selectedShapeTypes() { return state.selection.vector.selectedShapeTypes() }
 export function selectedShapeProps() { return state.selection.vector.selectedShapeProps() }
 
-export function updateSelectedShapes(updater) {
+/**
+ * Updates all selected shapes.
+ * @param {(shape: Shape) => boolean} updater - Updater function called for each shape.
+ *   Must return `true` if the shape was modified, or `false` otherwise. The return value is always required: it
+ *   not only controls whether history is pushed (when `historyMode` is `undefined`), but also whether the canvas
+ *   refreshes or change events are emitted.
+ * @param {undefined|true|false|string} [historyMode] - Controls history saving behavior:
+ *   - undefined: Push history if any `updater` returned `true`
+ *   - true: Always push history (if any shapes were selected)
+ *   - false: Never push history
+ *   - string: Always push history with option `modifiable:<string>`
+ */
+export function updateSelectedShapes(updater, historyMode) {
     if (!hasSelectedShapes()) return; // Do not emit event or push history
 
-    state.selection.vector.updateSelectedShapes(updater);
-    eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory();
-}
+    const updated = state.selection.vector.updateSelectedShapes(updater);
 
-// For rapid updates that affect shape display but should not be committed to history
-export function rapidUpdateSelectedShapes(updater) {
-    if (!hasSelectedShapes()) return; // Do not emit event or push history
+    if (updated) {
+        eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    }
 
-    state.selection.vector.updateSelectedShapes(updater);
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    switch(historyMode) {
+        case undefined:
+            if (updated) state.pushHistory();
+            break;
+        case true:
+            state.pushHistory();
+            break;
+        case false:
+            // Do nothing
+            break;
+        default:
+            state.pushHistory({ modifiable: historyMode })
+    }
 }
 
 export function deleteSelectedShapes() {
@@ -99,18 +119,17 @@ let draggedHandle = null; // handle currently being dragged (only active during 
 let marquee = null;
 
 function setupEventBus() {
-    let moveStep;
+    let prevCell;
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas }) => {
         if (mouseEvent.button !== MOUSE.LEFT) return;
 
         const tool = state.getConfig('tool')
 
-        moveStep = cell;
+        prevCell = cell;
 
         switch(tool) {
             case 'select':
-                // state.endHistoryModification();
                 onMousedown(cell, mouseEvent, canvas);
                 break;
             default:
@@ -120,8 +139,8 @@ function setupEventBus() {
 
     eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas }) => {
         if (draggedHandle) {
-            dragHandle(canvas, mouseEvent, cell, moveStep);
-            moveStep = cell;
+            dragHandle(canvas, mouseEvent, cell, prevCell);
+            prevCell = cell;
         }
 
         if (marquee) updateMarquee(mouseEvent);
@@ -160,15 +179,12 @@ function onMousedown(cell, mouseEvent, canvas) {
             draggedHandle = handle;
             if (handle.shapeId === undefined) throw new Error(`HANDLE_TYPES.BODY handle must provide shapeId`);
 
-            if (shapeSelector.mousedownShape(handle.shapeId, mouseEvent.shiftKey)) {
-                eventBus.emit(EVENTS.SELECTION.CHANGED);
-                state.pushHistory();
-            }
+            shapeSelector.mousedownShape(handle.shapeId, mouseEvent.shiftKey);
             break;
     }
 }
 
-function dragHandle(canvas, mouseEvent, cell, moveStep) {
+function dragHandle(canvas, mouseEvent, cell, prevCell) {
     switch (draggedHandle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
@@ -177,40 +193,31 @@ function dragHandle(canvas, mouseEvent, cell, moveStep) {
             shapeSelector.resize(draggedHandle, cell, roundedCell)
             break;
         case HANDLE_TYPES.BODY:
-            shapeSelector.translate(cell.row - moveStep.row, cell.col - moveStep.col)
+            shapeSelector.translate(cell.row - prevCell.row, cell.col - prevCell.col)
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")
     }
 
-    shapeSelector.cancelPending();
-
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    shapeSelector.cancelPendingSelection();
 }
 
 function finishDragHandle() {
-    let hasStateChange = false;
-
     switch (draggedHandle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
         case HANDLE_TYPES.CELL:
-            if (shapeSelector.finishResize()) hasStateChange = true;
+            shapeSelector.finishResize()
             break;
         case HANDLE_TYPES.BODY:
-            if (shapeSelector.commitPending()) hasStateChange = true;
-            if (shapeSelector.finishTranslate()) hasStateChange = true;
+            shapeSelector.commitPendingSelection()
+            shapeSelector.finishTranslate()
             break;
         case null:
             throw new Error("Cannot dragHandle with null handle type")
     }
 
     draggedHandle = null;
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-
-    if (hasStateChange) state.pushHistory();
 }
 
 export function getHandle(cell, mouseEvent, canvas) {
@@ -287,6 +294,7 @@ let preferredCursorCol;
 export function caretCell() {
     let { shape, cursorIndex } = getShapeCursor();
     if (!shape) return null;
+    if (!getTextLayout()) return null;
     return getTextLayout().getCellForCursorIndex(cursorIndex)
 }
 
@@ -327,23 +335,63 @@ function moveCursorInHorizDir(horizOffset) {
     setShapeCursor(getShapeCursor().shape.id, newIndex, true);
 }
 
+/**
+ * Handles an arrow key being pressed.
+ * @param {'left'|'right'|'up'|'down'} direction - Direction of arrow key
+ * @param {boolean} shiftKey - Whether the shift key was also down
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
 export function handleArrowKey(direction, shiftKey) {
-    switch(direction) {
-        case 'left':
-            moveCursorInHorizDir(-1)
-            break;
-        case 'up':
-            moveCursorInVertDir(-1)
-            break;
-        case 'right':
-            moveCursorInHorizDir(1)
-            break;
-        case 'down':
-            moveCursorInVertDir(1)
-            break;
-        default:
-            throw new Error(`Invalid direction: ${direction}`);
+    if (caretCell()) {
+        switch(direction) {
+            case 'left':
+                moveCursorInHorizDir(-1)
+                break;
+            case 'up':
+                moveCursorInVertDir(-1)
+                break;
+            case 'right':
+                moveCursorInHorizDir(1)
+                break;
+            case 'down':
+                moveCursorInVertDir(1)
+                break;
+            default:
+                throw new Error(`Invalid direction: ${direction}`);
+        }
+
+        return true; // Consume keyboard event
     }
+
+    if (hasSelectedShapes()) {
+        let rowOffset = 0, colOffset = 0;
+
+        switch(direction) {
+            case 'left':
+                colOffset = -1;
+                break;
+            case 'up':
+                rowOffset = -1;
+                break;
+            case 'right':
+                colOffset = 1;
+                break;
+            case 'down':
+                rowOffset = 1;
+                break;
+            default:
+                throw new Error(`Invalid direction: ${direction}`);
+        }
+
+        updateSelectedShapes(shape => {
+            shape.translate(rowOffset, colOffset);
+            return true; // Shape change has occurred - need to clear shape's cache
+        }, 'vectorSelectionMove');
+
+        return true; // Consume keyboard event
+    }
+
+    return false;
 }
 
 

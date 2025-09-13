@@ -6,6 +6,8 @@ import VertexArea from "../../geometry/vertex_area.js";
 import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
 import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
+import {pushHistory} from "../../state/index.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -65,22 +67,25 @@ export default class ShapeSelector {
             if (selectionController.vector.isShapeSelected(shapeId)) {
                 // Flag shape for deselection, but do not deselect yet because we may be dragging
                 this._markPendingDeselection(shapeId);
-                return false;
             } else {
                 selectionController.vector.selectShape(shapeId);
-                return true;
+                this._onStateChange();
             }
         } else if (selectionController.vector.numSelectedShapes() > 1 && selectionController.vector.isShapeSelected(shapeId)) {
             // If multiple shapes are already selected, mousedown (without shift) merely flags the shape for
             // selection; the shape will be selected on mouseup once it's confirmed we are not dragging
             this._markPendingSelection(shapeId);
-            return false;
         } else {
             const newSelectedShapeIds = [shapeId];
             const hasStateChange = !arraysEqual(selectionController.vector.selectedShapeIds(), newSelectedShapeIds);
             selectionController.vector.setSelectedShapeIds(newSelectedShapeIds);
-            return hasStateChange;
+            if (hasStateChange) this._onStateChange();
         }
+    }
+
+    _onStateChange() {
+        eventBus.emit(EVENTS.SELECTION.CHANGED);
+        pushHistory();
     }
 
     // ----------------------------------------- Pending selections
@@ -99,24 +104,23 @@ export default class ShapeSelector {
      * Commits any pending selections/deselections.
      * @returns {boolean} - True if a state change occurred.
      */
-    commitPending() {
+    commitPendingSelection() {
         let hasStateChange = false;
 
         if (this._pendingDeselection) {
             selectionController.vector.deselectShape(this._pendingDeselection);
             hasStateChange = true;
-        }
-        if (this._pendingSelection) {
+        } else if (this._pendingSelection) {
             selectionController.vector.setSelectedShapeIds([this._pendingSelection]);
             hasStateChange = true;
         }
 
-        this.cancelPending();
+        this.cancelPendingSelection();
 
-        return hasStateChange;
+        if (hasStateChange) this._onStateChange();
     }
 
-    cancelPending() {
+    cancelPendingSelection() {
         this._pendingDeselection = null;
         this._pendingSelection = null;
     }
@@ -126,11 +130,10 @@ export default class ShapeSelector {
     //
     // When the user begins resizing, we capture the initial bounding rectangle that encompasses all shapes in the
     // group. As the resize progresses, we compute a new bounding rectangle based on the updated mouse position. Both
-    // the original and new bounding rectangles are passed to each shape's `resizeInGroup` function.
+    // the original and new bounding rectangles are passed to each shape's `resize` function.
     //
     // Each shape uses these bounding rectangles to determine its original relative position and size within the group.
-    // It then applies the same relative proportions to fit itself into the new bounding rectangle, preserving layout
-    // relationships during the group resize.
+    // It then applies the same relative proportions to fit itself into the new bounding rectangle.
 
     beginResize() {
         this._resizeOccurred = false;
@@ -139,7 +142,10 @@ export default class ShapeSelector {
 
         if (this._oldBounds) throw new Error(`beginResize has already been called`);
         this._oldBounds = this.boundingVertexArea;
-        selectionController.vector.updateSelectedShapes(shape => shape.beginResize());
+        selectionController.vector.updateSelectedShapes(shape => {
+            shape.beginResize()
+            return false; // No visible changes occurred - do not need to clear shape's cache
+        }, false); // Do not push history - history will be pushed when resize is finished
     }
     resize(handle, cell, roundedCell) {
         this._resizeOccurred = true;
@@ -150,10 +156,16 @@ export default class ShapeSelector {
             case HANDLE_TYPES.VERTEX:
             case HANDLE_TYPES.EDGE:
                 const newBounds = resizeBoundingBox(this._oldBounds, handle, roundedCell)
-                selectionController.vector.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds));
+                selectionController.vector.updateSelectedShapes(shape => {
+                    shape.resize(this._oldBounds, newBounds)
+                    return true; // Shape change has occurred - need to clear shape's cache
+                }, false); // Do not push history yet - history will be pushed when resize is finished
                 break;
             case HANDLE_TYPES.CELL:
-                selectionController.vector.updateSelectedShapes(shape => shape.dragCellHandle(handle, cell))
+                selectionController.vector.updateSelectedShapes(shape => {
+                    shape.dragCellHandle(handle, cell)
+                    return true; // Shape change has occurred - need to clear shape's cache
+                }, false); // Do not push history yet - history will be pushed when resize is finished
                 break;
         }
     }
@@ -163,13 +175,15 @@ export default class ShapeSelector {
      */
     finishResize() {
         this._oldBounds = undefined;
-        selectionController.vector.updateSelectedShapes(shape => shape.finishResize());
-
-        return this._resizeOccurred;
+        selectionController.vector.updateSelectedShapes(shape => {
+            shape.finishResize()
+            return false; // No visible changes occurred - do not need to clear shape's cache
+        }, this._resizeOccurred); // Push history if a resize occurred
     }
 
 
     // ----------------------------------------- Translation
+    // Small wrapper around shape translate functions, mainly to detect if a translation actually occurred.
 
     beginTranslate() {
         this._translateOccurred = false;
@@ -177,14 +191,20 @@ export default class ShapeSelector {
 
     translate(rowDelta, colDelta) {
         this._translateOccurred = true;
-        selectionController.vector.updateSelectedShapes(shape => shape.translate(rowDelta, colDelta));
+
+        selectionController.vector.updateSelectedShapes(shape => {
+            shape.translate(rowDelta, colDelta)
+            return true; // Shape change has occurred - need to clear shape's cache
+        }, false); // Do not push history yet - history will be pushed when translation finished
     }
 
     /**
      * @returns {boolean} - True if a state change occurred.
      */
     finishTranslate() {
-        return this._translateOccurred;
+        if (this._translateOccurred) {
+            pushHistory()
+        }
     }
 
 }
