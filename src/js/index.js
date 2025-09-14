@@ -14,7 +14,14 @@ import { init as initPreview, resize as resizePreview } from "./controllers/prev
 import { init as initUnicode } from "./controllers/unicode_controller.js";
 import { init as initCanvas, resize as resizeCanvas, zoomToDefault } from './controllers/canvas_controller.js';
 import { init as initSelection, clear as performClearSelection } from './controllers/selection/index.js'
-import { init as initState, isValid as isStateValid, loadFromStorage, markClean, loadNewState } from "./state/index.js";
+import {
+    init as initState,
+    isValid as isStateValid,
+    loadFromStorage,
+    markClean,
+    loadNewState,
+    fontFamily
+} from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./controllers/frame_controller.js";
 import { init as initLayers } from "./controllers/layer_controller.js";
 import { init as initSidebar, resize as resizeSidebar } from "./controllers/sidebar_controller.js";
@@ -50,7 +57,7 @@ defer(() => loadInitialContent());
  */
 function setupEventBus() {
     eventBus.on(EVENTS.STATE.LOADED, () => {
-        calculateFontRatio();
+        calculateFontRatio(fontFamily());
         recalculateCanvasColors();
 
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: false, resetZoom: true })
@@ -82,7 +89,7 @@ function setupEventBus() {
     
     // History state-change listener:
     eventBus.on(EVENTS.HISTORY.CHANGED, ({ requiresResize, recalculateFont, recalculateColors }) => {
-        if (recalculateFont) calculateFontRatio()
+        if (recalculateFont) calculateFontRatio(fontFamily())
         if (recalculateColors) recalculateCanvasColors()
 
         if (requiresResize) {

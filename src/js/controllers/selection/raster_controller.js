@@ -182,7 +182,7 @@ function shiftContent(reverse = false) {
 /**
  * Move all selection polygons in a particular direction
  * @param {string} direction - Direction to move selection ('left'/'up'/'right'/'down')
- * @param {Object} [options={}] - move options
+ * @param {Object} [options] - move options
  * @param {number} [options.amount=1] - Number of cells to move the selection
  * @param {boolean} [options.updateCaretOrigin=true] - Whether to update the caretOrigin (where carriage return takes you)
  * @param {boolean} [options.wrapCaretPosition=true] - Whether to wrap the caret if it goes out of bounds
@@ -343,13 +343,17 @@ export function handleTabKey(shiftKey = false) {
     return false;
 }
 
+/**
+ * Handles the enter key being pressed.
+ * @param {boolean} [shiftKey=false] - Whether the shift key is pressed
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
 export function handleEnterKey(shiftKey) {
     if (movableContent()) {
         finishMovingContent();
+        return true;
     }
-    else {
-        if (caretCell()) {
-
+    else if (caretCell()) {
             // 'Enter' key differs from 'ArrowDown' in that the caret will go to the start of the next line (like Excel)
             let col = state.selection.raster.getCaretOriginCol(),
                 row = caretCell().row + 1;
@@ -361,16 +365,18 @@ export function handleEnterKey(shiftKey) {
             // positions per line.
             saveDistinctHistory();
 
-            return;
-        }
-
+            return true;
+    } else if (hasSelection()) {
         if (shiftKey) {
             // If shift key is pressed, we move in opposite direction
             moveInDirection('up')
         } else {
             moveInDirection('down')
         }
+        return true;
     }
+
+    return false;
 }
 
 /**
@@ -527,7 +533,7 @@ function setupEventBus() {
         // and start a new polygon
         if (!shouldModifyAction('tools.standard.selection.multiple', mouseEvent)) clear();
 
-        if (cell.isInBounds()) {
+        if (state.isCellInBounds(cell)) {
             isDrawing = true;
 
             switch(tool) {

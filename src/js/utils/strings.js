@@ -62,3 +62,21 @@ export function strToHTML(str) {
     if (!str) return '';
     return str.replace(/\n/g, '<br/>');
 }
+
+export function insertAt(str, index, char) {
+    if (index < 0) index = 0;
+    if (index > str.length) index = str.length;
+    return str.slice(0, index) + char + str.slice(index);
+}
+
+export function deleteBackward(str, caretIndex) {
+    if (caretIndex <= 0) return str; // nothing to delete
+    if (caretIndex > str.length) caretIndex = str.length;
+    return str.slice(0, caretIndex - 1) + str.slice(caretIndex);
+}
+
+export function deleteForward(str, caretIndex) {
+    if (caretIndex < 0) caretIndex = 0;
+    if (caretIndex >= str.length) return str; // nothing to delete
+    return str.slice(0, caretIndex) + str.slice(caretIndex + 1);
+}

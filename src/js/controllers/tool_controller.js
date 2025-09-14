@@ -134,6 +134,25 @@ export function handleCharKey(char, isComposing = false) {
     return false;
 }
 
+/**
+ * Handles a character composition finishing (for special characters, e.g. 'é').
+ * During composition, handleCharKey is called with isComposing:true, which prevents the char picker from
+ * closing and the caret cell from moving. However, once we are done with composition, we want to close
+ * the picker and advance the caret one space.
+ */
+export function handleCompositionEnd() {
+    if (isCharPickerOpen()) {
+        toggleCharPicker(false);
+    }
+
+    if (selectionController.raster.caretCell()) {
+        selectionController.raster.moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
+    }
+
+    // TODO technically we should do something like this, otherwise redo doesn't fully work when final char has an
+    //      accent. I don't know if I want to make these methods public though, and it seems like a rare case.
+    // selectionController.raster.saveSelectionTextHistory()
+}
 
 // -------------------------------------------------------------------------------- Events
 
@@ -268,7 +287,9 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.DBLCLICK, ({ mouseEvent }) => {
+    eventBus.on(EVENTS.CANVAS.DBLCLICK, ({ mouseEvent, cell, canvas }) => {
+        $canvasContainer.css('cursor', cursorStyle(state.getConfig('tool'), false, mouseEvent, cell, canvas));
+
         const tool = toolForMouseButton(mouseEvent.button);
 
         switch(tool) {
@@ -599,7 +620,7 @@ function setupShapeProperties() {
 
     actions.registerAction('tools.shapes.startCursor', {
         callback: () => {
-            selectionController.vector.setShapeCursor(selectionController.vector.selectedShapes()[0].id, 0)
+            selectionController.vector.setShapeCaret(selectionController.vector.selectedShapes()[0].id, 0)
         },
         enabled: () => selectionController.vector.selectedShapes().length
     })
@@ -774,7 +795,7 @@ function refreshShapeProperties() {
 // -------------------------------------------------------------------------------- Color Tools
 
 function fillConnectedCells(cell, char, colorIndex, options) {
-    if (!cell.isInBounds()) return;
+    if (!state.isCellInBounds(cell)) return;
 
     selectionController.raster.getConnectedCells(cell, options).forEach(cell => {
         state.setCurrentCelGlyph(cell.row, cell.col, char, colorIndex);
@@ -785,7 +806,7 @@ function fillConnectedCells(cell, char, colorIndex, options) {
 }
 
 function colorSwap(cell, options) {
-    if (!cell.isInBounds()) return;
+    if (!state.isCellInBounds(cell)) return;
 
     const [targetChar, targetColor] = state.getCurrentCelGlyph(cell.row, cell.col);
     if (targetChar === EMPTY_CHAR) return;
@@ -1034,10 +1055,10 @@ function refreshCharPicker() {
     $charPicker.toggleClass('animated-border', isQuickSwapEnabled());
 }
 
-export function isCharPickerOpen() {
+function isCharPickerOpen() {
     return primaryCharPicker.isOpen || shapeCharPicker.isOpen;
 }
-export function toggleCharPicker(open) {
+function toggleCharPicker(open) {
     if (open) {
         primaryCharPicker.toggle(true);
     } else {
@@ -1063,12 +1084,12 @@ function setPrimaryChar(char) {
 // "Quick Swap" is a toggle that lets the user instantly update the char picker's selected value by pressing a keyboard key
 let quickSwapEnabled = false;
 
-export function isQuickSwapEnabled() {
+function isQuickSwapEnabled() {
     if (selectionController.raster.hasSelection()) return true;
     return quickSwapEnabled;
 }
 
-export function toggleQuickSwap(enabled) {
+function toggleQuickSwap(enabled) {
     quickSwapEnabled = enabled === undefined ? !quickSwapEnabled : !!enabled;
     refresh();
 }

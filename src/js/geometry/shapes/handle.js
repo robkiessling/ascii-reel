@@ -26,8 +26,14 @@ class Handle {
 export class HandleCollection {
     constructor(handles) {
         this.handles = handles;
-        this.nonBody = handles.filter(handle => handle.type !== HANDLE_TYPES.BODY);
+
+        // Store special references to body/caret handles since we sometimes check for them specifically
         this.body = handles.filter(handle => handle.type === HANDLE_TYPES.BODY);
+        this.caret = handles.filter(handle => handle.type === HANDLE_TYPES.CARET);
+
+        // "standard" handles are all the rest of the handles
+        this.standard = handles.filter(handle => handle.type !== HANDLE_TYPES.BODY && handle.type !== HANDLE_TYPES.CARET);
+
         this.showBoundingBox = handles.some(handle => handle.type === HANDLE_TYPES.VERTEX || handle.type === HANDLE_TYPES.EDGE);
     }
 
@@ -178,6 +184,23 @@ export class BodyHandle extends Handle {
 
     get cursor() {
         return 'move'
+    }
+
+    matches({ cell }) {
+        return this.hitbox(cell);
+    }
+}
+
+export class CaretHandle extends Handle {
+    constructor(shape, hitbox) {
+        super();
+        this.type = HANDLE_TYPES.CARET
+        this.shape = shape;
+        this.hitbox = hitbox;
+    }
+
+    get cursor() {
+        return 'text'
     }
 
     matches({ cell }) {

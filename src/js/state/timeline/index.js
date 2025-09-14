@@ -174,7 +174,7 @@ export function deleteLayer(index) {
 // --------------------------------------------------------------------------- Cels API
 
 export {
-    hasCharContent, setCelGlyph, charInBounds, translateCel,
+    hasCharContent, setCelGlyph, isCellInBounds, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, convertToMonochrome
 } from './cels.js'
@@ -226,7 +226,7 @@ export function iterateCels(allLayers, allFrames, celCallback) {
 
 // This function returns the glyph as a 2d array: [char, color]
 export function getCurrentCelGlyph(row, col) {
-    if (!celData.charInBounds(row, col)) return [];
+    if (!celData.isCellInBounds({row, col})) return [];
 
     const celGlyphs = celData.getCelGlyphs(currentCel());
     return [celGlyphs.chars[row][col], celGlyphs.colors[row][col]];
@@ -248,6 +248,9 @@ export function addCurrentCelShape(shape) {
 }
 export function updateCurrentCelShape(shapeId, updater) {
     return celData.updateCelShape(currentCel(), shapeId, updater);
+}
+export function updateCurrentCelShapeText(shapeId, action, actionParams) {
+    return celData.updateCelShapeText(currentCel(), shapeId, action, actionParams);
 }
 export function deleteCurrentCelShape(shapeId) {
     celData.deleteCelShape(currentCel(), shapeId);
@@ -312,8 +315,8 @@ export function layeredGlyphs(frame, options = {}) {
                 c = celC;
 
                 if (offset && (options.offset.modifiers.allLayers || isCurrentLayer)) {
-                    ({ r, c } = celData.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap));
-                    if (!celData.charInBounds(r, c)) continue;
+                    const cell = celData.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap);
+                    if (!celData.isCellInBounds(cell)) continue;
                 }
 
                 chars[r][c] = celChars[celR][celC];

@@ -2,6 +2,7 @@ import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
 import SelectionPolygon from "./polygon.js";
 import {SELECTION_SHAPE_TYPES} from "./constants.js";
+import {isCellInBounds} from "../../state/index.js";
 
 /**
  * A SelectionLasso starts off as just an array of Cells (_lassoCells) as the user clicks and drags the mouse. When
@@ -41,7 +42,7 @@ export default class SelectionLasso extends SelectionPolygon {
         }
         else {
             this._lassoCells.forEach(cell => {
-                if (cell.isInBounds()) {
+                if (isCellInBounds(cell)) {
                     context.fillRect(...cell.xywh);
                 }
             });

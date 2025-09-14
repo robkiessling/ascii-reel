@@ -1,7 +1,6 @@
 import PixelRect from "./pixel_rect.js";
 import {fontHeight, fontWidth} from "../config/font.js";
 import bresenham from "bresenham";
-import {charInBounds} from "../state/index.js";
 
 /**
  * A Cell is a particular row/column pair of the drawable area. It is useful so we can deal with rows/columns instead
@@ -94,10 +93,6 @@ export default class Cell extends PixelRect {
             cells.pop();
             return cells;
         }
-    }
-
-    isInBounds() {
-        return charInBounds(this.row, this.col);
     }
 
     // Returns a new Cell that represents the relative distance of this cell from another cell

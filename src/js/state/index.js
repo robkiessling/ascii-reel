@@ -28,10 +28,10 @@ export {
     // cels
     iterateCelsForCurrentLayer, iterateCels,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph,
-    getCurrentCelShapes, getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape, deleteCurrentCelShape,
-    reorderCurrentCelShapes, canReorderCurrentCelShapes,
+    getCurrentCelShapes, getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape, updateCurrentCelShapeText,
+    deleteCurrentCelShape, reorderCurrentCelShapes, canReorderCurrentCelShapes,
     getCurrentCelShapeIdsAbove, testCurrentCelShapeHitboxes, testCurrentCelMarquee,
-    charInBounds, layeredGlyphs, translateCel,
+    isCellInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, colorSwap, hasCharContent
 } from './timeline/index.js'

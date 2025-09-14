@@ -2,11 +2,8 @@ import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js";
 import {SELECTION_COLOR} from "../../config/colors.js";
 import {
-    HANDLE_CELL_RADIUS,
-    HANDLE_TYPES,
-    SHAPE_BOX_PADDING,
-    SHAPE_DASHED_OUTLINE_LENGTH,
-    SHAPE_OUTLINE_WIDTH
+    HANDLE_CELL_RADIUS, HANDLE_TYPES, SHAPE_BOX_PADDING, SHAPE_DASHED_OUTLINE_LENGTH,
+    SHAPE_OUTLINE_WIDTH, SHAPE_TEXT_ACTIONS
 } from "../../geometry/shapes/constants.js";
 import CellArea from "../../geometry/cell_area.js";
 import ShapeSelector from "./shape_selector.js";
@@ -34,12 +31,12 @@ export function isShapeSelected(shapeId) { return state.selection.vector.isShape
 export function selectShape(shapeId) { return state.selection.vector.selectShape(shapeId) }
 export function deselectShape(shapeId) { return state.selection.vector.deselectShape(shapeId) }
 
-export function deselectAllShapes(allowHistoryPush = true) {
+export function deselectAllShapes(saveHistory = true) {
     if (!hasSelectedShapes()) return; // Do not emit event or push history
 
     state.selection.clearSelection();
     eventBus.emit(EVENTS.SELECTION.CHANGED);
-    if (allowHistoryPush) state.pushHistory();
+    if (saveHistory) state.pushHistory();
 }
 
 export function selectedShapes() { return state.selection.vector.selectedShapes() }
@@ -103,14 +100,6 @@ export function reorderSelectedShapes(action) {
     state.pushHistory();
 }
 
-export function setShapeCursor(shapeId, atIndex, resetPreferredCol = true) {
-    if (resetPreferredCol) preferredCursorCol = undefined;
-    state.selection.vector.setShapeCursor(shapeId, atIndex);
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-}
-
-export function getShapeCursor() { return state.selection.vector.getShapeCursor() }
-
 
 // -------------------------------------------------------------------------------- Events / Shape Selector
 
@@ -152,6 +141,8 @@ function setupEventBus() {
 
         if (marquee) finishMarquee(mouseEvent);
     })
+
+    // Note: We handle the EVENTS.CANVAS.DBLCLICK in the normal MOUSEDOWN event handler using mouseEvent.detail
 }
 
 
@@ -172,14 +163,30 @@ function onMousedown(cell, mouseEvent, canvas) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
         case HANDLE_TYPES.CELL:
+            clearShapeCaret();
+
             draggedHandle = handle;
             shapeSelector.beginResize();
             break;
         case HANDLE_TYPES.BODY:
+            clearShapeCaret();
+
             draggedHandle = handle;
             if (handle.shapeId === undefined) throw new Error(`HANDLE_TYPES.BODY handle must provide shapeId`);
 
-            shapeSelector.mousedownShape(handle.shapeId, mouseEvent.shiftKey);
+            shapeSelector.mousedownShape(handle.shapeId, mouseEvent.shiftKey && !caretCell());
+            break;
+        case HANDLE_TYPES.CARET:
+            draggedHandle = handle;
+            if (handle.shapeId === undefined) throw new Error(`HANDLE_TYPES.CARET handle must provide shapeId`);
+
+            // Ensure this is the only shape selected
+            setSelectedShapeIds([handle.shapeId])
+
+            const caretIndex = handle.shape.textLayout.getCaretIndexForCell(
+                canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell
+            );
+            setShapeCaret(handle.shapeId, caretIndex);
             break;
     }
 }
@@ -227,14 +234,21 @@ export function getHandle(cell, mouseEvent, canvas) {
     const shapes = selectedShapes();
 
     if (shapes.length === 1) {
-        // Check individual shape's non-body handles
         const shape = shapes[0];
-        for (const handle of shape.handles.nonBody) {
+
+        // If the caret is already showing or this was a dblclick, check individual shape's caret handle for a match
+        if (caretCell() || mouseEvent.detail > 1) {
+            const caretHandle = shape.handles.caret.at(0);
+            if (caretHandle && caretHandle.matches({mouseEvent, canvas, cell})) return caretHandle;
+        }
+
+        // Check rest of individual shape's standard handles
+        for (const handle of shape.handles.standard) {
             if (handle.matches({mouseEvent, canvas, cell})) return handle;
         }
     } else {
         // Check shape group's non-body handles
-        for (const handle of shapeSelector.handles.nonBody) {
+        for (const handle of shapeSelector.handles.standard) {
             if (handle.matches({mouseEvent, canvas, cell})) return handle;
         }
     }
@@ -287,52 +301,146 @@ function finishMarquee(mouseEvent) {
 }
 
 
+// ------------------------------------------------------------------------------------------------- Text handling
+
+export function handleEnterKey() {
+    if (!caretCell()) return false;
+
+    const { shapeId, caretIndex } = getShapeCaret();
+    state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex, char: '\n' });
+
+    moveCaret('right', false);
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+
+    // Store a new history snapshot at the start of the new line. This way the caret jumps from end of line ->
+    // start of line -> end of prev line -> start of prev line -> etc. In other words, there are 2 jump
+    // positions per line.
+    state.pushHistory();
+
+    return true;
+}
+
+/**
+ * Handles a keyboard key being pressed.
+ * @param {string} char - The char of the pressed keyboard key
+ * @param {boolean} [isComposing=false] - Whether the char is still being composed (for special characters, e.g. 'é')
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCharKey(char, isComposing = false) {
+    if (!caretCell()) return false;
+
+    const { shapeId, caretIndex } = getShapeCaret();
+    state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex, char });
+
+    if (!isComposing) moveCaret('right', false);
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory({ modifiable: 'vectorSelectionText' })
+    return true;
+}
+
+/**
+ * Handles the backspace or delete keyboard key being pressed.
+ * @param {boolean} [isDelete=false] - True if it was a Delete keypress, false if it was a Backspace keypress.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleBackspaceKey(isDelete = false) {
+    if (!caretCell()) return false;
+
+    const { shapeId, caretIndex } = getShapeCaret();
+
+    if (isDelete) {
+        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_FORWARD, { caretIndex });
+        eventBus.emit(EVENTS.SELECTION.CHANGED) // Caret doesn't change index, but might change cell if right-aligned
+    } else {
+        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex });
+        moveCaret('left', false);
+    }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory({ modifiable: 'vectorSelectionText' })
+    return true;
+}
+
 // ------------------------------------------------------------------------------------------------- Text caret
 
-let preferredCursorCol;
+// Tracks the preferred caret column when moving vertically. If the immediate row above/below is too short to reach
+// this column, the caret will land at the row’s end. But if a later row has enough columns again, the caret returns
+// as close as possible to this column.
+let preferredCaretCol;
 
 export function caretCell() {
-    let { shape, cursorIndex } = getShapeCursor();
-    if (!shape) return null;
-    if (!getTextLayout()) return null;
-    return getTextLayout().getCellForCursorIndex(cursorIndex)
+    const { shapeId, textLayout, caretIndex } = getShapeCaret();
+    if (!shapeId || !textLayout) return null;
+    return textLayout.getCellForCaretIndex(caretIndex)
 }
 
-function getTextLayout() {
-    return getShapeCursor().shape.textLayout;
+/**
+ * Places the caret into the given shape's text
+ * @param {string} shapeId - ID of shape to place the caret in
+ * @param {number} atIndex - Where to place the caret in the text
+ * @param {Object} [options] - Additional options
+ * @param {boolean} [options.resetPreferredCol=true] - Whether to reset the stored preferred column
+ * @param {boolean} [options.saveHistory=true] - Whether to save this caret move to history
+ */
+export function setShapeCaret(shapeId, atIndex, options = {}) {
+    const resetPreferredCol = options.resetPreferredCol === undefined ? true : options.resetPreferredCol;
+    const saveHistory = options.saveHistory === undefined ? true : options.saveHistory;
+
+    if (resetPreferredCol) preferredCaretCol = undefined;
+    state.selection.vector.setShapeCaret(shapeId, atIndex);
+
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
 }
 
-function moveCursorInVertDir(vertOffset) {
-    const currentCell = caretCell();
-    const desiredCell = currentCell.translate(vertOffset, 0);
+export function getShapeCaret() { return state.selection.vector.getShapeCaret() }
 
-    if (preferredCursorCol === undefined) {
-        preferredCursorCol = desiredCell.col;
-    } else {
-        desiredCell.col = preferredCursorCol
+export function clearShapeCaret(saveHistory = true) {
+    if (!caretCell()) return;
+
+    state.selection.vector.clearShapeCaret()
+
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (saveHistory) state.pushHistory()
+}
+
+function moveCaret(direction, saveHistory = true) {
+    if (!caretCell()) throw new Error('Cannot call moveCaret without a caretCell');
+
+    switch(direction) {
+        case 'left':
+        case 'right':
+            const min = 0;
+            const max = getShapeCaret().textLayout.maxCaretIndex;
+            const horizOffset = direction === 'left' ? -1 : 1;
+            let newIndex = getShapeCaret().caretIndex + horizOffset;
+            if (newIndex < min) newIndex = min;
+            if (newIndex > max) newIndex = max;
+            setShapeCaret(getShapeCaret().shapeId, newIndex, { saveHistory });
+            break;
+        case 'up':
+        case 'down':
+            const vertOffset = direction === 'up' ? -1 : 1;
+            const currentCell = caretCell();
+            const desiredCell = currentCell.translate(vertOffset, 0);
+
+            if (preferredCaretCol === undefined) {
+                preferredCaretCol = desiredCell.col;
+            } else {
+                desiredCell.col = preferredCaretCol
+            }
+
+            const textLayout = getShapeCaret().textLayout;
+            const resetPreferredCol = !textLayout.isCellInVerticalBounds(desiredCell);
+            const caretIndex = textLayout.getCaretIndexForCell(desiredCell);
+
+            setShapeCaret(getShapeCaret().shapeId, caretIndex, { resetPreferredCol, saveHistory });
+            break;
+        default:
+            throw new Error(`Invalid direction: ${direction}`);
     }
-
-    const layout = getTextLayout();
-
-    let cursorIndex;
-    let resetPreferredCol = false;
-    if (layout.isCellInVerticalBounds(desiredCell)) {
-        cursorIndex = layout.getCursorIndexForCell(desiredCell);
-    } else {
-        cursorIndex = vertOffset > 0 ? layout.maxCursorIndex : 0;
-        resetPreferredCol = true;
-    }
-
-    setShapeCursor(getShapeCursor().shape.id, cursorIndex, resetPreferredCol);
-}
-
-function moveCursorInHorizDir(horizOffset) {
-    const min = 0;
-    const max = getShapeCursor().shape.textLayout.maxCursorIndex;
-    let newIndex = getShapeCursor().cursorIndex + horizOffset;
-    if (newIndex < min) newIndex = min;
-    if (newIndex > max) newIndex = max;
-    setShapeCursor(getShapeCursor().shape.id, newIndex, true);
 }
 
 /**
@@ -343,23 +451,7 @@ function moveCursorInHorizDir(horizOffset) {
  */
 export function handleArrowKey(direction, shiftKey) {
     if (caretCell()) {
-        switch(direction) {
-            case 'left':
-                moveCursorInHorizDir(-1)
-                break;
-            case 'up':
-                moveCursorInVertDir(-1)
-                break;
-            case 'right':
-                moveCursorInHorizDir(1)
-                break;
-            case 'down':
-                moveCursorInVertDir(1)
-                break;
-            default:
-                throw new Error(`Invalid direction: ${direction}`);
-        }
-
+        moveCaret(direction);
         return true; // Consume keyboard event
     }
 

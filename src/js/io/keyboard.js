@@ -55,7 +55,7 @@ function setupKeydownListener() {
                 handleTabKey(e);
                 break;
             case 'Enter':
-                handleEnterKey(e);
+                handleEnterKey(key, e);
                 break;
             case 'Backspace':
             case 'Delete':
@@ -90,19 +90,24 @@ function handleTabKey(e) {
     actions.callActionByShortcut({ key: 'Tab' })
 }
 
-function handleEnterKey(e) {
-    selectionController.raster.handleEnterKey(e.shiftKey);
+function handleEnterKey(key, e) {
+    if (selectionController.raster.handleEnterKey(e.shiftKey)) return;
+    if (selectionController.vector.handleEnterKey(e.shiftKey)) return;
+
+    actions.callActionByShortcut({ key });
 }
 
 function handleBackspaceKey(key) {
     if (tools.handleCharKey(EMPTY_CHAR)) return;
     if (selectionController.raster.handleBackspaceKey(key === 'Delete')) return;
+    if (selectionController.vector.handleBackspaceKey(key === 'Delete')) return;
     actions.callActionByShortcut({ key });
 }
 
 function handleCharKey(char, isComposing = false) {
     if (tools.handleCharKey(char, isComposing)) return;
     if (selectionController.raster.handleCharKey(char, isComposing)) return;
+    if (selectionController.vector.handleCharKey(char, isComposing)) return;
     actions.callActionByShortcut({ key: char });
 }
 
@@ -219,26 +224,18 @@ function setupCompositionListener() {
     $document.on('compositionupdate', e => {
         const str = e.originalEvent.data;
 
-        // The str can be two characters long if composition failed, e.g. "`" + "x" = "`x"
+        // The str can be two characters long if composition failed, e.g. "´" + "x" = "´x"
         // We always take the last character, so even if composition failed we still print the failing char (e.g. "x")
         const char = str.charAt(str.length - 1)
 
-        // When isComposing is true, the char picker will not be closed yet, and the selection caret will not be moved yet
-        handleCharKey(char, true);
+        // Passing isComposing:true so the char picker does not close and the selection caret does not move yet
+        handleCharKey(char, isComposing);
     });
 
     $document.on('compositionend', e => {
         isComposing = false;
 
         // Now that composition is finished, manually close char picker and move caret (if cursorCell)
-        if (tools.isCharPickerOpen()) {
-            tools.toggleCharPicker(false);
-        }
-        if (selectionController.raster.caretCell()) {
-            selectionController.raster.moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
-        }
-
-        // TODO technically we should do something like this, otherwise redo doesn't fully work when final char has accent
-        // state.pushHistory({ modifiable: 'rasterSelectionText' })
+        tools.handleCompositionEnd();
     })
 }

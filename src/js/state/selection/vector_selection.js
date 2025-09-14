@@ -10,8 +10,8 @@ import {transformValues} from "../../utils/objects.js";
 
 const DEFAULT_STATE = {
     shapeIds: new Set(),
-    cursorShapeId: null,
-    cursorIndex: null,
+    caretShapeId: null,
+    caretIndex: null,
 }
 
 let state = {};
@@ -45,6 +45,7 @@ export function selectedShapeIds() {
     return Array.from(shapeIdsSet());
 }
 export function setSelectedShapeIds(shapeIds) {
+    if (state.caretShapeId && !shapeIds.includes(state.caretShapeId)) clearShapeCaret();
     state.shapeIds = new Set(shapeIds);
 }
 
@@ -62,11 +63,11 @@ export function selectShape(shapeId) {
 }
 export function deselectShape(shapeId) {
     shapeIdsSet().delete(shapeId);
-    if (state.cursorShapeId === shapeId) state.cursorShapeId = null;
+    if (state.caretShapeId && state.caretShapeId === shapeId) clearShapeCaret();
 }
 export function deselectAllShapes() {
     shapeIdsSet().clear();
-    state.cursorShapeId = null;
+    clearShapeCaret();
 }
 
 export function selectedShapes() {
@@ -115,16 +116,23 @@ export function reorderSelectedShapes(action) {
 }
 
 
-export function setShapeCursor(shapeId, cursorIndex = 0) {
-    state.cursorShapeId = shapeId;
-    state.cursorIndex = cursorIndex;
+export function setShapeCaret(shapeId, caretIndex = 0) {
+    state.caretShapeId = shapeId;
+    state.caretIndex = caretIndex;
 }
-export function getShapeCursor() {
-    if (state.cursorShapeId === null) return {};
+
+export function clearShapeCaret() {
+    state.caretShapeId = null;
+    state.caretIndex = 0;
+}
+
+export function getShapeCaret() {
+    if (state.caretShapeId === null) return {};
 
     return {
-        shape: getCurrentCelShape(state.cursorShapeId),
-        cursorIndex: state.cursorIndex,
+        shapeId: state.caretShapeId,
+        textLayout: getCurrentCelShape(state.caretShapeId).textLayout,
+        caretIndex: state.caretIndex,
     }
 }
 

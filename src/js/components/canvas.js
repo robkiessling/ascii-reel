@@ -29,7 +29,7 @@ const DASH_OUTLINE_FPS = 60;
 const CHECKER_SIZE = 10;
 const USE_CHECKERBOARD = true;
 
-const ZOOM_DEFAULT = 1; // What to set zoom to during initial load
+const ZOOM_DEFAULT = 2; // What to set zoom to during initial load
 
 // Static threshold value limiting how far you can zoom in
 const ZOOM_IN_THRESHOLD_VALUE = 30;

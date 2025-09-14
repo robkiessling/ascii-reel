@@ -16,6 +16,7 @@ export function getCelShapes(cel) { return cel.shapes(); }
 export function getCelShape(cel, ...args) { return cel.getShape(...args) }
 export function addCelShape(cel, ...args) { return cel.addShape(...args) }
 export function updateCelShape(cel, ...args) { return cel.updateShape(...args) }
+export function updateCelShapeText(cel, ...args) { return cel.updateShapeText(...args) }
 export function deleteCelShape(cel, ...args) { return cel.deleteShape(...args) }
 export function reorderCelShapes(cel, ...args) { return cel.reorderShapes(...args) }
 export function canReorderCelShapes(cel, ...args) { return cel.canReorderShapes(...args) }
@@ -123,20 +124,20 @@ export function iterateAllCels(callback) {
     }
 }
 
-export function charInBounds(row, col) {
-    return row >= 0 && row < numRows() && col >= 0 && col < numCols();
+export function isCellInBounds(cell) {
+    return cell.row >= 0 && cell.row < numRows() && cell.col >= 0 && cell.col < numCols();
 }
 
-export function getOffsetPosition(r, c, rowOffset, colOffset, wrap) {
-    r += rowOffset;
-    c += colOffset;
+export function getOffsetPosition(row, col, rowOffset, colOffset, wrap) {
+    row += rowOffset;
+    col += colOffset;
 
     if (wrap) {
-        r = mod(r, numRows());
-        c = mod(c, numCols());
+        row = mod(row, numRows());
+        col = mod(col, numCols());
     }
 
-    return { r, c }
+    return { row, col }
 }
 
 

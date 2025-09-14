@@ -7,6 +7,7 @@ export const HANDLE_TYPES = {
     EDGE: 'edge',
     CELL: 'cell',
     BODY: 'body',
+    CARET: 'caret'
 }
 export const VERTEX_CORNERS = {
     TOP_LEFT_CORNER: 'top-left-corner',
@@ -134,3 +135,12 @@ export const SHAPE_DASHED_OUTLINE_LENGTH = 5;
 export const HANDLE_CORNER_SIZE = 8;
 export const HANDLE_CORNER_RADIUS = 2;
 export const HANDLE_CELL_RADIUS = 5;
+
+
+// Shape text modification actions
+export const SHAPE_TEXT_ACTIONS = {
+    INSERT: 'modifyTextInsert',
+    DELETE_BACKWARD: 'modifyTextDeleteBackward',
+    DELETE_FORWARD: 'modifyTextDeleteForward',
+    REPLACE: 'modifyTextReplace'
+}

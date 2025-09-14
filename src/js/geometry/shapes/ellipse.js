@@ -9,7 +9,6 @@ import {
 import CellArea from "../cell_area.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import BoxShape from "./box_shape.js";
-import {xor} from "../../utils/utilities.js";
 
 export default class Ellipse extends BoxShape {
 
@@ -56,7 +55,7 @@ export default class Ellipse extends BoxShape {
 
         const hasEmptyBackground = fillChar === EMPTY_CHAR;
         const handles = this._buildHandleCollection(boundingArea, cell => {
-            // if (textLayout && textLayout.doesCellOverlap(cell)) return true;
+            // if (textLayout && textLayout.includesCell(cell)) return true;
             if (outlineHitbox(cell)) return true
             return !hasEmptyBackground && fillHitbox(cell);
         })

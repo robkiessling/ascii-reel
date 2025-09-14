@@ -309,7 +309,7 @@ function redrawHover() {
 
     if (hoveredCell && !selectionController.raster.isDrawing && !selectionController.raster.isMoving && showHoverForTool()) {
         hoveredCells(hoveredCell).forEach(cell => {
-            if (cell.isInBounds()) hoveredCellCanvas.highlightCell(cell);
+            if (state.isCellInBounds(cell)) hoveredCellCanvas.highlightCell(cell);
         })
     }
 
@@ -323,7 +323,7 @@ function refreshCanvasDetails() {
     $canvasDetails.selectedDimensions.toggle(!!selectedArea);
     $canvasDetails.selectedDimensionsValue.html(selectedArea ? `${selectedArea.numRows}x${selectedArea.numCols}` : '&nbsp;');
 
-    const showHoveredCoords = !selectedArea && hoveredCell && hoveredCell.isInBounds()
+    const showHoveredCoords = !selectedArea && hoveredCell && state.isCellInBounds(hoveredCell)
     $canvasDetails.mouseCoordinates.toggle(!!showHoveredCoords);
     $canvasDetails.mouseCoordinatesValue.html(showHoveredCoords ? `${hoveredCell.col}:${hoveredCell.row}` : '&nbsp;');
 }

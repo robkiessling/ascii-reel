@@ -1,6 +1,6 @@
 import {deserializeSelectionShape} from "../../geometry/selection/deserialize.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
-import {getCurrentCelGlyph, setCurrentCelGlyph} from "../timeline/index.js";
+import {getCurrentCelGlyph, isCellInBounds, setCurrentCelGlyph} from "../timeline/index.js";
 import {create2dArray, translateGlyphs} from "../../utils/arrays.js";
 import Cell from "../../geometry/cell.js";
 import CellArea from "../../geometry/cell_area.js";
@@ -200,7 +200,7 @@ export function getSelectedCells() {
  * Returns all Cells adjacent to (and sharing the same color as) the targeted Cell
  */
 export function getConnectedCells(cell, options) {
-    if (!cell.isInBounds()) { return []; }
+    if (!isCellInBounds(cell)) return [];
 
     const wand = new SelectionWand(cell, undefined, options);
     wand.complete();

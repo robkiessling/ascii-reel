@@ -1,7 +1,15 @@
 import { nanoid } from 'nanoid'
 import {create2dArray} from "../../utils/arrays.js";
-import {CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP} from "./constants.js";
+import {
+    CHAR_PROP,
+    COLOR_PROP,
+    FILL_OPTIONS,
+    FILL_PROP,
+    SHAPE_TEXT_ACTIONS,
+    TEXT_PROP
+} from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
+import {deleteBackward, deleteForward, insertAt} from "../../utils/strings.js";
 
 export default class Shape {
     constructor(id, type, props = {}) {
@@ -173,9 +181,38 @@ export default class Shape {
         return cellArea.contains(this.boundingArea);
     }
 
+    /**
+     * Returns the shape's TextLayout if the shape supports it
+     * @returns {TextLayout|undefined}
+     */
     get textLayout() {
         if (this._cache.textLayout === undefined) this._cacheGeometry();
         return this._cache.textLayout;
+    }
+
+    /**
+     * Updates the text property of the shape.
+     *
+     * @param {string} action - A key from {@link SHAPE_TEXT_ACTIONS} that specifies the type of modification to
+     *   perform (e.g., insert, delete, replace).
+     * @param {Object} actionParams - An options object containing the parameters required by the given action type.
+     */
+    updateText(action, actionParams) {
+        switch(action) {
+            case SHAPE_TEXT_ACTIONS.INSERT:
+                this.props[TEXT_PROP] = insertAt(this.props[TEXT_PROP] || '', actionParams.caretIndex, actionParams.char)
+                break;
+            case SHAPE_TEXT_ACTIONS.DELETE_BACKWARD:
+                this.props[TEXT_PROP] = deleteBackward(this.props[TEXT_PROP] || '', actionParams.caretIndex)
+                break;
+            case SHAPE_TEXT_ACTIONS.DELETE_FORWARD:
+                this.props[TEXT_PROP] = deleteForward(this.props[TEXT_PROP] || '', actionParams.caretIndex)
+                break;
+            default:
+                throw new Error(`Invalid updateText action: ${action}`)
+        }
+
+        this._clearCache();
     }
 
     // Note: glyphs will be in relative coords

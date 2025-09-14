@@ -3,7 +3,7 @@ import Cell from "../cell.js";
 import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import CellArea from "../cell_area.js";
 import {EDGE_SIDES, VERTEX_CORNERS} from "./constants.js";
-import {BodyHandle, EdgeHandle, HandleCollection, VertexHandle} from "./handle.js";
+import {BodyHandle, CaretHandle, EdgeHandle, HandleCollection, VertexHandle} from "./handle.js";
 
 /**
  * Abstract base class for all shapes defined by a rectangular bounding box.
@@ -71,11 +71,12 @@ export default class BoxShape extends Shape {
         ]
     }
 
-    _buildHandleCollection(boundingArea, bodyHitbox) {
+    _buildHandleCollection(boundingArea, bodyHitbox, caretHitbox) {
         return new HandleCollection([
             ...BoxShape.vertexHandles(this, boundingArea),
             ...BoxShape.edgeHandles(this, boundingArea),
-            new BodyHandle(this, bodyHitbox),
+            ...(bodyHitbox ? [new BodyHandle(this, bodyHitbox)] : []),
+            ...(caretHitbox ? [new CaretHandle(this, caretHitbox)] : []),
         ])
     }
 

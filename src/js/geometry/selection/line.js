@@ -1,5 +1,6 @@
 import SelectionPolygon from "./polygon.js";
 import {SELECTION_SHAPE_TYPES} from "./constants.js";
+import {isCellInBounds} from "../../state/index.js";
 
 /**
  * A selection of cells between a start/end cell using Bresenham line approximation (see Cell.lineTo).
@@ -13,7 +14,7 @@ export default class SelectionLine extends SelectionPolygon {
 
     draw(context) {
         this.start.lineTo(this.end).forEach(cell => {
-            if (cell.isInBounds()) {
+            if (isCellInBounds(cell)) {
                 context.fillRect(...cell.xywh);
             }
         });

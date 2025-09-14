@@ -134,7 +134,7 @@ export default class CellArea extends PixelRect {
         }
     }
 
-    doesCellOverlap(cell) {
+    includesCell(cell) {
         return cell.row >= this.topLeft.row && cell.row <= this.bottomRight.row &&
             cell.col >= this.topLeft.col && cell.col <= this.bottomRight.col;
     }

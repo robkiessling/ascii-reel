@@ -1,7 +1,7 @@
 import {create2dArray, mergeGlyphs, split1DArrayInto2D} from "../../../utils/arrays.js";
 import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
-import {charInBounds, COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT, getOffsetPosition} from "../cels.js";
+import {isCellInBounds, COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT, getOffsetPosition} from "../cels.js";
 import {addToCache} from "../../unicode.js";
 import pako from "pako";
 import {LAYER_TYPES} from "../../constants.js";
@@ -125,14 +125,14 @@ export default class RasterCel {
         let chars = create2dArray(numRows(), numCols(), EMPTY_CHAR);
         let colors = create2dArray(numRows(), numCols(), 0);
 
-        let celR, celC, r, c;
+        let celR, celC, cell;
         for (celR = 0; celR < this.chars.length; celR++) {
             for (celC = 0; celC < this.chars[celR].length; celC++) {
-                ({ r, c } = getOffsetPosition(celR, celC, rowOffset, colOffset, wrap));
+                cell = getOffsetPosition(celR, celC, rowOffset, colOffset, wrap);
 
-                if (charInBounds(r, c)) {
-                    chars[r][c] = this.chars[celR][celC];
-                    colors[r][c] = this.colors[celR][celC];
+                if (isCellInBounds(cell)) {
+                    chars[cell.row][cell.col] = this.chars[celR][celC];
+                    colors[cell.row][cell.col] = this.colors[celR][celC];
                 }
             }
         }
@@ -195,7 +195,7 @@ export default class RasterCel {
     // ------------------ Raster-specific functions:
 
     setGlyph(row, col, char, color) {
-        if (charInBounds(row, col)) {
+        if (isCellInBounds({row, col})) {
             if (char !== undefined) {
                 addToCache(char);
                 this.chars[row][col] = char;

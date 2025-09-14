@@ -11,6 +11,7 @@ import {eventBus, EVENTS} from "../../events/events.js";
 import ProjectTypePicker from "../../components/project_type_picker.js";
 import ColorModePicker from "../../components/color_mode_picker.js";
 import ColorInversionCheckbox from "../../components/color_inversion_checkbox.js";
+import {fontFamily} from "../../state/index.js";
 
 export function init() {
     setupFontDialog();
@@ -60,7 +61,7 @@ function setupFontDialog() {
     createDialog($fontDialog, () => {
         state.setConfig('font', $fontSelect.val());
 
-        calculateFontRatio();
+        calculateFontRatio(fontFamily());
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
         state.pushHistory({ requiresResize: true, recalculateFont: true });
 

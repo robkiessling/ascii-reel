@@ -2,6 +2,7 @@ import Cell from "../cell.js";
 import {TEXT_ALIGN_H_OPTS, TEXT_ALIGN_V_OPTS} from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {create2dArray} from "../../utils/arrays.js";
+import CellArea from "../cell_area.js";
 
 const DEFAULT_OPTIONS = {
     alignH: TEXT_ALIGN_H_OPTS.LEFT,
@@ -14,7 +15,7 @@ const DEFAULT_OPTIONS = {
  * Handles wrapping and aligning text to fit into a rectangular cellArea.
  */
 export default class TextLayout {
-    constructor(text, cellArea, options = {}) {
+    constructor(text = '', cellArea, options = {}) {
         // todo convert tabs to 2 spaces
         // todo convert /r/n to /n
 
@@ -22,11 +23,18 @@ export default class TextLayout {
         this.cellArea = cellArea;
         this.options = {...DEFAULT_OPTIONS, ...options};
 
-        this.lines = [];
-        this.grid = [];
+        this.usableArea = new CellArea(
+            this.cellArea.topLeft.clone().translate(this.paddingV, this.paddingH),
+            this.cellArea.bottomRight.clone().translate(-this.paddingV, -this.paddingH),
+        )
 
-        this._wrapText();
-        this._alignText();
+        this.lines = [];
+        this.grid = create2dArray(this.numRows, this.numCols, EMPTY_CHAR);
+
+        if (this.usableRows >= 1 && this.usableCols >= 1) {
+            this._wrapText();
+            this._alignText();
+        }
 
         // this.printLines()
         // this.printGrid()
@@ -40,69 +48,77 @@ export default class TextLayout {
     get alignV() { return this.options.alignV; }
     get usableRows() { return this.numRows - 2 * this.paddingV; }
     get usableCols() { return this.numCols - 2 * this.paddingH; }
-    get maxCursorIndex() { return this.lines.at(-1).cursorEnd; }
+
+    get minCaretIndex() { return 0; }
+    get maxCaretIndex() { return this.lines.at(-1).caretEnd; }
 
     /**
-     * Returns the corresponding Cell for a given cursorIndex.
+     * Returns the corresponding Cell for a given caretIndex.
      * Note: multiple indexes can map to the same cell.
      *
-     * @param {Number} cursorIndex - cursor position in original text string
-     * @param {Boolean} [useAbsolutePositioning=true] - If true, cell position is relative to (0,0) of canvas.
-     *   If false, cell position is relative to topLeft of cellArea.
-     * @returns {Cell}
+     * @param {number} caretIndex - caret position in original text string
+     * @returns {Cell|null} - Returns the Cell, or null if there is no valid space
      */
-    getCellForCursorIndex(cursorIndex, useAbsolutePositioning = true) {
+    getCellForCaretIndex(caretIndex) {
+        if (!this.lines.length) return null;
+
         const translateCell = (row, col) => {
-            // return { row: row, col: col }
             const cell = new Cell(row, col);
-            return useAbsolutePositioning ?
-                cell.translate(this.cellArea.topLeft.row, this.cellArea.topLeft.col) :
-                cell;
+
+            // Convert to absolute since this.lines is relative
+            return cell.translate(this.cellArea.topLeft.row, this.cellArea.topLeft.col);
         }
 
-        for (const { cursorStart, cursorEnd, displayLength, row, colOffset } of this.lines) {
-            if (cursorIndex >= cursorStart && cursorIndex < cursorEnd) {
+        if (caretIndex < this.minCaretIndex) {
+            // Out of bounds in the negative direction -> return first cell
+            const firstLine = this.lines.at(0);
+            const minCol = firstLine.colOffset;
+            return translateCell(firstLine.row, minCol);
+        }
+
+        for (const { caretStart, caretEnd, displayLength, row, colOffset } of this.lines) {
+            if (caretIndex >= caretStart && caretIndex < caretEnd) {
                 const maxCol = colOffset + displayLength;
-                const desiredCol = colOffset + (cursorIndex - cursorStart);
+                const desiredCol = colOffset + (caretIndex - caretStart);
                 return translateCell(row, Math.min(desiredCol, maxCol))
             }
         }
 
-        // If out of bounds, return final cell
+        // Out of bounds in the positive direction -> return final cell
         const lastLine = this.lines.at(-1);
         const maxCol = lastLine.colOffset + lastLine.displayLength;
         return translateCell(lastLine.row, maxCol);
     }
 
     /**
-     * Returns the corresponding cursorIndex for a given Cell.
-     * Note: A cell can be mapped to multiple indexes, this returns the first
-     * Note: If cell is out of bounds, will return the nearest cursor index
+     * Returns the corresponding caretIndex for a given Cell. If cell is out of bounds, will return the nearest
+     * caret index.
+     * Note: A cell can be mapped to multiple indexes, this will return the first
      *
      * @param {Cell} cell
-     * @param {Boolean} [useAbsolutePositioning=true] - If true, cell position is assumed to be relative
-     *   to (0,0) of canvas. If false, cell position is assumed to be relative to topLeft of cellArea.
      * @returns {Number}
      */
-    getCursorIndexForCell(cell, useAbsolutePositioning = true) {
-        if (useAbsolutePositioning) cell = cell.relativeTo(this.cellArea.topLeft);
+    getCaretIndexForCell(cell) {
+        cell = cell.relativeTo(this.cellArea.topLeft); // Convert to relative since this.lines is relative
 
-        for (const { cursorStart, cursorEnd, displayLength, row, colOffset } of this.lines) {
+        // Out of bounds in the negative direction -> return first caret index
+        if (!this.lines.length || cell.row < this.lines.at(0).row) return this.minCaretIndex;
+
+        for (const { caretStart, caretEnd, displayLength, row, colOffset } of this.lines) {
             if (row !== cell.row) continue;
-
             const colInset = cell.col - colOffset; // column relative to start of line
-            if (colInset < 0) return cursorStart;
-            if (colInset >= displayLength) return cursorEnd - 1;
-            return cursorStart + colInset;
+            if (colInset < 0) return caretStart;
+            if (colInset >= displayLength) return caretEnd - 1;
+            return caretStart + colInset;
         }
 
-        // Not in any rows -> return final cursor index
-        return this.maxCursorIndex;
+        // Out of bounds in the positive direction -> return final caret index
+        return this.maxCaretIndex;
     }
 
 
-    isCellInVerticalBounds(cell, useAbsolutePositioning = true) {
-        if (useAbsolutePositioning) cell = cell.relativeTo(this.cellArea.topLeft);
+    isCellInVerticalBounds(cell) {
+        cell = cell.relativeTo(this.cellArea.topLeft); // Convert to relative since this.lines is relative
 
         for (const { row } of this.lines) {
             if (row === cell.row) return true;
@@ -111,12 +127,24 @@ export default class TextLayout {
         return false;
     }
 
-    doesCellOverlap(cell, useAbsolutePositioning = true) {
-        if (useAbsolutePositioning) cell = cell.relativeTo(this.cellArea.topLeft);
-
-        if (!this.grid[cell.row]) return false;
-        if (!this.grid[cell.row][cell.col]) return false;
-        return this.grid[cell.row][cell.col] !== EMPTY_CHAR;
+    /**
+     * Determines whether the given cell overlaps a character in this text.
+     *
+     * @param {Cell} cell - The cell to check.
+     * @param {boolean} [requireChar=true]
+     *   If true, the cell must map to a non-empty character to count as overlapping.
+     *   If false, any character position within the text area counts as overlapping.
+     * @returns {boolean} True if the cell overlaps the text, otherwise false.
+     */
+    includesCell(cell, requireChar = true) {
+        if (requireChar) {
+            cell = cell.relativeTo(this.cellArea.topLeft); // Convert to relative since this.grid is relative
+            if (this.grid[cell.row] === undefined) return false;
+            if (this.grid[cell.row][cell.col] === undefined) return false;
+            return this.grid[cell.row][cell.col] !== EMPTY_CHAR;
+        } else {
+            return this.usableArea.includesCell(cell);
+        }
     }
 
     /**
@@ -124,25 +152,24 @@ export default class TextLayout {
      *
      * For example, given the input "Hello   world" (with 3 spaces) and `usableCols` = 6,
      * the resulting lines will be:
-     *   { rawText: "Hello   ", cursorStart: 0, cursorEnd: 8 },
-     *   { rawText: "world",    cursorStart: 8, cursorEnd: 13 }
+     *   { rawText: "Hello   ", caretStart: 0, caretEnd: 8 },
+     *   { rawText: "world",    caretStart: 8, caretEnd: 13 }
      *
      * Note that the first line's `rawText` has a length of 8, which exceeds `usableCols`.
      * This is intentional: trailing whitespace is preserved in the line it follows, even
-     * though it won't be visually rendered. This ensures accurate cursor indexing and movement.
+     * though it won't be visually rendered. This ensures accurate caret indexing and movement.
      *
-     * Any cursor index within [cursorStart, cursorEnd) maps to that line. In the example above,
+     * Any caret index within [caretStart, caretEnd) maps to that line. In the example above,
      * indices 0 through 7 (inclusive) map to the first line, even though only the first 6
      * characters will be displayed in the UI.
      *
-     * In practice, when the user presses the right arrow key, the cursor will remain at the end
+     * In practice, when the user presses the right arrow key, the caret will remain at the end
      * of the visible line while moving through the hidden whitespace. For instance, to move from
      * "Hello   " to "world", the user will need to press the right arrow 2 extra times before 
-     * advancing to the next line. The cursor will appear to "stick" at the line's end until all 
+     * advancing to the next line. The caret will appear to "stick" at the line's end until all
      * hidden characters are traversed.
      */
     _wrapText() {
-        this.lines = [];
         const usableCols = this.usableCols;
 
         let textIndex = 0;
@@ -151,8 +178,8 @@ export default class TextLayout {
         const pushLine = (startIndex, endIndex) => {
             this.lines.push({
                 rawText: this.text.substring(startIndex, endIndex),
-                cursorStart: startIndex,
-                cursorEnd: endIndex,
+                caretStart: startIndex,
+                caretEnd: endIndex,
 
                 // the following will be set in _alignText
                 // row: undefined,
@@ -205,7 +232,13 @@ export default class TextLayout {
             textIndex++;
         }
 
-        pushLine(lineStartIndex, textIndex);
+        if (lineStartIndex === undefined) {
+            // ended on a newline char, so add the next line
+            pushLine(textIndex, textIndex + 1)
+        } else {
+            // finish normal current line
+            pushLine(lineStartIndex, textIndex + 1);
+        }
     }
 
 
@@ -214,8 +247,6 @@ export default class TextLayout {
      * Will populate a 2d array of chars which it stores in `this.grid`
      */
     _alignText() {
-        this.grid = create2dArray(this.numRows, this.numCols, EMPTY_CHAR);
-
         const usableRows = this.usableRows;
         const usableCols = this.usableCols;
 

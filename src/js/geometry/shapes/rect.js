@@ -118,9 +118,11 @@ export default class Rect extends BoxShape {
 
         const hasEmptyBackground = fillChar === EMPTY_CHAR;
         const handles = this._buildHandleCollection(boundingArea, cell => {
-            if (textLayout && textLayout.doesCellOverlap(cell)) return true;
-            if (innerArea && innerArea.doesCellOverlap(cell) && hasEmptyBackground) return false;
-            return boundingArea.doesCellOverlap(cell);
+            if (textLayout && textLayout.includesCell(cell)) return true;
+            if (innerArea && innerArea.includesCell(cell) && hasEmptyBackground) return false;
+            return boundingArea.includesCell(cell);
+        }, cell => {
+            return textLayout && textLayout.includesCell(cell, false)
         })
 
         this._cache = {
@@ -136,9 +138,6 @@ export default class Rect extends BoxShape {
     // ------------------------------------------------------ Text
 
     _applyTextLayout(glyphs, cellArea) {
-        if (!this.props[TEXT_PROP]) return null;
-        if (cellArea.numCols < 3 || cellArea.numRows < 3) return null;
-
         const textLayout = new TextLayout(
             this.props[TEXT_PROP],
             cellArea,

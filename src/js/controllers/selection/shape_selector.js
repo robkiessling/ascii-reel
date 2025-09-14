@@ -57,13 +57,13 @@ export default class ShapeSelector {
     /**
      * Handles mousedown event on a shape
      * @param shapeId - ID of the shape being clicked on
-     * @param shiftKey - True if shift key was down
+     * @param allowMultiple - If true, will allow multiple shapes to be selected
      * @returns {boolean} - True if a state change occurred
      */
-    mousedownShape(shapeId, shiftKey) {
+    mousedownShape(shapeId, allowMultiple) {
         this.beginTranslate();
 
-        if (shiftKey) {
+        if (allowMultiple) {
             if (selectionController.vector.isShapeSelected(shapeId)) {
                 // Flag shape for deselection, but do not deselect yet because we may be dragging
                 this._markPendingDeselection(shapeId);
