@@ -198,15 +198,20 @@ export default class Shape {
      * @param {Object} actionParams - An options object containing the parameters required by the given action type.
      */
     updateText(action, actionParams) {
+        const currentText = this.props[TEXT_PROP] || '';
+
         switch(action) {
             case SHAPE_TEXT_ACTIONS.INSERT:
-                this.props[TEXT_PROP] = insertAt(this.props[TEXT_PROP] || '', actionParams.caretIndex, actionParams.char)
+                this.props[TEXT_PROP] = insertAt(currentText, actionParams.caretIndex, actionParams.char)
                 break;
             case SHAPE_TEXT_ACTIONS.DELETE_BACKWARD:
-                this.props[TEXT_PROP] = deleteBackward(this.props[TEXT_PROP] || '', actionParams.caretIndex)
+                this.props[TEXT_PROP] = deleteBackward(currentText, actionParams.caretIndex)
                 break;
             case SHAPE_TEXT_ACTIONS.DELETE_FORWARD:
-                this.props[TEXT_PROP] = deleteForward(this.props[TEXT_PROP] || '', actionParams.caretIndex)
+                this.props[TEXT_PROP] = deleteForward(currentText, actionParams.caretIndex)
+                break;
+            case SHAPE_TEXT_ACTIONS.REPLACE:
+                this.props[TEXT_PROP] = actionParams.text;
                 break;
             default:
                 throw new Error(`Invalid updateText action: ${action}`)

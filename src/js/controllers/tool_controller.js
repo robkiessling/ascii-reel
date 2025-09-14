@@ -112,22 +112,20 @@ export function handleEscapeKey() {
 /**
  * Handles a keyboard key being pressed.
  * @param {string} char - The char of the pressed keyboard key
- * @param {boolean} [isComposing=false] - Whether the char is still being composed (for special characters, e.g. 'é')
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
-export function handleCharKey(char, isComposing = false) {
+export function handleCharKey(char) {
     if (isCharPickerOpen()) {
         applyPrimaryChar(char);
-        if (!isComposing) toggleCharPicker(false);
+        toggleCharPicker(false);
         return true;
     }
 
     if (isQuickSwapEnabled()) {
         applyPrimaryChar(char);
 
-        selectionController.raster.handleCharKey(char, isComposing)
-
-        // When there is a raster selection
+        selectionController.raster.handleCharKey(char)
+        selectionController.vector.handleCharKey(char);
         return true;
     }
 
@@ -135,23 +133,68 @@ export function handleCharKey(char, isComposing = false) {
 }
 
 /**
- * Handles a character composition finishing (for special characters, e.g. 'é').
- * During composition, handleCharKey is called with isComposing:true, which prevents the char picker from
- * closing and the caret cell from moving. However, once we are done with composition, we want to close
- * the picker and advance the caret one space.
+ * Handles the start of a text composition sequence.
+ * @param {boolean} rollbackPrevChar - Whether the character typed just before the composition should be rolled back and
+ *   included in the composition buffer.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCompositionStart(rollbackPrevChar) {
+    if (isCharPickerOpen()) {
+        return true;
+    }
+
+    if (isQuickSwapEnabled()) {
+        selectionController.raster.handleCompositionStart(rollbackPrevChar);
+        selectionController.vector.handleCompositionStart(rollbackPrevChar);
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Handles updates during an active text composition sequence.
+ *
+ * TODO Making IME compositions will not work. The picker immediately closes as the first char is not a dead char.
+ *
+ * @param {string} str - The current composition string. Often a single character such as "´" or "é", but can be
+ *   longer if the sequence is invalid (e.g. "´x") or if IME composition is used.
+ * @param {string} char - The last char of the composition string (useful if logic only supports a single character).
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCompositionUpdate(str, char) {
+    if (isCharPickerOpen()) {
+        applyPrimaryChar(char);
+        return true;
+    }
+
+    if (isQuickSwapEnabled()) {
+        applyPrimaryChar(char);
+        selectionController.raster.handleCompositionUpdate(str, char)
+        selectionController.vector.handleCompositionUpdate(str, char)
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Handles the end of a text composition sequence.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCompositionEnd() {
     if (isCharPickerOpen()) {
         toggleCharPicker(false);
+        return true;
     }
 
-    if (selectionController.raster.caretCell()) {
-        selectionController.raster.moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
+    if (isQuickSwapEnabled()) {
+        selectionController.raster.handleCompositionEnd();
+        selectionController.vector.handleCompositionEnd();
+        return true;
     }
 
-    // TODO technically we should do something like this, otherwise redo doesn't fully work when final char has an
-    //      accent. I don't know if I want to make these methods public though, and it seems like a rare case.
-    // selectionController.raster.saveSelectionTextHistory()
+    return false;
 }
 
 // -------------------------------------------------------------------------------- Events

@@ -63,10 +63,17 @@ export function strToHTML(str) {
     return str.replace(/\n/g, '<br/>');
 }
 
-export function insertAt(str, index, char) {
+/**
+ * Inserts a string at the given index.
+ * @param {string} str - The original string
+ * @param {number} index - Index at which to insert
+ * @param {string} insertText - The string to insert (can be one or many chars)
+ * @returns {string} - The new string
+ */
+export function insertAt(str, index, insertText) {
     if (index < 0) index = 0;
     if (index > str.length) index = str.length;
-    return str.slice(0, index) + char + str.slice(index);
+    return str.slice(0, index) + insertText + str.slice(index);
 }
 
 export function deleteBackward(str, caretIndex) {
@@ -79,4 +86,22 @@ export function deleteForward(str, caretIndex) {
     if (caretIndex < 0) caretIndex = 0;
     if (caretIndex >= str.length) return str; // nothing to delete
     return str.slice(0, caretIndex) + str.slice(caretIndex + 1);
+}
+
+/**
+ * Replaces characters in `str` starting at `caretIndex` with `replacementText`.
+ * Only replaces as many characters as the replacement text length.
+ *
+ * @param {string} str - The original string
+ * @param {number} caretIndex - Index at which to start replacing
+ * @param {string} replacementText - The text to insert
+ * @returns {string} - The new string
+ */
+export function replaceAt(str, caretIndex, replacementText) {
+    if (caretIndex < 0) caretIndex = 0;
+    if (caretIndex > str.length) caretIndex = str.length;
+
+    const before = str.slice(0, caretIndex);
+    const after = str.slice(caretIndex + replacementText.length);
+    return before + replacementText + after;
 }

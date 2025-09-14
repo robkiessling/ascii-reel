@@ -11,68 +11,74 @@ export function init() {
     setupCompositionListener();
 }
 
+let prevKey;
 
 function setupKeydownListener() {
     $document.keydown(function(e) {
         const key = e.key; // Keyboard key. E.g., 'a', 'A', '1', '[', 'Shift', 'Enter', 'Backspace', etc.
-        // console.log(key);
 
-        if (useStandardKeyboard()) {
-            handleStandardKeyboard(key, e);
-            return;
-        }
+        // console.log(`key: "${key}", prevKey: "${prevKey}"`)
 
-        if (key === 'Unidentified') {
-            console.warn(`Unidentified key for event: ${e}`);
-            return;
-        }
-
-        // A 'Dead' key is received when composition starts (see composition section below)
-        if (key === 'Dead' || isComposing) return;
-
-        // Ascii Reel Shortcuts
-        if (e.metaKey || e.ctrlKey || e.altKey) {
-            const modifiers = ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'].filter(modifier => e[modifier]);
-            if (actions.callActionByShortcut({ key, modifiers })) {
-                e.preventDefault();
+        try {
+            if (useStandardKeyboard()) {
+                handleStandardKeyboard(key, e);
                 return;
             }
-        }
 
-        // If the metaKey/ctrlKey is down, and it did not reach one of our shortcuts, the user is likely performing
-        // a standard browser shortcut (e.g. cmd-R to reload). Return early (without preventing default) so that the
-        // browser shortcut works as normal. Note: a few browser shortcuts are prevented, see handleBrowserShortcut.
-        if (e.metaKey || e.ctrlKey) {
-            handleBrowserShortcut(e, key);
-            return;
-        }
+            if (key === 'Unidentified') {
+                console.warn(`Unidentified key for event: ${e}`);
+                return;
+            }
 
-        switch (key) {
-            case 'Escape':
-                handleEscapeKey();
-                break;
-            case 'Tab':
-                handleTabKey(e);
-                break;
-            case 'Enter':
-                handleEnterKey(key, e);
-                break;
-            case 'Backspace':
-            case 'Delete':
-                handleBackspaceKey(key);
-                break;
-            case 'ArrowLeft':
-            case 'ArrowUp':
-            case 'ArrowRight':
-            case 'ArrowDown':
-                handleArrowKey(key, e);
-                break;
-            default:
-                if (key.length !== 1) return; // Unrecognized input; let browser handle as normal
-                handleCharKey(key);
-        }
+            // A 'Dead' key is received when composition starts (see composition section below)
+            if (key === 'Dead' || isComposing) return;
 
-        e.preventDefault();
+            // Ascii Reel Shortcuts
+            if (e.metaKey || e.ctrlKey || e.altKey) {
+                const modifiers = ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'].filter(modifier => e[modifier]);
+                if (actions.callActionByShortcut({ key, modifiers })) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            // If the metaKey/ctrlKey is down, and it did not reach one of our shortcuts, the user is likely performing
+            // a standard browser shortcut (e.g. cmd-R to reload). Return early (without preventing default) so that the
+            // browser shortcut works as normal. Note: a few browser shortcuts are prevented, see handleBrowserShortcut.
+            if (e.metaKey || e.ctrlKey) {
+                handleBrowserShortcut(e, key);
+                return;
+            }
+
+            switch (key) {
+                case 'Escape':
+                    handleEscapeKey();
+                    break;
+                case 'Tab':
+                    handleTabKey(e);
+                    break;
+                case 'Enter':
+                    handleEnterKey(key, e);
+                    break;
+                case 'Backspace':
+                case 'Delete':
+                    handleBackspaceKey(key);
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    handleArrowKey(key, e);
+                    break;
+                default:
+                    if (key.length !== 1) return; // Unrecognized input; let browser handle as normal
+                    handleCharKey(key);
+            }
+
+            e.preventDefault();
+        } finally {
+            prevKey = key;
+        }
     });
 }
 
@@ -104,10 +110,10 @@ function handleBackspaceKey(key) {
     actions.callActionByShortcut({ key });
 }
 
-function handleCharKey(char, isComposing = false) {
-    if (tools.handleCharKey(char, isComposing)) return;
-    if (selectionController.raster.handleCharKey(char, isComposing)) return;
-    if (selectionController.vector.handleCharKey(char, isComposing)) return;
+function handleCharKey(char) {
+    if (tools.handleCharKey(char)) return;
+    if (selectionController.raster.handleCharKey(char)) return;
+    if (selectionController.vector.handleCharKey(char)) return;
     actions.callActionByShortcut({ key: char });
 }
 
@@ -194,19 +200,29 @@ function useStandardKeyboard() {
 
 // ---------------------------------------------------------------------------------- Composition
 /**
- * Composition is a way to type special characters by pressing a sequence of keys. For example, on macOS you can
- * press option+e once to create a ´ character (with an underline under it). Then you can press another character
- * such as e, i, or a, to create é, í, or á, respectively.
+ * Composition is a way to enter special characters by pressing a sequence of keys.
+ * There are two common types of composition:
  *
- * We simulate this in the canvas by listening for compositionstart/update/end and drawing each intermediate
- * composition char.
+ * 1) Dead key composition. For example, on macOS you can press Option+E once to start an accent composition. The
+ *    accent "´" appears with an underline, indicating that the accent is pending. The next key determines the
+ *    final character: pressing e → "é", i → "í", a → "á", etc. In this case the first keystroke ("´") is reported
+ *    as a 'Dead' key and composition begins immediately.
+ *
+ * 2) IME composition. For example, when using Chinese Pinyin input on macOS, typing "mei" is converted to "美".
+ *    However, the first keystroke "m" is inserted as normal text because composition has not started yet.
+ *    When the second key "e" is pressed, composition begins, and editors must roll back the previously
+ *    inserted "m" so it can be included in the composition buffer.
+ *
+ * We try to simulate this as best we can in the canvas by listening for compositionstart/update/end and drawing each
+ * intermediate composition char.
  */
 
 let isComposing = false;
 
 function setupCompositionListener() {
     // To ensure composition works (even though the user is not typing into an input) we create a hidden input
-    // offscreen that we focus on keydown
+    // offscreen that we focus on keydown.
+    // TODO For IME composition, it may be helpful if the input is shown near the cursor, so they can see autocompletes?
     let hiddenInput = $("<input>").css({
         position: "absolute",
         left: "-9999px",
@@ -219,23 +235,33 @@ function setupCompositionListener() {
 
     $document.on('compositionstart', e => {
         isComposing = true;
+
+        // IME compositions need to rollback the previous character. See comment at start of this section for more info.
+        const rollbackPrevChar = prevKey !== 'Dead';
+
+        if (tools.handleCompositionStart(rollbackPrevChar)) return;
+        if (selectionController.raster.handleCompositionStart(rollbackPrevChar)) return;
+        if (selectionController.vector.handleCompositionStart(rollbackPrevChar)) return;
     });
 
     $document.on('compositionupdate', e => {
         const str = e.originalEvent.data;
 
-        // The str can be two characters long if composition failed, e.g. "´" + "x" = "´x"
-        // We always take the last character, so even if composition failed we still print the failing char (e.g. "x")
-        const char = str.charAt(str.length - 1)
+        // The composed str can be multiple characters long if dead char composition failed (e.g. "´" + "x" = "´x"), or
+        // if using IME composition. We pass the last string char as a second parameter to handlers in case they only
+        // support strings of length 1.
+        const char = str.charAt(str.length - 1);
 
-        // Passing isComposing:true so the char picker does not close and the selection caret does not move yet
-        handleCharKey(char, isComposing);
+        if (tools.handleCompositionUpdate(str, char)) return;
+        if (selectionController.raster.handleCompositionUpdate(str, char)) return;
+        if (selectionController.vector.handleCompositionUpdate(str, char)) return;
     });
 
     $document.on('compositionend', e => {
         isComposing = false;
 
-        // Now that composition is finished, manually close char picker and move caret (if cursorCell)
-        tools.handleCompositionEnd();
+        if (tools.handleCompositionEnd()) return;
+        if (selectionController.raster.handleCompositionEnd()) return;
+        if (selectionController.vector.handleCompositionEnd()) return;
     })
 }

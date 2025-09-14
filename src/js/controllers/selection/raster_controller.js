@@ -11,7 +11,7 @@ import SelectionLasso from "../../geometry/selection/lasso.js";
 import SelectionWand from "../../geometry/selection/wand.js";
 import SelectionText from "../../geometry/selection/text.js";
 import Cell from "../../geometry/cell.js";
-import {EMPTY_CHAR} from "../../config/chars.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {translateGlyphs} from "../../utils/arrays.js";
 
 /**
@@ -379,14 +379,114 @@ export function handleEnterKey(shiftKey) {
     return false;
 }
 
+// -------------------------------------------------------------------------------- Char Input Handling
+
+function canHandleCharInput() {
+    return movableContent() || caretCell() || hasSelection();
+}
+
 /**
  * Handles a keyboard key being pressed.
  * @param {string} char - The char of the pressed keyboard key
- * @param {boolean} [isComposing=false] - Whether the char is still being composed (for special characters, e.g. 'é')
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
-export function handleCharKey(char, isComposing = false) {
-    return applyGlyph(char, state.primaryColorIndex(), !isComposing);
+export function handleCharKey(char) {
+    if (!canHandleCharInput()) return false;
+
+    applyGlyph(char, state.primaryColorIndex());
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveSelectionTextHistory();
+    return true;
+}
+
+/**
+ * Handles the start of a text composition sequence.
+ * @param {boolean} rollbackPrevChar - Whether the character typed just before the composition should be rolled back and
+ *   included in the composition buffer.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCompositionStart(rollbackPrevChar) {
+    if (!canHandleCharInput()) return false;
+
+    if (rollbackPrevChar) {
+        moveInDirection('left', { updateCaretOrigin: false, saveHistory: false })
+    }
+
+    // Insert a whitespace char. Further handleCompositionUpdate calls will update this char
+    // since it updates to the LEFT of cursor
+    applyGlyph(WHITESPACE_CHAR, state.primaryColorIndex())
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveSelectionTextHistory();
+    return true;
+}
+
+/**
+ * Handles updates during an active text composition sequence.
+ *
+ * TODO Making IME compositions will not work. Dead char compositions work because I'm just adding a whitespace char
+ *      and then having the updates affect the previous char. But this only works for compositions that are 1 char long.
+ *      We should make this work more like the vector version.
+ *
+ * @param {string} str - The current composition string. Often a single character such as "´" or "é", but can be
+ *   longer if the sequence is invalid (e.g. "´x") or if IME composition is used.
+ * @param {string} char - The last char of the composition string (useful if logic only supports a single character).
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCompositionUpdate(str, char) {
+    if (!canHandleCharInput()) return false;
+
+    if (caretCell()) {
+        // Update cell to the left of caret. Do not move caret.
+        state.setCurrentCelGlyph(caretCell().row, caretCell().col - 1, char, state.primaryColorIndex());
+
+        // For most cases, this will replace the previous cell's text without moving the caret. However, if `str` contains
+        // multiple characters, this will replace the previous and subsequent cells, then move the caret to the end of the
+        // inserted text.
+        for (let i = 0; i < str.length; i++) {
+            state.setCurrentCelGlyph(caretCell().row, caretCell().col - 1 + i, str[i], state.primaryColorIndex());
+            if (i > 0) moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
+        }
+    } else {
+        applyGlyph(char, state.primaryColorIndex())
+    }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveSelectionTextHistory();
+    return true;
+}
+
+/**
+ * Handles the end of a text composition sequence.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCompositionEnd() {
+    return canHandleCharInput();
+}
+
+/**
+ * Updates the selected area (or caret cell if using the text-editor tool) to be the provided glyph.
+ * Does not push history or emit events; it is up to outside function to handle that.
+ * @param {string} char - Char of glyph
+ * @param {number} color - Color index of glyph
+ */
+function applyGlyph(char, color) {
+    if (movableContent()) {
+        // Update entire movable content
+        updateMovableContent(char, color);
+    } else if (caretCell()) {
+        // Update caret cell and then move to next cell
+        state.setCurrentCelGlyph(caretCell().row, caretCell().col, char, color);
+        moveInDirection('right', { updateCaretOrigin: false, saveHistory: false })
+    } else if (hasSelection()) {
+        // Update entire selection
+        getSelectedCells().forEach(cell => {
+            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
+        });
+    } else {
+        throw new Error(`Invalid state: canHandleCharInput() should have prevented this.`)
+    }
 }
 
 /**
@@ -395,6 +495,8 @@ export function handleCharKey(char, isComposing = false) {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleBackspaceKey(isDelete = false) {
+    if (!canHandleCharInput()) return false;
+
     if (movableContent()) {
         updateMovableContent(EMPTY_CHAR, 0);
     } else if (caretCell()) {
@@ -412,37 +514,7 @@ export function handleBackspaceKey(isDelete = false) {
         // Update entire selection
         empty();
     } else {
-        return false; // No modifications were made: do not trigger refresh
-    }
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    saveSelectionTextHistory();
-    return true;
-}
-
-/**
- * Updates the selected area (or caret cell if using the text-editor tool) to be the provided glyph.
- * @param {string} char - Char of glyph
- * @param {number} color - Color index of glyph
- * @param {boolean} [moveCaret=true] - Whether to move the caret to the next cell. Only applicable for text-editor tool.
- * @returns {boolean} - Whether there was any updated content
- */
-export function applyGlyph(char, color, moveCaret = true) {
-    if (movableContent()) {
-        // Update entire movable content
-        updateMovableContent(char, color);
-    } else if (caretCell()) {
-        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
-        // saveSelectionTextHistory later
-        state.setCurrentCelGlyph(caretCell().row, caretCell().col, char, color);
-        if (moveCaret) moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
-    } else if (hasSelection()) {
-        // Update entire selection
-        getSelectedCells().forEach(cell => {
-            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
-        });
-    } else {
-        return false; // No modifications were made: do not trigger refresh
+        throw new Error(`Invalid state: canHandleCharInput() should have prevented this.`)
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -451,6 +523,7 @@ export function applyGlyph(char, color, moveCaret = true) {
 }
 
 
+// --------------------------------------------------------------------------------
 
 // Returns true if the given Cell is part of the selection
 export function isSelectedCell(cell) {

@@ -10,6 +10,9 @@ import ShapeSelector from "./shape_selector.js";
 import VectorMarquee from "./vector_marquee.js";
 import {arraysEqual} from "../../utils/arrays.js";
 import {MOUSE} from "../../io/mouse.js";
+import {WHITESPACE_CHAR} from "../../config/chars.js";
+import {hasSelection, movableContent} from "./raster_controller.js";
+import {insertAt, replaceAt} from "../../utils/strings.js";
 
 /**
  * Vector selection controller.
@@ -309,7 +312,7 @@ export function handleEnterKey() {
     const { shapeId, caretIndex } = getShapeCaret();
     state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex, char: '\n' });
 
-    moveCaret('right', false);
+    moveCaret('right');
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 
@@ -321,23 +324,83 @@ export function handleEnterKey() {
     return true;
 }
 
+// -------------------------------------------------------------------------------- Char Input Handling
+
+function canHandleCharInput() {
+    return caretCell();
+}
+
 /**
  * Handles a keyboard key being pressed.
- * @param {string} char - The char of the pressed keyboard key
- * @param {boolean} [isComposing=false] - Whether the char is still being composed (for special characters, e.g. 'é')
+ * @param {string} char - The char of the pressed keyboard key.
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
-export function handleCharKey(char, isComposing = false) {
-    if (!caretCell()) return false;
+export function handleCharKey(char) {
+    if (!canHandleCharInput()) return false;
 
     const { shapeId, caretIndex } = getShapeCaret();
     state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex, char });
-
-    if (!isComposing) moveCaret('right', false);
+    moveCaret('right');
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory({ modifiable: 'vectorSelectionText' })
     return true;
+}
+
+let compositionCaretIndex, compositionStartText;
+
+/**
+ * Handles the start of a text composition sequence.
+ * @param {boolean} rollbackPrevChar - Whether the character typed just before the composition should be rolled back and
+ *   included in the composition buffer.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCompositionStart(rollbackPrevChar) {
+    if (!canHandleCharInput()) return false;
+
+    let { shapeId, caretIndex, textLayout } = getShapeCaret();
+
+    if (rollbackPrevChar) {
+        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex })
+        moveCaret('left');
+        ({ shapeId, caretIndex, textLayout } = getShapeCaret()); // get updated values after doing replacement
+    }
+
+    compositionCaretIndex = caretIndex;
+    compositionStartText = textLayout.text;
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory({ modifiable: 'vectorSelectionText' })
+    return true;
+}
+
+/**
+ * Handles updates during an active text composition sequence.
+ * @param {string} str - The current composition string. Often a single character such as "´" or "é", but can be
+ *   longer if the sequence is invalid (e.g. "´x") or if IME composition is used.
+ * @param {string} char - The last char of the composition string (useful if logic only supports a single character).
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCompositionUpdate(str, char) {
+    if (!canHandleCharInput()) return false;
+
+    const { shapeId, caretIndex } = getShapeCaret();
+
+    const replacementText = insertAt(compositionStartText, compositionCaretIndex, str);
+    state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.REPLACE, { text: replacementText })
+    setShapeCaret(shapeId, compositionCaretIndex + str.length, { saveHistory: false })
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory({ modifiable: 'vectorSelectionText' })
+    return true;
+}
+
+/**
+ * Handles the end of a text composition sequence.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleCompositionEnd() {
+    return canHandleCharInput();
 }
 
 /**
@@ -346,7 +409,7 @@ export function handleCharKey(char, isComposing = false) {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleBackspaceKey(isDelete = false) {
-    if (!caretCell()) return false;
+    if (!canHandleCharInput()) return false;
 
     const { shapeId, caretIndex } = getShapeCaret();
 
@@ -355,7 +418,7 @@ export function handleBackspaceKey(isDelete = false) {
         eventBus.emit(EVENTS.SELECTION.CHANGED) // Caret doesn't change index, but might change cell if right-aligned
     } else {
         state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex });
-        moveCaret('left', false);
+        moveCaret('left');
     }
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -406,7 +469,7 @@ export function clearShapeCaret(saveHistory = true) {
     if (saveHistory) state.pushHistory()
 }
 
-function moveCaret(direction, saveHistory = true) {
+function moveCaret(direction, amount = 1, saveHistory = false) {
     if (!caretCell()) throw new Error('Cannot call moveCaret without a caretCell');
 
     switch(direction) {
@@ -414,7 +477,7 @@ function moveCaret(direction, saveHistory = true) {
         case 'right':
             const min = 0;
             const max = getShapeCaret().textLayout.maxCaretIndex;
-            const horizOffset = direction === 'left' ? -1 : 1;
+            const horizOffset = (direction === 'left' ? -1 : 1) * amount;
             let newIndex = getShapeCaret().caretIndex + horizOffset;
             if (newIndex < min) newIndex = min;
             if (newIndex > max) newIndex = max;
@@ -422,7 +485,7 @@ function moveCaret(direction, saveHistory = true) {
             break;
         case 'up':
         case 'down':
-            const vertOffset = direction === 'up' ? -1 : 1;
+            const vertOffset = (direction === 'up' ? -1 : 1) * amount;
             const currentCell = caretCell();
             const desiredCell = currentCell.translate(vertOffset, 0);
 
@@ -451,7 +514,7 @@ function moveCaret(direction, saveHistory = true) {
  */
 export function handleArrowKey(direction, shiftKey) {
     if (caretCell()) {
-        moveCaret(direction);
+        moveCaret(direction, 1, true);
         return true; // Consume keyboard event
     }
 

@@ -31,10 +31,8 @@ export function init() {
         // TODO Is this useful?
         // copyChar(char);
 
-        selectionController.raster.applyGlyph(
-            char,
-            selectionController.raster.caretCell() ? state.primaryColorIndex() : undefined
-        );
+        selectionController.raster.handleCharKey(char);
+        selectionController.vector.handleCharKey(char);
         eventBus.emit(EVENTS.UNICODE.CHAR_SELECTED, { char })
     });
 
