@@ -39,16 +39,6 @@ export default class ShapeSelector {
         ])
     }
 
-    // get handles() {
-    //     const boundingArea = this.boundingArea;
-    //
-    //     return new HandleCollection([
-    //         ...BoxShape.vertexHandles(null, boundingArea),
-    //         ...BoxShape.edgeHandles(null, boundingArea),
-    //     ])
-    // }
-
-
     get boundingVertexArea() {
         const area = this.boundingArea;
         return VertexArea.fromOriginAndDimensions(area.topLeft, area.numRows, area.numCols) // todo vertex

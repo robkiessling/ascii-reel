@@ -1,7 +1,7 @@
 import {
     canReorderCurrentCelShapes,
     deleteCurrentCelShape,
-    getCurrentCelShape,
+    getCurrentCelShape, getCurrentCelShapes,
     reorderCurrentCelShapes,
     updateCurrentCelShape
 } from "../index.js";
@@ -12,6 +12,8 @@ const DEFAULT_STATE = {
     shapeIds: new Set(),
     caretShapeId: null,
     caretIndex: null,
+    textSelectionStart: null,
+    textSelectionEnd: null,
 }
 
 let state = {};
@@ -45,7 +47,7 @@ export function selectedShapeIds() {
     return Array.from(shapeIdsSet());
 }
 export function setSelectedShapeIds(shapeIds) {
-    if (state.caretShapeId && !shapeIds.includes(state.caretShapeId)) clearShapeCaret();
+    if (state.caretShapeId && !shapeIds.includes(state.caretShapeId)) clearTextSelection();
     state.shapeIds = new Set(shapeIds);
 }
 
@@ -61,13 +63,22 @@ export function isShapeSelected(shapeId) {
 export function selectShape(shapeId) {
     shapeIdsSet().add(shapeId);
 }
+
+// Returns false if user is already selecting-all
+export function canSelectAllShapes() {
+    return getCurrentCelShapes().some(shape => !isShapeSelected(shape));
+}
+export function selectAllShapes() {
+    getCurrentCelShapes().forEach(shape => selectShape(shape.id));
+}
+
 export function deselectShape(shapeId) {
     shapeIdsSet().delete(shapeId);
-    if (state.caretShapeId && state.caretShapeId === shapeId) clearShapeCaret();
+    if (state.caretShapeId && state.caretShapeId === shapeId) clearTextSelection();
 }
 export function deselectAllShapes() {
     shapeIdsSet().clear();
-    clearShapeCaret();
+    clearTextSelection();
 }
 
 export function selectedShapes() {
@@ -115,24 +126,53 @@ export function reorderSelectedShapes(action) {
     reorderCurrentCelShapes(selectedShapeIds(), action)
 }
 
-
-export function setShapeCaret(shapeId, caretIndex = 0) {
+export function setTextRange(shapeId, selectionStart, selectionEnd) {
     state.caretShapeId = shapeId;
-    state.caretIndex = caretIndex;
+    state.textSelectionStart = selectionStart;
+    state.textSelectionEnd = selectionEnd;
 }
 
-export function clearShapeCaret() {
+export function canEditText() {
+    if (numSelectedShapes() !== 1) return false;
+    return selectedShapes()[0].canHaveText;
+}
+
+// Returns false if text is already all selected
+export function canSelectAllText() {
+    if (!canEditText()) return false;
+
+    const shape = selectedShapes()[0];
+    return state.caretShapeId !== shape.id ||
+        state.textSelectionStart !== shape.textLayout.minCaretIndex ||
+        state.textSelectionEnd !== shape.textLayout.maxCaretIndex
+}
+export function selectAllText() {
+    if (numSelectedShapes() !== 1) throw new Error('Must call selectAllText with 1 shape already selected');
+    const shape = selectedShapes()[0];
+    if (!shape.canHaveText) throw new Error('Shape has no text property to select');
+    const textLayout = getCurrentCelShape(shape.id).textLayout
+    setTextRange(shape.id, textLayout.minCaretIndex, textLayout.maxCaretIndex);
+}
+
+export function setTextCaret(shapeId, caretIndex) {
+    state.caretShapeId = shapeId;
+    state.textSelectionStart = caretIndex;
+    state.textSelectionEnd = caretIndex;
+}
+
+export function clearTextSelection() {
     state.caretShapeId = null;
-    state.caretIndex = 0;
 }
 
-export function getShapeCaret() {
-    if (state.caretShapeId === null) return {};
+export function getTextSelection() {
+    if (state.caretShapeId === null) return null;
 
     return {
         shapeId: state.caretShapeId,
         textLayout: getCurrentCelShape(state.caretShapeId).textLayout,
-        caretIndex: state.caretIndex,
+        hasRange: state.textSelectionStart !== state.textSelectionEnd,
+        startIndex: state.textSelectionStart,
+        endIndex: state.textSelectionEnd
     }
 }
 

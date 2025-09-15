@@ -87,6 +87,7 @@ export function resizeBoundingBox(oldBox, handle, newPosition) {
     if (newPosition.row === anchor.row) newPosition.row += anchorPushback.row;
     if (newPosition.col === anchor.col) newPosition.col += anchorPushback.col;
 
+    // TODO newPosition is a Cell, not a Vertex
     return VertexArea.fromVertices([anchor, newPosition]);
 }
 

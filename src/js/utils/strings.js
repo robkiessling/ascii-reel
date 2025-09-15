@@ -88,6 +88,14 @@ export function deleteForward(str, caretIndex) {
     return str.slice(0, caretIndex) + str.slice(caretIndex + 1);
 }
 
+export function deleteRange(str, start, end) {
+    if (start < 0) start = 0;
+    if (end > str.length) end = str.length;
+    if (start > end) [start, end] = [end, start]; // swap if out of order
+
+    return str.slice(0, start) + str.slice(end);
+}
+
 /**
  * Replaces characters in `str` starting at `caretIndex` with `replacementText`.
  * Only replaces as many characters as the replacement text length.

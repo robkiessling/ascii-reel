@@ -3,6 +3,8 @@ import {TEXT_ALIGN_H_OPTS, TEXT_ALIGN_V_OPTS} from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {create2dArray} from "../../utils/arrays.js";
 import CellArea from "../cell_area.js";
+import Vertex from "../vertex.js";
+import VertexArea from "../vertex_area.js";
 
 const DEFAULT_OPTIONS = {
     alignH: TEXT_ALIGN_H_OPTS.LEFT,
@@ -10,6 +12,8 @@ const DEFAULT_OPTIONS = {
     paddingH: 0,
     paddingV: 0,
 }
+
+const DEBUG = false;
 
 /**
  * Handles wrapping and aligning text to fit into a rectangular cellArea.
@@ -36,8 +40,10 @@ export default class TextLayout {
             this._alignText();
         }
 
-        // this.printLines()
-        // this.printGrid()
+        if (DEBUG) {
+            this.printLines()
+            this.printGrid()
+        }
     }
 
     get numCols() { return this.cellArea.numCols; }
@@ -50,7 +56,7 @@ export default class TextLayout {
     get usableCols() { return this.numCols - 2 * this.paddingH; }
 
     get minCaretIndex() { return 0; }
-    get maxCaretIndex() { return this.lines.at(-1).caretEnd; }
+    get maxCaretIndex() { return this.lines.at(-1).caretEnd - 1; } // Subtract 1 since caretEnd is exclusive
 
     /**
      * Returns the corresponding Cell for a given caretIndex.
@@ -148,6 +154,31 @@ export default class TextLayout {
     }
 
     /**
+     * Returns a CellArea for every horizontal line of text.
+     * Because CellAreas have a minimum width of 1 column, if a line is just '' its CellArea will still have 1 column.
+     * @returns {CellArea[]}
+     */
+    get lineCellAreas() {
+        return this.lines.map(({ row, colOffset, displayLength }) => {
+            const leftEdge = new Vertex(row, colOffset)
+            const rightEdge = new Vertex(row, colOffset + displayLength)
+
+            // Convert to absolute coords
+            leftEdge.translate(this.cellArea.topLeft.row, this.cellArea.topLeft.col)
+            rightEdge.translate(this.cellArea.topLeft.row, this.cellArea.topLeft.col)
+
+            const vertexArea = new VertexArea(leftEdge, rightEdge);
+
+            // When converting VertexArea to a CellArea, have to define how it works when a line has zero width.
+            // In our case, we want the resulting CellArea (which must have 1 width) to expand depending on text alignment.
+            return vertexArea.toCellArea(
+                this.alignV !== TEXT_ALIGN_V_OPTS.BOTTOM,
+                this.alignH !== TEXT_ALIGN_H_OPTS.RIGHT
+            )
+        })
+    }
+
+    /**
      * Wraps text into logical "lines" based on the available column width (`usableCols`).
      *
      * For example, given the input "Hello   world" (with 3 spaces) and `usableCols` = 6,
@@ -173,7 +204,7 @@ export default class TextLayout {
         const usableCols = this.usableCols;
 
         let textIndex = 0;
-        let lineStartIndex, spacesEndIndex;
+        let lineStartIndex, lastSpaceIndex;
 
         const pushLine = (startIndex, endIndex) => {
             this.lines.push({
@@ -188,7 +219,7 @@ export default class TextLayout {
             })
 
             lineStartIndex = undefined;
-            spacesEndIndex = undefined;
+            lastSpaceIndex = undefined;
         }
 
         /**
@@ -208,21 +239,21 @@ export default class TextLayout {
             const char = this.text[textIndex];
             const lineLength = textIndex - lineStartIndex + 1;
 
-            // console.log(textIndex, lineStartIndex, char === '\n' ? '\\n' : char, lineLength, spacesEndIndex);
+            // console.log(textIndex, lineStartIndex, char === '\n' ? '\\n' : char, lineLength, lastSpaceIndex);
 
             if (char === '\n') {
                 pushLine(lineStartIndex, textIndex + 1); // +1 to include this \n char in the current line
             } else if (char === WHITESPACE_CHAR) {
-                spacesEndIndex = textIndex; // Include sequential whitespace, even if it goes longer than usableCols
+                lastSpaceIndex = textIndex; // Include sequential whitespace, even if it goes longer than usableCols
             } else if (lineLength > usableCols) {
                 // Once we reach a non-whitespace out-of-bounds char we terminate the line
-                if (spacesEndIndex === undefined) {
+                if (lastSpaceIndex === undefined) {
                     // There were no spaces in the line so far, so have to terminate the line mid-word
                     pushLine(lineStartIndex, textIndex);
                     continue; // Not incrementing textIndex so we evaluate current char again
                 } else {
                     // There were spaces in the line, so we terminate the line at the end of the last space
-                    const indexAfterLastSpace = spacesEndIndex + 1; // Store this because pushLine will wipe spacesEndIndex
+                    const indexAfterLastSpace = lastSpaceIndex + 1; // Store this because pushLine will wipe lastSpaceIndex
                     pushLine(lineStartIndex, indexAfterLastSpace)
                     textIndex = indexAfterLastSpace; // Restart evaluation after the last space
                     continue;
@@ -232,6 +263,7 @@ export default class TextLayout {
             textIndex++;
         }
 
+        // The following add one since the final caretEnd should be exclusive
         if (lineStartIndex === undefined) {
             // ended on a newline char, so add the next line
             pushLine(textIndex, textIndex + 1)

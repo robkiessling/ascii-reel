@@ -139,8 +139,9 @@ export const HANDLE_CELL_RADIUS = 5;
 
 // Shape text modification actions
 export const SHAPE_TEXT_ACTIONS = {
-    INSERT: 'modifyTextInsert',
-    DELETE_BACKWARD: 'modifyTextDeleteBackward',
-    DELETE_FORWARD: 'modifyTextDeleteForward',
-    REPLACE: 'modifyTextReplace'
+    INSERT: 'insert',
+    DELETE_BACKWARD: 'deleteBackward',
+    DELETE_FORWARD: 'deleteForward',
+    DELETE_RANGE: 'deleteRange',
+    REPLACE: 'replace'
 }

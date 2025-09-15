@@ -20,6 +20,7 @@ import * as tools from "./tool_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
 import {EMPTY_CHAR} from "../config/chars.js";
+import SelectionRect from "../geometry/selection/rect.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -281,9 +282,16 @@ function redrawSelection() {
     }
 
     selectionController.vector.drawShapeSelection(selectionCanvas);
-    if (selectionController.vector.caretCell()) {
+
+    const vectorCaret = selectionController.vector.caretCell();
+    if (vectorCaret) {
         const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(selectionController.vector.caretCell(), state.getConfig('caretStyle'), () => PRIMARY_COLOR);
+        caretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => PRIMARY_COLOR);
+    }
+
+    const vectorTextAreas = selectionController.vector.selectedTextAreas();
+    if (vectorTextAreas) {
+        selectionCanvas.highlightPolygons(vectorTextAreas.map(cellArea => new SelectionRect(cellArea.topLeft, cellArea.bottomRight)));
     }
 
     refreshCanvasDetails();

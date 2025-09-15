@@ -69,9 +69,9 @@ export default class Rect extends BoxShape {
             [FILL_PROP]: options.fill || FILL_OPTIONS.EMPTY,
             [CHAR_PROP]: options.char,
             [COLOR_PROP]: options.colorIndex,
-            [TEXT_PROP]: " Hello World\nI am Merlin, lord of magicke, and I shall rule these lands",
-            [TEXT_ALIGN_V_PROP]: TEXT_ALIGN_V_OPTS.TOP,
-            [TEXT_ALIGN_H_PROP]: TEXT_ALIGN_H_OPTS.LEFT,
+            [TEXT_PROP]: "",
+            [TEXT_ALIGN_V_PROP]: TEXT_ALIGN_V_OPTS.MIDDLE,
+            [TEXT_ALIGN_H_PROP]: TEXT_ALIGN_H_OPTS.CENTER,
             textPadding: 0
         };
 

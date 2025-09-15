@@ -86,7 +86,7 @@ export function init() {
  * @param {boolean|function:boolean} [data.enabled=true] - Whether the action is allowed to be called. If disabled, the
  *   action will be greyed out and un-clickable.
  * @param {boolean|function:boolean} [data.visible=true] - Whether the action is visible in the UI. If an action is
- *   not visible it can still be called via shortcut -- if that is not desired makes sure enabled is false.
+ *   not visible it can still be called via shortcut -- if that is not desired make sure enabled is also false.
  * @param {string|function:string} [data.shortcutAbbr] - Hardcoded shortcut abbreviation (not common; most abbr will
  *   come from preferences)
  * @param {string|function:string} [data.icon] - Class name of an icon (e.g. remixicon class). If the action is shown in
@@ -140,6 +140,15 @@ export function isActionEnabled(id) {
     }
 
     return isFunction(actions[id].enabled) ? actions[id].enabled() : actions[id].enabled;
+}
+
+export function isActionVisible(id) {
+    if (actions[id] === undefined) {
+        console.error('No action found for: ', id);
+        return false;
+    }
+
+    return isFunction(actions[id].visible) ? actions[id].visible() : actions[id].visible;
 }
 
 // Returns true if the action is successfully called

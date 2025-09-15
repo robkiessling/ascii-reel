@@ -9,7 +9,7 @@ import {
     TEXT_PROP
 } from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
-import {deleteBackward, deleteForward, insertAt} from "../../utils/strings.js";
+import {deleteBackward, deleteForward, deleteRange, insertAt} from "../../utils/strings.js";
 
 export default class Shape {
     constructor(id, type, props = {}) {
@@ -131,7 +131,7 @@ export default class Shape {
         return this.constructor.deserializeProps(this._resizeSnapshot);
     }
 
-    resize(handle, position, options) {
+    resize(oldBox, newBox) {
         throw new Error(`resize must be implemented by subclass`)
     }
 
@@ -215,6 +215,9 @@ export default class Shape {
                 break;
             case SHAPE_TEXT_ACTIONS.DELETE_FORWARD:
                 this.props[TEXT_PROP] = deleteForward(currentText, actionParams.caretIndex)
+                break;
+            case SHAPE_TEXT_ACTIONS.DELETE_RANGE:
+                this.props[TEXT_PROP] = deleteRange(currentText, actionParams.startIndex, actionParams.endIndex)
                 break;
             case SHAPE_TEXT_ACTIONS.REPLACE:
                 this.props[TEXT_PROP] = actionParams.text;

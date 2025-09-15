@@ -23,7 +23,6 @@ import {translateGlyphs} from "../../utils/arrays.js";
  */
 
 export function init() {
-    actions.registerAction('selection.select-all', () => selectAll());
     setupEventBus();
     clearCaches();
 }
@@ -35,7 +34,7 @@ export function hasTarget() { return state.selection.raster.hasTarget(); }
 function firstSelectionShape() { return selectionShapes().at(0) }
 function lastSelectionShape() { return selectionShapes().at(-1) }
 
-export function clear(refresh = true) {
+export function clear(saveHistory = true) {
     let hasChanges = false;
 
     if (movableContent()) {
@@ -48,9 +47,9 @@ export function clear(refresh = true) {
         hasChanges = true;
     }
 
-    if (hasChanges && refresh) {
+    if (hasChanges) {
         eventBus.emit(EVENTS.SELECTION.CHANGED);
-        saveSelectionHistory();
+        if (saveHistory) saveSelectionHistory();
     }
 }
 
@@ -58,16 +57,16 @@ export function empty() { return state.selection.raster.empty(); }
 export function canSelectAll() { return state.selection.raster.canSelectAll(); }
 
 export function selectAll() {
+    if (!canSelectAll()) return;
+
     // selectAll is only used with a few tools; switch to selection-rect if not using one of those tools already
     if (!['text-editor', 'selection-rect'].includes(state.getConfig('tool'))) {
-        tools.changeTool('text-editor');
+        tools.changeTool('text-editor', false);
     }
 
-    if (canSelectAll()) {
-        state.selection.raster.selectAll();
-        eventBus.emit(EVENTS.SELECTION.CHANGED);
-        saveSelectionHistory();
-    }
+    state.selection.raster.selectAll();
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
+    saveSelectionHistory();
 }
 
 // -------------------------------------------------------------------------------- Selection Results

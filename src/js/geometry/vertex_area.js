@@ -1,5 +1,6 @@
 import PixelRect from "./pixel_rect.js";
 import Vertex from "./vertex.js";
+import CellArea from "./cell_area.js";
 
 /**
  * Represents a rectangular region of the grid using cell corners (vertices), rather than cell centers.
@@ -71,6 +72,38 @@ export default class VertexArea extends PixelRect {
 
     clone() {
         return new VertexArea(this.topLeft.clone(), this.bottomRight.clone());
+    }
+
+    /**
+     * Converts the VertexArea to a CellArea.
+     *
+     * If the VertexArea has zero rows or zero cols, the CellArea must be expanded (CellAreas
+     * cannot have zero rows/cols). The direction of expansion can be specified by parameters.
+     * @param {boolean} [expandDown=true] - Direction to vertically expand if zero rows
+     * @param {boolean} [expandRight=true] - Direction to horizontally expand if zero cols
+     * @returns {CellArea}
+     */
+    toCellArea(expandDown = true, expandRight = true) {
+        const topLeftCell = this.topLeft.bottomRightCell;
+        const bottomRightCell = this.bottomRight.topLeftCell;
+
+        if (bottomRightCell.col < topLeftCell.col) {
+            if (expandRight) {
+                bottomRightCell.translate(0, 1)
+            } else {
+                topLeftCell.translate(0, -1)
+            }
+        }
+
+        if (bottomRightCell.row < topLeftCell.row) {
+            if (expandDown) {
+                bottomRightCell.translate(1, 0)
+            } else {
+                topLeftCell.translate(-1, 0)
+            }
+        }
+
+        return new CellArea(topLeftCell, bottomRightCell);
     }
 
     toString() {

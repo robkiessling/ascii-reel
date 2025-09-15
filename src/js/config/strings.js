@@ -200,14 +200,16 @@ export const STRINGS = {
     'tools.shapes.color-picker.name': 'Shape Color',
     'tools.shapes.color-picker.description': 'Click to open the color picker.',
 
-    'tools.shapes.order.name': 'Order',
+    'tools.shapes.order.name': 'Re-order Shape',
     'tools.shapes.sendToBack.name': 'Send To Back',
     'tools.shapes.sendBackward.name': 'Send Backward',
     'tools.shapes.bringForward.name': 'Bring Forward',
     'tools.shapes.bringToFront.name': 'Bring To Front',
     'tools.shapes.delete.name': 'Delete Shape',
+    'tools.shapes.delete.description': 'Remove the selected shapes from the canvas.',
 
-    'tools.shapes.startCursor.name': 'Start Cursor',
+    'tools.shapes.editText.name': 'Edit Text',
+    'tools.shapes.editText.description': 'Change the text inside the selected shape.',
 
     'tools.shapes.textAlignH.name': 'Horizontal Alignment',
     'tools.shapes.textAlignH.alignLeft.name': 'Align Left',

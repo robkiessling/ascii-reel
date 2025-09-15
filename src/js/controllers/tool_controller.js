@@ -35,6 +35,7 @@ import Line from "../geometry/shapes/line.js";
 import {MOUSE} from "../io/mouse.js";
 import Freeform from "../geometry/shapes/freeform.js";
 import {LAYER_TYPES} from "../state/constants.js";
+import {canEditText, getTextSelection} from "./selection/vector_controller.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -77,10 +78,12 @@ function refresh() {
     refreshShapeProperties();
 }
 
-export function changeTool(newTool) {
+// TODO Rework this so we don't need second parameter
+export function changeTool(newTool, saveHistoryOnSelectionClear = true) {
+    if (state.getConfig('tool') === newTool) return;
+
     state.setConfig('tool', newTool);
-    selectionController.raster.clear();
-    selectionController.vector.deselectAllShapes();
+    selectionController.clear(saveHistoryOnSelectionClear);
     refresh();
 }
 
@@ -90,7 +93,8 @@ export function changeDrawType(toolKey, newDrawType) {
         refresh();
     }
     else {
-        changeTool(toolKey);
+        throw new Error("TEST: I don't think this is reachable");
+        // changeTool(toolKey);
     }
 }
 
@@ -658,20 +662,16 @@ function setupShapeProperties() {
     setupOrderMenu();
 
     actions.registerAction('tools.shapes.delete', {
-        callback: () => selectionController.vector.deleteSelectedShapes()
+        callback: () => selectionController.vector.deleteSelectedShapes(),
+        enabled: () => selectionController.vector.hasSelectedShapes(),
+        shortcutAbbr: 'Delete'
     })
 
-    actions.registerAction('tools.shapes.startCursor', {
-        callback: () => {
-            selectionController.vector.setShapeCaret(
-                selectionController.vector.singleSelectedShape().id,
-                selectionController.vector.singleSelectedShape().textLayout.maxCaretIndex
-            )
-        },
-        enabled: () => {
-            const singleShape = selectionController.vector.singleSelectedShape();
-            return singleShape && singleShape.canHaveText;
-        }
+    actions.registerAction('tools.shapes.editText', {
+        callback: () => selectionController.vector.selectAllText(),
+        visible: () => selectionController.vector.canEditText(),
+        enabled: () => selectionController.vector.canEditText() && !selectionController.vector.getTextSelection(),
+        shortcutAbbr: 'Enter'
     })
 
     $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {
@@ -833,6 +833,7 @@ function refreshShapeProperties() {
             const actionId = $element.data('action');
             $element.html(getIconHTML(actionId))
             $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
+            $element.toggle(actions.isActionVisible(actionId));
         });
     } else {
         shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
