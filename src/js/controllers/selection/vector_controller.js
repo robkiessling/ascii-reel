@@ -10,9 +10,7 @@ import ShapeSelector from "./shape_selector.js";
 import VectorMarquee from "./vector_marquee.js";
 import {arraysEqual} from "../../utils/arrays.js";
 import {MOUSE} from "../../io/mouse.js";
-import {WHITESPACE_CHAR} from "../../config/chars.js";
-import {hasSelection, movableContent} from "./raster_controller.js";
-import {insertAt, replaceAt} from "../../utils/strings.js";
+import {insertAt} from "../../utils/strings.js";
 
 /**
  * Vector selection controller.
@@ -45,6 +43,11 @@ export function deselectAllShapes(saveHistory = true) {
 export function selectedShapes() { return state.selection.vector.selectedShapes() }
 export function selectedShapeTypes() { return state.selection.vector.selectedShapeTypes() }
 export function selectedShapeProps() { return state.selection.vector.selectedShapeProps() }
+
+export function singleSelectedShape() {
+    if (numSelectedShapes() === 1) return selectedShapes()[0];
+    return null;
+}
 
 /**
  * Updates all selected shapes.
@@ -304,27 +307,49 @@ function finishMarquee(mouseEvent) {
 }
 
 
-// ------------------------------------------------------------------------------------------------- Text handling
+// ------------------------------------------------------------------------------------------------- Keyboard
 
-export function handleEnterKey() {
-    if (!caretCell()) return false;
+/**
+ * Handles the escape key being pressed.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleEscapeKey() {
+    if (!hasSelectedShapes()) return false;
 
-    const { shapeId, caretIndex } = getShapeCaret();
-    state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex, char: '\n' });
-
-    moveCaret('right');
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-
-    // Store a new history snapshot at the start of the new line. This way the caret jumps from end of line ->
-    // start of line -> end of prev line -> start of prev line -> etc. In other words, there are 2 jump
-    // positions per line.
-    state.pushHistory();
+    if (caretCell()) {
+        clearShapeCaret();
+    } else {
+        deselectAllShapes();
+    }
 
     return true;
 }
 
-// -------------------------------------------------------------------------------- Char Input Handling
+
+export function handleEnterKey() {
+    if (caretCell()) {
+        const { shapeId, caretIndex } = getShapeCaret();
+        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex, char: '\n' });
+
+        moveCaret('right');
+
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+
+        // Store a new history snapshot at the start of the new line. This way the caret jumps from end of line ->
+        // start of line -> end of prev line -> start of prev line -> etc. In other words, there are 2 jump
+        // positions per line.
+        state.pushHistory();
+        return true;
+    }
+
+    if (singleSelectedShape() && singleSelectedShape().canHaveText) {
+        setShapeCaret(singleSelectedShape().id, singleSelectedShape().textLayout.maxCaretIndex)
+        return true;
+    }
+
+    return false;
+}
+
 
 function canHandleCharInput() {
     return caretCell();

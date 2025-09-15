@@ -86,8 +86,8 @@ function handleEscapeKey() {
     state.endHistoryModification();
 
     if (tools.handleEscapeKey()) return;
-
-    selectionController.clear();
+    if (selectionController.raster.handleEscapeKey()) return;
+    if (selectionController.vector.handleEscapeKey()) return;
 }
 
 function handleTabKey(e) {

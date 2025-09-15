@@ -286,6 +286,19 @@ export function flipHorizontally(mirrorChars) {
 
 // -------------------------------------------------------------------------------- Keyboard
 
+
+/**
+ * Handles the escape key being pressed.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleEscapeKey() {
+    if (!hasTarget()) return false;
+
+    clear();
+    return true;
+}
+
+
 /**
  * Handles an arrow key being pressed.
  * @param {'left'|'right'|'up'|'down'} direction - Direction of arrow key
@@ -378,8 +391,6 @@ export function handleEnterKey(shiftKey) {
 
     return false;
 }
-
-// -------------------------------------------------------------------------------- Char Input Handling
 
 function canHandleCharInput() {
     return movableContent() || caretCell() || hasSelection();

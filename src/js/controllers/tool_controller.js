@@ -663,9 +663,15 @@ function setupShapeProperties() {
 
     actions.registerAction('tools.shapes.startCursor', {
         callback: () => {
-            selectionController.vector.setShapeCaret(selectionController.vector.selectedShapes()[0].id, 0)
+            selectionController.vector.setShapeCaret(
+                selectionController.vector.singleSelectedShape().id,
+                selectionController.vector.singleSelectedShape().textLayout.maxCaretIndex
+            )
         },
-        enabled: () => selectionController.vector.selectedShapes().length
+        enabled: () => {
+            const singleShape = selectionController.vector.singleSelectedShape();
+            return singleShape && singleShape.canHaveText;
+        }
     })
 
     $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {

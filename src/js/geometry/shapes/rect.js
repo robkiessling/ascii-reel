@@ -137,6 +137,10 @@ export default class Rect extends BoxShape {
 
     // ------------------------------------------------------ Text
 
+    get canHaveText() {
+        return true;
+    }
+
     _applyTextLayout(glyphs, cellArea) {
         const textLayout = new TextLayout(
             this.props[TEXT_PROP],

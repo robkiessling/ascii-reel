@@ -181,12 +181,18 @@ export default class Shape {
         return cellArea.contains(this.boundingArea);
     }
 
+    get canHaveText() {
+        return false;
+    }
+
     /**
-     * Returns the shape's TextLayout if the shape supports it
-     * @returns {TextLayout|undefined}
+     * Returns the shape's TextLayout component.
+     * @returns {TextLayout}
      */
     get textLayout() {
+        if (!this.canHaveText) throw new Error('Shape does not support textLayout');
         if (this._cache.textLayout === undefined) this._cacheGeometry();
+        if (this._cache.textLayout === undefined) throw new Error(`Shape failed to create textLayout during _cacheGeometry`)
         return this._cache.textLayout;
     }
 
