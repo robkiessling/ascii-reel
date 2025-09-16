@@ -53,9 +53,13 @@ export default class Point {
         return new Cell(row, col);
     }
 
-    // Getting the caret positioning is slightly different than just getting the corresponding cell; we round the x
-    // position up or down, depending on where the user clicks in the cell. This is how real text editors work - if you
-    // click on the right half of a character, it will round up to the next character
+
+    /**
+     * Getting a caret's position is slightly different from simply retrieving the corresponding cell: we round the x
+     * position up or down depending on where the user clicks in the cell. This is how real text editors work - if you
+     * click on the right half of a character, it will round up to the next character.
+     * @returns {Cell}
+     */
     get caretCell() {
         const row = Math.floor(this.y / fontHeight);
         const col = Math.round(this.x / fontWidth);

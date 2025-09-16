@@ -55,13 +55,8 @@ export function selectedShapes() { return state.selection.vector.selectedShapes(
 export function selectedShapeTypes() { return state.selection.vector.selectedShapeTypes() }
 export function selectedShapeProps() { return state.selection.vector.selectedShapeProps() }
 
-export function singleSelectedShape() {
-    if (numSelectedShapes() === 1) return selectedShapes()[0];
-    return null;
-}
-
 export function selectAll() {
-    if (canHandleCharInput()) {
+    if (getTextSelection()) {
         selectAllText();
     } else {
         // selectAllShapes is only used with the select tool
@@ -134,38 +129,41 @@ export function reorderSelectedShapes(action) {
 let shapeSelector = new ShapeSelector();
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
 let marquee = null;
+let draggedCaretStart; // start point of a text highlight
 
 function setupEventBus() {
     let prevCell;
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas }) => {
         if (mouseEvent.button !== MOUSE.LEFT) return;
+        if (state.getConfig('tool') !== 'select') return;
 
-        const tool = state.getConfig('tool')
+        const handle = getHandle(cell, mouseEvent, canvas);
+        
+        if (handle) {
+            cell = cellForHandle(cell, handle, canvas, mouseEvent);
+            startDraggingHandle(handle, cell, mouseEvent)
+        } else {
+            if (!mouseEvent.shiftKey) deselectAllShapes();
+            createMarquee(canvas, mouseEvent);
+        }
 
         prevCell = cell;
-
-        switch(tool) {
-            case 'select':
-                onMousedown(cell, mouseEvent, canvas);
-                break;
-            default:
-                return; // Ignore all other tools
-        }
     })
 
     eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas }) => {
         if (draggedHandle) {
+            cell = cellForHandle(cell, draggedHandle, canvas, mouseEvent);
             dragHandle(canvas, mouseEvent, cell, prevCell);
-            prevCell = cell;
         }
 
         if (marquee) updateMarquee(mouseEvent);
 
+        prevCell = cell;
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, canvas }) => {
-        if (draggedHandle) finishDragHandle();
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent }) => {
+        if (draggedHandle) finishDraggingHandle();
 
         if (marquee) finishMarquee(mouseEvent);
     })
@@ -173,20 +171,7 @@ function setupEventBus() {
     // Note: We handle the EVENTS.CANVAS.DBLCLICK in the normal MOUSEDOWN event handler using mouseEvent.detail
 }
 
-
-function onMousedown(cell, mouseEvent, canvas) {
-    const handle = getHandle(cell, mouseEvent, canvas);
-
-    if (!handle) {
-        if (mouseEvent.shiftKey) {
-            createMarquee(canvas, mouseEvent);
-        } else {
-            deselectAllShapes();
-            createMarquee(canvas, mouseEvent);
-        }
-        return;
-    }
-
+function startDraggingHandle(handle, cell, mouseEvent) {
     switch (handle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
@@ -211,11 +196,12 @@ function onMousedown(cell, mouseEvent, canvas) {
             // Ensure this is the only shape selected
             setSelectedShapeIds([handle.shapeId])
 
-            const caretIndex = handle.shape.textLayout.getCaretIndexForCell(
-                canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell
-            );
+            const caretIndex = handle.shape.textLayout.getCaretIndexForCell(cell);
             setTextCaret(handle.shapeId, caretIndex);
+            draggedCaretStart = caretIndex;
             break;
+        default:
+            throw new Error(`Unknown handle type: ${handle.type}`)
     }
 }
 
@@ -230,14 +216,20 @@ function dragHandle(canvas, mouseEvent, cell, prevCell) {
         case HANDLE_TYPES.BODY:
             shapeSelector.translate(cell.row - prevCell.row, cell.col - prevCell.col)
             break;
-        case null:
-            throw new Error("Cannot dragHandle with null handle type")
+        case HANDLE_TYPES.CARET:
+            const newCaretIndex = draggedHandle.shape.textLayout.getCaretIndexForCell(cell);
+            const selectionStart = Math.min(draggedCaretStart, newCaretIndex);
+            const selectionEnd = Math.max(draggedCaretStart, newCaretIndex);
+            setSelectedTextRange(draggedHandle.shape.id, selectionStart, selectionEnd);
+            break;
+        default:
+            throw new Error(`Unknown handle type: ${draggedHandle.type}`)
     }
 
     shapeSelector.cancelPendingSelection();
 }
 
-function finishDragHandle() {
+function finishDraggingHandle() {
     switch (draggedHandle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
@@ -248,8 +240,11 @@ function finishDragHandle() {
             shapeSelector.commitPendingSelection()
             shapeSelector.finishTranslate()
             break;
-        case null:
-            throw new Error("Cannot dragHandle with null handle type")
+        case HANDLE_TYPES.CARET:
+            // Do nothing
+            break;
+        default:
+            throw new Error(`Unknown handle type: ${draggedHandle.type}`)
     }
 
     draggedHandle = null;
@@ -284,6 +279,17 @@ export function getHandle(cell, mouseEvent, canvas) {
     // Check body handles of all shapes (both selected and unselected)
     return state.testCurrentCelShapeHitboxes(cell);
 }
+
+/**
+ * Caret handles use special cell rounding to make it more text-editor like.
+ * See {@link Point#caretCell} for more info.
+ */
+function cellForHandle(cell, handle, canvas, mouseEvent) {
+    return handle.type === HANDLE_TYPES.CARET ?
+        canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell :
+        cell
+}
+
 
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.
@@ -349,7 +355,7 @@ export function handleEscapeKey() {
 
 
 export function handleEnterKey() {
-    if (canHandleCharInput()) {
+    if (getTextSelection()) {
         const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
         if (hasRange) {
@@ -376,18 +382,13 @@ export function handleEnterKey() {
     return false;
 }
 
-
-function canHandleCharInput() {
-    return !!getTextSelection();
-}
-
 /**
  * Handles a keyboard key being pressed.
  * @param {string} char - The char of the pressed keyboard key.
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCharKey(char) {
-    if (!canHandleCharInput()) return false;
+    if (!getTextSelection()) return false;
 
     const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
@@ -413,7 +414,7 @@ let compositionCaretIndex, compositionStartText;
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCompositionStart(rollbackPrevChar) {
-    if (!canHandleCharInput()) return false;
+    if (!getTextSelection()) return false;
 
     let { shapeId, hasRange, startIndex, endIndex, textLayout } = getTextSelection();
 
@@ -443,7 +444,7 @@ export function handleCompositionStart(rollbackPrevChar) {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCompositionUpdate(str, char) {
-    if (!canHandleCharInput()) return false;
+    if (!getTextSelection()) return false;
 
     const { shapeId } = getTextSelection();
 
@@ -461,7 +462,7 @@ export function handleCompositionUpdate(str, char) {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCompositionEnd() {
-    return canHandleCharInput();
+    return !!getTextSelection();
 }
 
 /**
@@ -470,7 +471,7 @@ export function handleCompositionEnd() {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleBackspaceKey(isDelete = false) {
-    if (canHandleCharInput()) {
+    if (getTextSelection()) {
         const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
         if (hasRange) {
@@ -512,12 +513,12 @@ export function caretCell() {
 export function selectedTextAreas() {
     const selection = getTextSelection();
     if (!selection || !selection.hasRange) return null;
-    return selection.textLayout.lineCellAreas;
+    return selection.textLayout.lineCellAreas(selection.startIndex, selection.endIndex);
 }
 
-export function setTextRange(shapeId, selectionStart, selectionEnd, saveHistory = true) {
+export function setSelectedTextRange(shapeId, selectionStart, selectionEnd, saveHistory = true) {
     preferredCaretCol = undefined;
-    state.selection.vector.setTextRange(shapeId, selectionStart, selectionEnd)
+    state.selection.vector.setSelectedTextRange(shapeId, selectionStart, selectionEnd)
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
 }
@@ -553,6 +554,21 @@ export function setTextCaret(shapeId, caretIndex, options = {}) {
     if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
 }
 
+/**
+ * Retrieves the current text selection, if any. A selection may represent either:
+ *   - A highlighted range of text (hasRange = true), or
+ *   - A single caret position (hasRange = false).
+ *
+ * If no selection exists, the function returns null.
+ *
+ * @returns {?{
+ *   shapeId: string,
+ *   textLayout: TextLayout,
+ *   hasRange: boolean,
+ *   startIndex: number,
+ *   endIndex: number
+ * }} - The active text selection, or null if none exists.
+ */
 export function getTextSelection() { return state.selection.vector.getTextSelection() }
 
 export function clearTextSelection(saveHistory = true) {

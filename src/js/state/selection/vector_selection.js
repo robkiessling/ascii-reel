@@ -11,7 +11,6 @@ import {transformValues} from "../../utils/objects.js";
 const DEFAULT_STATE = {
     shapeIds: new Set(),
     caretShapeId: null,
-    caretIndex: null,
     textSelectionStart: null,
     textSelectionEnd: null,
 }
@@ -126,7 +125,7 @@ export function reorderSelectedShapes(action) {
     reorderCurrentCelShapes(selectedShapeIds(), action)
 }
 
-export function setTextRange(shapeId, selectionStart, selectionEnd) {
+export function setSelectedTextRange(shapeId, selectionStart, selectionEnd) {
     state.caretShapeId = shapeId;
     state.textSelectionStart = selectionStart;
     state.textSelectionEnd = selectionEnd;
@@ -151,9 +150,10 @@ export function selectAllText() {
     const shape = selectedShapes()[0];
     if (!shape.canHaveText) throw new Error('Shape has no text property to select');
     const textLayout = getCurrentCelShape(shape.id).textLayout
-    setTextRange(shape.id, textLayout.minCaretIndex, textLayout.maxCaretIndex);
+    setSelectedTextRange(shape.id, textLayout.minCaretIndex, textLayout.maxCaretIndex);
 }
 
+// TODO maybe we don't need to pass shapeId here? Could always just assume it's our single selected shape
 export function setTextCaret(shapeId, caretIndex) {
     state.caretShapeId = shapeId;
     state.textSelectionStart = caretIndex;

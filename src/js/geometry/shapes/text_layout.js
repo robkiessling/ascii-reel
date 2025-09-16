@@ -154,28 +154,43 @@ export default class TextLayout {
     }
 
     /**
-     * Returns a CellArea for every horizontal line of text.
-     * Because CellAreas have a minimum width of 1 column, if a line is just '' its CellArea will still have 1 column.
+     * Returns a CellArea for each horizontal line of selected text. If a selected line contains no characters (''),
+     * its CellArea will still span 1 column since CellAreas cannot have zero width.
+     * @param {number} selectionStart - Caret index where the selection begins
+     * @param {number} selectionEnd - Caret index where the selection ends
      * @returns {CellArea[]}
      */
-    get lineCellAreas() {
-        return this.lines.map(({ row, colOffset, displayLength }) => {
-            const leftEdge = new Vertex(row, colOffset)
-            const rightEdge = new Vertex(row, colOffset + displayLength)
+    lineCellAreas(selectionStart, selectionEnd) {
+        return this.lines.map(line => {
+            // Skip lines completely outside the selection range
+            if (selectionStart >= line.caretEnd) return null;
+            if (selectionEnd <= line.caretStart) return null;
 
-            // Convert to absolute coords
-            leftEdge.translate(this.cellArea.topLeft.row, this.cellArea.topLeft.col)
-            rightEdge.translate(this.cellArea.topLeft.row, this.cellArea.topLeft.col)
+            // Compute overlap between selection and this line (in caret coordinates)
+            const overlapStart = Math.max(line.caretStart, selectionStart);
+            const overlapEnd = Math.min(line.caretEnd, selectionEnd);
 
-            const vertexArea = new VertexArea(leftEdge, rightEdge);
+            // Convert overlap to column coordinates, clamped to visible width
+            const startCol = line.colOffset + (overlapStart - line.caretStart);
+            const endCol = line.colOffset + (overlapEnd - line.caretStart);
+            const maxCol = line.colOffset + line.displayLength;
+            const clampedStartCol = Math.min(startCol, maxCol);
+            const clampedEndCol = Math.min(endCol, maxCol);
 
-            // When converting VertexArea to a CellArea, have to define how it works when a line has zero width.
-            // In our case, we want the resulting CellArea (which must have 1 width) to expand depending on text alignment.
+            // Build vertices for the selected span and translate to absolute coords
+            const leftVertex = new Vertex(line.row, clampedStartCol)
+            const rightVertex = new Vertex(line.row, clampedEndCol)
+            leftVertex.translate(this.cellArea.topLeft.row, this.cellArea.topLeft.col)
+            rightVertex.translate(this.cellArea.topLeft.row, this.cellArea.topLeft.col)
+
+            // Create a CellArea from the vertex span. Zero-width spans are expanded to 1
+            // column, aligned according to text alignment settings.
+            const vertexArea = new VertexArea(leftVertex, rightVertex);
             return vertexArea.toCellArea(
                 this.alignV !== TEXT_ALIGN_V_OPTS.BOTTOM,
                 this.alignH !== TEXT_ALIGN_H_OPTS.RIGHT
             )
-        })
+        }).filter(Boolean); // Drop skipped lines
     }
 
     /**

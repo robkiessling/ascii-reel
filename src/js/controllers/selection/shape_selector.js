@@ -20,7 +20,9 @@ import {eventBus, EVENTS} from "../../events/events.js";
 export default class ShapeSelector {
 
     get boundingArea() {
-        if (selectionController.vector.singleSelectedShape()) return selectionController.vector.singleSelectedShape().boundingArea;
+        if (selectionController.vector.numSelectedShapes() === 1) {
+            return selectionController.vector.selectedShapes()[0].boundingArea;
+        }
 
         return CellArea.mergeCellAreas(selectionController.vector.selectedShapes().map(shape => shape.boundingArea))
     }
