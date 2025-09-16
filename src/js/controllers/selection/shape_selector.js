@@ -1,6 +1,6 @@
 import * as selectionController from "./index.js";
 import CellArea from "../../geometry/cell_area.js";
-import {arraysEqual} from "../../utils/arrays.js";
+import {areArraysEqual} from "../../utils/arrays.js";
 import {resizeBoundingBox} from "../../geometry/shapes/algorithms/box_sizing.js";
 import VertexArea from "../../geometry/vertex_area.js";
 import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
@@ -69,7 +69,7 @@ export default class ShapeSelector {
             this._markPendingSelection(shapeId);
         } else {
             const newSelectedShapeIds = [shapeId];
-            const hasStateChange = !arraysEqual(selectionController.vector.selectedShapeIds(), newSelectedShapeIds);
+            const hasStateChange = !areArraysEqual(selectionController.vector.selectedShapeIds(), newSelectedShapeIds);
             selectionController.vector.setSelectedShapeIds(newSelectedShapeIds);
             if (hasStateChange) this._onStateChange();
         }

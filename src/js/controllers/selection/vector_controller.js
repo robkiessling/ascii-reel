@@ -2,13 +2,14 @@ import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js";
 import {SELECTION_COLOR} from "../../config/colors.js";
 import {
+    CARET_HANDLE_SELECTION_MODES,
     HANDLE_CELL_RADIUS, HANDLE_TYPES, SHAPE_BOX_PADDING, SHAPE_DASHED_OUTLINE_LENGTH,
     SHAPE_OUTLINE_WIDTH, SHAPE_TEXT_ACTIONS
 } from "../../geometry/shapes/constants.js";
 import CellArea from "../../geometry/cell_area.js";
 import ShapeSelector from "./shape_selector.js";
 import VectorMarquee from "./vector_marquee.js";
-import {arraysEqual} from "../../utils/arrays.js";
+import {areArraysEqual} from "../../utils/arrays.js";
 import {MOUSE} from "../../io/mouse.js";
 import {insertAt} from "../../utils/strings.js";
 import * as tools from "../tool_controller.js";
@@ -56,7 +57,7 @@ export function selectedShapeTypes() { return state.selection.vector.selectedSha
 export function selectedShapeProps() { return state.selection.vector.selectedShapeProps() }
 
 export function selectAll() {
-    if (getTextSelection()) {
+    if (isEditingText()) {
         selectAllText();
     } else {
         // selectAllShapes is only used with the select tool
@@ -129,7 +130,6 @@ export function reorderSelectedShapes(action) {
 let shapeSelector = new ShapeSelector();
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
 let marquee = null;
-let draggedCaretStart; // start point of a text highlight
 
 function setupEventBus() {
     let prevCell;
@@ -141,71 +141,59 @@ function setupEventBus() {
         const handle = getHandle(cell, mouseEvent, canvas);
         
         if (handle) {
-            cell = cellForHandle(cell, handle, canvas, mouseEvent);
-            startDraggingHandle(handle, cell, mouseEvent)
+            startHandleDrag(canvas, mouseEvent, cell, handle)
         } else {
             if (!mouseEvent.shiftKey) deselectAllShapes();
-            createMarquee(canvas, mouseEvent);
+            startMarquee(canvas, mouseEvent);
         }
 
         prevCell = cell;
     })
 
     eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas }) => {
-        if (draggedHandle) {
-            cell = cellForHandle(cell, draggedHandle, canvas, mouseEvent);
-            dragHandle(canvas, mouseEvent, cell, prevCell);
-        }
-
+        if (draggedHandle) updateHandleDrag(canvas, mouseEvent, cell, prevCell);
         if (marquee) updateMarquee(mouseEvent);
 
         prevCell = cell;
     });
 
     eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent }) => {
-        if (draggedHandle) finishDraggingHandle();
-
+        if (draggedHandle) finishHandleDrag();
         if (marquee) finishMarquee(mouseEvent);
     })
 
-    // Note: We handle the EVENTS.CANVAS.DBLCLICK in the normal MOUSEDOWN event handler using mouseEvent.detail
+    // Note: We handle the EVENTS.CANVAS.DBLCLICK (and higher) in the normal MOUSEDOWN event handler using mouseEvent.detail
 }
 
-function startDraggingHandle(handle, cell, mouseEvent) {
+function startHandleDrag(canvas, mouseEvent, cell, handle) {
     switch (handle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
         case HANDLE_TYPES.CELL:
-            clearTextSelection();
+            stopEditingText();
 
             draggedHandle = handle;
             shapeSelector.beginResize();
             break;
         case HANDLE_TYPES.BODY:
-            clearTextSelection();
+            stopEditingText();
 
             draggedHandle = handle;
             if (handle.shapeId === undefined) throw new Error(`HANDLE_TYPES.BODY handle must provide shapeId`);
 
-            shapeSelector.mousedownShape(handle.shapeId, mouseEvent.shiftKey && !getTextSelection());
+            shapeSelector.mousedownShape(handle.shapeId, mouseEvent.shiftKey && !isEditingText());
             break;
         case HANDLE_TYPES.CARET:
             draggedHandle = handle;
             if (handle.shapeId === undefined) throw new Error(`HANDLE_TYPES.CARET handle must provide shapeId`);
-
-            // Ensure this is the only shape selected
-            setSelectedShapeIds([handle.shapeId])
-
-            const caretIndex = handle.shape.textLayout.getCaretIndexForCell(cell);
-            setTextCaret(handle.shapeId, caretIndex);
-            draggedCaretStart = caretIndex;
+            startTextSelection(canvas, mouseEvent, cell, handle);
             break;
         default:
             throw new Error(`Unknown handle type: ${handle.type}`)
     }
 }
 
-function dragHandle(canvas, mouseEvent, cell, prevCell) {
+function updateHandleDrag(canvas, mouseEvent, cell, prevCell) {
     switch (draggedHandle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
@@ -217,10 +205,7 @@ function dragHandle(canvas, mouseEvent, cell, prevCell) {
             shapeSelector.translate(cell.row - prevCell.row, cell.col - prevCell.col)
             break;
         case HANDLE_TYPES.CARET:
-            const newCaretIndex = draggedHandle.shape.textLayout.getCaretIndexForCell(cell);
-            const selectionStart = Math.min(draggedCaretStart, newCaretIndex);
-            const selectionEnd = Math.max(draggedCaretStart, newCaretIndex);
-            setSelectedTextRange(draggedHandle.shape.id, selectionStart, selectionEnd);
+            updateTextSelection(canvas, mouseEvent, cell, draggedHandle)
             break;
         default:
             throw new Error(`Unknown handle type: ${draggedHandle.type}`)
@@ -229,7 +214,7 @@ function dragHandle(canvas, mouseEvent, cell, prevCell) {
     shapeSelector.cancelPendingSelection();
 }
 
-function finishDraggingHandle() {
+function finishHandleDrag() {
     switch (draggedHandle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
@@ -260,7 +245,7 @@ export function getHandle(cell, mouseEvent, canvas) {
         const shape = shapes[0];
 
         // If the caret is already showing or this was a dblclick, check individual shape's caret handle for a match
-        if (getTextSelection() || mouseEvent.detail > 1) {
+        if (isEditingText() || mouseEvent.detail > 1) {
             const caretHandle = shape.handles.caret.at(0);
             if (caretHandle && caretHandle.matches({mouseEvent, canvas, cell})) return caretHandle;
         }
@@ -280,21 +265,11 @@ export function getHandle(cell, mouseEvent, canvas) {
     return state.testCurrentCelShapeHitboxes(cell);
 }
 
-/**
- * Caret handles use special cell rounding to make it more text-editor like.
- * See {@link Point#caretCell} for more info.
- */
-function cellForHandle(cell, handle, canvas, mouseEvent) {
-    return handle.type === HANDLE_TYPES.CARET ?
-        canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell :
-        cell
-}
-
 
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.
 
-function createMarquee(canvas, mouseEvent) {
+function startMarquee(canvas, mouseEvent) {
     const isFreshMarquee = !hasSelectedShapes();
     const originalSelection = selectedShapeIds();
 
@@ -316,7 +291,7 @@ function createMarquee(canvas, mouseEvent) {
             }
         },
         onFinish: () => {
-            const hasStateChange = !arraysEqual(originalSelection, selectedShapeIds())
+            const hasStateChange = !areArraysEqual(originalSelection, selectedShapeIds())
             if (hasStateChange) state.pushHistory();
         }
     })
@@ -344,8 +319,8 @@ function finishMarquee(mouseEvent) {
 export function handleEscapeKey() {
     if (!hasSelectedShapes()) return false;
 
-    if (getTextSelection()) {
-        clearTextSelection();
+    if (isEditingText()) {
+        stopEditingText();
     } else {
         deselectAllShapes();
     }
@@ -355,12 +330,12 @@ export function handleEscapeKey() {
 
 
 export function handleEnterKey() {
-    if (getTextSelection()) {
+    if (isEditingText()) {
         const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
         if (hasRange) {
             state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex });
-            setTextCaret(shapeId, startIndex, { saveHistory: false });
+            setTextCaret(startIndex, { saveHistory: false });
         }
         
         state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, char: '\n' });
@@ -388,13 +363,13 @@ export function handleEnterKey() {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCharKey(char) {
-    if (!getTextSelection()) return false;
+    if (!isEditingText()) return false;
 
     const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
     if (hasRange) {
         state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex });
-        setTextCaret(shapeId, startIndex, { saveHistory: false });
+        setTextCaret(startIndex, { saveHistory: false });
     }
 
     state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, char: char });
@@ -414,13 +389,13 @@ let compositionCaretIndex, compositionStartText;
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCompositionStart(rollbackPrevChar) {
-    if (!getTextSelection()) return false;
+    if (!isEditingText()) return false;
 
     let { shapeId, hasRange, startIndex, endIndex, textLayout } = getTextSelection();
 
     if (hasRange) {
         state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex });
-        setTextCaret(shapeId, startIndex, { saveHistory: false });
+        setTextCaret(startIndex, { saveHistory: false });
         ({ startIndex, textLayout } = getTextSelection()); // get updated values after deleting range
     } else if (rollbackPrevChar) {
         state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex: startIndex })
@@ -444,13 +419,13 @@ export function handleCompositionStart(rollbackPrevChar) {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCompositionUpdate(str, char) {
-    if (!getTextSelection()) return false;
+    if (!isEditingText()) return false;
 
     const { shapeId } = getTextSelection();
 
     const replacementText = insertAt(compositionStartText, compositionCaretIndex, str);
     state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.REPLACE, { text: replacementText })
-    setTextCaret(shapeId, compositionCaretIndex + str.length, { saveHistory: false })
+    setTextCaret(compositionCaretIndex + str.length, { saveHistory: false })
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory({ modifiable: 'vectorSelectionText' })
@@ -462,7 +437,7 @@ export function handleCompositionUpdate(str, char) {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleCompositionEnd() {
-    return !!getTextSelection();
+    return isEditingText();
 }
 
 /**
@@ -471,12 +446,12 @@ export function handleCompositionEnd() {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleBackspaceKey(isDelete = false) {
-    if (getTextSelection()) {
+    if (isEditingText()) {
         const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
         if (hasRange) {
             state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex });
-            setTextCaret(shapeId, startIndex, { saveHistory: false });
+            setTextCaret(startIndex, { saveHistory: false });
         } else if (isDelete) {
             state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_FORWARD, { caretIndex: startIndex });
             eventBus.emit(EVENTS.SELECTION.CHANGED) // Caret doesn't change index, but might change cell if right-aligned
@@ -498,127 +473,6 @@ export function handleBackspaceKey(isDelete = false) {
     return false;
 }
 
-// ------------------------------------------------------------------------------------------------- Text caret
-
-// Tracks the preferred caret column when moving vertically. If the immediate row above/below is too short to reach
-// this column, the caret will land at the row’s end. But if a later row has enough columns again, the caret returns
-// as close as possible to this column.
-let preferredCaretCol;
-
-export function caretCell() {
-    const selection = getTextSelection();
-    if (!selection || selection.hasRange) return null;
-    return selection.textLayout.getCellForCaretIndex(selection.startIndex)
-}
-export function selectedTextAreas() {
-    const selection = getTextSelection();
-    if (!selection || !selection.hasRange) return null;
-    return selection.textLayout.lineCellAreas(selection.startIndex, selection.endIndex);
-}
-
-export function setSelectedTextRange(shapeId, selectionStart, selectionEnd, saveHistory = true) {
-    preferredCaretCol = undefined;
-    state.selection.vector.setSelectedTextRange(shapeId, selectionStart, selectionEnd)
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
-}
-
-export function canEditText() { return state.selection.vector.canEditText() }
-export function canSelectAllText() { return state.selection.vector.canSelectAllText() }
-export function selectAllText(saveHistory = true) {
-    if (!canSelectAllText()) return false;
-
-    preferredCaretCol = undefined;
-    state.selection.vector.selectAllText()
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
-    return true;
-}
-
-/**
- * Places the caret into the given shape's text
- * @param {string} shapeId - ID of shape to place the caret in
- * @param {number} caretIndex - Where to place the caret in the text
- * @param {Object} [options] - Additional options
- * @param {boolean} [options.resetPreferredCol=true] - Whether to reset the stored preferred column
- * @param {boolean} [options.saveHistory=true] - Whether to save this caret move to history
- */
-export function setTextCaret(shapeId, caretIndex, options = {}) {
-    const resetPreferredCol = options.resetPreferredCol === undefined ? true : options.resetPreferredCol;
-    const saveHistory = options.saveHistory === undefined ? true : options.saveHistory;
-
-    if (resetPreferredCol) preferredCaretCol = undefined;
-    state.selection.vector.setTextCaret(shapeId, caretIndex);
-
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
-}
-
-/**
- * Retrieves the current text selection, if any. A selection may represent either:
- *   - A highlighted range of text (hasRange = true), or
- *   - A single caret position (hasRange = false).
- *
- * If no selection exists, the function returns null.
- *
- * @returns {?{
- *   shapeId: string,
- *   textLayout: TextLayout,
- *   hasRange: boolean,
- *   startIndex: number,
- *   endIndex: number
- * }} - The active text selection, or null if none exists.
- */
-export function getTextSelection() { return state.selection.vector.getTextSelection() }
-
-export function clearTextSelection(saveHistory = true) {
-    if (!getTextSelection()) return;
-
-    state.selection.vector.clearTextSelection()
-
-    eventBus.emit(EVENTS.SELECTION.CHANGED)
-    if (saveHistory) state.pushHistory()
-}
-
-function moveCaret(direction, saveHistory = true) {
-    const selection = getTextSelection();
-    if (!selection) throw new Error('Cannot call moveCaret without an existing text selection');
-
-    switch(direction) {
-        case 'left':
-        case 'right':
-            const min = 0;
-            const max = selection.textLayout.maxCaretIndex;
-            const horizOffset = direction === 'left' ? -1 : 1;
-            let newIndex = selection.hasRange ? selection.endIndex : selection.endIndex + horizOffset;
-            if (newIndex < min) newIndex = min;
-            if (newIndex > max) newIndex = max;
-            setTextCaret(selection.shapeId, newIndex, { saveHistory });
-            break;
-        case 'up':
-        case 'down':
-            const vertOffset = direction === 'up' ? -1 : 1;
-            const currentCell = selection.textLayout.getCellForCaretIndex(
-                direction === 'up' ? selection.startIndex : selection.endIndex
-            )
-            const desiredCell = currentCell.translate(vertOffset, 0);
-
-            if (preferredCaretCol === undefined) {
-                preferredCaretCol = desiredCell.col;
-            } else {
-                desiredCell.col = preferredCaretCol
-            }
-
-            const resetPreferredCol = !selection.textLayout.isCellInVerticalBounds(desiredCell);
-            const caretIndex = selection.textLayout.getCaretIndexForCell(desiredCell);
-
-            setTextCaret(selection.shapeId, caretIndex, { resetPreferredCol, saveHistory });
-            break;
-        default:
-            throw new Error(`Invalid direction: ${direction}`);
-    }
-}
-
 /**
  * Handles an arrow key being pressed.
  * @param {'left'|'right'|'up'|'down'} direction - Direction of arrow key
@@ -626,7 +480,7 @@ function moveCaret(direction, saveHistory = true) {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleArrowKey(direction, shiftKey) {
-    if (getTextSelection()) {
+    if (isEditingText()) {
         moveCaret(direction);
         return true; // Consume keyboard event
     }
@@ -662,7 +516,170 @@ export function handleArrowKey(direction, shiftKey) {
     return false;
 }
 
+// ------------------------------------------------------------------------------------------------- Text caret
 
+// Tracks the preferred caret column when moving vertically. If the immediate row above/below is too short to reach
+// this column, the caret will land at the row’s end. But if a later row has enough columns again, the caret returns
+// as close as possible to this column.
+let preferredCaretCol;
+
+export function caretCell() {
+    if (!isEditingText()) return null;
+    const { hasRange, textLayout, startIndex } = getTextSelection();
+    if (hasRange) return null;
+    return textLayout.getCellForCaretIndex(startIndex)
+}
+export function selectedTextAreas() {
+    if (!isEditingText()) return null;
+    const { hasRange, textLayout, startIndex, endIndex } = getTextSelection();
+    if (!hasRange) return null;
+    return textLayout.lineCellAreas(startIndex, endIndex);
+}
+
+export function setSelectedTextRange(selectionStart, selectionEnd, saveHistory = true) {
+    preferredCaretCol = undefined;
+    state.selection.vector.setSelectedTextRange(selectionStart, selectionEnd)
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
+}
+
+export function canEditText() { return state.selection.vector.canEditText() }
+export function canSelectAllText() { return state.selection.vector.canSelectAllText() }
+
+export function selectAllText(saveHistory = true) {
+    if (!canSelectAllText()) return false;
+
+    preferredCaretCol = undefined;
+    state.selection.vector.selectAllText()
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
+    return true;
+}
+
+/**
+ * Places the caret into the given shape's text
+ * @param {number} caretIndex - Where to place the caret in the text
+ * @param {Object} [options] - Additional options
+ * @param {boolean} [options.resetPreferredCol=true] - Whether to reset the stored preferred column
+ * @param {boolean} [options.saveHistory=true] - Whether to save this caret move to history
+ */
+export function setTextCaret(caretIndex, options = {}) {
+    const resetPreferredCol = options.resetPreferredCol === undefined ? true : options.resetPreferredCol;
+    const saveHistory = options.saveHistory === undefined ? true : options.saveHistory;
+
+    if (resetPreferredCol) preferredCaretCol = undefined;
+    state.selection.vector.setTextCaret(caretIndex);
+
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
+}
+
+/**
+ * Retrieves the current text selection, if any. A selection may represent either:
+ *   - A highlighted range of text (hasRange = true), or
+ *   - A single caret position (hasRange = false).
+ * If no selection exists, the function returns null.
+ */
+export function getTextSelection() { return state.selection.vector.getTextSelection() }
+
+export function isEditingText() { return state.selection.vector.isEditingText() }
+
+export function stopEditingText(saveHistory = true) {
+    if (!isEditingText()) return;
+
+    state.selection.vector.stopEditingText()
+
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (saveHistory) state.pushHistory()
+}
+
+function moveCaret(direction, saveHistory = true) {
+    const selection = getTextSelection();
+    if (!selection) throw new Error('Cannot call moveCaret without an existing text selection');
+
+    switch(direction) {
+        case 'left':
+        case 'right':
+            const min = 0;
+            const max = selection.textLayout.maxCaretIndex;
+            const horizOffset = direction === 'left' ? -1 : 1;
+            let newIndex = selection.hasRange ? selection.endIndex : selection.endIndex + horizOffset;
+            if (newIndex < min) newIndex = min;
+            if (newIndex > max) newIndex = max;
+            setTextCaret(newIndex, { saveHistory });
+            break;
+        case 'up':
+        case 'down':
+            const vertOffset = direction === 'up' ? -1 : 1;
+            const currentCell = selection.textLayout.getCellForCaretIndex(
+                direction === 'up' ? selection.startIndex : selection.endIndex
+            )
+            const desiredCell = currentCell.translate(vertOffset, 0);
+
+            if (preferredCaretCol === undefined) {
+                preferredCaretCol = desiredCell.col;
+            } else {
+                desiredCell.col = preferredCaretCol
+            }
+
+            const resetPreferredCol = !selection.textLayout.isCellInVerticalBounds(desiredCell);
+            const caretIndex = selection.textLayout.getCaretIndexForCell(desiredCell);
+
+            setTextCaret(caretIndex, { resetPreferredCol, saveHistory });
+            break;
+        default:
+            throw new Error(`Invalid direction: ${direction}`);
+    }
+}
+
+function startTextSelection(canvas, mouseEvent, cell, handle) {
+    // Ensure this is the only shape selected
+    setSelectedShapeIds([handle.shapeId])
+
+    if (!isEditingText() || mouseEvent.detail === 1) {
+        // If not yet editing text or was a single click: place caret
+        const caretCell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell
+        const caretIndex = handle.shape.textLayout.getCaretIndexForCell(caretCell);
+        setTextCaret(caretIndex);
+        handle.selectionMode = CARET_HANDLE_SELECTION_MODES.CHAR;
+    } else if (mouseEvent.detail === 2) {
+        // Double click: select whole word
+        const word = getTextSelection().textLayout.wordAtCell(cell);
+        setSelectedTextRange(word[0], word[1])
+        handle.selectionMode = CARET_HANDLE_SELECTION_MODES.WORD;
+    } else {
+        // Triple click or higher: select whole paragraph
+        const paragraph = getTextSelection().textLayout.paragraphAtCell(cell);
+        setSelectedTextRange(paragraph[0], paragraph[1])
+        handle.selectionMode = CARET_HANDLE_SELECTION_MODES.PARAGRAPH;
+    }
+    handle.initialSelection = [getTextSelection().startIndex, getTextSelection().endIndex];
+}
+
+function updateTextSelection(canvas, mouseEvent, cell, handle) {
+    let selectionStart, selectionEnd;
+    switch(handle.selectionMode) {
+        case CARET_HANDLE_SELECTION_MODES.CHAR:
+            const caretCell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell
+            const caretIndex = handle.shape.textLayout.getCaretIndexForCell(caretCell);
+            selectionStart = Math.min(handle.initialSelection[0], caretIndex);
+            selectionEnd = Math.max(handle.initialSelection[1], caretIndex);
+            break;
+        case CARET_HANDLE_SELECTION_MODES.WORD:
+            const word = getTextSelection().textLayout.wordAtCell(cell);
+            selectionStart = Math.min(handle.initialSelection[0], word[0]);
+            selectionEnd = Math.max(handle.initialSelection[1], word[1]);
+            break;
+        case CARET_HANDLE_SELECTION_MODES.PARAGRAPH:
+            const paragraph = getTextSelection().textLayout.paragraphAtCell(cell);
+            selectionStart = Math.min(handle.initialSelection[0], paragraph[0]);
+            selectionEnd = Math.max(handle.initialSelection[1], paragraph[1]);
+            break;
+        default:
+            throw new Error(`Invalid selectionMode: ${handle.selectionMode}`);
+    }
+    setSelectedTextRange(selectionStart, selectionEnd);
+}
 
 // ------------------------------------------------------------------------------------------------- Drawing
 

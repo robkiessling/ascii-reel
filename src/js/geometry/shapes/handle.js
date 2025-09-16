@@ -206,6 +206,13 @@ export class CaretHandle extends Handle {
     matches({ cell }) {
         return this.hitbox(cell);
     }
+
+    set selectionMode(mode) {
+        this._highlightMode = mode;
+    }
+    get selectionMode() {
+        return this._highlightMode;
+    }
 }
 
 export class CellHandle extends Handle {

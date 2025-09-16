@@ -5,6 +5,7 @@ import {create2dArray} from "../../utils/arrays.js";
 import CellArea from "../cell_area.js";
 import Vertex from "../vertex.js";
 import VertexArea from "../vertex_area.js";
+import {isWordBreaker} from "../../utils/strings.js";
 
 const DEFAULT_OPTIONS = {
     alignH: TEXT_ALIGN_H_OPTS.LEFT,
@@ -193,6 +194,51 @@ export default class TextLayout {
         }).filter(Boolean); // Drop skipped lines
     }
 
+    wordAtCell(cell) {
+        const caretIndex = this.getCaretIndexForCell(cell);
+        const char = this._charAtCaretIndex(caretIndex);
+        let startIndex = caretIndex;
+        let endIndex = caretIndex;
+
+        switch(char) {
+            case '\n':
+                // Include all whitespace to left
+                while (startIndex > this.minCaretIndex && this._charAtCaretIndex(startIndex - 1) === ' ') startIndex -= 1;
+                break;
+            case ' ':
+                // Include all whitespace to left and right
+                while (startIndex > this.minCaretIndex && this._charAtCaretIndex(startIndex - 1) === ' ') startIndex -= 1;
+                while (endIndex < this.maxCaretIndex && this._charAtCaretIndex(endIndex) === ' ') endIndex += 1;
+                break;
+            default:
+                // Include all letters to left and right
+                while (startIndex > this.minCaretIndex && !isWordBreaker(this._charAtCaretIndex(startIndex - 1))) startIndex -= 1;
+                while (endIndex < this.maxCaretIndex && !isWordBreaker(this._charAtCaretIndex(endIndex))) endIndex += 1;
+        }
+
+        return [startIndex, endIndex];
+    }
+
+    paragraphAtCell(cell) {
+        const caretIndex = this.getCaretIndexForCell(cell);
+        const char = this._charAtCaretIndex(caretIndex);
+        let startIndex = caretIndex;
+        let endIndex = caretIndex;
+
+        switch(char) {
+            case '\n':
+                // Include all letters to left until you hit a newline char
+                while (startIndex > this.minCaretIndex && this._charAtCaretIndex(startIndex - 1) !== '\n') startIndex -= 1;
+                break;
+            default:
+                // Include all letters to left until you hit newline chars
+                while (startIndex > this.minCaretIndex && this._charAtCaretIndex(startIndex - 1) !== '\n') startIndex -= 1;
+                while (endIndex < this.maxCaretIndex && this._charAtCaretIndex(endIndex) !== '\n') endIndex += 1;
+        }
+
+        return [startIndex, endIndex];
+    }
+
     /**
      * Wraps text into logical "lines" based on the available column width (`usableCols`).
      *
@@ -350,6 +396,10 @@ export default class TextLayout {
         return displayText;
     }
 
+
+    _charAtCaretIndex(caretIndex) {
+        return this.text[caretIndex]
+    }
 
     printLines() {
         console.log('---------------')

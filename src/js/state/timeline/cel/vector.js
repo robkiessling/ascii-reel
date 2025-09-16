@@ -1,4 +1,4 @@
-import {arraysEqual, create2dArray, mergeGlyphs, moveOneStep} from "../../../utils/arrays.js";
+import {areArraysEqual, create2dArray, mergeGlyphs, moveOneStep} from "../../../utils/arrays.js";
 import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {deserializeShape} from "../../../geometry/shapes/deserialize.js";
@@ -178,7 +178,7 @@ export default class VectorCel {
     }
 
     canReorderShapes(shapeIds, action) {
-        return !arraysEqual(this.shapesOrder, this._reorderShapesPreview(shapeIds, action));
+        return !areArraysEqual(this.shapesOrder, this._reorderShapesPreview(shapeIds, action));
     }
 
     _reorderShapesPreview(shapeIds, action) {

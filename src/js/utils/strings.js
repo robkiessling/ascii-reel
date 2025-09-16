@@ -63,6 +63,10 @@ export function strToHTML(str) {
     return str.replace(/\n/g, '<br/>');
 }
 
+export function isWordBreaker(char) {
+    return /[ \t\n\r.,;:!?()[\]{}'"`~!@#$%^&*+=|\\/<>-]/.test(char);
+}
+
 /**
  * Inserts a string at the given index.
  * @param {string} str - The original string

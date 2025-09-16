@@ -35,7 +35,6 @@ import Line from "../geometry/shapes/line.js";
 import {MOUSE} from "../io/mouse.js";
 import Freeform from "../geometry/shapes/freeform.js";
 import {LAYER_TYPES} from "../state/constants.js";
-import {canEditText, getTextSelection} from "./selection/vector_controller.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -670,7 +669,7 @@ function setupShapeProperties() {
     actions.registerAction('tools.shapes.editText', {
         callback: () => selectionController.vector.selectAllText(),
         visible: () => selectionController.vector.canEditText(),
-        enabled: () => selectionController.vector.canEditText() && !selectionController.vector.getTextSelection(),
+        enabled: () => selectionController.vector.canEditText() && !selectionController.vector.isEditingText(),
         shortcutAbbr: 'Enter'
     })
 

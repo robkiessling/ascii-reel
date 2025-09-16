@@ -7,10 +7,12 @@ import {
 } from "../index.js";
 import {SHARED_SHAPE_PROPS} from "../../geometry/shapes/constants.js";
 import {transformValues} from "../../utils/objects.js";
+import {areArraysEqual} from "../../utils/arrays.js";
 
 const DEFAULT_STATE = {
     shapeIds: new Set(),
-    caretShapeId: null,
+
+    isEditingText: false,
     textSelectionStart: null,
     textSelectionEnd: null,
 }
@@ -45,9 +47,12 @@ function shapeIdsSet() {
 export function selectedShapeIds() {
     return Array.from(shapeIdsSet());
 }
+
 export function setSelectedShapeIds(shapeIds) {
-    if (state.caretShapeId && !shapeIds.includes(state.caretShapeId)) clearTextSelection();
+    if (areArraysEqual(shapeIds, selectedShapeIds())) return;
+
     state.shapeIds = new Set(shapeIds);
+    stopEditingText();
 }
 
 export function numSelectedShapes() {
@@ -61,6 +66,7 @@ export function isShapeSelected(shapeId) {
 }
 export function selectShape(shapeId) {
     shapeIdsSet().add(shapeId);
+    stopEditingText();
 }
 
 // Returns false if user is already selecting-all
@@ -69,15 +75,16 @@ export function canSelectAllShapes() {
 }
 export function selectAllShapes() {
     getCurrentCelShapes().forEach(shape => selectShape(shape.id));
+    stopEditingText();
 }
 
 export function deselectShape(shapeId) {
     shapeIdsSet().delete(shapeId);
-    if (state.caretShapeId && state.caretShapeId === shapeId) clearTextSelection();
+    stopEditingText();
 }
 export function deselectAllShapes() {
     shapeIdsSet().clear();
-    clearTextSelection();
+    stopEditingText();
 }
 
 export function selectedShapes() {
@@ -125,54 +132,118 @@ export function reorderSelectedShapes(action) {
     reorderCurrentCelShapes(selectedShapeIds(), action)
 }
 
-export function setSelectedTextRange(shapeId, selectionStart, selectionEnd) {
-    state.caretShapeId = shapeId;
+/**
+ * Determines whether the current shape selection allows text editing.
+ * @returns {boolean} True if exactly one shape is selected and that shape supports text, false otherwise.
+ */
+export function canEditText() {
+    if (numSelectedShapes() !== 1) return false;
+    return singleSelectedShape().canHaveText;
+}
+
+/**
+ * Indicates whether the editor is currently in text-editing mode for a shape.
+ * This is true if a text caret or selection range is active inside a shape.
+ *
+ * @returns {boolean} True if a shape's text is being edited, false otherwise.
+ */
+export function isEditingText() {
+    if (state.isEditingText && !canEditText()) throw new Error(`Invalid text-editing state`)
+    return state.isEditingText;
+}
+
+/**
+ * Checks whether a "select all" operation would change the current text selection.
+ * @returns {boolean} True if the current shape's text is editable and not already fully selected, false otherwise
+ */
+export function canSelectAllText() {
+    if (!canEditText()) return false;
+
+    const shape = singleSelectedShape();
+    return state.textSelectionStart !== shape.textLayout.minCaretIndex ||
+        state.textSelectionEnd !== shape.textLayout.maxCaretIndex
+}
+
+/**
+ * Enables text-editing mode for the currently selected shape (if not already active) and selects all available text.
+ */
+export function selectAllText() {
+    if (!canSelectAllText()) return;
+    const shape = singleSelectedShape();
+    const textLayout = getCurrentCelShape(shape.id).textLayout
+    setSelectedTextRange(textLayout.minCaretIndex, textLayout.maxCaretIndex);
+}
+
+/**
+ * Enables text-editing mode for the currently selected shape (if not already active) and selects a range of text
+ * between the given indices.
+ *
+ * @param {number} selectionStart - The character index to start the selection range (inclusive).
+ * @param {number} selectionEnd - The character index to end the selection range (exclusive).
+ * @throws {Error} If zero or multiple shapes are selected.
+ */
+export function setSelectedTextRange(selectionStart, selectionEnd) {
+    if (numSelectedShapes() !== 1) throw new Error('Must call setSelectedTextRange with 1 shape already selected');
+    state.isEditingText = true;
     state.textSelectionStart = selectionStart;
     state.textSelectionEnd = selectionEnd;
 }
 
-export function canEditText() {
-    if (numSelectedShapes() !== 1) return false;
-    return selectedShapes()[0].canHaveText;
-}
+/**
+ * Enables text-editing mode for the currently selected shape (if not already active) and places the caret at
+ * the given index.
+ *
+ * @param {number} caretIndex - The character index to place the caret.
+ * @throws {Error} If zero or multiple shapes are selected.
+ */
+export function setTextCaret(caretIndex) {
+    if (numSelectedShapes() !== 1) throw new Error('Must call setTextCaret with 1 shape already selected');
 
-// Returns false if text is already all selected
-export function canSelectAllText() {
-    if (!canEditText()) return false;
-
-    const shape = selectedShapes()[0];
-    return state.caretShapeId !== shape.id ||
-        state.textSelectionStart !== shape.textLayout.minCaretIndex ||
-        state.textSelectionEnd !== shape.textLayout.maxCaretIndex
-}
-export function selectAllText() {
-    if (numSelectedShapes() !== 1) throw new Error('Must call selectAllText with 1 shape already selected');
-    const shape = selectedShapes()[0];
-    if (!shape.canHaveText) throw new Error('Shape has no text property to select');
-    const textLayout = getCurrentCelShape(shape.id).textLayout
-    setSelectedTextRange(shape.id, textLayout.minCaretIndex, textLayout.maxCaretIndex);
-}
-
-// TODO maybe we don't need to pass shapeId here? Could always just assume it's our single selected shape
-export function setTextCaret(shapeId, caretIndex) {
-    state.caretShapeId = shapeId;
+    state.isEditingText = true;
     state.textSelectionStart = caretIndex;
     state.textSelectionEnd = caretIndex;
 }
 
-export function clearTextSelection() {
-    state.caretShapeId = null;
+/**
+ * Stops text-editing mode.
+ */
+export function stopEditingText() {
+    state.isEditingText = false;
 }
 
+/**
+ * Retrieves details about the current text selection within the active shape.
+ *
+ * @throws {Error} If not currently editing text in exactly one shape.
+ * @returns {{
+ *   shapeId: number,        // ID of the shape whose text is being edited
+ *   textLayout: TextLayout, // Layout information for the shape's text
+ *   hasRange: boolean,      // True if a non-empty selection range exists (start !== end)
+ *   startIndex: number,     // Caret/selection start index
+ *   endIndex: number        // Caret/selection end index
+ * }}
+ */
 export function getTextSelection() {
-    if (state.caretShapeId === null) return null;
+    if (!isEditingText()) throw new Error('Text selection is only valid while editing text');
+
+    const shape = singleSelectedShape();
 
     return {
-        shapeId: state.caretShapeId,
-        textLayout: getCurrentCelShape(state.caretShapeId).textLayout,
+        shapeId: shape.id,
+        textLayout: shape.textLayout,
         hasRange: state.textSelectionStart !== state.textSelectionEnd,
         startIndex: state.textSelectionStart,
         endIndex: state.textSelectionEnd
     }
 }
 
+/**
+ * Returns the currently selected shape, if and only if exactly one shape is selected. Throws an error otherwise.
+ *
+ * @throws {Error} If zero or more than one shape is selected.
+ * @returns {Shape} The single selected shape.
+ */
+export function singleSelectedShape() {
+    if (numSelectedShapes() !== 1) throw new Error('Exactly 1 shape must be selected');
+    return selectedShapes()[0];
+}

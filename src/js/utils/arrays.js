@@ -103,7 +103,7 @@ export function mergeGlyphs(baseGlyphs, newGlyphs, origin, filter) {
  * @param {Array} b - The second array to compare.
  * @returns {boolean} - True if both arrays contain the same elements in the same order.
  */
-export function arraysEqual(a, b) {
+export function areArraysEqual(a, b) {
     if (a === b) return true;
     if (!Array.isArray(a) || !Array.isArray(b)) return false;
     if (a.length !== b.length) return false;

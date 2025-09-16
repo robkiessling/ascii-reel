@@ -9,6 +9,12 @@ export const HANDLE_TYPES = {
     BODY: 'body',
     CARET: 'caret'
 }
+export const CARET_HANDLE_SELECTION_MODES = {
+    CHAR: 'char',
+    WORD: 'word',
+    PARAGRAPH: 'paragraph'
+}
+
 export const VERTEX_CORNERS = {
     TOP_LEFT_CORNER: 'top-left-corner',
     TOP_RIGHT_CORNER: 'top-right-corner',
