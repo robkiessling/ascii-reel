@@ -207,12 +207,24 @@ export class CaretHandle extends Handle {
         return this.hitbox(cell);
     }
 
-    set selectionMode(mode) {
-        this._highlightMode = mode;
-    }
-    get selectionMode() {
-        return this._highlightMode;
-    }
+    /**
+     * The selection granularity for this caret.
+     * @type {CaretSelectionMode}
+     */
+    selectionMode;
+
+    /**
+     * The text selection range at the moment of the initial single/double/triple click.
+     *
+     * Stored as a tuple of [startIndex, endIndex], where:
+     * - startIndex is always ≤ endIndex (normalized order)
+     * - If startIndex === endIndex, the selection is collapsed (caret only)
+     *
+     * Used later to compare against the current selection during drag/expansion.
+     *
+     * @type {[number, number]}
+     */
+    initialSelection;
 }
 
 export class CellHandle extends Handle {

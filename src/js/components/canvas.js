@@ -241,6 +241,28 @@ export default class Canvas {
         }
     }
 
+    // Draws a caret inside the current cell, a few pixels offset from the left edge. TODO choose this or the next version
+    // _toggleCaretIBeam(show, cell, caretColor) {
+    //     this._withTemporaryContext(() => {
+    //         if (show) {
+    //             this.context.strokeStyle = caretColor;
+    //             this.context.lineWidth = CARET_I_BEAM_WIDTH;
+    //
+    //             this.context.beginPath();
+    //             cell = cell.clone();
+    //             this.context.moveTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y + OUTLINE_WIDTH);
+    //             cell.translate(1, 0);
+    //             this.context.lineTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y - OUTLINE_WIDTH);
+    //             this.context.stroke();
+    //         } else {
+    //             // Reduce rect size by half an outline width
+    //             const innerRect = new PixelRect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
+    //             this.context.clearRect(...innerRect.xywh);
+    //         }
+    //     });
+    // }
+
+    // Draws a caret right on the border between the two cells. TODO choose this or the previous version
     _toggleCaretIBeam(show, cell, caretColor) {
         this._withTemporaryContext(() => {
             if (show) {
@@ -248,14 +270,18 @@ export default class Canvas {
                 this.context.lineWidth = CARET_I_BEAM_WIDTH;
 
                 this.context.beginPath();
-                cell = cell.clone();
-                this.context.moveTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y + OUTLINE_WIDTH);
-                cell.translate(1, 0);
-                this.context.lineTo(cell.x + OUTLINE_WIDTH + CARET_I_BEAM_WIDTH, cell.y - OUTLINE_WIDTH);
+                this.context.moveTo(cell.x, cell.y + OUTLINE_WIDTH);
+                this.context.lineTo(cell.x, cell.y + cell.height - OUTLINE_WIDTH);
                 this.context.stroke();
             } else {
-                // Reduce rect size by half an outline width
-                const innerRect = new PixelRect(cell.x + OUTLINE_WIDTH / 2, cell.y + OUTLINE_WIDTH / 2, cell.width - OUTLINE_WIDTH, cell.height - OUTLINE_WIDTH);
+                const epsilon = 1; // Erase a tiny bit more than expected, due to what I assume are tiny floating pt errors
+                const innerRect = new PixelRect(
+                    cell.x - CARET_I_BEAM_WIDTH / 2 - epsilon,
+                    cell.y + OUTLINE_WIDTH - epsilon,
+                    CARET_I_BEAM_WIDTH + 2 * epsilon,
+                    cell.height - OUTLINE_WIDTH * 2 + 2 * epsilon
+                );
+
                 this.context.clearRect(...innerRect.xywh);
             }
         });

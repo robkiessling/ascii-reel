@@ -13,8 +13,8 @@ const DEFAULT_STATE = {
     shapeIds: new Set(),
 
     isEditingText: false,
-    textSelectionStart: null,
-    textSelectionEnd: null,
+    textSelectionAnchor: null, // Selected text's fixed index (starting point of text selection)
+    textSelectionFocus: null, // Selected text's moving index (where mouse/caret currently is)
 }
 
 let state = {};
@@ -160,8 +160,9 @@ export function canSelectAllText() {
     if (!canEditText()) return false;
 
     const shape = singleSelectedShape();
-    return state.textSelectionStart !== shape.textLayout.minCaretIndex ||
-        state.textSelectionEnd !== shape.textLayout.maxCaretIndex
+
+    return textSelectionStart() !== shape.textLayout.minCaretIndex ||
+        textSelectionEnd() !== shape.textLayout.maxCaretIndex;
 }
 
 /**
@@ -175,23 +176,26 @@ export function selectAllText() {
 }
 
 /**
- * Enables text-editing mode for the currently selected shape (if not already active) and selects a range of text
- * between the given indices.
+ * Activates text-editing mode for the currently selected shape (if not already active) and selects a range of text
+ * between the given indices. Text selections are directional: the anchorIndex is the fixed point where the selection
+ * began, while the focusIndex is the moving end (which may be to the left or right of the anchor).
  *
- * @param {number} selectionStart - The character index to start the selection range (inclusive).
- * @param {number} selectionEnd - The character index to end the selection range (exclusive).
+ * For example, if the user clicks on the right and drags left, the anchor will be on the right and the focus on the left.
+ *
+ * @param {number} anchorIndex - The fixed index where the selection began.
+ * @param {number} focusIndex - The moving index where the selection ends.
  * @throws {Error} If zero or multiple shapes are selected.
  */
-export function setSelectedTextRange(selectionStart, selectionEnd) {
+export function setSelectedTextRange(anchorIndex, focusIndex) {
     if (numSelectedShapes() !== 1) throw new Error('Must call setSelectedTextRange with 1 shape already selected');
     state.isEditingText = true;
-    state.textSelectionStart = selectionStart;
-    state.textSelectionEnd = selectionEnd;
+    state.textSelectionAnchor = anchorIndex;
+    state.textSelectionFocus = focusIndex;
 }
 
 /**
- * Enables text-editing mode for the currently selected shape (if not already active) and places the caret at
- * the given index.
+ * Activates text-editing mode for the currently selected shape (if not already active) and creates a collapsed
+ * selection at the given index. A collapsed selection is just a single blinking caret; no highlighted range.
  *
  * @param {number} caretIndex - The character index to place the caret.
  * @throws {Error} If zero or multiple shapes are selected.
@@ -200,8 +204,8 @@ export function setTextCaret(caretIndex) {
     if (numSelectedShapes() !== 1) throw new Error('Must call setTextCaret with 1 shape already selected');
 
     state.isEditingText = true;
-    state.textSelectionStart = caretIndex;
-    state.textSelectionEnd = caretIndex;
+    state.textSelectionAnchor = caretIndex;
+    state.textSelectionFocus = caretIndex;
 }
 
 /**
@@ -218,9 +222,12 @@ export function stopEditingText() {
  * @returns {{
  *   shapeId: number,        // ID of the shape whose text is being edited
  *   textLayout: TextLayout, // Layout information for the shape's text
- *   hasRange: boolean,      // True if a non-empty selection range exists (start !== end)
- *   startIndex: number,     // Caret/selection start index
- *   endIndex: number        // Caret/selection end index
+ *   isCollapsed: boolean,   // True if the selection has no range; the caret is at a single position. Opposite of hasRange.
+ *   hasRange: boolean,      // True if a selection covers at least one character (not just a caret). Opposite of isCollapsed.
+ *   anchorIndex: number,    // Index where selection began; the fixed end. E.g. where the original mousedown was.
+ *   focusIndex: number,     // Index where selection currently extends to; the moving end. E.g. where the mouse currently is.
+ *   startIndex: number,     // Selection's logical start; the top-left-most index of the selection
+ *   endIndex: number        // Selection's logical end; the bottom-right-most index of the selection
  * }}
  */
 export function getTextSelection() {
@@ -231,10 +238,33 @@ export function getTextSelection() {
     return {
         shapeId: shape.id,
         textLayout: shape.textLayout,
-        hasRange: state.textSelectionStart !== state.textSelectionEnd,
-        startIndex: state.textSelectionStart,
-        endIndex: state.textSelectionEnd
+        isCollapsed: state.textSelectionAnchor === state.textSelectionFocus,
+        hasRange: state.textSelectionAnchor !== state.textSelectionFocus,
+        anchorIndex: state.textSelectionAnchor,
+        focusIndex: state.textSelectionFocus,
+        startIndex: textSelectionStart(),
+        endIndex: textSelectionEnd()
     }
+}
+
+/**
+ * Returns the normalized start index of the current text selection. This is always the smaller of (anchor, focus), so
+ * it works regardless of selection direction (left-to-right or right-to-left).
+ *
+ * @returns {number} - The top-left-most index of the selection.
+ */
+function textSelectionStart() {
+    return Math.min(state.textSelectionAnchor, state.textSelectionFocus);
+}
+
+/**
+ * Returns the normalized end index of the current text selection. This is always the larger of (anchor, focus), so
+ * it works regardless of selection direction (left-to-right or right-to-left).
+ *
+ * @returns {number} - The bottom-right-most index of the selection.
+ */
+function textSelectionEnd() {
+    return Math.max(state.textSelectionAnchor, state.textSelectionFocus);
 }
 
 /**

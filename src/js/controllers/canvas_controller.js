@@ -283,15 +283,15 @@ function redrawSelection() {
 
     selectionController.vector.drawShapeSelection(selectionCanvas);
 
-    const vectorCaret = selectionController.vector.caretCell();
-    if (vectorCaret) {
-        const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => PRIMARY_COLOR);
-    }
-
     const vectorTextAreas = selectionController.vector.selectedTextAreas();
     if (vectorTextAreas) {
         selectionCanvas.highlightPolygons(vectorTextAreas.map(cellArea => new SelectionRect(cellArea.topLeft, cellArea.bottomRight)));
+    }
+
+    const vectorCaret = selectionController.vector.caretCell();
+    if (vectorCaret) {
+        const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
+        caretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
     }
 
     refreshCanvasDetails();

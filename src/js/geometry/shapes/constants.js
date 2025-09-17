@@ -9,11 +9,18 @@ export const HANDLE_TYPES = {
     BODY: 'body',
     CARET: 'caret'
 }
+
+/**
+ * @typedef {'char' | 'word' | 'paragraph'} CaretSelectionMode
+ */
+/**
+ * Modes for caret selection granularity.
+ */
 export const CARET_HANDLE_SELECTION_MODES = {
     CHAR: 'char',
     WORD: 'word',
-    PARAGRAPH: 'paragraph'
-}
+    PARAGRAPH: 'paragraph',
+};
 
 export const VERTEX_CORNERS = {
     TOP_LEFT_CORNER: 'top-left-corner',
