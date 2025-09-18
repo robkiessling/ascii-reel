@@ -13,6 +13,7 @@ import {areArraysEqual} from "../../utils/arrays.js";
 import {MOUSE} from "../../io/mouse.js";
 import {insertAt} from "../../utils/strings.js";
 import * as tools from "../tool_controller.js";
+import Shape from "../../geometry/shapes/shape.js";
 
 /**
  * Vector selection controller.
@@ -122,6 +123,26 @@ export function reorderSelectedShapes(action) {
     eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory();
+}
+
+export function selectedShapesGlyphs() {
+    return shapeSelector.glyphs;
+}
+
+export function importShapes(serializedShapes) {
+    const importedShapes = serializedShapes.map(serializedShape => {
+        const shape = Shape.deserialize(serializedShape);
+        state.addCurrentCelShape(shape);
+        return shape;
+    })
+
+    setSelectedShapeIds(importedShapes.map(shape => shape.id));
+
+    // Move pasted shapes a little down and right
+    shapeSelector.translate(2, 2)
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    state.pushHistory()
 }
 
 
@@ -338,7 +359,7 @@ export function handleEnterKey() {
             setTextCaret(startIndex, { saveHistory: false });
         }
         
-        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, char: '\n' });
+        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, text: '\n' });
         moveCaret('right', false);
 
         eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -365,6 +386,13 @@ export function handleEnterKey() {
 export function handleCharKey(char) {
     if (!isEditingText()) return false;
 
+    insertText(char);
+    return true;
+}
+
+export function insertText(text) {
+    if (!isEditingText()) throw new Error(`No place to insert text`);
+
     const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
     if (hasRange) {
@@ -372,13 +400,13 @@ export function handleCharKey(char) {
         setTextCaret(startIndex, { saveHistory: false });
     }
 
-    state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, char: char });
-    moveCaret('right', false);
+    state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, text });
+    setTextCaret(startIndex + text.length, { saveHistory: false })
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory({ modifiable: 'vectorSelectionText' })
-    return true;
 }
+
 
 let compositionCaretIndex, compositionStartText;
 

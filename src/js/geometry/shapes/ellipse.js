@@ -9,6 +9,7 @@ import {
 import CellArea from "../cell_area.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import BoxShape from "./box_shape.js";
+import {registerShape} from "./registry.js";
 
 export default class Ellipse extends BoxShape {
 
@@ -294,3 +295,5 @@ export default class Ellipse extends BoxShape {
 
 
 }
+
+registerShape(SHAPE_TYPES.ELLIPSE, Ellipse);

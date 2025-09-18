@@ -8,6 +8,7 @@ import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import {forEachAdjPair} from "../../utils/arrays.js";
 import BoxShape from "./box_shape.js";
 import {straightAsciiLine} from "./algorithms/traverse_straight.js";
+import {registerShape} from "./registry.js";
 
 
 export default class Line extends Shape {
@@ -141,3 +142,5 @@ export default class Line extends Shape {
 
 
 }
+
+registerShape(SHAPE_TYPES.LINE, Line);

@@ -5,30 +5,64 @@ import "core-js/stable.js";
 import * as selectionController from "../controllers/selection/index.js";
 import * as state from "../state/index.js";
 import * as actions from "./actions.js";
-import {translateGlyphs} from "../utils/arrays.js";
-import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
+import {LAYER_TYPES} from "../state/constants.js";
 
-let copiedSelection = null;
-let copiedText = null;
+let copiedSelection = {};
 
 export function init() {
     actions.registerAction('clipboard.cut', {
         callback: () => cut(),
-        enabled: () => selectionController.raster.hasSelection() && !selectionController.raster.movableContent()
+        enabled: () => canCopy()
     });
     actions.registerAction('clipboard.copy', {
         callback: () => copy(),
-        enabled: () => selectionController.raster.hasSelection() && !selectionController.raster.movableContent()
+        enabled: () => canCopy()
     });
     actions.registerAction('clipboard.paste', {
         callback: () => paste(),
-        enabled: () => selectionController.raster.hasTarget() && !selectionController.raster.movableContent()
+        enabled: () => canPaste()
     });
     actions.registerAction('clipboard.paste-in-selection', {
         callback: () => paste(true),
-        enabled: () => selectionController.raster.hasSelection() && !selectionController.raster.movableContent()
+        enabled: () => canPaste(true)
     });
+}
+
+/**
+ * Determines whether the current layer has any content that can be copied or cut.
+ * @returns {boolean}
+ */
+function canCopy() {
+    switch (state.currentLayerType()) {
+        case LAYER_TYPES.RASTER:
+            return selectionController.raster.hasSelection()
+        case LAYER_TYPES.VECTOR:
+            if (selectionController.vector.isEditingText()) {
+                return selectionController.vector.getTextSelection().hasRange;
+            }
+            return selectionController.vector.hasSelectedShapes();
+        default:
+            throw new Error(`Invalid layer type: ${state.currentLayerType()}`)
+    }
+}
+
+/**
+ * Determines whether the current layer has a place to paste copied content.
+ * @param {boolean} [limitToSelection=false] Whether the paste is going to be limited to within the current selection.
+ * @returns {boolean}
+ */
+export function canPaste(limitToSelection) {
+    switch (state.currentLayerType()) {
+        case LAYER_TYPES.RASTER:
+            if (limitToSelection) return selectionController.raster.hasSelection() && !selectionController.raster.movableContent();
+            return selectionController.raster.hasTarget() && !selectionController.raster.movableContent()
+        case LAYER_TYPES.VECTOR:
+            if (limitToSelection) return false; // Vector cels have no concept of "paste in selection"
+            return true;
+        default:
+            throw new Error(`Invalid layer type: ${state.currentLayerType()}`)
+    }
 }
 
 
@@ -36,104 +70,93 @@ function cut() {
     // If we're moving content, immediately finish it so that it's more intuitive as to what is being cut
     if (selectionController.raster.movableContent()) { selectionController.raster.finishMovingContent(); }
 
-    copySelection();
-    selectionController.raster.empty();
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
-    state.pushHistory();
-}
+    copy();
 
-function copy() {
-    copySelection();
+    // Empty selection
+    switch (state.currentLayerType()) {
+        case LAYER_TYPES.RASTER:
+            // todo don't tie these to "backspace key" handlers; tie them to actual empty() functions
+            selectionController.raster.handleBackspaceKey();
+            break;
+        case LAYER_TYPES.VECTOR:
+            selectionController.vector.handleBackspaceKey();
+            break;
+    }
 }
 
 /**
- * What to paste:
- * - If there is new content in the clipboard (clipboard comes from user's OS) paste that
- * - Otherwise, paste the copied canvas selection
- *
- * How to paste it:
- * - If the pasted content is a single character, repeat that character across current selection
- * - Otherwise, paste content relative to topLeft of selection
+ * Copies the current selected content.
+ * - Saves a rich internal representation (glyph arrays, shapes, etc.) of the selection for use when pasting back
+ *   inside this app.
+ * - Writes a plain-text version of the selection to the system clipboard so it can be pasted into external
+ *   applications.
  */
-function paste(limitToSelection) {
-    if (!selectionController.raster.hasTarget()) {
-        // There is nowhere to paste the text
-        return;
+function copy() {
+    switch (state.currentLayerType()) {
+        case LAYER_TYPES.RASTER:
+            const glyphs = selectionController.raster.getSelectedValues();
+            copiedSelection = {
+                text: convertGlyphsToText(glyphs),
+                glyphs
+            }
+            break;
+        case LAYER_TYPES.VECTOR:
+            if (selectionController.vector.isEditingText()) {
+                copiedSelection = {
+                    text: selectionController.vector.getTextSelection().text,
+                    glyphs: null, // Don't calculate glyphs yet; we can calculate them if/when we end up pasting
+                }
+            } else {
+                const glyphs = selectionController.vector.selectedShapesGlyphs();
+                const shapes = selectionController.vector.selectedShapes().map(shape => shape.duplicate())
+
+                copiedSelection = {
+                    text: convertGlyphsToText(glyphs),
+                    glyphs,
+                    shapes
+                }
+            }
+            break;
     }
 
-    readClipboard(text => {
-        if (copiedText !== text) {
-            // External clipboard has changed; paste the external clipboard
-            pasteGlyphs(convertTextToGlyphs(text), limitToSelection);
-        }
-        else if (copiedSelection) {
-            // Write our stored selection
-            pasteGlyphs(copiedSelection, limitToSelection);
-        }
-    });
+    writeClipboard(copiedSelection.text);
 }
 
-function copySelection() {
-    copiedSelection = selectionController.raster.getSelectedValues();
-    copiedText = convertGlyphsToText(copiedSelection);
-    writeClipboard(copiedText);
+/**
+ * Pastes content into the canvas.
+ * - If new system clipboard content is available, use that first (e.g. plain text from the OS).
+ * - Otherwise, fall back to the app's rich internal clipboard content (glyph arrays, shapes, etc.).
+ *
+ * @param {boolean} [limitToSelection=false] - If true, restricts the pasted content to the current selection area.
+ *   This option currently only applies to raster pasting.
+ */
+function paste(limitToSelection) {
+    readClipboard(latestText => {
+        // If external clipboard has changed, convert new clipboard text to glyphs. Otherwise, use stored glyphs.
+        const latestGlyphs = latestText !== copiedSelection.text || !copiedSelection.glyphs ?
+            convertTextToGlyphs(latestText) :
+            copiedSelection.glyphs;
+
+        switch (state.currentLayerType()) {
+            case LAYER_TYPES.RASTER:
+                selectionController.raster.insertGlyphs(latestGlyphs, limitToSelection);
+                break;
+            case LAYER_TYPES.VECTOR:
+                if (selectionController.vector.isEditingText()) {
+                    selectionController.vector.insertText(latestText);
+                } else if (copiedSelection.shapes) {
+                    selectionController.vector.importShapes(copiedSelection.shapes);
+                } else {
+                    console.warn("[Not implemented] create textbox with latestText")
+                }
+                break;
+        }
+    });
 }
 
 // Copies a single char to the clipboard
 export function copyChar(char) {
     writeClipboard(char);
-}
-
-/**
- * Pastes the glyph content in the selection
- * @param {{chars: string[][], colors: number[][]}} glyphs - Content to paste
- * @param {boolean} [limitToSelection=false] - If true, pasted text will only be pasted within the current selection bounds
- */
-function pasteGlyphs(glyphs, limitToSelection = false) {
-    // If there is no selection area, that means there is simply a caret to paste at (this only happens when using the
-    // text-editor tool).
-    const pasteAtCaret = !selectionController.raster.hasSelection();
-
-    if (glyphs.chars.length === 1 && glyphs.chars[0].length === 1) {
-        // Special case: only one char of text was copied. Apply that char to entire selection
-        const char = glyphs.chars[0][0];
-        const color = glyphs.colors[0][0];
-
-        (pasteAtCaret ? [selectionController.raster.caretCell()] : selectionController.raster.getSelectedCells()).forEach(cell => {
-            state.setCurrentCelGlyph(cell.row, cell.col, char, color);
-        });
-    }
-    else {
-        // Paste glyphs at topLeft of selected area
-        const topLeft = pasteAtCaret ? selectionController.raster.caretCell() : selectionController.raster.getSelectedCellArea().topLeft;
-        translateGlyphs(glyphs, topLeft, (r, c, char, color) => {
-            // Copied empty cells do not override existing cells (if you want to override existing cells to make them
-            // blank, original copy should have spaces not empty cells)
-            if (char === EMPTY_CHAR) return;
-
-            if (!limitToSelection || selectionController.raster.isSelectedCell({row: r, col: c})) {
-                state.setCurrentCelGlyph(r, c, char, color);
-            }
-        });
-    }
-
-    if (selectionController.raster.caretCell()) {
-        selectionController.raster.moveInDirection('down', {
-            amount: glyphs.chars.length - 1,
-            updateCaretOrigin: false,
-            wrapCaretPosition: false,
-            saveHistory: false // Do not want selection move to save history; we push full history state at end of this function
-        });
-        selectionController.raster.moveInDirection('right', {
-            amount: glyphs.chars.at(-1).length,
-            updateCaretOrigin: false,
-            wrapCaretPosition: false,
-            saveHistory: false // Do not want selection move to save history; we push full history state at end of this function
-        });
-    }
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory();
 }
 
 function convertGlyphsToText(glyphs) {

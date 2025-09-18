@@ -1,10 +1,10 @@
 import {areArraysEqual, create2dArray, mergeGlyphs, moveOneStep} from "../../../utils/arrays.js";
 import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
-import {deserializeShape} from "../../../geometry/shapes/deserialize.js";
 import {transformValues} from "../../../utils/objects.js";
 import {HANDLE_TYPES, REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
 import {LAYER_TYPES} from "../../constants.js";
+import Shape from "../../../geometry/shapes/shape.js";
 
 /**
  * Vector Cel
@@ -29,7 +29,7 @@ export default class VectorCel {
 
     static deserialize(data, options = {}) {
         const cel = new this(
-            transformValues(data.shapesById || {}, (id, shapeData) => deserializeShape(shapeData)),
+            transformValues(data.shapesById || {}, (id, shapeData) => Shape.deserialize(shapeData)),
             data.shapesOrder
         );
 

@@ -10,6 +10,7 @@ import {
 } from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {deleteBackward, deleteForward, deleteRange, insertAt} from "../../utils/strings.js";
+import {deserializeShape} from "./registry.js";
 
 export default class Shape {
     constructor(id, type, props = {}) {
@@ -19,12 +20,22 @@ export default class Shape {
         this._clearCache();
     }
 
+    static deserialize(data) {
+        return deserializeShape(data)
+    }
+
     serialize() {
         return {
             id: this.id,
             type: this.type,
             props: this.serializeProps(),
         }
+    }
+
+    duplicate() {
+        const serializedShape = this.serialize();
+        serializedShape.id = undefined;
+        return deserializeShape(serializedShape);
     }
 
     // Subclasses can override props serialization/deserialization (e.g. if a prop is a Cell)
@@ -208,7 +219,7 @@ export default class Shape {
 
         switch(action) {
             case SHAPE_TEXT_ACTIONS.INSERT:
-                this.props[TEXT_PROP] = insertAt(currentText, actionParams.caretIndex, actionParams.char)
+                this.props[TEXT_PROP] = insertAt(currentText, actionParams.caretIndex, actionParams.text)
                 break;
             case SHAPE_TEXT_ACTIONS.DELETE_BACKWARD:
                 this.props[TEXT_PROP] = deleteBackward(currentText, actionParams.caretIndex)

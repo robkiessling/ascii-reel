@@ -14,6 +14,13 @@ export function init() {
     actions.registerAction('selection.select-all', () => selectAll());
 }
 
+export function isRaster() {
+    return state.currentLayerType() === LAYER_TYPES.RASTER;
+}
+export function isVector() {
+    return state.currentLayerType() === LAYER_TYPES.VECTOR;
+}
+
 export function clear(saveHistory = true) {
     raster.clear(saveHistory);
     vector.deselectAllShapes(saveHistory)

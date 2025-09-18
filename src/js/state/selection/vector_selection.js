@@ -227,13 +227,16 @@ export function stopEditingText() {
  *   anchorIndex: number,    // Index where selection began; the fixed end. E.g. where the original mousedown was.
  *   focusIndex: number,     // Index where selection currently extends to; the moving end. E.g. where the mouse currently is.
  *   startIndex: number,     // Selection's logical start; the top-left-most index of the selection
- *   endIndex: number        // Selection's logical end; the bottom-right-most index of the selection
+ *   endIndex: number,       // Selection's logical end; the bottom-right-most index of the selection
+ *   text: string            // Selected text string
  * }}
  */
 export function getTextSelection() {
     if (!isEditingText()) throw new Error('Text selection is only valid while editing text');
 
     const shape = singleSelectedShape();
+    const start = textSelectionStart();
+    const end = textSelectionEnd();
 
     return {
         shapeId: shape.id,
@@ -242,8 +245,9 @@ export function getTextSelection() {
         hasRange: state.textSelectionAnchor !== state.textSelectionFocus,
         anchorIndex: state.textSelectionAnchor,
         focusIndex: state.textSelectionFocus,
-        startIndex: textSelectionStart(),
-        endIndex: textSelectionEnd()
+        startIndex: start,
+        endIndex: end,
+        text: shape.textLayout.text.substring(start, end)
     }
 }
 

@@ -7,6 +7,7 @@ import CellArea from "../cell_area.js";
 import TextLayout from "./text_layout.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import BoxShape from "./box_shape.js";
+import {registerShape} from "./registry.js";
 
 
 /**
@@ -166,3 +167,5 @@ export default class Rect extends BoxShape {
 
 
 }
+
+registerShape(SHAPE_TYPES.RECT, Rect);

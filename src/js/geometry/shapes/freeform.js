@@ -8,6 +8,7 @@ import Point from "../point.js";
 import BoxShape from "./box_shape.js";
 import CellCache from "../cell_cache.js";
 import {freeformAsciiPath} from "./algorithms/traverse_freeform.js";
+import {registerShape} from "./registry.js";
 
 
 export default class Freeform extends Shape {
@@ -128,3 +129,6 @@ export default class Freeform extends Shape {
 
 
 }
+
+
+registerShape(SHAPE_TYPES.FREEFORM, Freeform);

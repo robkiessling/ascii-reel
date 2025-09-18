@@ -1,6 +1,6 @@
 import * as selectionController from "./index.js";
 import CellArea from "../../geometry/cell_area.js";
-import {areArraysEqual} from "../../utils/arrays.js";
+import {areArraysEqual, create2dArray, mergeGlyphs} from "../../utils/arrays.js";
 import {resizeBoundingBox} from "../../geometry/shapes/algorithms/box_sizing.js";
 import VertexArea from "../../geometry/vertex_area.js";
 import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
@@ -8,6 +8,7 @@ import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
 import {pushHistory} from "../../state/index.js";
 import {eventBus, EVENTS} from "../../events/events.js";
+import {EMPTY_CHAR} from "../../config/chars.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -25,6 +26,24 @@ export default class ShapeSelector {
         }
 
         return CellArea.mergeCellAreas(selectionController.vector.selectedShapes().map(shape => shape.boundingArea))
+    }
+
+    get glyphs() {
+        const boundingArea = this.boundingArea;
+
+        const result = {
+            chars: create2dArray(boundingArea.numRows, boundingArea.numCols, EMPTY_CHAR),
+            colors: create2dArray(boundingArea.numRows, boundingArea.numCols, 0)
+        }
+
+        selectionController.vector.selectedShapes().forEach(shape => {
+            const { glyphs: shapeGlyphs, origin: shapeOrigin } = shape.rasterize();
+            mergeGlyphs(result, shapeGlyphs, shapeOrigin.relativeTo(boundingArea.topLeft), (char, color) => {
+                return char !== undefined && char !== EMPTY_CHAR;
+            })
+        })
+
+        return result;
     }
 
     /**

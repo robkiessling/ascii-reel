@@ -510,8 +510,7 @@ export function handleBackspaceKey(isDelete = false) {
     if (movableContent()) {
         updateMovableContent(EMPTY_CHAR, 0);
     } else if (caretCell()) {
-        // Update caret cell and then move to next cell. moveInDirection is not saved to history because we will call
-        // saveSelectionTextHistory later
+        // Update caret cell and then move to next cell
         if (isDelete) {
             state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
             moveInDirection('right', { updateCaretOrigin: false, saveHistory: false });
@@ -521,7 +520,7 @@ export function handleBackspaceKey(isDelete = false) {
             state.setCurrentCelGlyph(caretCell().row, caretCell().col, EMPTY_CHAR, 0);
         }
     } else if (hasSelection()){
-        // Update entire selection
+        // Empty entire selection
         empty();
     } else {
         throw new Error(`Invalid state: canHandleCharInput() should have prevented this.`)
@@ -554,6 +553,59 @@ export function allowMovement(tool, mouseEvent) {
     return true;
 }
 
+/**
+ * Inserts the glyph content into the canvas.
+ * - If the glyph content is a single character, repeat that character across current selection.
+ * - Otherwise, paste content relative to topLeft of current selection.
+ *
+ * @param {{chars: string[][], colors: number[][]}} glyphs - Content to paste
+ * @param {boolean} [limitToSelection=false] - If true, pasted text will only be pasted within the current selection bounds
+ */
+export function insertGlyphs(glyphs, limitToSelection = false) {
+    // If there is no selection area, that means there is simply a caret to paste at (this only happens when using the
+    // text-editor tool).
+    const pasteAtCaret = !hasSelection();
+
+    if (glyphs.chars.length === 1 && glyphs.chars[0].length === 1) {
+        // Special case: only one char of text was copied. Apply that char to entire selection
+        const char = glyphs.chars[0][0];
+        const color = glyphs.colors[0][0];
+        const targetCells = pasteAtCaret ? [caretCell()] : getSelectedCells();
+
+        targetCells.forEach(cell => state.setCurrentCelGlyph(cell.row, cell.col, char, color));
+    }
+    else {
+        // Paste glyphs at topLeft of selected area
+        const topLeft = pasteAtCaret ? caretCell() : getSelectedCellArea().topLeft;
+        translateGlyphs(glyphs, topLeft, (r, c, char, color) => {
+            // Copied empty cells do not override existing cells (if you want to override existing cells to make them
+            // blank, original copy should have spaces not empty cells)
+            if (char === EMPTY_CHAR) return;
+
+            if (!limitToSelection || isSelectedCell({row: r, col: c})) {
+                state.setCurrentCelGlyph(r, c, char, color);
+            }
+        });
+    }
+
+    if (caretCell()) {
+        moveInDirection('down', {
+            amount: glyphs.chars.length - 1,
+            updateCaretOrigin: false,
+            wrapCaretPosition: false,
+            saveHistory: false // History will be saved at the end of this function
+        });
+        moveInDirection('right', {
+            amount: glyphs.chars.at(-1).length,
+            updateCaretOrigin: false,
+            wrapCaretPosition: false,
+            saveHistory: false // History will be saved at the end of this function
+        });
+    }
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveDistinctHistory();
+}
 
 // -------------------------------------------------------------------------------- Events
 
