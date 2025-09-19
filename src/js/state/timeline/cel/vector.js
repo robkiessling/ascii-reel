@@ -144,20 +144,17 @@ export default class VectorCel {
     /**
      * Applies an update to a shape in this cel.
      * @param {string} shapeId - The ID of shape to update
-     * @param {(shape: Shape) => boolean} updater - Function called with the shape for the given `shapeId`.
-     *   Must return `true` if the shape's state was modified, or `false` if no changes were made.
+     * @param {(shape: Shape) => boolean|void} updater - Function called with the shape for the given `shapeId`.
+     *   Should return `true` if the shape's state was modified, or `false` if no changes were made.
      *   This cel's cached glyphs are only cleared when the updater reports a change.
+     *   If function returns void, it will count as updating; cache will be cleared.
      * @returns {boolean} - `true` if the shape's state changed, otherwise `false`
      */
     updateShape(shapeId, updater) {
-        const updated = updater(this.shapesById[shapeId])
+        let updated = updater(this.shapesById[shapeId])
+        if (updated === undefined) updated = true;
         if (updated) this._clearCachedGlyphs();
         return updated;
-    }
-
-    updateShapeText(shapeId, action, actionParams) {
-        this.shapesById[shapeId].updateText(action, actionParams);
-        this._clearCachedGlyphs();
     }
 
     deleteShape(shapeId) {

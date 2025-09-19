@@ -248,6 +248,10 @@ export default class Shape {
         }
     }
     _setGlyph(glyphs, cell, char, colorIndex) {
+        if (!glyphs.chars[cell.row]) {
+            glyphs.chars[cell.row] = [];
+            glyphs.colors[cell.row] = [];
+        }
         glyphs.chars[cell.row][cell.col] = char;
         glyphs.colors[cell.row][cell.col] = colorIndex;
     }

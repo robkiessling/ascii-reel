@@ -102,6 +102,8 @@ export const TEXT_PROP = 'text';
 
 export const TEXT_ALIGN_H_PROP = 'textAlignH';
 export const TEXT_ALIGN_V_PROP = 'textAlignV';
+export const TEXT_PADDING_PROP = 'textPadding';
+export const TEXT_OVERFLOW_PROP = 'textOverflow';
 
 export const TEXT_ALIGN_H_OPTS = {
     LEFT: 'alignLeft',
@@ -121,8 +123,10 @@ export const SHARED_SHAPE_PROPS = [
     COLOR_PROP,
     TEXT_PROP,
     TEXT_ALIGN_H_PROP,
-    TEXT_ALIGN_V_PROP
-]; // todo textPadding
+    TEXT_ALIGN_V_PROP,
+    TEXT_PADDING_PROP,
+    TEXT_OVERFLOW_PROP,
+];
 
 export const BRUSH_TYPES = {
     SQUARE: 'square',

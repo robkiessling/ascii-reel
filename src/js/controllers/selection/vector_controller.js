@@ -70,10 +70,10 @@ export function selectAll() {
 
 /**
  * Updates all selected shapes.
- * @param {(shape: Shape) => boolean} updater - Updater function called for each shape.
- *   Must return `true` if the shape was modified, or `false` otherwise. The return value is always required: it
- *   not only controls whether history is pushed (when `historyMode` is `undefined`), but also whether the canvas
- *   refreshes or change events are emitted.
+ * @param {(shape: Shape) => boolean|void} updater - Updater function called for each shape.
+ *   Should return `true` if the shape was modified, or `false` otherwise. This controls whether the canvas refreshes,
+ *   change events are emitted, and, if historyMode:undefined, whether history is pushed. If the updater returns
+ *   void, this will be interpreted as true (it assumes a modification was made).
  * @param {undefined|true|false|string} [historyMode] - Controls history saving behavior:
  *   - undefined: Push history if any `updater` returned `true`
  *   - true: Always push history (if any shapes were selected)
@@ -355,11 +355,11 @@ export function handleEnterKey() {
         const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
         if (hasRange) {
-            state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex });
+            state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex }))
             setTextCaret(startIndex, { saveHistory: false });
         }
         
-        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, text: '\n' });
+        state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, text: '\n' }))
         moveCaret('right', false);
 
         eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -396,11 +396,11 @@ export function insertText(text) {
     const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
     if (hasRange) {
-        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex });
+        state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex }));
         setTextCaret(startIndex, { saveHistory: false });
     }
 
-    state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, text });
+    state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, text }));
     setTextCaret(startIndex + text.length, { saveHistory: false })
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -422,11 +422,11 @@ export function handleCompositionStart(rollbackPrevChar) {
     let { shapeId, hasRange, startIndex, endIndex, textLayout } = getTextSelection();
 
     if (hasRange) {
-        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex });
+        state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex }));
         setTextCaret(startIndex, { saveHistory: false });
         ({ startIndex, textLayout } = getTextSelection()); // get updated values after deleting range
     } else if (rollbackPrevChar) {
-        state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex: startIndex })
+        state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex: startIndex }))
         moveCaret('left', false);
         ({ startIndex, textLayout } = getTextSelection()); // get updated values after doing replacement
     }
@@ -452,7 +452,7 @@ export function handleCompositionUpdate(str, char) {
     const { shapeId } = getTextSelection();
 
     const replacementText = insertAt(compositionStartText, compositionCaretIndex, str);
-    state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.REPLACE, { text: replacementText })
+    state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.REPLACE, { text: replacementText }))
     setTextCaret(compositionCaretIndex + str.length, { saveHistory: false })
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
@@ -478,13 +478,13 @@ export function handleBackspaceKey(isDelete = false) {
         const { shapeId, hasRange, startIndex, endIndex } = getTextSelection();
 
         if (hasRange) {
-            state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex });
+            state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.DELETE_RANGE, { startIndex, endIndex }));
             setTextCaret(startIndex, { saveHistory: false });
         } else if (isDelete) {
-            state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_FORWARD, { caretIndex: startIndex });
+            state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.DELETE_FORWARD, { caretIndex: startIndex }));
             eventBus.emit(EVENTS.SELECTION.CHANGED) // Caret doesn't change index, but might change cell if right-aligned
         } else {
-            state.updateCurrentCelShapeText(shapeId, SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex: startIndex });
+            state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex: startIndex }));
             moveCaret('left', false);
         }
 
@@ -538,10 +538,7 @@ export function handleArrowKey(direction, shiftKey) {
                 throw new Error(`Invalid direction: ${direction}`);
         }
 
-        updateSelectedShapes(shape => {
-            shape.translate(rowOffset, colOffset);
-            return true; // Shape change has occurred - need to clear shape's cache
-        }, 'vectorSelectionMove');
+        updateSelectedShapes(shape => shape.translate(rowOffset, colOffset), 'vectorSelectionMove');
 
         return true; // Consume keyboard event
     }
@@ -605,6 +602,7 @@ export function setSelectedTextRange(anchorIndex, focusIndex, options = {}) {
     state.selection.vector.setSelectedTextRange(anchorIndex, focusIndex);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // [todo dirty-state] needs refresh from text overflow
     if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
 }
 
@@ -626,6 +624,7 @@ export function setTextCaret(caretIndex, options = {}) {
     state.selection.vector.setTextCaret(caretIndex);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // [todo dirty-state] needs refresh from text overflow
     if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
 }
 
@@ -643,6 +642,7 @@ export function stopEditingText(saveHistory = true) {
     state.selection.vector.stopEditingText()
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // [todo dirty-state] needs refresh from text overflow
     if (saveHistory) state.pushHistory()
 }
 

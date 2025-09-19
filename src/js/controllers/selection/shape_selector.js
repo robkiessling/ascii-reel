@@ -153,10 +153,7 @@ export default class ShapeSelector {
 
         if (this._oldBounds) throw new Error(`beginResize has already been called`);
         this._oldBounds = this.boundingVertexArea;
-        selectionController.vector.updateSelectedShapes(shape => {
-            shape.beginResize()
-            return false; // No visible changes occurred - do not need to clear shape's cache
-        }, false); // Do not push history - history will be pushed when resize is finished
+        selectionController.vector.updateSelectedShapes(shape => shape.beginResize(), false);
     }
     resize(handle, cell, roundedCell) {
         this._resizeOccurred = true;
@@ -167,16 +164,10 @@ export default class ShapeSelector {
             case HANDLE_TYPES.VERTEX:
             case HANDLE_TYPES.EDGE:
                 const newBounds = resizeBoundingBox(this._oldBounds, handle, roundedCell)
-                selectionController.vector.updateSelectedShapes(shape => {
-                    shape.resize(this._oldBounds, newBounds)
-                    return true; // Shape change has occurred - need to clear shape's cache
-                }, false); // Do not push history yet - history will be pushed when resize is finished
+                selectionController.vector.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds), false);
                 break;
             case HANDLE_TYPES.CELL:
-                selectionController.vector.updateSelectedShapes(shape => {
-                    shape.dragCellHandle(handle, cell)
-                    return true; // Shape change has occurred - need to clear shape's cache
-                }, false); // Do not push history yet - history will be pushed when resize is finished
+                selectionController.vector.updateSelectedShapes(shape => shape.dragCellHandle(handle, cell), false);
                 break;
         }
     }
@@ -186,10 +177,9 @@ export default class ShapeSelector {
      */
     finishResize() {
         this._oldBounds = undefined;
-        selectionController.vector.updateSelectedShapes(shape => {
-            shape.finishResize()
-            return false; // No visible changes occurred - do not need to clear shape's cache
-        }, this._resizeOccurred); // Push history if a resize occurred
+
+        // Push history if a resize occurred
+        selectionController.vector.updateSelectedShapes(shape => shape.finishResize(), this._resizeOccurred);
     }
 
 
@@ -203,10 +193,7 @@ export default class ShapeSelector {
     translate(rowDelta, colDelta) {
         this._translateOccurred = true;
 
-        selectionController.vector.updateSelectedShapes(shape => {
-            shape.translate(rowDelta, colDelta)
-            return true; // Shape change has occurred - need to clear shape's cache
-        }, false); // Do not push history yet - history will be pushed when translation finished
+        selectionController.vector.updateSelectedShapes(shape => shape.translate(rowDelta, colDelta), false);
     }
 
     /**

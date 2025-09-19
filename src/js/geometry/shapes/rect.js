@@ -1,7 +1,8 @@
 import {isFunction} from "../../utils/utilities.js";
 import {
     CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP, SHAPE_TYPES,
-    STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
+    STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP,
+    TEXT_OVERFLOW_PROP, TEXT_PADDING_PROP, TEXT_PROP
 } from "./constants.js";
 import CellArea from "../cell_area.js";
 import TextLayout from "./text_layout.js";
@@ -73,7 +74,8 @@ export default class Rect extends BoxShape {
             [TEXT_PROP]: "",
             [TEXT_ALIGN_V_PROP]: TEXT_ALIGN_V_OPTS.MIDDLE,
             [TEXT_ALIGN_H_PROP]: TEXT_ALIGN_H_OPTS.CENTER,
-            textPadding: 0
+            [TEXT_PADDING_PROP]: 0,
+            [TEXT_OVERFLOW_PROP]: false
         };
 
         return new Rect(undefined, SHAPE_TYPES.RECT, props);
@@ -149,14 +151,21 @@ export default class Rect extends BoxShape {
             {
                 alignH: this.props[TEXT_ALIGN_H_PROP],
                 alignV: this.props[TEXT_ALIGN_V_PROP],
-                paddingH: this.props.textPadding + 1, // Add 1 for rect's natural outline
-                paddingV: this.props.textPadding + 1,
+                paddingH: this.props[TEXT_PADDING_PROP] + 1, // Add 1 for rect's natural outline
+                paddingV: this.props[TEXT_PADDING_PROP] + 1,
+                showOverflow: this.props[TEXT_OVERFLOW_PROP]
             }
         )
 
         textLayout.grid.forEach((row, rowIndex) => {
             row.forEach((char, colIndex) => {
                 if (char !== EMPTY_CHAR) {
+                    // Text layout might go beyond bounds if showOverflow:true
+                    if (!glyphs.chars[rowIndex]) {
+                        glyphs.chars[rowIndex] = [];
+                        glyphs.colors[rowIndex] = [];
+                    }
+
                     this._setGlyph(glyphs, { row: rowIndex, col: colIndex }, char, this.props[COLOR_PROP])
                 }
             })

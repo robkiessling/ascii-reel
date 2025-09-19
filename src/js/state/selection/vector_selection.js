@@ -5,7 +5,7 @@ import {
     reorderCurrentCelShapes,
     updateCurrentCelShape
 } from "../index.js";
-import {SHARED_SHAPE_PROPS} from "../../geometry/shapes/constants.js";
+import {SHARED_SHAPE_PROPS, TEXT_OVERFLOW_PROP} from "../../geometry/shapes/constants.js";
 import {transformValues} from "../../utils/objects.js";
 import {areArraysEqual} from "../../utils/arrays.js";
 
@@ -191,6 +191,7 @@ export function setSelectedTextRange(anchorIndex, focusIndex) {
     state.isEditingText = true;
     state.textSelectionAnchor = anchorIndex;
     state.textSelectionFocus = focusIndex;
+    updateSelectedShapes(shape => shape.updateProp(TEXT_OVERFLOW_PROP, true)) // [todo dirty-state] needs refresh
 }
 
 /**
@@ -206,6 +207,7 @@ export function setTextCaret(caretIndex) {
     state.isEditingText = true;
     state.textSelectionAnchor = caretIndex;
     state.textSelectionFocus = caretIndex;
+    updateSelectedShapes(shape => shape.updateProp(TEXT_OVERFLOW_PROP, true)) // [todo dirty-state] needs refresh
 }
 
 /**
@@ -213,6 +215,7 @@ export function setTextCaret(caretIndex) {
  */
 export function stopEditingText() {
     state.isEditingText = false;
+    updateSelectedShapes(shape => shape.updateProp(TEXT_OVERFLOW_PROP, false)) // [todo dirty-state] needs refresh
 }
 
 /**

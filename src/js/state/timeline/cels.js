@@ -16,7 +16,6 @@ export function getCelShapes(cel) { return cel.shapes(); }
 export function getCelShape(cel, ...args) { return cel.getShape(...args) }
 export function addCelShape(cel, ...args) { return cel.addShape(...args) }
 export function updateCelShape(cel, ...args) { return cel.updateShape(...args) }
-export function updateCelShapeText(cel, ...args) { return cel.updateShapeText(...args) }
 export function deleteCelShape(cel, ...args) { return cel.deleteShape(...args) }
 export function reorderCelShapes(cel, ...args) { return cel.reorderShapes(...args) }
 export function canReorderCelShapes(cel, ...args) { return cel.canReorderShapes(...args) }
