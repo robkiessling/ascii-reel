@@ -191,7 +191,7 @@ export function setSelectedTextRange(anchorIndex, focusIndex) {
     state.isEditingText = true;
     state.textSelectionAnchor = anchorIndex;
     state.textSelectionFocus = focusIndex;
-    updateSelectedShapes(shape => shape.updateProp(TEXT_OVERFLOW_PROP, true)) // [todo dirty-state] needs refresh
+    toggleTextOverflow(true)
 }
 
 /**
@@ -207,7 +207,7 @@ export function setTextCaret(caretIndex) {
     state.isEditingText = true;
     state.textSelectionAnchor = caretIndex;
     state.textSelectionFocus = caretIndex;
-    updateSelectedShapes(shape => shape.updateProp(TEXT_OVERFLOW_PROP, true)) // [todo dirty-state] needs refresh
+    toggleTextOverflow(true)
 }
 
 /**
@@ -215,7 +215,7 @@ export function setTextCaret(caretIndex) {
  */
 export function stopEditingText() {
     state.isEditingText = false;
-    updateSelectedShapes(shape => shape.updateProp(TEXT_OVERFLOW_PROP, false)) // [todo dirty-state] needs refresh
+    toggleTextOverflow(false)
 }
 
 /**
@@ -283,4 +283,29 @@ function textSelectionEnd() {
 export function singleSelectedShape() {
     if (numSelectedShapes() !== 1) throw new Error('Exactly 1 shape must be selected');
     return selectedShapes()[0];
+}
+
+
+/**
+ * Shows/hides the text overflow of a shape. We typically only show overflow when editing; once editing is finished
+ * we cut off all overflow.
+ *
+ * Because this actually affects which chars are visible on the canvas, we end up having to refresh the char canvas
+ * during almost any selection change. TODO We can improve performance by just refreshing char canvas if overflow toggles.
+ *
+ * @param {boolean} show - Whether to show or hide text overflow for selected shapes.
+ */
+function toggleTextOverflow(show) {
+    const updater = shape => shape.updateProp(TEXT_OVERFLOW_PROP, show)
+
+    if (show) {
+        // Show overflow for currently selected shape (should just be one)
+        updateSelectedShapes(updater);
+    } else {
+        // Hiding overflow for all shapes, not just currently selected (because this may happen after selection cleared).
+        getCurrentCelShapes().forEach(shape => {
+            updateCurrentCelShape(shape.id, updater)
+        });
+    }
+
 }

@@ -38,6 +38,7 @@ export default class TextLayout {
             console.log(`textArea: ${this.textArea}`)
         }
 
+        this.unabridgedLines = [];
         this.lines = [];
         this.grid = create2dArray(this.textArea.numRows, this.textArea.numCols, EMPTY_CHAR);
 
@@ -270,7 +271,7 @@ export default class TextLayout {
         let lineStartIndex, lastSpaceIndex;
 
         const pushLine = (startIndex, endIndex) => {
-            this.lines.push({
+            this.unabridgedLines.push({
                 rawText: this.text.substring(startIndex, endIndex),
                 caretStart: startIndex,
                 caretEnd: endIndex,
@@ -344,9 +345,12 @@ export default class TextLayout {
     _alignText() {
         const usableCols = this.textArea.numCols;
         let offsetTop = this.paddingV;
-        if (!this.options.showOverflow) {
+
+        if (this.options.showOverflow) {
+            this.lines = this.unabridgedLines;
+        } else {
             const usableRows = this.textArea.numRows;
-            this.lines = this.lines.slice(0, usableRows);
+            this.lines = this.unabridgedLines.slice(0, usableRows);
 
             // Calculate vertical offset based on alignment
             if (this.alignV === TEXT_ALIGN_V_OPTS.MIDDLE) offsetTop += Math.floor((usableRows - this.lines.length) / 2);
@@ -392,9 +396,10 @@ export default class TextLayout {
         // Normally we trim all spaces around the text, except in a few situations:
         // - if this is the first line of a paragraph, do not trim starting whitespace
         // - if this is the last line of a paragraph, do not trim ending whitespace
-        const prevLine = this.lines[lineIndex - 1];
+        // Note: We use unabridged lines for this calculation so that it is consistent whether overflow is showing or not.
+        const prevLine = this.unabridgedLines[lineIndex - 1];
         const isFirstLineOfParagraph = lineIndex === 0 || (prevLine && prevLine.rawText.endsWith('\n'));
-        const isLastLineOfParagraph = (lineIndex === this.lines.length - 1) || line.rawText.endsWith('\n');
+        const isLastLineOfParagraph = (lineIndex === this.unabridgedLines.length - 1) || line.rawText.endsWith('\n');
         if (!isFirstLineOfParagraph) displayText = displayText.trimStart();
         if (!isLastLineOfParagraph) displayText = displayText.trimEnd();
 

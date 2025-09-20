@@ -39,6 +39,7 @@ export function selectAllShapes(saveHistory = true) {
 
     state.selection.vector.selectAllShapes();
     eventBus.emit(EVENTS.SELECTION.CHANGED);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
     if (saveHistory) state.pushHistory();
     return true;
 }
@@ -49,6 +50,7 @@ export function deselectAllShapes(saveHistory = true) {
 
     state.selection.clearSelection();
     eventBus.emit(EVENTS.SELECTION.CHANGED);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
     if (saveHistory) state.pushHistory();
     return true;
 }
@@ -602,7 +604,7 @@ export function setSelectedTextRange(anchorIndex, focusIndex, options = {}) {
     state.selection.vector.setSelectedTextRange(anchorIndex, focusIndex);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // [todo dirty-state] needs refresh from text overflow
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
     if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
 }
 
@@ -624,7 +626,7 @@ export function setTextCaret(caretIndex, options = {}) {
     state.selection.vector.setTextCaret(caretIndex);
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // [todo dirty-state] needs refresh from text overflow
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
     if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
 }
 
@@ -642,7 +644,7 @@ export function stopEditingText(saveHistory = true) {
     state.selection.vector.stopEditingText()
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // [todo dirty-state] needs refresh from text overflow
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
     if (saveHistory) state.pushHistory()
 }
 

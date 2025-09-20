@@ -96,6 +96,7 @@ export default class ShapeSelector {
 
     _onStateChange() {
         eventBus.emit(EVENTS.SELECTION.CHANGED);
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
         pushHistory();
     }
 
