@@ -668,8 +668,8 @@ function setupShapeProperties() {
 
     actions.registerAction('tools.shapes.editText', {
         callback: () => selectionController.vector.selectAllText(),
-        visible: () => selectionController.vector.canEditText(),
-        enabled: () => selectionController.vector.canEditText() && !selectionController.vector.isEditingText(),
+        visible: () => selectionController.vector.hasTextProperty(),
+        enabled: () => selectionController.vector.canEnterEditMode(),
         shortcutAbbr: 'Enter'
     })
 
@@ -730,8 +730,8 @@ function setupTextAlignMenu($menu, prop, options) {
         }),
         visible: () => {
             // Show text-align if any selected shapes have non-zero text length
-            // TODO or if cursor is currently in the shape
-            return selectionController.vector.selectedShapeProps()[TEXT_PROP].some(textProp => !!textProp);
+            return selectionController.vector.isEditingText() ||
+                selectionController.vector.selectedShapeProps()[TEXT_PROP].some(textProp => !!textProp);
         },
         getValue: () => selectionController.vector.selectedShapeProps()[prop][0],
         onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(prop, newValue)),

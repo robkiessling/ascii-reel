@@ -45,6 +45,8 @@ export default class TextLayout {
         if (this.textArea.numRows >= 1 && this.textArea.numCols >= 1) {
             this._wrapText();
             this._alignText();
+        } else {
+            this.fullyClipped = true;
         }
 
         if (DEBUG) {
@@ -343,19 +345,18 @@ export default class TextLayout {
      * Will populate a 2d array of chars which it stores in `this.grid`
      */
     _alignText() {
+        const usableRows = this.textArea.numRows;
         const usableCols = this.textArea.numCols;
         let offsetTop = this.paddingV;
 
-        if (this.options.showOverflow) {
-            this.lines = this.unabridgedLines;
-        } else {
-            const usableRows = this.textArea.numRows;
-            this.lines = this.unabridgedLines.slice(0, usableRows);
+        this.lines = this.options.showOverflow ? this.unabridgedLines : this.unabridgedLines.slice(0, usableRows);
 
+        if (this.lines.length <= usableRows) {
             // Calculate vertical offset based on alignment
             if (this.alignV === TEXT_ALIGN_V_OPTS.MIDDLE) offsetTop += Math.floor((usableRows - this.lines.length) / 2);
             else if (this.alignV === TEXT_ALIGN_V_OPTS.BOTTOM) offsetTop += (usableRows - this.lines.length);
         }
+
 
         this.lines.forEach((line, lineIndex) => {
             line.displayText = this._calcDisplayText(line, lineIndex, usableCols);

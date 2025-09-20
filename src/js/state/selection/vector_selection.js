@@ -51,8 +51,8 @@ export function selectedShapeIds() {
 export function setSelectedShapeIds(shapeIds) {
     if (areArraysEqual(shapeIds, selectedShapeIds())) return;
 
-    state.shapeIds = new Set(shapeIds);
     stopEditingText();
+    state.shapeIds = new Set(shapeIds);
 }
 
 export function numSelectedShapes() {
@@ -65,8 +65,8 @@ export function isShapeSelected(shapeId) {
     return shapeIdsSet().has(shapeId);
 }
 export function selectShape(shapeId) {
-    shapeIdsSet().add(shapeId);
     stopEditingText();
+    shapeIdsSet().add(shapeId);
 }
 
 // Returns false if user is already selecting-all
@@ -74,17 +74,17 @@ export function canSelectAllShapes() {
     return getCurrentCelShapes().some(shape => !isShapeSelected(shape));
 }
 export function selectAllShapes() {
-    getCurrentCelShapes().forEach(shape => selectShape(shape.id));
     stopEditingText();
+    getCurrentCelShapes().forEach(shape => selectShape(shape.id));
 }
 
 export function deselectShape(shapeId) {
-    shapeIdsSet().delete(shapeId);
     stopEditingText();
+    shapeIdsSet().delete(shapeId);
 }
 export function deselectAllShapes() {
-    shapeIdsSet().clear();
     stopEditingText();
+    shapeIdsSet().clear();
 }
 
 export function selectedShapes() {
@@ -119,8 +119,11 @@ export function updateSelectedShapes(updater) {
 }
 
 export function deleteSelectedShapes() {
-    selectedShapeIds().forEach(shapeId => deleteCurrentCelShape(shapeId));
+    // If you delete the shapes first, deselection will error out when it tries to clear text overflow prop.
+    // So we snapshot which shapes are selected, deselect them, and then delete those shapes.
+    const shapeIds = selectedShapeIds();
     deselectAllShapes();
+    shapeIds.forEach(shapeId => deleteCurrentCelShape(shapeId));
 }
 
 export function canReorderSelectedShapes(action) {
@@ -136,7 +139,7 @@ export function reorderSelectedShapes(action) {
  * Determines whether the current shape selection allows text editing.
  * @returns {boolean} True if exactly one shape is selected and that shape supports text, false otherwise.
  */
-export function canEditText() {
+export function hasTextProperty() {
     if (numSelectedShapes() !== 1) return false;
     return singleSelectedShape().canHaveText;
 }
@@ -148,8 +151,12 @@ export function canEditText() {
  * @returns {boolean} True if a shape's text is being edited, false otherwise.
  */
 export function isEditingText() {
-    if (state.isEditingText && !canEditText()) throw new Error(`Invalid text-editing state`)
+    if (state.isEditingText && !hasTextProperty()) throw new Error(`Invalid text-editing state`)
     return state.isEditingText;
+}
+
+export function canEnterEditMode() {
+    return hasTextProperty() && !isEditingText() && !singleSelectedShape().textLayout.fullyClipped;
 }
 
 /**
@@ -157,11 +164,12 @@ export function isEditingText() {
  * @returns {boolean} True if the current shape's text is editable and not already fully selected, false otherwise
  */
 export function canSelectAllText() {
-    if (!canEditText()) return false;
+    if (!hasTextProperty()) return false;
 
     const shape = singleSelectedShape();
 
-    return textSelectionStart() !== shape.textLayout.minCaretIndex ||
+    return !isEditingText() ||
+        textSelectionStart() !== shape.textLayout.minCaretIndex ||
         textSelectionEnd() !== shape.textLayout.maxCaretIndex;
 }
 
@@ -171,6 +179,7 @@ export function canSelectAllText() {
 export function selectAllText() {
     if (!canSelectAllText()) return;
     const shape = singleSelectedShape();
+    toggleTextOverflow(true) // Need to show all text before calculating min/max carets
     const textLayout = getCurrentCelShape(shape.id).textLayout
     setSelectedTextRange(textLayout.minCaretIndex, textLayout.maxCaretIndex);
 }
@@ -296,16 +305,16 @@ export function singleSelectedShape() {
  * @param {boolean} show - Whether to show or hide text overflow for selected shapes.
  */
 function toggleTextOverflow(show) {
-    const updater = shape => shape.updateProp(TEXT_OVERFLOW_PROP, show)
-
-    if (show) {
-        // Show overflow for currently selected shape (should just be one)
-        updateSelectedShapes(updater);
-    } else {
-        // Hiding overflow for all shapes, not just currently selected (because this may happen after selection cleared).
-        getCurrentCelShapes().forEach(shape => {
-            updateCurrentCelShape(shape.id, updater)
-        });
-    }
-
+    // const updater = shape => shape.updateProp(TEXT_OVERFLOW_PROP, show)
+    //
+    // if (show) {
+    //     // Show overflow for currently selected shape (should just be one)
+    //     updateSelectedShapes(updater);
+    // } else {
+    //     // Hiding overflow for all shapes, not just currently selected (because this may happen after selection cleared).
+    //     getCurrentCelShapes().forEach(shape => {
+    //         updateCurrentCelShape(shape.id, updater)
+    //     });
+    // }
+    updateSelectedShapes(shape => shape.updateProp(TEXT_OVERFLOW_PROP, show))
 }

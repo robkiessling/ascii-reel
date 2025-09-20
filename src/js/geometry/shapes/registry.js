@@ -19,7 +19,7 @@ export function registerShape(type, constructor) {
 /**
  * Create a new shape instance from its serialized data.
  *
- * @param {{id: string, type: string, props: {}}} data - Serialized shape data.
+ * @param {{id?: string, type: string, props: {}}} data - Serialized shape data.
  * @param {string} data.type - The type identifier of the shape.
  * @returns {Shape} - A new shape instance of the correct subclass.
  */

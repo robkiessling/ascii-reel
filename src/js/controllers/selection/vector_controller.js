@@ -131,7 +131,7 @@ export function selectedShapesGlyphs() {
     return shapeSelector.glyphs;
 }
 
-export function importShapes(serializedShapes) {
+export function importShapes(serializedShapes, offset) {
     const importedShapes = serializedShapes.map(serializedShape => {
         const shape = Shape.deserialize(serializedShape);
         state.addCurrentCelShape(shape);
@@ -141,7 +141,7 @@ export function importShapes(serializedShapes) {
     setSelectedShapeIds(importedShapes.map(shape => shape.id));
 
     // Move pasted shapes a little down and right
-    shapeSelector.translate(2, 2)
+    shapeSelector.translate(offset, offset)
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     state.pushHistory()
@@ -373,7 +373,7 @@ export function handleEnterKey() {
         return true;
     }
 
-    if (selectAllText()) return true;
+    if (canEnterEditMode() && selectAllText()) return true;
 
     // Leaving space for future Enter-key logic
 
@@ -570,7 +570,8 @@ export function selectedTextAreas() {
     return textLayout.lineCellAreas(startIndex, endIndex);
 }
 
-export function canEditText() { return state.selection.vector.canEditText() }
+export function hasTextProperty() { return state.selection.vector.hasTextProperty() }
+export function canEnterEditMode() { return state.selection.vector.canEnterEditMode() }
 export function canSelectAllText() { return state.selection.vector.canSelectAllText() }
 
 export function selectAllText(saveHistory = true) {
@@ -580,6 +581,7 @@ export function selectAllText(saveHistory = true) {
     state.selection.vector.selectAllText()
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
     if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
 
     return true;
