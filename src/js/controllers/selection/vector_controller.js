@@ -14,6 +14,7 @@ import {MOUSE} from "../../io/mouse.js";
 import {insertAt} from "../../utils/strings.js";
 import * as tools from "../tool_controller.js";
 import Shape from "../../geometry/shapes/shape.js";
+import {isFunction} from "../../utils/utilities.js";
 
 /**
  * Vector selection controller.
@@ -40,7 +41,7 @@ export function selectAllShapes(saveHistory = true) {
     state.selection.vector.selectAllShapes();
     eventBus.emit(EVENTS.SELECTION.CHANGED);
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
-    if (saveHistory) state.pushHistory();
+    if (saveHistory) saveDistinctHistory();
     return true;
 }
 export function deselectShape(shapeId) { return state.selection.vector.deselectShape(shapeId) }
@@ -51,7 +52,7 @@ export function deselectAllShapes(saveHistory = true) {
     state.selection.vector.deselectAllShapes();
     eventBus.emit(EVENTS.SELECTION.CHANGED);
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
-    if (saveHistory) state.pushHistory();
+    if (saveHistory) saveDistinctHistory();
     return true;
 }
 
@@ -76,11 +77,11 @@ export function selectAll() {
  *   Should return `true` if the shape was modified, or `false` otherwise. This controls whether the canvas refreshes,
  *   change events are emitted, and, if historyMode:undefined, whether history is pushed. If the updater returns
  *   void, this will be interpreted as true (it assumes a modification was made).
- * @param {undefined|true|false|string} [historyMode] - Controls history saving behavior:
+ * @param {undefined|true|false|function(updated: boolean)} [historyMode] - Controls history saving behavior:
  *   - undefined: Push history if any `updater` returned `true`
  *   - true: Always push history (if any shapes were selected)
  *   - false: Never push history
- *   - string: Always push history with option `modifiable:<string>`
+ *   - function: Calls a custom function that may save history as it chooses
  */
 export function updateSelectedShapes(updater, historyMode) {
     if (!hasSelectedShapes()) return; // Do not emit event or push history
@@ -92,18 +93,12 @@ export function updateSelectedShapes(updater, historyMode) {
         eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     }
 
-    switch(historyMode) {
-        case undefined:
-            if (updated) state.pushHistory();
-            break;
-        case true:
-            state.pushHistory();
-            break;
-        case false:
-            // Do nothing
-            break;
-        default:
-            state.pushHistory({ modifiable: historyMode })
+    if (historyMode === undefined) {
+        if (updated) saveDistinctHistory();
+    } else if (isFunction(historyMode)) {
+        historyMode(updated);
+    } else if (historyMode === true) {
+        saveDistinctHistory();
     }
 }
 
@@ -113,7 +108,7 @@ export function deleteSelectedShapes() {
     state.selection.vector.deleteSelectedShapes();
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory();
+    saveDistinctHistory();
 }
 
 export function canReorderSelectedShapes(action) { return state.selection.vector.canReorderSelectedShapes(action) }
@@ -124,7 +119,7 @@ export function reorderSelectedShapes(action) {
     state.selection.vector.reorderSelectedShapes(action);
     eventBus.emit(EVENTS.SELECTION.CHANGED); // So shape property buttons refresh
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory();
+    saveDistinctHistory();
 }
 
 export function selectedShapesGlyphs() {
@@ -144,13 +139,18 @@ export function importShapes(serializedShapes, offset) {
     shapeSelector.translate(offset, offset)
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory()
+    saveDistinctHistory()
 }
 
 
 // -------------------------------------------------------------------------------- Events / Shape Selector
 
-let shapeSelector = new ShapeSelector();
+let shapeSelector = new ShapeSelector(() => {
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
+    saveDistinctHistory();
+});
+
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
 let marquee = null;
 
@@ -242,11 +242,11 @@ function finishHandleDrag() {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
         case HANDLE_TYPES.CELL:
-            shapeSelector.finishResize()
+            if (shapeSelector.finishResize()) saveShapesMoved();
             break;
         case HANDLE_TYPES.BODY:
             shapeSelector.commitPendingSelection()
-            shapeSelector.finishTranslate()
+            if (shapeSelector.finishTranslate()) saveShapesMoved();
             break;
         case HANDLE_TYPES.CARET:
             // Do nothing
@@ -315,7 +315,7 @@ function startMarquee(canvas, mouseEvent) {
         },
         onFinish: () => {
             const hasStateChange = !areArraysEqual(originalSelection, selectedShapeIds())
-            if (hasStateChange) state.pushHistory();
+            if (hasStateChange) saveDistinctHistory();
         }
     })
 }
@@ -369,7 +369,7 @@ export function handleEnterKey() {
         // Store a new history snapshot at the start of the new line. This way the caret jumps from end of line ->
         // start of line -> end of prev line -> start of prev line -> etc. In other words, there are 2 jump
         // positions per line.
-        state.pushHistory();
+        saveDistinctHistory();
         return true;
     }
 
@@ -406,7 +406,7 @@ export function insertText(text) {
     setTextCaret(startIndex + text.length, { saveHistory: false })
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory({ modifiable: 'vectorSelectionText' })
+    saveTextUpdated()
 }
 
 
@@ -437,7 +437,7 @@ export function handleCompositionStart(rollbackPrevChar) {
     compositionStartText = textLayout.text;
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory({ modifiable: 'vectorSelectionText' })
+    saveTextUpdated()
     return true;
 }
 
@@ -458,7 +458,7 @@ export function handleCompositionUpdate(str, char) {
     setTextCaret(compositionCaretIndex + str.length, { saveHistory: false })
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    state.pushHistory({ modifiable: 'vectorSelectionText' })
+    saveTextUpdated()
     return true;
 }
 
@@ -491,7 +491,7 @@ export function handleBackspaceKey(isDelete = false) {
         }
 
         eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-        state.pushHistory({ modifiable: 'vectorSelectionText' })
+        saveTextUpdated()
         return true;
     }
 
@@ -540,7 +540,7 @@ export function handleArrowKey(direction, shiftKey) {
                 throw new Error(`Invalid direction: ${direction}`);
         }
 
-        updateSelectedShapes(shape => shape.translate(rowOffset, colOffset), 'vectorSelectionMove');
+        updateSelectedShapes(shape => shape.translate(rowOffset, colOffset), () => saveShapesMoved());
 
         return true; // Consume keyboard event
     }
@@ -582,7 +582,7 @@ export function selectAllText(saveHistory = true) {
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
-    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
+    if (saveHistory) saveTextSelectionMoved()
 
     return true;
 }
@@ -607,7 +607,7 @@ export function setSelectedTextRange(anchorIndex, focusIndex, options = {}) {
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
-    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
+    if (saveHistory) saveTextSelectionMoved()
 }
 
 
@@ -629,7 +629,7 @@ export function setTextCaret(caretIndex, options = {}) {
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
-    if (saveHistory) state.pushHistory({ modifiable: 'vectorSelectionCaret' })
+    if (saveHistory) saveTextSelectionMoved()
 }
 
 /**
@@ -647,7 +647,7 @@ export function stopEditingText(saveHistory = true) {
 
     eventBus.emit(EVENTS.SELECTION.CHANGED)
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
-    if (saveHistory) state.pushHistory()
+    if (saveHistory) saveDistinctHistory()
 }
 
 /**
@@ -950,4 +950,44 @@ function drawCellHandle(canvas, cell) {
     )
 
     context.stroke();
+}
+
+
+// -------------------------------------------------------------------------------- History Management
+
+/**
+ * Saves a shape moving or resizing. This means consecutive moving/resizing of a given shape will all be grouped
+ * under a single undo.
+ */
+function saveShapesMoved() {
+    state.pushHistory({ modifiable: 'vectorShapesMoved' });
+}
+
+/**
+ * Saves a text selection changing (e.g. caret moving, highlighting new words, etc.). This means consecutive
+ * text selection changes will be grouped under a single undo.
+ */
+function saveTextSelectionMoved() {
+    state.pushHistory({ modifiable: 'vectorTextSelectionMoved' });
+}
+
+/**
+ * Saves a selection text update (e.g. adding new chars, deleting chars). This means consecutive text edits
+ * will be grouped under a single undo.
+ *
+ * Because this is different from saveTextSelectionMoved, each newline char will end being its own undo slice.
+ */
+function saveTextUpdated() {
+    state.pushHistory({ modifiable: 'vectorTextUpdated' });
+}
+
+/**
+ * Saves an immutable history snapshot of the current selection state. No modifiable flag means it always
+ * creates a new slice in time. This is useful for editor states that must remain distinct.
+ *
+ * Note: This type of history saving is common throughout the app - it is just less common in this vector
+ * selection file so I'm giving it its own function.
+ */
+function saveDistinctHistory() {
+    state.pushHistory();
 }

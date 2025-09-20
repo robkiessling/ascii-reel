@@ -6,8 +6,6 @@ import VertexArea from "../../geometry/vertex_area.js";
 import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
 import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
-import {pushHistory} from "../../state/index.js";
-import {eventBus, EVENTS} from "../../events/events.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 
 /**
@@ -19,6 +17,10 @@ import {EMPTY_CHAR} from "../../config/chars.js";
  * This also handles resizing when multiple shapes are selected.
  */
 export default class ShapeSelector {
+
+    constructor(onSelect) {
+        this._onSelect = onSelect;
+    }
 
     get boundingArea() {
         if (selectionController.vector.numSelectedShapes() === 1) {
@@ -80,7 +82,7 @@ export default class ShapeSelector {
                 this._markPendingDeselection(shapeId);
             } else {
                 selectionController.vector.selectShape(shapeId);
-                this._onStateChange();
+                this._onSelect();
             }
         } else if (selectionController.vector.numSelectedShapes() > 1 && selectionController.vector.isShapeSelected(shapeId)) {
             // If multiple shapes are already selected, mousedown (without shift) merely flags the shape for
@@ -90,14 +92,8 @@ export default class ShapeSelector {
             const newSelectedShapeIds = [shapeId];
             const hasStateChange = !areArraysEqual(selectionController.vector.selectedShapeIds(), newSelectedShapeIds);
             selectionController.vector.setSelectedShapeIds(newSelectedShapeIds);
-            if (hasStateChange) this._onStateChange();
+            if (hasStateChange) this._onSelect();
         }
-    }
-
-    _onStateChange() {
-        eventBus.emit(EVENTS.SELECTION.CHANGED);
-        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
-        pushHistory();
     }
 
     // ----------------------------------------- Pending selections
@@ -129,7 +125,7 @@ export default class ShapeSelector {
 
         this.cancelPendingSelection();
 
-        if (hasStateChange) this._onStateChange();
+        if (hasStateChange) this._onSelect();
     }
 
     cancelPendingSelection() {
@@ -146,6 +142,8 @@ export default class ShapeSelector {
     //
     // Each shape uses these bounding rectangles to determine its original relative position and size within the group.
     // It then applies the same relative proportions to fit itself into the new bounding rectangle.
+    //
+    // Does not save history; it is up to outside handler to save history upon finish.
 
     beginResize() {
         this._resizeOccurred = false;
@@ -174,18 +172,20 @@ export default class ShapeSelector {
     }
 
     /**
-     * @returns {boolean} - True if a state change occurred.
+     * @returns {boolean} - True if shape(s) were resized.
      */
     finishResize() {
         this._oldBounds = undefined;
 
-        // Push history if a resize occurred
-        selectionController.vector.updateSelectedShapes(shape => shape.finishResize(), this._resizeOccurred);
+        selectionController.vector.updateSelectedShapes(shape => shape.finishResize(), false);
+
+        return this._resizeOccurred;
     }
 
 
     // ----------------------------------------- Translation
     // Small wrapper around shape translate functions, mainly to detect if a translation actually occurred.
+    // Does not save history; it is up to outside handler to save history upon finish.
 
     beginTranslate() {
         this._translateOccurred = false;
@@ -198,12 +198,10 @@ export default class ShapeSelector {
     }
 
     /**
-     * @returns {boolean} - True if a state change occurred.
+     * @returns {boolean} - True if a shape(s) were translated.
      */
     finishTranslate() {
-        if (this._translateOccurred) {
-            pushHistory()
-        }
+        return this._translateOccurred;
     }
 
 }
