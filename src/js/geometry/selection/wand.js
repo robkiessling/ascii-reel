@@ -1,16 +1,16 @@
 import Cell from "../cell.js";
-import SelectionPolygon from "./polygon.js";
+import SelectionShape from "./shape.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import {SELECTION_SHAPE_TYPES} from "./constants.js";
 import {getCurrentCelGlyph, isCellInBounds} from "../../state/index.js";
 
 /**
- * SelectionWand starts with a single cell and then finds all connected cells of the same color.
+ * WandSelection starts with a single cell and then finds all connected cells of the same color.
  * Supports the following options:
  * - diagonal: (boolean) Whether to include diagonally adjacent cells or not
  * - colorblind (boolean) If true, finds connected cells regardless of color.
  */
-export default class SelectionWand extends SelectionPolygon {
+export default class WandSelection extends SelectionShape {
     static type = SELECTION_SHAPE_TYPES.WAND;
 
     serialize() {
@@ -18,7 +18,7 @@ export default class SelectionWand extends SelectionPolygon {
     }
 
     static deserialize(data) {
-        const wand = new SelectionWand(null, null);
+        const wand = new WandSelection(null, null);
         wand._cells = data.cells.map(cell => Cell.deserialize(cell));
         wand._cacheEndpoints();
         wand.completed = true;

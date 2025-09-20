@@ -48,7 +48,7 @@ export function deselectShape(shapeId) { return state.selection.vector.deselectS
 export function deselectAllShapes(saveHistory = true) {
     if (!hasSelectedShapes()) return false; // Do not emit event or push history
 
-    state.selection.clearSelection();
+    state.selection.vector.deselectAllShapes();
     eventBus.emit(EVENTS.SELECTION.CHANGED);
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME); // Refresh chars canvas in case shape text overflow changed
     if (saveHistory) state.pushHistory();

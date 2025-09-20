@@ -20,7 +20,7 @@ import * as tools from "./tool_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
 import {EMPTY_CHAR} from "../config/chars.js";
-import SelectionRect from "../geometry/selection/rect.js";
+import RectSelection from "../geometry/selection/rect.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -285,7 +285,7 @@ function redrawSelection() {
 
     const vectorTextAreas = selectionController.vector.selectedTextAreas();
     if (vectorTextAreas) {
-        selectionCanvas.highlightPolygons(vectorTextAreas.map(cellArea => new SelectionRect(cellArea.topLeft, cellArea.bottomRight)));
+        selectionCanvas.highlightPolygons(vectorTextAreas.map(cellArea => new RectSelection(cellArea.topLeft, cellArea.bottomRight)));
     }
 
     const vectorCaret = selectionController.vector.caretCell();

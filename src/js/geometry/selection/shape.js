@@ -2,12 +2,12 @@ import Cell from "../cell.js";
 import equal from "fast-deep-equal";
 
 /**
- * SelectionPolygon is the base class for many types of selection shapes. All polygons have a start value (where the
+ * SelectionShape is the base class for many types of selection shapes. All polygons have a start value (where the
  * user first clicked) and an end value (where the user's mouse position currently is or was at time of mouseup).
  *
  * Subclasses must implement 'iterateCells', 'draw', and static 'type' field
  */
-export default class SelectionPolygon {
+export default class SelectionShape {
     constructor(startCell, endCell = undefined, options = {}) {
         this.start = startCell;
         this.end = endCell === undefined ? startCell.clone() : endCell;

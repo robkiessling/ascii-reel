@@ -4,12 +4,12 @@ import * as state from "../../state/index.js"
 import * as tools from "../tool_controller.js";
 import CellCache from "../../geometry/cell_cache.js";
 import {MOUSE} from "../../io/mouse.js";
-import SelectionRect from "../../geometry/selection/rect.js";
+import RectSelection from "../../geometry/selection/rect.js";
 import {shouldModifyAction} from "../../io/actions.js";
-import SelectionLine from "../../geometry/selection/line.js";
-import SelectionLasso from "../../geometry/selection/lasso.js";
-import SelectionWand from "../../geometry/selection/wand.js";
-import SelectionText from "../../geometry/selection/text.js";
+import LineSelection from "../../geometry/selection/line.js";
+import LassoSelection from "../../geometry/selection/lasso.js";
+import WandSelection from "../../geometry/selection/wand.js";
+import TextSelection from "../../geometry/selection/text.js";
 import Cell from "../../geometry/cell.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {translateGlyphs} from "../../utils/arrays.js";
@@ -43,7 +43,7 @@ export function clear(saveHistory = true) {
     }
 
     if (hasTarget()) {
-        state.selection.clearSelection();
+        state.selection.raster.clear();
         hasChanges = true;
     }
 
@@ -673,18 +673,18 @@ function setupEventBus() {
 
             switch(tool) {
                 case 'selection-rect':
-                    addSelectionShape(new SelectionRect(cell, undefined, {
+                    addSelectionShape(new RectSelection(cell, undefined, {
                         outline: shouldModifyAction('tools.standard.selection-rect.outline', mouseEvent)
                     }))
                     break;
                 case 'selection-line':
-                    addSelectionShape(new SelectionLine(cell));
+                    addSelectionShape(new LineSelection(cell));
                     break;
                 case 'selection-lasso':
-                    addSelectionShape(new SelectionLasso(cell));
+                    addSelectionShape(new LassoSelection(cell));
                     break;
                 case 'selection-wand':
-                    const wand = new SelectionWand(cell, undefined, {
+                    const wand = new WandSelection(cell, undefined, {
                         diagonal: shouldModifyAction('tools.standard.selection-wand.diagonal', mouseEvent),
                         charblind: true,
                         colorblind: shouldModifyAction('tools.standard.selection-wand.colorblind', mouseEvent)

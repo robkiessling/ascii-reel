@@ -7,24 +7,24 @@
  * these subclasses because the subclasses already import the base shape.js class.
  */
 import {SELECTION_SHAPE_TYPES} from "./constants.js";
-import SelectionLine from "./line.js";
-import SelectionRect from "./rect.js";
-import SelectionText from "./text.js";
-import SelectionLasso from "./lasso.js";
-import SelectionWand from "./wand.js";
+import LineSelection from "./line.js";
+import RectSelection from "./rect.js";
+import TextSelection from "./text.js";
+import LassoSelection from "./lasso.js";
+import WandSelection from "./wand.js";
 
 export function deserializeSelectionShape(data) {
     switch (data.type) {
         case SELECTION_SHAPE_TYPES.LINE:
-            return SelectionLine.deserialize(data);
+            return LineSelection.deserialize(data);
         case SELECTION_SHAPE_TYPES.RECT:
-            return SelectionRect.deserialize(data);
+            return RectSelection.deserialize(data);
         case SELECTION_SHAPE_TYPES.TEXT:
-            return SelectionText.deserialize(data);
+            return TextSelection.deserialize(data);
         case SELECTION_SHAPE_TYPES.LASSO:
-            return SelectionLasso.deserialize(data);
+            return LassoSelection.deserialize(data);
         case SELECTION_SHAPE_TYPES.WAND:
-            return SelectionWand.deserialize(data);
+            return WandSelection.deserialize(data);
         default:
             throw new Error(`Unsupported shape type ${data.type}`);
     }

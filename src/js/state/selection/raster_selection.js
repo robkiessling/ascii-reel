@@ -4,9 +4,9 @@ import {getCurrentCelGlyph, isCellInBounds, setCurrentCelGlyph} from "../timelin
 import {create2dArray, translateGlyphs} from "../../utils/arrays.js";
 import Cell from "../../geometry/cell.js";
 import CellArea from "../../geometry/cell_area.js";
-import SelectionRect from "../../geometry/selection/rect.js";
-import SelectionText from "../../geometry/selection/text.js";
-import SelectionWand from "../../geometry/selection/wand.js";
+import RectSelection from "../../geometry/selection/rect.js";
+import TextSelection from "../../geometry/selection/text.js";
+import WandSelection from "../../geometry/selection/wand.js";
 import {getConfig} from "../config.js";
 import {mirrorCharHorizontally, mirrorCharVertically} from "../../utils/strings.js";
 
@@ -70,12 +70,12 @@ export function empty() {
 
 // Returns false if user is already selecting-all
 export function canSelectAll() {
-    return state.selectionShapes.length !== 1 || !state.selectionShapes[0].equals(SelectionRect.drawableArea())
+    return state.selectionShapes.length !== 1 || !state.selectionShapes[0].equals(RectSelection.drawableArea())
 }
 
 // Select entire canvas
 export function selectAll() {
-    state.selectionShapes = [SelectionRect.drawableArea()];
+    state.selectionShapes = [RectSelection.drawableArea()];
 }
 
 // -------------------------------------------------------------------------------- Selection Results
@@ -166,7 +166,7 @@ export function getSelectedRect() {
     if (!hasSelection()) return null;
 
     const cellArea = getSelectedCellArea();
-    return new SelectionRect(cellArea.topLeft, cellArea.bottomRight);
+    return new RectSelection(cellArea.topLeft, cellArea.bottomRight);
 }
 
 /**
@@ -202,7 +202,7 @@ export function getSelectedCells() {
 export function getConnectedCells(cell, options) {
     if (!isCellInBounds(cell)) return [];
 
-    const wand = new SelectionWand(cell, undefined, options);
+    const wand = new WandSelection(cell, undefined, options);
     wand.complete();
     return wand.cells;
 }
@@ -268,9 +268,9 @@ export function caretCell() {
 
 export function moveCaretTo(cell) {
     if (getConfig('caretStyle') === 'I-beam') {
-        state.selectionShapes = [new SelectionText(cell)]
+        state.selectionShapes = [new TextSelection(cell)]
     } else {
-        state.selectionShapes = [new SelectionRect(cell)];
+        state.selectionShapes = [new RectSelection(cell)];
     }
 }
 

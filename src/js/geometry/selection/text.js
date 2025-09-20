@@ -1,14 +1,14 @@
 import Cell from "../cell.js";
-import SelectionRect from "./rect.js";
+import RectSelection from "./rect.js";
 import {SELECTION_SHAPE_TYPES} from "./constants.js";
 
 /**
- * SelectionText is similar to SelectionRect, but it can occupy 0 width. Similar to selecting text in a text editor,
+ * TextSelection is similar to RectSelection, but it can occupy 0 width. Similar to selecting text in a text editor,
  * when you first mousedown your caret appears as a single line between two characters (no chars are selected yet).
  * As you drag in a particular direction, you will highlight 0 or more characters. To achieve this effect, we can simply
  * subtract 1 from the end column once the user highlights more than 1 cell.
  */
-export default class SelectionText extends SelectionRect {
+export default class TextSelection extends RectSelection {
     static type = SELECTION_SHAPE_TYPES.TEXT;
 
     get bottomRight() {
