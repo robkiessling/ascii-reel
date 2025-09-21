@@ -35,6 +35,7 @@ import Line from "../geometry/shapes/line.js";
 import {MOUSE} from "../io/mouse.js";
 import Freeform from "../geometry/shapes/freeform.js";
 import {LAYER_TYPES} from "../state/constants.js";
+import Textbox from "../geometry/shapes/textbox.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -232,6 +233,9 @@ function setupEventBus() {
             case 'draw-ellipse':
                 handleDrawMousedown(Ellipse.beginEllipse, cell, canvas, mouseEvent);
                 break;
+            case 'draw-textbox':
+                handleDrawMousedown(Textbox.beginTextbox, cell, canvas, mouseEvent);
+                break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
                     diagonal: shouldModifyAction('tools.standard.fill-char.diagonal', mouseEvent),
@@ -291,6 +295,7 @@ function setupEventBus() {
                 break;
             case 'draw-rect':
             case 'draw-ellipse':
+            case 'draw-textbox':
                 if (isDragging && isNewCell) handleDrawMousemove(cell, canvas, mouseEvent);
                 break;
             case 'pan':
@@ -323,6 +328,7 @@ function setupEventBus() {
             case 'draw-rect':
             case 'draw-line':
             case 'draw-ellipse':
+            case 'draw-textbox':
                 handleDrawMouseup(cell, mouseEvent);
                 break;
             case 'move-all':
@@ -649,9 +655,12 @@ let $shapeProperties, shapeTooltips, shapeSubMenus = [];
 function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
-    // Style dropdowns for each shape type
-    const $styleActions = $('#shape-stroke-menu-group').find('.group-actions')
-    Object.values(SHAPE_TYPES).forEach(shapeType => setupStrokeMenu($('<div>').appendTo($styleActions), shapeType));
+    // Stroke dropdowns for each shape type
+    const $strokeActions = $('#shape-stroke-menu-group').find('.group-actions')
+    Object.values(SHAPE_TYPES).forEach(shapeType => {
+        if (!STROKE_PROPS[shapeType]) return; // Shape has no stroke prop
+        setupStrokeMenu($('<div>').appendTo($strokeActions), shapeType)
+    });
 
     setupFillMenu();
 
@@ -744,6 +753,11 @@ function setupTextAlignMenu($menu, prop, options) {
     shapeSubMenus.push(menu);
 }
 
+function selectedShapesUseStroke() {
+    const props = selectionController.vector.selectedShapeProps();
+    return Object.values(STROKE_PROPS).some(strokeProp => props[strokeProp].length)
+}
+
 function selectedShapesUseCharPicker() {
     let strokeUsesChar = false;
     Object.values(STROKE_PROPS).forEach(strokeProp => {
@@ -824,6 +838,7 @@ function refreshShapeProperties() {
     if (isVisible) {
         shapeSubMenus.forEach(subMenu => subMenu.refresh()); // Also handles showing/hiding menu icon thru onRefresh callback
 
+        $shapeProperties.find('#shape-stroke-menu-group').toggle(selectedShapesUseStroke())
         $shapeProperties.find('#shape-color-menu-group').toggle(state.isMultiColored())
         $shapeProperties.find('#shape-char-menu-group').toggle(selectedShapesUseCharPicker())
 
@@ -986,6 +1001,12 @@ function finishDrawing() {
 
     drawingContent.finishDraw();
     state.addCurrentCelShape(drawingContent);
+
+    if (drawingContent.deleteOnTextFinished()) {
+        changeTool('select', false);
+        selectionController.vector.setSelectedShapeIds([drawingContent.id])
+        selectionController.vector.setTextCaret(0, { saveHistory: false });
+    }
 
     drawingContent = null;
     eventBus.emit(EVENTS.REFRESH.ALL);
@@ -1244,6 +1265,7 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvas) {
         case 'draw-rect':
         case 'draw-line':
         case 'draw-ellipse':
+        case 'draw-textbox':
         case 'fill-char':
         case 'eraser':
         case 'paint-brush':

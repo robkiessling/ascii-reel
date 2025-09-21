@@ -48,6 +48,7 @@ export const SHAPE_TYPES = {
     RECT: 'rect',
     LINE: 'line',
     ELLIPSE: 'ellipse',
+    TEXTBOX: 'textbox'
 }
 
 export const STROKE_PROPS = {
@@ -79,6 +80,9 @@ export const STROKE_OPTIONS = {
 }
 
 export const DEFAULT_STROKES = transformValues(STROKE_OPTIONS, (k, v) => Object.values(v)[0])
+
+// TODO
+export const AUTO_RESIZE_PROP = 'resizeMode';
 
 export const FILL_PROP = 'fill';
 export const FILL_OPTIONS = {

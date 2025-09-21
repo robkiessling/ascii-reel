@@ -58,16 +58,16 @@ export const RASTER_TOOLS = new Set([
     'text-editor', 'fill-char', 'selection-rect', 'selection-lasso', 'selection-line', 'selection-wand',
     'paint-brush', 'color-swap', 'fill-color', 'eyedropper'
 ])
-export const VECTOR_TOOLS = new Set(['select', 'text-box']);
+export const VECTOR_TOOLS = new Set(['select', 'draw-textbox']);
 
 // Tool fallbacks for when the current tool isn't valid for the current layer type
 const VECTOR_TOOL_TO_RASTER_FALLBACK = {
     default: 'text-editor',
-    'text-box': 'fill-char'
+    'draw-textbox': 'fill-char'
 }
 const RASTER_TOOL_TO_VECTOR_FALLBACK = {
     default: 'select',
-    'fill-char': 'text-box',
+    'fill-char': 'draw-textbox',
 }
 
 let state = {};

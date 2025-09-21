@@ -849,6 +849,12 @@ export function drawShapeSelection(canvas) {
     })
 }
 
+export function drawShapeBoundingBox(canvas, shape) {
+    canvas.inScreenSpace(() => {
+        drawBoundingBox(canvas, shape.boundingArea);
+    })
+}
+
 function drawBoundingBox(canvas, cellArea, dashed = false) {
     const context = canvas.context;
 

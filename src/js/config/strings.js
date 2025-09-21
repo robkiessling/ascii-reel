@@ -68,6 +68,8 @@ export const STRINGS = {
     'tools.standard.draw-line.description': 'Draws a line out of ASCII characters.',
     'tools.standard.draw-ellipse.name': 'Draw Ellipse',
     'tools.standard.draw-ellipse.description': 'Draws an ellipse out of ASCII characters.',
+    'tools.standard.draw-textbox.name': 'Draw Textbox',
+    'tools.standard.draw-textbox.description': 'Draws a text box that can be filled with text.',
     'tools.standard.selection.multiple': 'Create multiple selections',
     'tools.standard.selection-rect.name': 'Rectangle Selection',
     'tools.standard.selection-rect.description': 'Select a rectangular area to move, copy, or modify. ' +

@@ -1,4 +1,4 @@
-import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_OPTIONS, STROKE_PROPS} from "./constants.js";
+import {AUTO_RESIZE_PROP, CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_OPTIONS, STROKE_PROPS} from "./constants.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
@@ -15,6 +15,7 @@ export default class Freeform extends Shape {
 
     static beginFreeform(startCell, options) {
         const props = {
+            [AUTO_RESIZE_PROP]: false,
             // path: [startCell, startCell.clone()],
             [STROKE_PROPS[SHAPE_TYPES.FREEFORM]]: options.drawPreset,
             [CHAR_PROP]: options.char,

@@ -1,4 +1,4 @@
-import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_OPTIONS, STROKE_PROPS} from "./constants.js";
+import {AUTO_RESIZE_PROP, CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_OPTIONS, STROKE_PROPS} from "./constants.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
@@ -16,6 +16,7 @@ export default class Line extends Shape {
     static beginLine(startCell, options) {
         const props = {
             path: [startCell, startCell.clone()],
+            [AUTO_RESIZE_PROP]: false,
             [STROKE_PROPS[SHAPE_TYPES.LINE]]: options.drawPreset,
             [CHAR_PROP]: options.char,
             [COLOR_PROP]: options.colorIndex,

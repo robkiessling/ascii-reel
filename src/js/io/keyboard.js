@@ -4,18 +4,17 @@ import * as tools from "../controllers/tool_controller.js";
 import * as actions from "./actions.js";
 import {EMPTY_CHAR} from "../config/chars.js";
 
-const $document = $(document);
-
 export function init() {
     setupKeydownListener();
     setupCompositionListener();
 }
 
+const $document = $(document);
 let prevKey;
 
 function setupKeydownListener() {
     $document.keydown(function(e) {
-        const key = e.key; // Keyboard key. E.g., 'a', 'A', '1', '[', 'Shift', 'Enter', 'Backspace', etc.
+        const key = e.key; // Keyboard key. E.g., 'a', 'A', '1', '+', 'Shift', 'Enter', 'Backspace', etc.
 
         // console.log(`key: "${key}", prevKey: "${prevKey}"`)
 
@@ -33,7 +32,7 @@ function setupKeydownListener() {
             // A 'Dead' key is received when composition starts (see composition section below)
             if (key === 'Dead' || isComposing) return;
 
-            // Ascii Reel Shortcuts
+            // App Shortcuts
             if (e.metaKey || e.ctrlKey || e.altKey) {
                 const modifiers = ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'].filter(modifier => e[modifier]);
                 if (actions.callActionByShortcut({ key, modifiers })) {
@@ -42,7 +41,7 @@ function setupKeydownListener() {
                 }
             }
 
-            // If the metaKey/ctrlKey is down, and it did not reach one of our shortcuts, the user is likely performing
+            // If the metaKey/ctrlKey is down, and it did not call an app shortcut, the user is likely performing
             // a standard browser shortcut (e.g. cmd-R to reload). Return early (without preventing default) so that the
             // browser shortcut works as normal. Note: a few browser shortcuts are prevented, see handleBrowserShortcut.
             if (e.metaKey || e.ctrlKey) {
@@ -81,6 +80,12 @@ function setupKeydownListener() {
         }
     });
 }
+
+// -------------------------------------------------------------------------- Key handlers
+/**
+ * Each controller is given a chance to handle the key in order. If a controller consumes the event (by returning
+ * true), subsequent controllers are skipped.
+ */
 
 function handleEscapeKey() {
     state.endHistoryModification();
@@ -139,27 +144,6 @@ function arrowKeyToDirection(arrowKey) {
     }
 }
 
-function handleStandardKeyboard(key, e) {
-    if (key === 'Enter') {
-        $document.trigger('keyboard:enter');
-        e.preventDefault();
-    }
-}
-
-const PREVENT_DEFAULT_BROWSER_SHORTCUTS = new Set([
-    // Preventing normal browser zoom in/out since we use these same keys to zoom in/out of the canvas. Normally our
-    // own shortcut already prevents normal browser behavior, but if the canvas is zoomed all the way in/out our action
-    // will actually be disabled, meaning our shortcut does not prevent default browser behavior.
-    '-', '=', '0'
-])
-
-// A few browser shortcuts are prevented. See PREVENT_DEFAULT_BROWSER_SHORTCUTS for details.
-function handleBrowserShortcut(e, key) {
-    if (PREVENT_DEFAULT_BROWSER_SHORTCUTS.has(key)) {
-        e.preventDefault();
-    }
-}
-
 // ---------------------------------------------------------------------------------- Standard Keyboard
 
 let standardKeyboardLocks = {};
@@ -196,7 +180,26 @@ function useStandardKeyboard() {
     return Object.values(standardKeyboardLocks).some(value => value === true)
 }
 
+function handleStandardKeyboard(key, e) {
+    if (key === 'Enter') {
+        $document.trigger('keyboard:enter');
+        e.preventDefault();
+    }
+}
 
+const PREVENT_DEFAULT_BROWSER_SHORTCUTS = new Set([
+    // Preventing normal browser zoom in/out since we use these same keys to zoom in/out of the canvas. Normally our
+    // own shortcut already prevents normal browser behavior, but if the canvas is zoomed all the way in/out our action
+    // will actually be disabled, meaning our shortcut does not prevent default browser behavior.
+    '-', '=', '0'
+])
+
+// A few browser shortcuts are prevented. See PREVENT_DEFAULT_BROWSER_SHORTCUTS for details.
+function handleBrowserShortcut(e, key) {
+    if (PREVENT_DEFAULT_BROWSER_SHORTCUTS.has(key)) {
+        e.preventDefault();
+    }
+}
 
 // ---------------------------------------------------------------------------------- Composition
 /**
@@ -222,7 +225,7 @@ let isComposing = false;
 function setupCompositionListener() {
     // To ensure composition works (even though the user is not typing into an input) we create a hidden input
     // offscreen that we focus on keydown.
-    // TODO For IME composition, it may be helpful if the input is shown near the cursor, so they can see autocompletes?
+    // TODO For IME composition, it may be helpful if this <input> is shown near the cursor, so they can see autocompletes
     let hiddenInput = $("<input>").css({
         position: "absolute",
         left: "-9999px",

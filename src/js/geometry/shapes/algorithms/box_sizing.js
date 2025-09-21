@@ -92,10 +92,14 @@ export function resizeBoundingBox(oldBox, handle, newPosition) {
 }
 
 /**
- * We cannot simply take all the points of a rect (e.g. topLeft & bottomRight) or Line and proportionally map them from
- * oldBox to newBox. If you do this, the difference between points may jitter as the shape is resized due to rounding
- * (because we must round to discrete cell indices). In other words, the shape's size fluctuates as you resize a group,
- * which looks bad.
+ * Translates and resizes a CellArea as its outer box changes. For example, if multiple shapes are selected, the
+ * outer box will be the bounding rect that fits all shapes. As this bounding rect is moved/resized, each inner
+ * shape will be handled by this function.
+ *
+ * For each inner shape, we cannot simply take all the points of a rect (e.g. topLeft & bottomRight) or Line and
+ * proportionally map them from oldBox to newBox. If you do this, the difference between points may jitter as the shape
+ * is resized due to rounding (because we must round to discrete cell indices). In other words, the shape's size
+ * fluctuates as you resize a group, which looks bad.
  *
  * I've found that the smoothest way to resize is to instead:
  * 1) Determine the dimensions of the new shape. By calculating this first, it guarantees that as you resize
@@ -107,6 +111,12 @@ export function resizeBoundingBox(oldBox, handle, newPosition) {
  *    the new area of the shape is. Now we can proportionally map every cell in the old shape to a cell in the new shape.
  *    Note that this step is not required for all shapes - e.g. for a rect we already have everything needed from steps
  *    1 & 2 (since a rect is just defined by its topLeft and dimensions).
+ *
+ * @param {CellArea} cellArea - The inner shape's CellArea to translate/resize
+ * @param {VertexArea} oldBox - The original bounding box
+ * @param {VertexArea} newBox - The new location/size of the bounding box
+ * @returns {{area: CellArea, cellMapper: function, pointMapper: function}} - The new location/dimensions of the
+ *   given CellArea, along with functions to map any inner cells/points that were part of the original cellArea.
  */
 export function translateAreaWithBoxResizing(cellArea, oldBox, newBox) {
     const newDimensions = calculateScaledDimensions(cellArea.numRows, cellArea.numCols, oldBox, newBox);

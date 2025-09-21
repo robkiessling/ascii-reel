@@ -3,6 +3,7 @@ import {
     COLOR_PROP,
     FILL_OPTIONS,
     FILL_PROP,
+    AUTO_RESIZE_PROP,
     SHAPE_TYPES,
     STROKE_PROPS
 } from "./constants.js";
@@ -18,6 +19,7 @@ export default class Ellipse extends BoxShape {
             topLeft: startCell,
             numRows: 1,
             numCols: 1,
+            [AUTO_RESIZE_PROP]: false,
             [STROKE_PROPS[SHAPE_TYPES.ELLIPSE]]: options.drawPreset,
             [FILL_PROP]: options.fill || FILL_OPTIONS.EMPTY,
             [CHAR_PROP]: options.char,

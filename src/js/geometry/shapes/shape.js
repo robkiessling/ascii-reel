@@ -267,6 +267,13 @@ export default class Shape {
         }
     }
 
+    // If returns true, shape will be deleted when text editing is finished
+    deleteOnTextFinished() {
+        return false;
+    }
+    showSelectionOnInitialDraw() {
+        return false;
+    }
 
     hasContent(matchingColorIndex) {
         // TODO

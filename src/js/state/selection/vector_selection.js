@@ -93,6 +93,14 @@ export function selectedShapes() {
 export function selectedShapeTypes() {
     return [...new Set(selectedShapes().map(shape => shape.type))];
 }
+
+/**
+ * Collects the shared prop values across all currently selected shapes.
+ *
+ * @returns {Object.<string, any[]>} An object where each key is a prop name, and each value is an array of all
+ *   distinct values for that property across the selection. All strings listed in SHARED_SHAPE_PROPS will be included
+ *   as result keys (their values may be empty arrays). Array values will not contain duplicates.
+ */
 export function selectedShapeProps() {
     const result = {};
     const shapes = selectedShapes();
@@ -123,7 +131,13 @@ export function deleteSelectedShapes() {
     // So we snapshot which shapes are selected, deselect them, and then delete those shapes.
     const shapeIds = selectedShapeIds();
     deselectAllShapes();
-    shapeIds.forEach(shapeId => deleteCurrentCelShape(shapeId));
+    shapeIds.forEach(shapeId => {
+        // TODO HACK - deselectAllShapes has the possibility of deleting a shape if it's an empty text box
+        //             This ensure we don't try to delete an already-deleted object
+        if (!getCurrentCelShapes().map(shape => shape.id).includes(shapeId)) return;
+
+        deleteCurrentCelShape(shapeId)
+    });
 }
 
 export function canReorderSelectedShapes(action) {
@@ -225,6 +239,13 @@ export function setTextCaret(caretIndex) {
 export function stopEditingText() {
     state.isEditingText = false;
     toggleTextOverflow(false)
+
+    selectedShapeIds().forEach(shapeId => {
+        if (getCurrentCelShape(shapeId).deleteOnTextFinished()) {
+            shapeIdsSet().delete(shapeId);
+            deleteCurrentCelShape(shapeId);
+        }
+    });
 }
 
 /**
@@ -305,16 +326,5 @@ export function singleSelectedShape() {
  * @param {boolean} show - Whether to show or hide text overflow for selected shapes.
  */
 function toggleTextOverflow(show) {
-    // const updater = shape => shape.updateProp(TEXT_OVERFLOW_PROP, show)
-    //
-    // if (show) {
-    //     // Show overflow for currently selected shape (should just be one)
-    //     updateSelectedShapes(updater);
-    // } else {
-    //     // Hiding overflow for all shapes, not just currently selected (because this may happen after selection cleared).
-    //     getCurrentCelShapes().forEach(shape => {
-    //         updateCurrentCelShape(shape.id, updater)
-    //     });
-    // }
     updateSelectedShapes(shape => shape.updateProp(TEXT_OVERFLOW_PROP, show))
 }

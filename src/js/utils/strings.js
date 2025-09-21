@@ -68,6 +68,15 @@ export function isWordBreaker(char) {
 }
 
 /**
+ * Checks whether a string is empty or consists only of whitespace characters, including spaces, tabs, and newlines.
+ * @param {string} str - The string to check
+ * @returns {boolean} - True if string is empty or whitespace
+ */
+export function isEmptyOrWhitespace(str) {
+    return /^\s*$/.test(str);
+}
+
+/**
  * Inserts a string at the given index.
  * @param {string} str - The original string
  * @param {number} index - Index at which to insert

@@ -86,8 +86,8 @@ function cut() {
 
 /**
  * Copies the current selected content.
- * - Saves a rich internal representation (glyph arrays, shapes, etc.) of the selection for use when pasting back
- *   inside this app.
+ * - Saves a rich representation (glyph arrays, shape instances, etc.) of the selection for use when pasting back
+ *   inside this app. This is stored in `copiedSelection`.
  * - Writes a plain-text version of the selection to the system clipboard so it can be pasted into external
  *   applications.
  */

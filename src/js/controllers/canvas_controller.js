@@ -230,6 +230,12 @@ function redrawCharCanvas() {
         if (drawingContent) charCanvas.drawShapePaths([drawingContent]);
     }
 
+    // Special case for textbox initial draw - need to show selection boundaries otherwise it is invisible
+    if (drawingContent && drawingContent.showSelectionOnInitialDraw()) {
+        // TODO - Drawing on charCanvas makes the boundaries wrong opacity
+        selectionController.vector.drawShapeBoundingBox(charCanvas, drawingContent);
+    }
+
     // 3. Draw current layer at normal opacity
     charCanvas.drawGlyphs(currentGlyphs, {
         showWhitespace: state.getConfig('showWhitespace'),

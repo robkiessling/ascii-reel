@@ -51,6 +51,7 @@ let actionIdToShortcut = {
     'tools.standard.draw-line': { key: 'l' },
     'tools.standard.draw-rect': { key: 'r' },
     'tools.standard.draw-ellipse': { key: 'o' },
+    // 'tools.standard.draw-textbox': { key: 't' }, // todo same key
     'tools.standard.fill-char': { key: 'p' },
     'tools.standard.selection-lasso': { key: 's' },
     'tools.standard.selection-wand': { key: 'w' },
