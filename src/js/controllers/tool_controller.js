@@ -23,9 +23,10 @@ import {
     BRUSHES,
     CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP,
     REORDER_ACTIONS,
-    STROKE_OPTIONS,
+    STROKE_STYLE_OPTIONS,
     SHAPE_TYPES,
-    STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP
+    STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP,
+    BRUSH_PROP, LINKED_PROPS
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
 import {standardTip, standardTips} from "../components/tooltips.js";
@@ -36,6 +37,8 @@ import {MOUSE} from "../io/mouse.js";
 import Freeform from "../geometry/shapes/freeform.js";
 import {LAYER_TYPES} from "../state/constants.js";
 import Textbox from "../geometry/shapes/textbox.js";
+import {diamondBrushCells, squareBrushCells} from "../geometry/shapes/algorithms/brush.js";
+import Shape from "../geometry/shapes/shape.js";
 
 
 const DRAWING_MODIFIERS = {
@@ -85,17 +88,6 @@ export function changeTool(newTool, saveHistoryOnSelectionClear = true) {
     state.setConfig('tool', newTool);
     selectionController.clear(saveHistoryOnSelectionClear);
     refresh();
-}
-
-export function changeDrawType(toolKey, newDrawType) {
-    state.updateDrawType(toolKey, newDrawType);
-    if (state.getConfig('tool') === toolKey) {
-        refresh();
-    }
-    else {
-        throw new Error("TEST: I don't think this is reachable");
-        // changeTool(toolKey);
-    }
 }
 
 /**
@@ -216,25 +208,31 @@ function setupEventBus() {
 
         switch(tool) {
             case 'eraser':
-                handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'eraser' })
+                // handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'eraser' })
+                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, canvas, mouseEvent, {
+                    // TODO
+                });
                 break;
             case 'paint-brush':
-                handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'paint-brush' })
+                // handleDrawMousedown(PolygonFactory.createFreeform, cell, mouseEvent, { drawType: 'paint-brush' })
+                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, canvas, mouseEvent, {
+                    // TODO
+                });
                 break;
             case 'draw-freeform':
-                handleDrawMousedown(Freeform.beginFreeform, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, canvas, mouseEvent);
                 break;
             case 'draw-rect':
-                handleDrawMousedown(Rect.beginRect, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.RECT, cell, canvas, mouseEvent);
                 break;
             case 'draw-line':
-                handleDrawMousedown(Line.beginLine, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.LINE, cell, canvas, mouseEvent);
                 break;
             case 'draw-ellipse':
-                handleDrawMousedown(Ellipse.beginEllipse, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.ELLIPSE, cell, canvas, mouseEvent);
                 break;
             case 'draw-textbox':
-                handleDrawMousedown(Textbox.beginTextbox, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.TEXTBOX, cell, canvas, mouseEvent);
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
@@ -565,13 +563,13 @@ function resizeToSelection() {
 
 const BRUSH_TOOLS = ['draw-freeform', 'eraser', 'paint-brush'];
 
-function brushEnabled() {
+function isDrawBrushEnabled() {
     if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return false;
 
     switch(state.getConfig('tool')) {
         case 'draw-freeform':
             // Brush is only used when drawing irregular-monochar (not other types of freeform drawings)
-            return state.getConfig('drawTypes')['draw-freeform'] === 'irregular-monochar';
+            return state.getConfig('drawStrokeStyles')[SHAPE_TYPES.FREEFORM] === 'irregular-monochar';
         default:
             return true;
     }
@@ -579,48 +577,21 @@ function brushEnabled() {
 
 export function hoveredCells(primaryCell) {
     if (!primaryCell) return [];
-    if (!brushEnabled()) return [primaryCell];
+    if (!isDrawBrushEnabled()) return [primaryCell];
     const { type, size } = BRUSHES[state.getConfig('brush')];
 
     switch(type) {
+        case BRUSH_TYPES.PIXEL_PERFECT:
+            return squareBrushCells(primaryCell, 1);
         case BRUSH_TYPES.SQUARE:
             return squareBrushCells(primaryCell, size);
-        case BRUSH_TYPES.CIRCLE:
-            return circleBrushCells(primaryCell, size);
+        case BRUSH_TYPES.DIAMOND:
+            return diamondBrushCells(primaryCell, size);
         default:
             console.error('Unsupported brush type: ', type);
     }
 }
 
-// Iterates through cells in a square shape, centered around the primaryCell
-function squareBrushCells(primaryCell, size) {
-    const result = []
-    const offset = Math.floor(size / 2);
-
-    for (let row = 0; row < size; row++) {
-        for (let col = 0; col < size; col++) {
-            result.push(new Cell(primaryCell.row - offset + row, primaryCell.col - offset + col));
-        }
-    }
-    return result;
-}
-
-// Iterates through cells in a circle shape, centered around the primaryCell
-// Also, it's actually more of a diamond than a circle
-function circleBrushCells(primaryCell, size) {
-    const result = [];
-    const radius = Math.floor((size - 1) / 2);
-
-    for (let row = -radius; row <= radius; row++) {
-        for (let col = -radius; col <= radius; col++) {
-            if (Math.abs(col) + Math.abs(row) <= radius) {
-                result.push(new Cell(primaryCell.row + row, primaryCell.col + col));
-            }
-        }
-    }
-
-    return result;
-}
 
 function setupBrushSubMenu() {
     const $container = $('#context-tools-left');
@@ -629,15 +600,15 @@ function setupBrushSubMenu() {
     }).appendTo($container);
 
     const menu = new IconMenu($menu, {
-        items: Object.keys(BRUSHES).map(key => {
+        items: Object.keys(BRUSHES).map(brush => {
             return {
-                value: key,
-                icon: `tools.brush.${key}`,
-                tooltip: `tools.brush.${key}`,
+                value: brush,
+                icon: `tools.brush.${brush}`,
+                tooltip: `tools.brush.${brush}`
             }
         }),
         visible: () => BRUSH_TOOLS.includes(state.getConfig('tool')),
-        disabled: () => !brushEnabled(),
+        disabled: () => !isDrawBrushEnabled(),
         getValue: () => state.getConfig('brush'),
         onSelect: newValue => {
             state.setConfig('brush', newValue)
@@ -658,9 +629,15 @@ function setupShapeProperties() {
     // Stroke dropdowns for each shape type
     const $strokeActions = $('#shape-stroke-menu-group').find('.group-actions')
     Object.values(SHAPE_TYPES).forEach(shapeType => {
-        if (!STROKE_PROPS[shapeType]) return; // Shape has no stroke prop
-        setupStrokeMenu($('<div>').appendTo($strokeActions), shapeType)
+        if (!STROKE_STYLE_PROPS[shapeType]) return; // Shape has no stroke prop
+
+        setupStrokeMenu($('<div>', {
+            class: 'flex-row',
+            style: `gap:0.25rem;`
+        }).appendTo($strokeActions), shapeType)
     });
+
+    setupBrushMenu();
 
     setupFillMenu();
 
@@ -697,12 +674,12 @@ function setupShapeProperties() {
 }
 
 function setupStrokeMenu($menu, shapeType) {
-    const strokeProp = STROKE_PROPS[shapeType];
+    const strokeProp = STROKE_STYLE_PROPS[shapeType];
 
     const styleMenu = new IconMenu($menu, {
         dropdown: true,
         dropdownBtnTooltip: `tools.shapes.${strokeProp}`,
-        items: Object.values(STROKE_OPTIONS[shapeType]).map(stroke => {
+        items: Object.values(STROKE_STYLE_OPTIONS[shapeType]).map(stroke => {
             return {
                 value: stroke,
                 icon: `tools.shapes.${strokeProp}.${stroke}`,
@@ -722,6 +699,50 @@ function setupStrokeMenu($menu, shapeType) {
     })
 
     shapeSubMenus.push(styleMenu);
+}
+
+
+// Brush option is disabled if there is a linked prop enforcing a different brush option
+function isBrushDisabled(brush, currentShapeProps) {
+    return LINKED_PROPS.some(({ when, enforce }) => {
+        return currentShapeProps[when.prop].includes(when.value) &&
+            enforce.prop === BRUSH_PROP && enforce.value !== brush
+    })
+}
+
+function setupBrushMenu() {
+    const $menuGroup = $('#shape-brush-menu-group');
+    const $menu = $('<div>').appendTo($menuGroup.find('.group-actions'));
+
+    const menu = new IconMenu($menu, {
+        dropdown: true,
+        dropdownBtnTooltip: `tools.shapes.${BRUSH_PROP}`,
+        items: Object.keys(BRUSHES).map(option => {
+            return {
+                value: option,
+                icon: `tools.brush.${option}`,
+                tooltip: `tools.brush.${option}`,
+
+                // Currently there is no need to disable individual items because linked prop causes entire menu to be hidden
+                // disabled: () => isBrushDisabled(option, selectionController.vector.selectedShapeProps())
+            }
+        }),
+        visible: () => {
+            if (!selectionController.vector.selectedShapeProps()[BRUSH_PROP].length) return false;
+
+            // Only visible if more than one option is enabled
+            const shapeProps = selectionController.vector.selectedShapeProps();
+            return Object.keys(BRUSHES).filter(brush => !isBrushDisabled(brush, shapeProps)).length > 1;
+        },
+        getValue: () => selectionController.vector.selectedShapeProps()[BRUSH_PROP][0],
+        onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(BRUSH_PROP, newValue)),
+        onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
+        tooltipOptions: {
+            placement: 'right'
+        }
+    })
+
+    shapeSubMenus.push(menu);
 }
 
 function setupTextAlignMenu($menu, prop, options) {
@@ -755,12 +776,12 @@ function setupTextAlignMenu($menu, prop, options) {
 
 function selectedShapesUseStroke() {
     const props = selectionController.vector.selectedShapeProps();
-    return Object.values(STROKE_PROPS).some(strokeProp => props[strokeProp].length)
+    return Object.values(STROKE_STYLE_PROPS).some(strokeProp => props[strokeProp].length)
 }
 
 function selectedShapesUseCharPicker() {
     let strokeUsesChar = false;
-    Object.values(STROKE_PROPS).forEach(strokeProp => {
+    Object.values(STROKE_STYLE_PROPS).forEach(strokeProp => {
         const strokes = selectionController.vector.selectedShapeProps()[strokeProp];
 
         // TODO This is basing monochar styles off of their key name... change to a real property
@@ -911,10 +932,10 @@ function setupDrawSubMenu(toolKey, shapeType) {
         class: 'sub-tool-menu'
     }).appendTo($container);
 
-    const strokeProp = STROKE_PROPS[shapeType]
+    const strokeProp = STROKE_STYLE_PROPS[shapeType]
 
     const menu = new IconMenu($menu, {
-        items: Object.values(STROKE_OPTIONS[shapeType]).map(stroke => {
+        items: Object.values(STROKE_STYLE_OPTIONS[shapeType]).map(stroke => {
             return {
                 value: stroke,
                 icon: `tools.shapes.${strokeProp}.${stroke}`,
@@ -922,8 +943,13 @@ function setupDrawSubMenu(toolKey, shapeType) {
             }
         }),
         visible: () => state.getConfig('tool') === toolKey,
-        getValue: () => state.getConfig('drawTypes')[toolKey],
-        onSelect: newValue => changeDrawType(toolKey, newValue),
+        getValue: () => state.getConfig('drawStrokeStyles')[shapeType],
+        onSelect: newValue => {
+            const currentStrokes = structuredClone(state.getConfig('drawStrokeStyles'));
+            currentStrokes[shapeType] = newValue;
+            state.setConfig('drawStrokeStyles', currentStrokes);
+            refresh();
+        },
         // TODO getDrawingModifiersTooltip(toolKey, style)
     })
 
@@ -962,16 +988,16 @@ function getDrawingModifiersTooltip(tool, drawType) {
     return result;
 }
 
-function handleDrawMousedown(factory, cell, canvas, mouseEvent, options = {}) {
+function handleDrawMousedown(shapeType, cell, canvas, mouseEvent, options = {}) {
     if (!drawingContent) {
         selectionController.vector.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
 
-        drawingContent = factory(cell, $.extend({ // todo rename drawingShape?
-            drawPreset: state.getConfig('drawTypes')[state.getConfig('tool')],
-            colorIndex: state.primaryColorIndex(),
-            char: state.getConfig('primaryChar'),
-            // hoveredCells: hoveredCells, // todo this should be based on line thickness, don't pass hoveredCells fn
-            // canvasDimensions: state.getConfig('dimensions'),
+        // todo rename drawingShape?
+        drawingContent = Shape.begin(shapeType, $.extend({
+            [CHAR_PROP]: state.getConfig('primaryChar'),
+            [COLOR_PROP]: state.primaryColorIndex(),
+            [STROKE_STYLE_PROPS[shapeType]]: state.getConfig('drawStrokeStyles')[shapeType],
+            [BRUSH_PROP]: state.getConfig('brush')
         }, options));
     }
 

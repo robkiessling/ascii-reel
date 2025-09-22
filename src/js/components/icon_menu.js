@@ -32,8 +32,8 @@ export default class IconMenu {
      *   - `value` will be the value returned by onSelect
      *   - `tooltip`/`icon` will be used for icon/tooltip constant lookups.
      *   - `disabled` (optional) callback to determine if individual item is disabled
-     * @param {(string) => void} options.onSelect - Callback when menu item is selected
-     * @param {(IconMenu) => void} options.onRefresh - Callback when menu is refreshed
+     * @param {(value: string) => void} options.onSelect - Callback when menu item is selected
+     * @param {(IconMenu) => void} [options.onRefresh] - Callback when menu is refreshed
      * @param {boolean} [options.dropdown=false] - If false, renders as a menu bar. If true, renders as dropdown
      * @param {string} [options.dropdownBtnIcon] - (Only applicable if dropdown:true) If undefined, button icon will
      *   match whatever value is selected (based on item icon). If defined, button icon will be set to a static value
@@ -72,6 +72,15 @@ export default class IconMenu {
 
     isVisible() {
         return !!this.options.visible();
+    }
+
+    /**
+     * IconMenu does not store current menu value; it is managed by the outside process and passed in through
+     * getValue callback. This is just a helper method to retrieve that outside value.
+     */
+    value() {
+        if (!this.options.getValue) throw new Error(`IconMenu#value is only valid if getValue method provided`)
+        return this.options.getValue();
     }
 
 

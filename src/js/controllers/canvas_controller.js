@@ -21,6 +21,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {currentFrame} from "../state/index.js";
 import {EMPTY_CHAR} from "../config/chars.js";
 import RectSelection from "../geometry/selection/rect.js";
+import {LAYER_TYPES} from "../state/constants.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -225,7 +226,7 @@ function redrawCharCanvas() {
         }
     });
 
-    if (DRAW_DEBUG_PATHS) {
+    if (DRAW_DEBUG_PATHS && state.currentLayerType() === LAYER_TYPES.VECTOR) {
         charCanvas.drawShapePaths(state.getCurrentCelShapes());
         if (drawingContent) charCanvas.drawShapePaths([drawingContent]);
     }

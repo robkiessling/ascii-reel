@@ -1,11 +1,8 @@
 import {
     CHAR_PROP,
     COLOR_PROP,
-    FILL_OPTIONS,
-    FILL_PROP,
-    AUTO_RESIZE_PROP,
     SHAPE_TYPES,
-    STROKE_PROPS
+    STROKE_STYLE_PROPS
 } from "./constants.js";
 import CellArea from "../cell_area.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
@@ -13,32 +10,17 @@ import BoxShape from "./box_shape.js";
 import {registerShape} from "./registry.js";
 
 export default class Ellipse extends BoxShape {
-
-    static beginEllipse(startCell, options) {
-        const props = {
-            topLeft: startCell,
-            numRows: 1,
-            numCols: 1,
-            [AUTO_RESIZE_PROP]: false,
-            [STROKE_PROPS[SHAPE_TYPES.ELLIPSE]]: options.drawPreset,
-            [FILL_PROP]: options.fill || FILL_OPTIONS.EMPTY,
-            [CHAR_PROP]: options.char,
-            [COLOR_PROP]: options.colorIndex,
-            // [TEXT_PROP]: " Hello World\nI am Merlin, lord of magicke, and I shall rule these lands",
-            // [TEXT_ALIGN_V_PROP]: TEXT_ALIGN_V_OPTS.TOP,
-            // [TEXT_ALIGN_H_PROP]: TEXT_ALIGN_H_OPTS.LEFT,
-            // textPadding: 0
-        };
-
-        return new Ellipse(undefined, SHAPE_TYPES.ELLIPSE, props);
-    }
+    static propDefinitions = [
+        ...super.propDefinitions,
+        { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.ELLIPSE] },
+    ];
 
     _cacheGeometry() {
         const boundingArea = CellArea.fromOriginAndDimensions(this.props.topLeft, this.props.numRows, this.props.numCols);
         const glyphs = this._initGlyphs(boundingArea);
 
         const strokeChar = this.props[CHAR_PROP];
-        const fillChar = this._fillChar();
+        const fillChar = this._fillChar;
         const color = this.props[COLOR_PROP];
 
         this._setupEllipseRecord();

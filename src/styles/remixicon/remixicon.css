@@ -8,7 +8,7 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1756888560217") format("woff2");
+    src: url("remixicon/remixicon.woff2?t=1758488743086") format("woff2");
     font-display: swap;
 }
 
@@ -112,3 +112,4 @@
 .ri-align-item-vertical-center-line:before { content: "\f4c4"; }
 .ri-grid-line:before { content: "\eddf"; }
 .ri-input-field:before { content: "\f47a"; }
+.ri-crosshair-2-line:before { content: "\f3b3"; }

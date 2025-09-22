@@ -6,7 +6,7 @@ import SimpleBar from "simplebar";
 import * as state from "../state/index.js";
 import * as actions from "../io/actions.js";
 import Canvas from "../components/canvas.js";
-import ArrayRange from "../utils/arrays.js";
+import {ArrayRange} from "../utils/arrays.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {delegate, hideAll as hideAllTooltips} from "tippy.js";

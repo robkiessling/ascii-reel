@@ -1,14 +1,17 @@
 import Cell from "../../cell.js";
 import TraversedCell from "../../traversed_cell.js";
 import {charForTraversedCell} from "./char_approximation.js";
+import CellCache from "../../cell_cache.js";
+import {BRUSH_TYPES} from "../constants.js";
+import {diamondBrushCells, squareBrushCells} from "./brush.js";
 
 /**
- * Calculates the line between each pair of adjacent points in the given array of points, and finds the best ascii
- * characters to fit each line segment. Will ignore cells that the path only slightly overlaps to reduce noise.
+ * Calculates a "pixel perfect" freeform line that goes through the array of points; will ignore cells that the path
+ * only slightly overlaps to reduce noise. Each returned cell will also have an ascii char that best fits its segment.
  * @param {Array<Point>} points
  * @param {(cell: TraversedCell, char: string) => void} callback - Callback called for each cell in the drawn path
  */
-export function freeformAsciiPath(points, callback) {
+export function pixelPerfectFreeformPath(points, callback) {
     const traversedCells = getTraversedCells(points);
 
     let prevUsedCell; // Keep track of the previous cell that has something drawn to it
@@ -18,7 +21,7 @@ export function freeformAsciiPath(points, callback) {
 
         // Check if char should be pruned (due to its size). This is only done if we have more than 2 cells so we don't
         // prune during initial draw stroke
-        if (disposable && traversedCells.length > 2) {
+        if (disposable && i > 0) {
             // If there is no previously used cell, allow prune
             if (!prevUsedCell) continue;
 
@@ -34,6 +37,39 @@ export function freeformAsciiPath(points, callback) {
 }
 
 /**
+ * Calculates a freeform line of a given thickness that goes through the array of points. Duplicate cells (e.g. if
+ * the line is very thick) are skipped.
+ * @param {Array<Point>} points
+ * @param {string} brushType
+ * @param {number} brushSize
+ * @param {(cell: TraversedCell) => void} callback - Callback called for each cell in the drawn path
+ */
+export function standardFreeformPath(points, brushType, brushSize, callback) {
+    const traversedCells = getTraversedCells(points);
+
+    let getBrushCells;
+    switch(brushType) {
+        case BRUSH_TYPES.SQUARE:
+            getBrushCells = squareBrushCells;
+            break;
+        case BRUSH_TYPES.DIAMOND:
+            getBrushCells = diamondBrushCells;
+            break;
+        default:
+            throw new Error(`Invalid brushType: ${brushType}`)
+    }
+
+    const cache = new CellCache();
+    traversedCells.forEach(traversedCell => {
+        getBrushCells(traversedCell, brushSize).forEach(cell => {
+            if (cache.has(cell)) return;
+            callback(cell);
+            cache.add(cell);
+        })
+    })
+}
+
+/**
  * Given an array of points, returns an array of TraversedCells that represents how you would traverse cells
  * to go through all the points.
  * - If two sequential points are not in adjacent cells, all the cells between them will be included as separate
@@ -45,6 +81,11 @@ export function freeformAsciiPath(points, callback) {
  * @returns {Array<TraversedCell>}
  */
 function getTraversedCells(points) {
+    if (points.length === 1) {
+        const cell = points[0].cell;
+        return [TraversedCell.fromNormalizedData(cell.row, cell.col, { x: 0.5, y: 0.5 }, { x: 0.5, y: 0.5})]
+    }
+
     const result = [];
 
     for (let i = 0; i < points.length - 1; i++) {

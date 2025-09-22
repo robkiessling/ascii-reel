@@ -51,14 +51,15 @@ export const SHAPE_TYPES = {
     TEXTBOX: 'textbox'
 }
 
-export const STROKE_PROPS = {
+// TODO Are these called stroke or strokeStyle?
+export const STROKE_STYLE_PROPS = {
     [SHAPE_TYPES.FREEFORM]: 'freeformStroke',
     [SHAPE_TYPES.RECT]: 'rectStroke',
     [SHAPE_TYPES.LINE]: 'lineStroke',
     [SHAPE_TYPES.ELLIPSE]: 'ellipseStroke',
 }
 
-export const STROKE_OPTIONS = {
+export const STROKE_STYLE_OPTIONS = {
     [SHAPE_TYPES.FREEFORM]: {
         IRREGULAR_ADAPTIVE: 'irregular-adaptive',
         IRREGULAR_MONOCHAR: 'irregular-monochar',
@@ -79,7 +80,26 @@ export const STROKE_OPTIONS = {
     }
 }
 
-export const DEFAULT_STROKES = transformValues(STROKE_OPTIONS, (k, v) => Object.values(v)[0])
+export const DEFAULT_STROKE_STYLES = transformValues(STROKE_STYLE_OPTIONS, (k, v) => Object.values(v)[0])
+
+export const BRUSH_PROP = 'brush';
+
+export const BRUSH_TYPES = {
+    PIXEL_PERFECT: 'pixelPerfect',
+    SQUARE: 'square',
+    DIAMOND: 'diamond',
+}
+export const BRUSHES = {
+    'pixel-perfect': { type: BRUSH_TYPES.PIXEL_PERFECT },
+    'square-1': { type: BRUSH_TYPES.SQUARE, size: 1 },
+    'square-2': { type: BRUSH_TYPES.SQUARE, size: 2 },
+    'square-3': { type: BRUSH_TYPES.SQUARE, size: 3 },
+    'square-5': { type: BRUSH_TYPES.SQUARE, size: 5 },
+    'square-10': { type: BRUSH_TYPES.SQUARE, size: 10 },
+    'diamond-3': { type: BRUSH_TYPES.DIAMOND, size: 3 },
+    'diamond-5': { type: BRUSH_TYPES.DIAMOND, size: 5 },
+    'diamond-10': { type: BRUSH_TYPES.DIAMOND, size: 10 },
+}
 
 // TODO
 export const AUTO_RESIZE_PROP = 'resizeMode';
@@ -120,8 +140,11 @@ export const TEXT_ALIGN_V_OPTS = {
     BOTTOM: 'alignBottom',
 }
 
+// ------------------------------------------------------ Prop bundles
+
 export const SHARED_SHAPE_PROPS = [
-    ...Object.values(STROKE_PROPS),
+    ...Object.values(STROKE_STYLE_PROPS),
+    BRUSH_PROP,
     FILL_PROP,
     CHAR_PROP, 
     COLOR_PROP,
@@ -132,20 +155,20 @@ export const SHARED_SHAPE_PROPS = [
     TEXT_OVERFLOW_PROP,
 ];
 
-export const BRUSH_TYPES = {
-    SQUARE: 'square',
-    CIRCLE: 'circle',
-}
-export const BRUSHES = {
-    'square-1': { type: BRUSH_TYPES.SQUARE, size: 1 },
-    'square-2': { type: BRUSH_TYPES.SQUARE, size: 2 },
-    'square-3': { type: BRUSH_TYPES.SQUARE, size: 3 },
-    'square-5': { type: BRUSH_TYPES.SQUARE, size: 5 },
-    'square-10': { type: BRUSH_TYPES.SQUARE, size: 10 },
-    'circle-3': { type: BRUSH_TYPES.CIRCLE, size: 3 },
-    'circle-5': { type: BRUSH_TYPES.CIRCLE, size: 5 },
-    'circle-10': { type: BRUSH_TYPES.CIRCLE, size: 10 },
-}
+/**
+ * A list of linked property rules used to enforce consistency between shape props. This is useful when one prop
+ * being set to a particular value should force another prop to another particular value.
+ * @type {[{when: {prop: string, value: string}, enforce: {prop: string, value: string}}]}
+ */
+export const LINKED_PROPS = [
+    // freeform's adaptive stroke requires pixel-perfect brush:
+    {
+        when: { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.FREEFORM], value: STROKE_STYLE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_ADAPTIVE },
+        enforce: { prop: BRUSH_PROP, value: 'pixel-perfect' }
+    }
+]
+
+
 
 
 // Drawing

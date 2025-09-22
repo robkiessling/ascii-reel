@@ -1,4 +1,11 @@
-import {AUTO_RESIZE_PROP, CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_OPTIONS, STROKE_PROPS} from "./constants.js";
+import {
+    BRUSH_PROP, BRUSH_TYPES, BRUSHES,
+    CHAR_PROP,
+    COLOR_PROP,
+    SHAPE_TYPES,
+    STROKE_STYLE_OPTIONS,
+    STROKE_STYLE_PROPS
+} from "./constants.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
@@ -7,23 +14,17 @@ import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import Point from "../point.js";
 import BoxShape from "./box_shape.js";
 import CellCache from "../cell_cache.js";
-import {freeformAsciiPath} from "./algorithms/traverse_freeform.js";
+import {pixelPerfectFreeformPath, standardFreeformPath} from "./algorithms/traverse_freeform.js";
 import {registerShape} from "./registry.js";
 
 
 export default class Freeform extends Shape {
-
-    static beginFreeform(startCell, options) {
-        const props = {
-            [AUTO_RESIZE_PROP]: false,
-            // path: [startCell, startCell.clone()],
-            [STROKE_PROPS[SHAPE_TYPES.FREEFORM]]: options.drawPreset,
-            [CHAR_PROP]: options.char,
-            [COLOR_PROP]: options.colorIndex,
-        }
-
-        return new Freeform(undefined, SHAPE_TYPES.FREEFORM, props);
-    }
+    static propDefinitions = [
+        ...super.propDefinitions,
+        { prop: 'path' },
+        { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.FREEFORM] },
+        { prop: BRUSH_PROP },
+    ];
 
     serializeProps() {
         const { path, ...restProps } = this.props;
@@ -84,34 +85,33 @@ export default class Freeform extends Shape {
     }
 
     _cacheGeometry() {
-        const boundingArea = CellArea.fromPoints(this.props.path);
-        const glyphs = this._initGlyphs(boundingArea);
+        let boundingArea = CellArea.fromPoints(this.props.path);
+        let origin = boundingArea.topLeft;
+        let glyphs = this._initGlyphs(boundingArea, true);
         const hitbox = new CellCache();
-        const stroke = this.props[STROKE_PROPS[SHAPE_TYPES.FREEFORM]]
+        const brush = BRUSHES[this.props[BRUSH_PROP]];
 
-        switch(stroke) {
-            case STROKE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_ADAPTIVE:
-                freeformAsciiPath(this.props.path, (cell, char) => {
-                    const relativeCell = cell.relativeTo(boundingArea.topLeft);
-                    this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
-                    hitbox.add(cell); // use absolute position for hitbox
-                })
-                break;
-            case STROKE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_MONOCHAR:
-                // TODO Do not prune for monochar?
-                freeformAsciiPath(this.props.path, (cell, char) => {
-                    const relativeCell = cell.relativeTo(boundingArea.topLeft);
-                    this._setGlyph(glyphs, relativeCell, this.props[CHAR_PROP], this.props[COLOR_PROP]);
-                    hitbox.add(cell); // use absolute position for hitbox
-                })
-                break;
-            default:
-                throw new Error(`Invalid stroke: ${stroke}`)
+        if (brush.type === BRUSH_TYPES.PIXEL_PERFECT) {
+            const generateAsciiChar = this._strokeStyle === STROKE_STYLE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_ADAPTIVE;
+            pixelPerfectFreeformPath(this.props.path, (cell, char) => {
+                const relativeCell = cell.relativeTo(origin);
+                this._setGlyph(glyphs, relativeCell, generateAsciiChar ? char : this.props[CHAR_PROP], this.props[COLOR_PROP]);
+                hitbox.add(cell); // use absolute position for hitbox
+            })
+        } else {
+            standardFreeformPath(this.props.path, brush.type, brush.size, cell => {
+                const relativeCell = cell.relativeTo(origin);
+                this._setGlyph(glyphs, relativeCell, this.props[CHAR_PROP], this.props[COLOR_PROP]);
+                hitbox.add(cell); // use absolute position for hitbox
+            })
         }
+
+        // Bounding area / origin may have changed if line thickness pushed a boundary
+        ({ boundingArea, origin, glyphs } = this._processAnchoredGrid(glyphs, boundingArea.topLeft))
 
         this._cache = {
             boundingArea,
-            origin: boundingArea.topLeft,
+            origin,
             glyphs,
             handles: new HandleCollection([
                 ...BoxShape.vertexHandles(this, boundingArea),

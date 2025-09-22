@@ -8,7 +8,7 @@
 import * as frameData from './frames.js';
 import * as layerData from './layers.js';
 import * as celData from './cels.js';
-import ArrayRange, {create2dArray, mergeGlyphs, translateGlyphs} from "../../utils/arrays.js";
+import {ArrayRange, create2dArray, mergeGlyphs, translateGlyphs} from "../../utils/arrays.js";
 import {numCols, numRows} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {LAYER_TYPES} from "../constants.js";

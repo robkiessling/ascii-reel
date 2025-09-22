@@ -24,7 +24,12 @@ export function registerShape(type, constructor) {
  * @returns {Shape} - A new shape instance of the correct subclass.
  */
 export function deserializeShape(data) {
-    const constructor = ShapeRegistry.get(data.type);
-    if (!constructor) throw new Error(`Unknown shape type: ${data.type}`);
+    const constructor = getConstructor(data.type);
     return new constructor(data.id, data.type, constructor.deserializeProps(data.props));
+}
+
+export function getConstructor(shapeType) {
+    const constructor = ShapeRegistry.get(shapeType);
+    if (!constructor) throw new Error(`Unknown shape type: ${shapeType}`);
+    return constructor;
 }

@@ -1,27 +1,54 @@
 import { nanoid } from 'nanoid'
-import {create2dArray} from "../../utils/arrays.js";
+import {AnchoredGrid, create2dArray} from "../../utils/arrays.js";
 import {
+    AUTO_RESIZE_PROP,
     CHAR_PROP,
     COLOR_PROP,
     FILL_OPTIONS,
-    FILL_PROP,
-    SHAPE_TEXT_ACTIONS,
+    FILL_PROP, LINKED_PROPS,
+    SHAPE_TEXT_ACTIONS, STROKE_STYLE_PROPS,
     TEXT_PROP
 } from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {deleteBackward, deleteForward, deleteRange, insertAt} from "../../utils/strings.js";
-import {deserializeShape} from "./registry.js";
+import {deserializeShape, getConstructor} from "./registry.js";
+import CellArea from "../cell_area.js";
 
 export default class Shape {
+    static propDefinitions = [
+        { prop: AUTO_RESIZE_PROP, default: false },
+        { prop: CHAR_PROP },
+        { prop: COLOR_PROP },
+    ]
+
+    static _allowedPropsCache = null;
+    static get allowedProps() {
+        if (!this._allowedPropsCache) {
+            this._allowedPropsCache = new Set(this.propDefinitions.map(definition => definition.prop));
+        }
+        return this._allowedPropsCache;
+    }
+
     constructor(id, type, props = {}) {
         this.id = id || nanoid();
         this.type = type;
-        this.props = props;
+
+        this.props = {};
+        this.constructor.propDefinitions.forEach(definition => {
+            const incomingValue = props[definition.prop];
+            this.updateProp(definition.prop, incomingValue === undefined ? definition.default : incomingValue);
+        })
+
         this._clearCache();
     }
 
     static deserialize(data) {
         return deserializeShape(data)
+    }
+
+    static begin(shapeType, initialProps) {
+        const constructor = getConstructor(shapeType);
+        return new constructor(undefined, shapeType, initialProps);
     }
 
     serialize() {
@@ -47,19 +74,36 @@ export default class Shape {
     }
 
     /**
-     * Updates one of the shape's properties
-     * @param {string} prop - Property to update
+     * Updates one of the shape's properties. Property must be included in the shape's static allowedProps
+     * for it to be updated.
+     * @param {string} propKey - Property to update
      * @param newValue - Value to set property to
      * @returns {boolean} - Whether the property was actually updated. Note: uses === to test equality, so if your
      *   value is, for example, a Cell, this will return true if though the Cells might be at the same location.
      */
-    updateProp(prop, newValue) {
-        if (this.props[prop] !== newValue) {
-            this.props[prop] = newValue;
-            this._clearCache();
-            return true;
+    updateProp(propKey, newValue) {
+        const standardUpdate = (key, value) => {
+            if (this.constructor.allowedProps.has(key) && this.props[key] !== value) {
+                this.props[key] = value;
+                this._clearCache();
+                return true;
+            }
+            return false;
         }
-        return false;
+
+        // Special handler for linked props:
+        for (const { when, enforce } of LINKED_PROPS) {
+            if (propKey === when.prop && newValue === when.value) {
+                const normalUpdate = standardUpdate(propKey, newValue)
+                const linkedUpdate = standardUpdate(enforce.prop, enforce.value);
+                return normalUpdate || linkedUpdate;
+            }
+            if (propKey === enforce.prop && this.props[when.prop] === when.value) {
+                return standardUpdate(propKey, enforce.value);
+            }
+        }
+
+        return standardUpdate(propKey, newValue);
     }
 
     // ------------------------------------------------------ Initial draw
@@ -240,23 +284,69 @@ export default class Shape {
         this._clearCache();
     }
 
-    // Note: glyphs will be in relative coords
-    _initGlyphs(area) {
-        return {
-            chars: create2dArray(area.numRows, area.numCols),
-            colors: create2dArray(area.numRows, area.numCols),
+    // -------------------------------------------------------------------------------- Glyphs
+    /**
+     * A glyph "grid" contains 2d arrays for both chars and colors.
+     *
+     * Two storage modes are supported:
+     *
+     * 1. Standard Mode: Uses regular 2D arrays for rectangular shapes.
+     * 2. Overflow Mode Uses `AnchoredGrid` to support brush strokes
+     *    or shapes that can extend outside their bounding box (e.g. thick freeform lines).
+     *
+     * Glyphs are stored in relative coords to shape's origin.
+     */
+
+    /**
+     * Sets up containers to hold the shape's rendered chars/colors.
+     * @param {CellArea} boundingArea - current bounding area of shape
+     * @param {boolean} [supportOverflow=false] - If true, uses AnchoredGrids to allow drawing glyphs that extend
+     *   outside the bounding area. If false, uses regular 2D arrays sized to the bounding area.
+     *
+     *  @returns {{chars: AnchoredGrid|string[][], colors: AnchoredGrid|number[][], supportOverflow: boolean}}
+     */
+    _initGlyphs(boundingArea, supportOverflow = false) {
+        return supportOverflow ? {
+            chars: AnchoredGrid.filledGrid(boundingArea.numRows, boundingArea.numCols),
+            colors: AnchoredGrid.filledGrid(boundingArea.numRows, boundingArea.numCols),
+            supportOverflow
+        } : {
+            chars: create2dArray(boundingArea.numRows, boundingArea.numCols),
+            colors: create2dArray(boundingArea.numRows, boundingArea.numCols),
+            supportOverflow
         }
-    }
-    _setGlyph(glyphs, cell, char, colorIndex) {
-        if (!glyphs.chars[cell.row]) {
-            glyphs.chars[cell.row] = [];
-            glyphs.colors[cell.row] = [];
-        }
-        glyphs.chars[cell.row][cell.col] = char;
-        glyphs.colors[cell.row][cell.col] = colorIndex;
     }
 
-    _fillChar() {
+    _setGlyph(glyphs, cell, char, colorIndex) {
+        if (glyphs.supportOverflow) {
+            glyphs.chars.set(cell.row, cell.col, char);
+            glyphs.colors.set(cell.row, cell.col, colorIndex);
+        } else {
+            glyphs.chars[cell.row][cell.col] = char;
+            glyphs.colors[cell.row][cell.col] = colorIndex;
+        }
+    }
+
+    /**
+     * Converts the AnchoredGrids back to normal 2d arrays. Also returns an updated boundingArea and origin
+     * if the anchored grids had any out-of-bounds cells.
+     * @param glyphs
+     * @param currentOrigin
+     * @returns {{boundingArea: CellArea, origin: Cell, glyphs: {chars: string[][], colors: number[][]}}}
+     */
+    _processAnchoredGrid(glyphs, currentOrigin) {
+        const { data: chars, rowOffset, colOffset } = glyphs.chars.to2dArray();
+        const { data: colors } = glyphs.colors.to2dArray();
+        const origin = currentOrigin.clone().translate(rowOffset, colOffset);
+
+        return {
+            boundingArea: CellArea.fromOriginAndDimensions(origin, chars.length, chars[0].length),
+            origin: origin,
+            glyphs: { chars, colors }
+        }
+    }
+
+    get _fillChar() {
         switch(this.props[FILL_PROP]) {
             case FILL_OPTIONS.WHITESPACE:
                 return WHITESPACE_CHAR;
@@ -266,6 +356,12 @@ export default class Shape {
                 return EMPTY_CHAR;
         }
     }
+
+    get _strokeStyle() {
+        return this.props[STROKE_STYLE_PROPS[this.type]]
+    }
+
+    // --------------------------------------------------------------------------------
 
     // If returns true, shape will be deleted when text editing is finished
     deleteOnTextFinished() {

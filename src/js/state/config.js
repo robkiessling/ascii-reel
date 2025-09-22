@@ -2,7 +2,7 @@ import {getFormattedDateTime} from "../utils/strings.js";
 import {COLOR_FORMAT, DEFAULT_COLOR} from "./palette.js";
 import {pick} from "../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
-import {BRUSHES, DEFAULT_STROKES} from "../geometry/shapes/constants.js";
+import {BRUSHES, DEFAULT_STROKE_STYLES} from "../geometry/shapes/constants.js";
 import {LAYER_TYPES} from "./constants.js";
 import * as timeline from "./timeline/index.js";
 
@@ -34,13 +34,7 @@ export const DEFAULT_STATE = {
     primaryColor: DEFAULT_COLOR,
     primaryChar: 'A',
     brush: Object.keys(BRUSHES)[0], // todo brushType/brushSize
-    drawTypes: {
-        'draw-freeform': 'irregular-adaptive',
-        'draw-rect': 'outline-ascii-1',
-        'draw-line': 'straight-adaptive',
-        'draw-ellipse': 'outline-monochar',
-    },
-    shapeStrokes: DEFAULT_STROKES,
+    drawStrokeStyles: DEFAULT_STROKE_STYLES,
     lastExportOptions: null,
     caretStyle: 'I-beam', // vs. block
 }
@@ -135,10 +129,6 @@ export function getName(includeDefaultTimestamp = true) {
                 return 'Untitled';
         }
     }
-}
-
-export function updateDrawType(toolKey, newType) {
-    state.drawTypes[toolKey] = newType;
 }
 
 export function isAnimationProject() {

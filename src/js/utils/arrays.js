@@ -10,17 +10,31 @@ import {isFunction} from "./utilities.js";
  * @returns {*[][]} - The 2d array
  */
 export function create2dArray(numRows, numCols, defaultValue) {
-    let array = [];
+    let result = [];
 
     for (let row = 0; row < numRows; row++) {
         let rowValues = [];
         for (let col = 0; col < numCols; col++) {
             rowValues.push(isFunction(defaultValue) ? defaultValue(row, col) : defaultValue);
         }
-        array.push(rowValues);
+        result.push(rowValues);
     }
 
-    return array;
+    return result;
+}
+
+export function create2dAnchoredArray(numRows, numCols, defaultValue) {
+    let result = new AnchoredArray();
+
+    for (let row = 0; row < numRows; row++) {
+        let rowValues = new AnchoredArray();
+        for (let col = 0; col < numCols; col++) {
+            rowValues.push(isFunction(defaultValue) ? defaultValue(row, col) : defaultValue);
+        }
+        result.push(rowValues);
+    }
+
+    return result;
 }
 
 export function freeze2dArray(arr) {
@@ -160,7 +174,7 @@ export function moveOneStep(array, elementsToMove, direction) {
  * A Range represents a subarray between two indices: startIndex and endIndex
  * Indices are inclusive.
  */
-export default class ArrayRange {
+export class ArrayRange {
     constructor(startIndex, endIndex) {
         this.startIndex = startIndex;
         this.endIndex = endIndex;
@@ -226,5 +240,227 @@ export default class ArrayRange {
 
     clone() {
         return new ArrayRange(this.startIndex, this.endIndex);
+    }
+}
+
+/**
+ * AnchoredArray is an array-like structure that supports both positive and negative indices,
+ * where index `0` is a fixed anchor point. Negative indices allow insertion before index 0
+ * without shifting or affecting positive indices.
+ *
+ * Unlike native JavaScript arrays:
+ * - Setting a value at index `-1` does not access the last element.
+ * - Instead, it inserts a value before index `0`, preserving the meaning of `0`, `1`, etc.
+ */
+export class AnchoredArray {
+    constructor() {
+        this._before = []; // values at negative indices
+        this._after = [];  // values at 0 and above
+    }
+
+    set(index, value) {
+        if (index >= 0) {
+            this._after[index] = value;
+        } else {
+            this._before[-index - 1] = value;
+        }
+    }
+
+    get(index) {
+        if (index >= 0) {
+            return this._after[index];
+        } else {
+            return this._before[-index - 1];
+        }
+    }
+
+    push(value) {
+        this._after.push(value);
+    }
+
+    pop() {
+        return this._after.pop();
+    }
+
+    unshift(value) {
+        this._before.push(value);
+    }
+
+    toArray() {
+        return [...this._before.slice().reverse(), ...this._after];
+    }
+
+    forEach(callback) {
+        // Negative indices: from -N to -1
+        for (let i = this._before.length - 1; i >= 0; i--) {
+            const index = -i - 1;
+            callback(this._before[i], index);
+        }
+
+        // Non-negative indices: from 0 upward
+        for (let i = 0; i < this._after.length; i++) {
+            callback(this._after[i], i);
+        }
+    }
+
+    length() {
+        return this._before.length + this._after.length;
+    }
+}
+
+
+/**
+ * AnchoredGrid is a 2D grid that supports both negative and positive row/column indices.
+ * This is useful when elements need to extend beyond the original bounds of a shape or area.
+ *
+ * For example, you could start with a 5x5 grid, then call `set(-1, -1, value)` to assign a cell
+ * above and to the left of (0, 0). This does not shift the existing grid; instead, it expands the
+ * tracked bounds so that `to2dArray()` will include the new top-left and return a larger array.
+ */
+export class AnchoredGrid {
+    constructor() {
+        this._rowsBefore = [];
+        this._rowsAfter = [];
+    }
+
+    // Creates a 2d AnchoredGrid, analogous to create2dArray
+    static filledGrid(numRows, numCols, defaultValue) {
+        const grid = new AnchoredGrid();
+
+        for (let row = 0; row < numRows; row++) {
+            for (let col = 0; col < numCols; col++) {
+                grid.set(row, col, defaultValue);
+            }
+        }
+
+        return grid;
+    }
+
+    /**
+     * Set a value at (row, col)
+     * @param {number} row - Row index (can be negative)
+     * @param {number} col - Column index (can be negative)
+     * @param {*} value - Value to store
+     */
+    set(row, col, value) {
+        const targetRow = this._getOrCreateRow(row);
+        targetRow.set(col, value);
+    }
+
+    /**
+     * Get a value at (row, col)
+     * @param {number} row - Row index (can be negative)
+     * @param {number} col - Column index (can be negative)
+     * @returns {*} Value at the given cell, or undefined
+     */
+    get(row, col) {
+        const targetRow = this._getRow(row);
+        return targetRow?.get(col);
+    }
+
+    /**
+     * Iterate over all defined cells in row-major order, starting from the most negative row, most negative column.
+     *
+     * @param {(value: any, row: number, col: number) => void} callback
+     */
+    forEach(callback) {
+        // Rows before 0: most negative up to -1
+        for (let r = this._rowsBefore.length - 1; r >= 0; r--) {
+            const row = this._rowsBefore[r];
+            if (row) {
+                row.forEach((value, col) => {
+                    callback(value, -r - 1, col);
+                });
+            }
+        }
+
+        // Rows 0 and above
+        for (let r = 0; r < this._rowsAfter.length; r++) {
+            const row = this._rowsAfter[r];
+            if (row) {
+                row.forEach((value, col) => {
+                    callback(value, r, col);
+                });
+            }
+        }
+    }
+
+    /**
+     * Converts the grid into a dense 2D array of values. Rows and columns are padded with `undefined` as needed. \
+     * Result includes offsets for origin; this can be used to place the resulting 2D array so that the negative
+     * values are upward/leftward.
+     *
+     * @returns {{
+     *   data: any[][],
+     *   rowOffset: number,
+     *   colOffset: number
+     * }}
+     */
+    to2dArray() {
+        // First, find bounds
+        let minRow = Infinity;
+        let maxRow = -Infinity;
+        let minCol = Infinity;
+        let maxCol = -Infinity;
+
+        this.forEach((_, row, col) => {
+            minRow = Math.min(minRow, row);
+            maxRow = Math.max(maxRow, row);
+            minCol = Math.min(minCol, col);
+            maxCol = Math.max(maxCol, col);
+        });
+
+        // Empty grid?
+        if (minRow > maxRow || minCol > maxCol) {
+            return { data: [[]], rowOffset: 0, colOffset: 0 };
+        }
+
+        const numRows = maxRow - minRow + 1;
+        const numCols = maxCol - minCol + 1;
+
+        // Build and populate 2D array
+        // const data = Array.from({ length: numRows }, () => Array(numCols).fill(undefined));
+        const data = create2dArray(numRows, numCols);
+
+        this.forEach((value, row, col) => {
+            const r = row - minRow;
+            const c = col - minCol;
+            data[r][c] = value;
+        });
+
+        return {
+            data,
+            rowOffset: minRow,
+            colOffset: minCol
+        };
+    }
+
+    /**
+     * Get or create the AnchoredArray row at the given index.
+     * @private
+     * @param {number} row
+     * @returns {AnchoredArray}
+     */
+    _getOrCreateRow(row) {
+        const rows = row >= 0 ? this._rowsAfter : this._rowsBefore;
+        const index = row >= 0 ? row : -row - 1;
+
+        if (!rows[index]) {
+            rows[index] = new AnchoredArray();
+        }
+
+        return rows[index];
+    }
+
+    /**
+     * Get the AnchoredArray row at the given index, if it exists.
+     * @private
+     * @param {number} row
+     * @returns {AnchoredArray | undefined}
+     */
+    _getRow(row) {
+        const rows = row >= 0 ? this._rowsAfter : this._rowsBefore;
+        const index = row >= 0 ? row : -row - 1;
+        return rows[index];
     }
 }

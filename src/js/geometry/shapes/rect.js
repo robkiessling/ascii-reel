@@ -1,9 +1,6 @@
 import {isFunction} from "../../utils/utilities.js";
 import {
-    AUTO_RESIZE_PROP,
-    CHAR_PROP, COLOR_PROP, FILL_OPTIONS, FILL_PROP, SHAPE_TYPES,
-    STROKE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP,
-    TEXT_OVERFLOW_PROP, TEXT_PADDING_PROP, TEXT_PROP
+    CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_PROPS, TEXT_PADDING_PROP
 } from "./constants.js";
 import CellArea from "../cell_area.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
@@ -61,26 +58,10 @@ const CHAR_SHEETS = {
 }
 
 export default class Rect extends Textbox {
-
-    static beginRect(startCell, options) {
-        const props = {
-            topLeft: startCell,
-            numRows: 1,
-            numCols: 1,
-            [AUTO_RESIZE_PROP]: false,
-            [STROKE_PROPS[SHAPE_TYPES.RECT]]: options.drawPreset,
-            [FILL_PROP]: options.fill || FILL_OPTIONS.EMPTY,
-            [CHAR_PROP]: options.char,
-            [COLOR_PROP]: options.colorIndex,
-            [TEXT_PROP]: "",
-            [TEXT_ALIGN_V_PROP]: TEXT_ALIGN_V_OPTS.MIDDLE,
-            [TEXT_ALIGN_H_PROP]: TEXT_ALIGN_H_OPTS.CENTER,
-            [TEXT_PADDING_PROP]: 0,
-            [TEXT_OVERFLOW_PROP]: false
-        };
-
-        return new Rect(undefined, SHAPE_TYPES.RECT, props);
-    }
+    static propDefinitions = [
+        ...super.propDefinitions,
+        { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.RECT] },
+    ];
 
     deleteOnTextFinished() {
         return false;
@@ -98,7 +79,7 @@ export default class Rect extends Textbox {
         this._applyStrokeAndFill(boundingArea, glyphs);
         this._applyTextLayout(textLayout, glyphs);
 
-        const hasEmptyBackground = this._fillChar() === EMPTY_CHAR;
+        const hasEmptyBackground = this._fillChar === EMPTY_CHAR;
         const innerArea = boundingArea.innerArea();
         const handles = this._buildHandleCollection(boundingArea, cell => {
             if (textLayout.includesCell(cell)) return true;
@@ -118,10 +99,9 @@ export default class Rect extends Textbox {
     }
 
     _applyStrokeAndFill(boundingArea, glyphs) {
-        const stroke = this.props[STROKE_PROPS[SHAPE_TYPES.RECT]]
-        let charSheet = CHAR_SHEETS[stroke];
+        let charSheet = CHAR_SHEETS[this._strokeStyle];
         if (isFunction(charSheet)) charSheet = charSheet(this.props[CHAR_PROP]);
-        const fillChar = this._fillChar();
+        const fillChar = this._fillChar;
 
         const lastRow = this.props.numRows - 1;
         const lastCol = this.props.numCols - 1;

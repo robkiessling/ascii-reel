@@ -1,4 +1,6 @@
-import {AUTO_RESIZE_PROP, CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_OPTIONS, STROKE_PROPS} from "./constants.js";
+import {
+    CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_OPTIONS, STROKE_STYLE_PROPS,
+} from "./constants.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
@@ -12,18 +14,11 @@ import {registerShape} from "./registry.js";
 
 
 export default class Line extends Shape {
-
-    static beginLine(startCell, options) {
-        const props = {
-            path: [startCell, startCell.clone()],
-            [AUTO_RESIZE_PROP]: false,
-            [STROKE_PROPS[SHAPE_TYPES.LINE]]: options.drawPreset,
-            [CHAR_PROP]: options.char,
-            [COLOR_PROP]: options.colorIndex,
-        }
-
-        return new Line(undefined, SHAPE_TYPES.LINE, props);
-    }
+    static propDefinitions = [
+        ...super.propDefinitions,
+        { prop: 'path' },
+        { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.LINE] },
+    ];
 
     serializeProps() {
         const { path, ...restProps } = this.props;
@@ -82,7 +77,6 @@ export default class Line extends Shape {
         const boundingArea = CellArea.fromCells(this.props.path);
         const glyphs = this._initGlyphs(boundingArea);
         const hitbox = new CellCache();
-        const stroke = this.props[STROKE_PROPS[SHAPE_TYPES.LINE]]
 
         const setGlyph = (absCell, char) => {
             const relativeCell = absCell.relativeTo(boundingArea.topLeft);
@@ -90,13 +84,13 @@ export default class Line extends Shape {
             hitbox.add(absCell);
         }
 
-        switch(stroke) {
-            case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
+        switch(this._strokeStyle) {
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
                 forEachAdjPair(this.props.path, (a, b) => {
                     a.lineTo(b).forEach(cell => setGlyph(cell, this.props[CHAR_PROP]))
                 })
                 break;
-            case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
                 const cornerChar = '+';
                 setGlyph(this.props.path.at(0), cornerChar)
                 forEachAdjPair(this.props.path, (a, b) => {
@@ -104,13 +98,13 @@ export default class Line extends Shape {
                     setGlyph(b, cornerChar)
                 })
                 break;
-            // case STROKE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
+            // case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
             //     forEachAdjPair(this.props.path, (a, b, i) => {
             //         straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char), i === 0, true);
             //     })
             //     break;
             default:
-                throw new Error(`Invalid stroke: ${stroke}`)
+                throw new Error(`Invalid stroke: ${this._strokeStyle}`)
         }
 
         const handles = new HandleCollection([

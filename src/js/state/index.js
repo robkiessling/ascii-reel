@@ -12,7 +12,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {LAYER_TYPES} from "./constants.js";
 
 export {
-    numRows, numCols, setConfig, getConfig, fontFamily, getName, updateDrawType,
+    numRows, numCols, setConfig, getConfig, fontFamily, getName,
     isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, RASTER_TOOLS, VECTOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {

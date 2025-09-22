@@ -2,7 +2,7 @@ import Shape from "./shape.js";
 import Cell from "../cell.js";
 import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import CellArea from "../cell_area.js";
-import {EDGE_SIDES, VERTEX_CORNERS} from "./constants.js";
+import {CHAR_PROP, EDGE_SIDES, FILL_OPTIONS, FILL_PROP, VERTEX_CORNERS} from "./constants.js";
 import {BodyHandle, CaretHandle, EdgeHandle, HandleCollection, VertexHandle} from "./handle.js";
 
 /**
@@ -12,6 +12,13 @@ import {BodyHandle, CaretHandle, EdgeHandle, HandleCollection, VertexHandle} fro
  * that determine its position and size on the canvas/grid.
  */
 export default class BoxShape extends Shape {
+    static propDefinitions = [
+        ...super.propDefinitions,
+        { prop: 'topLeft' },
+        { prop: 'numRows' },
+        { prop: 'numCols' },
+        { prop: FILL_PROP, default: FILL_OPTIONS.EMPTY },
+    ];
 
     serializeProps() {
         const { topLeft, ...restProps } = this.props;

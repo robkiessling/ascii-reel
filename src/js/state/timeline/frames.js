@@ -1,4 +1,4 @@
-import ArrayRange from "../../utils/arrays.js";
+import {ArrayRange} from "../../utils/arrays.js";
 
 const DEFAULT_STATE = {
     frames: [],
