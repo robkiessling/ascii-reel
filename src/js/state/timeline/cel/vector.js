@@ -73,8 +73,20 @@ export default class VectorCel {
         });
     }
 
-    glyphs() {
-        if (!this._cachedGlyphs) {
+    /**
+     * Returns the rendered character and color grids for this cel.
+     *
+     * @param {{row: number, col: number}} [offset] - Optional offset to apply to the rendered position.
+     * @returns {{chars: string[][], colors: number[][]}}
+     */
+    glyphs(offset = { row: 0, col: 0 }) {
+        // If offset changes, recalculate cache
+        const needsRebuild = !this._cachedGlyphs || !this._cachedGlyphsOffset ||
+            this._cachedGlyphsOffset.row !== offset.row ||
+            this._cachedGlyphsOffset.col !== offset.col;
+
+        if (needsRebuild) {
+            this._cachedGlyphsOffset = { ...offset };
             this._cachedGlyphs = {
                 chars: create2dArray(numRows(), numCols(), EMPTY_CHAR),
                 colors: create2dArray(numRows(), numCols(), 0)
@@ -82,7 +94,7 @@ export default class VectorCel {
 
             this.shapes().forEach(shape => {
                 const { glyphs: shapeGlyphs, origin: shapeOrigin } = shape.rasterize();
-                mergeGlyphs(this._cachedGlyphs, shapeGlyphs, shapeOrigin, (char, color) => {
+                mergeGlyphs(this._cachedGlyphs, shapeGlyphs, shapeOrigin.clone().translate(offset.row, offset.col), (char, color) => {
                     // Do not merge in EMPTY_CHARs when laying shapes on top of each other. In vector cels, an "empty"
                     // shape should behave as see-through; it should not overwrite characters from shapes below it.
                     // This differs from raster cels, where the final result may intentionally include EMPTY_CHARs to
@@ -94,6 +106,12 @@ export default class VectorCel {
 
         return this._cachedGlyphs;
     }
+
+    _clearCachedGlyphs() {
+        this._cachedGlyphs = undefined;
+        this._cachedGlyphsOffset = undefined;
+    }
+
 
     hasContent(matchingColorIndex) {
         let result = false;
@@ -232,11 +250,6 @@ export default class VectorCel {
             }
         })
         return shapes;
-    }
-
-
-    _clearCachedGlyphs() {
-        this._cachedGlyphs = undefined;
     }
 
 }

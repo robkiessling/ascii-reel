@@ -296,7 +296,7 @@ function setupEventBus() {
                 }
                 break;
             case 'move-all':
-                if (isDragging && isNewCell) updateMoveAll(cell, isNewCell);
+                if (isDragging && isNewCell) updateMoveAll(cell);
                 break;
         }
 
@@ -1055,9 +1055,12 @@ function startMoveAll(cell, mouseEvent) {
     }
 }
 
-function updateMoveAll(cell, isNewCell) {
-    if (moveAllOrigin && isNewCell) {
-        moveAllOffset = [cell.row - moveAllOrigin.row, cell.col - moveAllOrigin.col];
+function updateMoveAll(cell) {
+    if (moveAllOrigin) {
+        moveAllOffset = {
+            row: cell.row - moveAllOrigin.row,
+            col: cell.col - moveAllOrigin.col
+        };
         eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     }
 }
@@ -1065,7 +1068,7 @@ function updateMoveAll(cell, isNewCell) {
 function finishMoveAll() {
     if (moveAllOffset) {
         state.iterateCels(moveAllModifiers.allLayers, moveAllModifiers.allFrames, cel => {
-            state.translateCel(cel, moveAllOffset[0], moveAllOffset[1], moveAllModifiers.wrap)
+            state.translateCel(cel, moveAllOffset.row, moveAllOffset.col, moveAllModifiers.wrap)
         });
 
         moveAllOffset = null;

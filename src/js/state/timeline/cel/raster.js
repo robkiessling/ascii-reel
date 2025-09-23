@@ -97,7 +97,12 @@ export default class RasterCel {
         this.colors = colors;
     }
 
-    glyphs() {
+    /**
+     * Returns the rendered character and color grids for this cel.
+     * Unlike vector cels, offset is not a supported parameter (has not been needed).
+     * @returns {{chars: string[][], colors: number[][]}}
+     */
+    glyphs(/* offset */) {
         return {
             chars: this.chars,
             colors: this.colors

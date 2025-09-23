@@ -12,6 +12,7 @@ import {ArrayRange, create2dArray, mergeGlyphs, translateGlyphs} from "../../uti
 import {numCols, numRows} from "../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {LAYER_TYPES} from "../constants.js";
+import Cell from "../../geometry/cell.js";
 
 export function deserialize(data = {}, options = {}) {
     layerData.deserialize(data.layerData, options);
@@ -276,7 +277,7 @@ export function testCurrentCelMarquee(cellArea) {
  * @param {Object} options Layering options:
  * @param {Object[]} [options.layers] - Array of Layers to include. If not provided, all layers will be included. If
  *   it is provided, the array will be further filtered to only include `visible` layers.
- * @param {Object} [options.offset] - Object containing information about how much to offset all the content
+ * @param {{row: number, col: number}} [options.offset] - Object containing information about how much to offset all the content
  * @param {Object} [options.movableContent] - If provided, the content will be drawn on top of the current layer
  * @param {Object} [options.drawingContent] - If provided, the content will be drawn on top of the current layer
  * @param {boolean} [options.convertEmptyStrToSpace] - If true, EMPTY_CHAR will be converted to WHITESPACE_CHAR
@@ -290,7 +291,7 @@ export function layeredGlyphs(frame, options = {}) {
     const chars = create2dArray(numRows(), numCols(), EMPTY_CHAR);
     const colors = create2dArray(numRows(), numCols(), 0);
 
-    let l, layer, isCurrentLayer, celChars, celColors, celR, celC, r, c;
+    let l, layer, isCurrentLayer, r, c;
     const isCurrentFrame = frame.id === frameData.currentFrame().id;
 
     for (l = 0; l < layerData.layers().length; l++) {
@@ -299,26 +300,24 @@ export function layeredGlyphs(frame, options = {}) {
 
         if (layerIds && !layerIds.has(layer.id)) continue;
 
-        const glyphs = celData.getCelGlyphs(celData.cel(layer, frame));
-        celChars = glyphs.chars;
-        celColors = glyphs.colors;
-        const offset = options.offset && options.offset.amount;
-
-        for (celR = 0; celR < celChars.length; celR++) {
-            for (celC = 0; celC < celChars[celR].length; celC++) {
-                if (celChars[celR][celC] === EMPTY_CHAR) continue;
-
-                r = celR;
-                c = celC;
-
-                if (offset && (options.offset.modifiers.allLayers || isCurrentLayer)) {
-                    const cell = celData.getOffsetPosition(celR, celC, offset[0], offset[1], options.offset.modifiers.wrap);
-                    if (!celData.isCellInBounds(cell)) continue;
-                }
-
-                chars[r][c] = celChars[celR][celC];
-                colors[r][c] = celColors[celR][celC];
-            }
+        // Merge in standard cel content. Offsets are handled slightly differently for raster vs. vector layers.
+        const offset = options.offset && options.offset.amount && (options.offset.modifiers.allLayers || isCurrentLayer)
+            ? options.offset.amount : { row: 0, col: 0 };
+        switch (layer.type) {
+            case LAYER_TYPES.RASTER:
+                // For raster layers, we calculate cel glyphs without an offset, then merge them into result using offset
+                const rasterGlyphs = celData.getCelGlyphs(celData.cel(layer, frame));
+                mergeGlyphs({ chars, colors }, rasterGlyphs, new Cell(offset.row, offset.col));
+                break;
+            case LAYER_TYPES.VECTOR:
+                // For vector layers, we must retrieve cel glyphs using the offset, then merge them into result at
+                // no offset. This is required because vector shapes can go beyond the borders, so when we move them
+                // inside more content can appear.
+                const vectorGlyphs = celData.getCelGlyphs(celData.cel(layer, frame), offset);
+                mergeGlyphs({ chars, colors }, vectorGlyphs, new Cell(0, 0));
+                break;
+            default:
+                throw new Error(`Invalid layer type: ${layer.type}`)
         }
 
         // If there is movableContent, show it on top of the rest of the layer
