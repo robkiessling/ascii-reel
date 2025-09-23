@@ -12,12 +12,9 @@ import {setupTooltips, shouldModifyAction} from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
 import {modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
-import Cell from "../geometry/cell.js";
 import CharPicker from "../components/char_picker.js";
 import {getIconHTML} from "../config/icons.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
-import PolygonFactory from "../geometry/drawing/polygon_factory.js";
-import Rect from "../geometry/shapes/rect.js";
 import {
     BRUSH_TYPES,
     BRUSHES,
@@ -29,14 +26,10 @@ import {
     BRUSH_PROP, LINKED_PROPS
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
-import {standardTip, standardTips} from "../components/tooltips.js";
+import {standardTip} from "../components/tooltips.js";
 import IconMenu from "../components/icon_menu.js";
-import Ellipse from "../geometry/shapes/ellipse.js";
-import Line from "../geometry/shapes/line.js";
 import {MOUSE} from "../io/mouse.js";
-import Freeform from "../geometry/shapes/freeform.js";
 import {LAYER_TYPES} from "../state/constants.js";
-import Textbox from "../geometry/shapes/textbox.js";
 import {diamondBrushCells, squareBrushCells} from "../geometry/shapes/algorithms/brush.js";
 import Shape from "../geometry/shapes/shape.js";
 
