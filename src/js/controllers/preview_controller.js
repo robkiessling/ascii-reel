@@ -127,13 +127,17 @@ function reset() {
 }
 
 // Caches the layered glyphs so that they don't have to be recalculated every loop
+// TODO I've disabled caching - it doesn't work because autosave -> vacuums colorTable -> colors get out of sync
 function getPreviewGlyphs() {
-    let frame = state.expandedFrames()[previewIndex];
+    // let frame = state.expandedFrames()[previewIndex];
+    //
+    // if (!previewGlyphsCache) previewGlyphsCache = new Map();
+    // if (!previewGlyphsCache.has(frame.id)) previewGlyphsCache.set(frame.id, state.layeredGlyphs(frame));
+    //
+    // return previewGlyphsCache.get(frame.id);
 
     if (!previewGlyphsCache) previewGlyphsCache = new Map();
-    if (!previewGlyphsCache.has(frame.id)) previewGlyphsCache.set(frame.id, state.layeredGlyphs(frame));
-
-    return previewGlyphsCache.get(frame.id);
+    return state.layeredGlyphs(state.expandedFrames()[previewIndex]);
 }
 
 

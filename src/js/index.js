@@ -12,7 +12,7 @@ import { init as initActions } from "./io/actions.js";
 import { init as initPalette } from "./controllers/palette_controller.js";
 import { init as initPreview, resize as resizePreview } from "./controllers/preview_controller.js";
 import { init as initUnicode } from "./controllers/unicode_controller.js";
-import { init as initCanvas, resize as resizeCanvas, zoomToDefault } from './controllers/canvas_controller.js';
+import { init as initCanvas, resize as resizeCanvas } from './controllers/canvas_controller.js';
 import { init as initSelection, clear as performClearSelection } from './controllers/selection/index.js'
 import {
     init as initState,
@@ -62,7 +62,7 @@ function setupEventBus() {
 
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: false, resetZoom: true })
 
-        eventBus.emit(EVENTS.CANVAS.ZOOM_TO_DEFAULT);
+        // eventBus.emit(EVENTS.CANVAS.ZOOM_TO_DEFAULT);
     })
 
     $(window).on('resize', debounce(() => eventBus.emit(EVENTS.RESIZE.ALL)));

@@ -189,24 +189,27 @@ function redrawCharCanvas() {
     }
 
     // Build glyphs for current layer
-    const currentGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend(true, {}, layeredGlyphsOptions, {
+    const currentGlyphs = state.layeredGlyphs(state.currentFrame(), {
+        ...layeredGlyphsOptions,
         layers: [state.currentLayer()],
         movableContent: {
             glyphs: selectionController.raster.movableContent(),
             origin: selectionController.raster.movableContent() ? selectionController.raster.getSelectedCellArea().topLeft : null
         },
         drawingContent: tools.drawingContent ? tools.drawingContent.rasterize() : undefined,
-    }));
+    })
 
     // If showing all layers, build glyphs for all-layers-below-current and all-layers-above-current.:
     let belowGlyphs, aboveGlyphs;
     if (!state.getConfig('lockLayerVisibility')) {
-        belowGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend(true, {}, layeredGlyphsOptions, {
+        belowGlyphs = state.layeredGlyphs(state.currentFrame(), {
+            ...layeredGlyphsOptions,
             layers: state.layers().slice(0, state.layerIndex())
-        }));
-        aboveGlyphs = state.layeredGlyphs(state.currentFrame(), $.extend(true, {}, layeredGlyphsOptions, {
+        });
+        aboveGlyphs = state.layeredGlyphs(state.currentFrame(), {
+            ...layeredGlyphsOptions,
             layers: state.layers().slice(state.layerIndex() + 1)
-        }));
+        });
     }
 
     // Begin rendering:

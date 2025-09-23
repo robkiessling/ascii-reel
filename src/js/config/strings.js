@@ -149,7 +149,7 @@ export const STRINGS = {
     'tools.brush.pixel-perfect.name': 'Pixel Perfect',
     'tools.brush.pixel-perfect.description': 'Attempts to maintain 1-cell-wide strokes, even on diagonals.',
     'tools.brush.square-1.name': '1x1 Square',
-    'tools.brush.square-1.description': 'Standard 1-cell brush. Includes every cell the line passes through, which may make it appear thicker when crossing diagonals.',
+    'tools.brush.square-1.description': 'Standard 1-cell brush. Includes every cell the line passes through, which may make it appear thicker than 1 cell when crossing diagonals.',
     'tools.brush.square-2.name': '2x2 Square',
     'tools.brush.square-2.description': 'Square-shaped brush with 2x2 diameter.',
     'tools.brush.square-3.name': '3x3 Square',
