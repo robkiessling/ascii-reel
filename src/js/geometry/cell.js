@@ -100,6 +100,20 @@ export default class Cell extends PixelRect {
         return new Cell(this.row - cell.row, this.col - cell.col)
     }
 
+    // Returns a new Cell that represents this relative cell's absolute coords. To do so, have to supply what this cell
+    // is relative to.
+    makeAbsolute(relativeOrigin) {
+        return new Cell(this.row + relativeOrigin.row, this.col + relativeOrigin.col);
+    }
+
+    // Make absolute compared to old origin, then make relative to new origin
+    changeRelativeOrigin(oldOrigin, newOrigin) {
+        return new Cell(
+            this.row + oldOrigin.row - newOrigin.row,
+            this.col + oldOrigin.col - newOrigin.col
+        )
+    }
+
     toString() {
         return `C{r:${this.row},c:${this.col}}`
     }

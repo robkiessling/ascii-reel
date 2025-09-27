@@ -1,7 +1,6 @@
 import { nanoid } from 'nanoid'
 import {AnchoredGrid, create2dArray} from "../../utils/arrays.js";
 import {
-    AUTO_RESIZE_PROP,
     CHAR_PROP,
     COLOR_PROP,
     FILL_OPTIONS,
@@ -16,14 +15,12 @@ import CellArea from "../cell_area.js";
 
 export default class Shape {
     static propDefinitions = [
-        { prop: AUTO_RESIZE_PROP, default: false },
         { prop: CHAR_PROP },
         { prop: COLOR_PROP },
     ]
 
-    static _allowedPropsCache = null;
     static get allowedProps() {
-        if (!this._allowedPropsCache) {
+        if (!Object.hasOwn(this, '_allowedPropsCache')) {
             this._allowedPropsCache = new Set(this.propDefinitions.map(definition => definition.prop));
         }
         return this._allowedPropsCache;
@@ -159,7 +156,11 @@ export default class Shape {
      * but this can be overridden to add post-processing.
      */
     finishDraw() {
-        // Default: Do nothing
+        this._initialDraw = undefined;
+    }
+
+    get isPerformingInitialDraw() {
+        return !!this._initialDraw;
     }
 
     /**

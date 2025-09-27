@@ -101,8 +101,7 @@ export const BRUSHES = {
     'diamond-10': { type: BRUSH_TYPES.DIAMOND, size: 10 },
 }
 
-// TODO
-export const AUTO_RESIZE_PROP = 'resizeMode';
+export const AUTO_TEXT_WIDTH_PROP = 'autoTextWidth';
 
 export const FILL_PROP = 'fill';
 export const FILL_OPTIONS = {

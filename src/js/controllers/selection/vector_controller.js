@@ -2,9 +2,9 @@ import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js";
 import {SELECTION_COLOR} from "../../config/colors.js";
 import {
-    CARET_HANDLE_SELECTION_MODES,
+    CARET_HANDLE_SELECTION_MODES, CHAR_PROP, COLOR_PROP,
     HANDLE_CELL_RADIUS, HANDLE_TYPES, SHAPE_BOX_PADDING, SHAPE_DASHED_OUTLINE_LENGTH,
-    SHAPE_OUTLINE_WIDTH, SHAPE_TEXT_ACTIONS
+    SHAPE_OUTLINE_WIDTH, SHAPE_TEXT_ACTIONS, SHAPE_TYPES
 } from "../../geometry/shapes/constants.js";
 import CellArea from "../../geometry/cell_area.js";
 import ShapeSelector from "./shape_selector.js";
@@ -15,6 +15,7 @@ import {insertAt} from "../../utils/strings.js";
 import * as tools from "../tool_controller.js";
 import Shape from "../../geometry/shapes/shape.js";
 import {isFunction} from "../../utils/utilities.js";
+import {changeTool} from "../tool_controller.js";
 
 /**
  * Vector selection controller.
@@ -162,9 +163,11 @@ function setupEventBus() {
         if (state.getConfig('tool') !== 'select') return;
 
         const handle = getHandle(cell, mouseEvent, canvas);
-        
+
         if (handle) {
             startHandleDrag(canvas, mouseEvent, cell, handle)
+        } else if (mouseEvent.detail > 1) {
+            createEmptyTextbox(cell);
         } else {
             if (!mouseEvent.shiftKey) deselectAllShapes();
             startMarquee(canvas, mouseEvent);
@@ -216,15 +219,22 @@ function startHandleDrag(canvas, mouseEvent, cell, handle) {
     }
 }
 
+// Cache the last *rounded* cell under the cursor to prevent redundant handle updates.
+// Note: This is distinct from `prevCell`, which tracks unrounded positions.
+let prevRoundedCell;
+
 function updateHandleDrag(canvas, mouseEvent, cell, prevCell) {
     switch (draggedHandle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
         case HANDLE_TYPES.CELL:
             const roundedCell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).roundedCell;
+            if (prevRoundedCell && prevRoundedCell.equals(roundedCell)) return;
+            prevRoundedCell = roundedCell.clone();
             shapeSelector.resize(draggedHandle, cell, roundedCell)
             break;
         case HANDLE_TYPES.BODY:
+            if (prevCell && prevCell.equals(cell)) return;
             shapeSelector.translate(cell.row - prevCell.row, cell.col - prevCell.col)
             break;
         case HANDLE_TYPES.CARET:
@@ -242,6 +252,7 @@ function finishHandleDrag() {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
         case HANDLE_TYPES.CELL:
+            prevRoundedCell = undefined;
             if (shapeSelector.finishResize()) saveShapesMoved();
             break;
         case HANDLE_TYPES.BODY:
@@ -330,6 +341,27 @@ function finishMarquee(mouseEvent) {
     marquee.finish();
     marquee = null;
     eventBus.emit(EVENTS.SELECTION.CHANGED)
+}
+
+
+// ------------------------------------------------------------------------------------------------- Textbox
+
+function createEmptyTextbox(cell) {
+    const textbox = Shape.begin(SHAPE_TYPES.TEXTBOX, {
+        topLeft: cell,
+        numRows: 1,
+        numCols: 1,
+        [CHAR_PROP]: state.getConfig('primaryChar'),
+        [COLOR_PROP]: state.primaryColorIndex(),
+    })
+    state.addCurrentCelShape(textbox);
+    changeTool('select', false);
+    setSelectedShapeIds([textbox.id])
+    setTextCaret(0, { saveHistory: false });
+
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    saveDistinctHistory();
 }
 
 
@@ -619,6 +651,8 @@ export function setSelectedTextRange(anchorIndex, focusIndex, options = {}) {
  * @param {Object} [options] - Additional options
  * @param {boolean} [options.resetPreferredCol=true] - Whether to reset the stored preferred column
  * @param {boolean} [options.saveHistory=true] - Whether to save this selection change to history
+ *
+ * TODO add refresh option to improve performance? e.g. from insertText, don't need to emit changes yet
  */
 export function setTextCaret(caretIndex, options = {}) {
     const resetPreferredCol = options.resetPreferredCol === undefined ? true : options.resetPreferredCol;

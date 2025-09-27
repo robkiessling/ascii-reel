@@ -613,7 +613,8 @@ function setupBrushSubMenu() {
 
 // -------------------------------------------------------------------------------- Shape Properties
 
-let $shapeProperties, shapeTooltips, shapeSubMenus = [];
+let $shapeProperties, shapeTooltips;
+const shapeSubMenus = {};
 
 function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
@@ -690,7 +691,7 @@ function setupStrokeMenu($menu, shapeType) {
         }
     })
 
-    shapeSubMenus.push(styleMenu);
+    shapeSubMenus[strokeProp] = styleMenu;
 }
 
 
@@ -703,8 +704,7 @@ function isBrushDisabled(brush, currentShapeProps) {
 }
 
 function setupBrushMenu() {
-    const $menuGroup = $('#shape-brush-menu-group');
-    const $menu = $('<div>').appendTo($menuGroup.find('.group-actions'));
+    const $menu = $('<div>').appendTo($('#shape-brush-menu-group').find('.group-actions'));
 
     const menu = new IconMenu($menu, {
         dropdown: true,
@@ -728,18 +728,15 @@ function setupBrushMenu() {
         },
         getValue: () => selectionController.vector.selectedShapeProps()[BRUSH_PROP][0],
         onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(BRUSH_PROP, newValue)),
-        onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
             placement: 'right'
         }
     })
 
-    shapeSubMenus.push(menu);
+    shapeSubMenus[BRUSH_PROP] = menu;
 }
 
 function setupTextAlignMenu($menu, prop, options) {
-    const $menuGroup = $('#shape-text-align');
-
     const menu = new IconMenu($menu, {
         dropdown: true,
         dropdownBtnTooltip: `tools.shapes.${prop}`,
@@ -750,44 +747,19 @@ function setupTextAlignMenu($menu, prop, options) {
                 tooltip: `tools.shapes.${prop}.${option}`,
             }
         }),
-        visible: () => {
-            // Show text-align if any selected shapes have non-zero text length
-            return selectionController.vector.isEditingText() ||
-                selectionController.vector.selectedShapeProps()[TEXT_PROP].some(textProp => !!textProp);
-        },
+        visible: () => selectionController.vector.selectedShapeProps()[prop].length,
         getValue: () => selectionController.vector.selectedShapeProps()[prop][0],
         onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(prop, newValue)),
-        onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
             placement: 'right'
         }
     })
 
-    shapeSubMenus.push(menu);
-}
-
-function selectedShapesUseStroke() {
-    const props = selectionController.vector.selectedShapeProps();
-    return Object.values(STROKE_STYLE_PROPS).some(strokeProp => props[strokeProp].length)
-}
-
-function selectedShapesUseCharPicker() {
-    let strokeUsesChar = false;
-    Object.values(STROKE_STYLE_PROPS).forEach(strokeProp => {
-        const strokes = selectionController.vector.selectedShapeProps()[strokeProp];
-
-        // TODO This is basing monochar styles off of their key name... change to a real property
-        if (strokes.some(stroke => stroke.includes('monochar'))) strokeUsesChar = true;
-    })
-
-    const fillUsesChar = selectionController.vector.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
-
-    return strokeUsesChar || fillUsesChar;
+    shapeSubMenus[prop] = menu;
 }
 
 function setupFillMenu() {
-    const $menuGroup = $('#shape-fill-menu-group');
-    const $menu = $('<div>').appendTo($menuGroup.find('.group-actions'));
+    const $menu = $('<div>').appendTo($('#shape-fill-menu-group').find('.group-actions'));
 
     const menu = new IconMenu($menu, {
         dropdown: true,
@@ -802,13 +774,12 @@ function setupFillMenu() {
         visible: () => selectionController.vector.selectedShapeProps()[FILL_PROP].length,
         getValue: () => selectionController.vector.selectedShapeProps()[FILL_PROP][0],
         onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(FILL_PROP, newValue)),
-        onRefresh: menu => $menuGroup.toggle(menu.isVisible()),
         tooltipOptions: {
             placement: 'right'
         }
     })
 
-    shapeSubMenus.push(menu);
+    shapeSubMenus[FILL_PROP] = menu;
 }
 
 function setupOrderMenu() {
@@ -841,7 +812,7 @@ function setupOrderMenu() {
         }
     })
 
-    shapeSubMenus.push(menu);
+    shapeSubMenus['ORDER'] = menu;
 }
 
 function refreshShapeProperties() {
@@ -849,12 +820,22 @@ function refreshShapeProperties() {
     $shapeProperties.toggle(isVisible);
 
     if (isVisible) {
-        shapeSubMenus.forEach(subMenu => subMenu.refresh()); // Also handles showing/hiding menu icon thru onRefresh callback
+        // Toggle menu visibility
+        Object.values(shapeSubMenus).forEach(menu => menu.refresh());
 
-        $shapeProperties.find('#shape-stroke-menu-group').toggle(selectedShapesUseStroke())
+        // Toggle menu group visibility (the containers around groups of menus)
+        $shapeProperties.find('#shape-stroke-menu-group').toggle(
+            Object.values(STROKE_STYLE_PROPS).some(prop => shapeSubMenus[prop].isVisible())
+        )
+        $shapeProperties.find('#shape-brush-menu-group').toggle(shapeSubMenus[BRUSH_PROP].isVisible())
+        $shapeProperties.find('#shape-text-align').toggle(
+            shapeSubMenus[TEXT_ALIGN_H_PROP].isVisible() || shapeSubMenus[TEXT_ALIGN_V_PROP].isVisible()
+        )
+        $shapeProperties.find('#shape-fill-menu-group').toggle(shapeSubMenus[FILL_PROP].isVisible())
         $shapeProperties.find('#shape-color-menu-group').toggle(state.isMultiColored())
         $shapeProperties.find('#shape-char-menu-group').toggle(selectedShapesUseCharPicker())
 
+        // Refresh action buttons
         $shapeProperties.find('.action-button').each((i, element) => {
             const $element = $(element);
             const actionId = $element.data('action');
@@ -868,6 +849,19 @@ function refreshShapeProperties() {
     }
 }
 
+function selectedShapesUseCharPicker() {
+    let strokeUsesChar = false;
+    Object.values(STROKE_STYLE_PROPS).forEach(strokeProp => {
+        const strokes = selectionController.vector.selectedShapeProps()[strokeProp];
+
+        // TODO This is basing monochar styles off of their key name... change to a real property
+        if (strokes.some(stroke => stroke.includes('monochar'))) strokeUsesChar = true;
+    })
+
+    const fillUsesChar = selectionController.vector.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
+
+    return strokeUsesChar || fillUsesChar;
+}
 
 // -------------------------------------------------------------------------------- Color Tools
 
@@ -1021,6 +1015,7 @@ function finishDrawing() {
     drawingContent.finishDraw();
     state.addCurrentCelShape(drawingContent);
 
+    // If the drawn shape would be deleted (e.g. empty Textbox), immediately start editing its text
     if (drawingContent.deleteOnTextFinished()) {
         changeTool('select', false);
         selectionController.vector.setSelectedShapeIds([drawingContent.id])

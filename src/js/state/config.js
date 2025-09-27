@@ -15,7 +15,7 @@ export const DEFAULT_STATE = {
     colorMode: 'monochrome',
     createdAt: undefined,
     dimensions: [15, 30], // [numRows, numCols]
-    background: new Color('rgba(255,255,255,1)')[COLOR_FORMAT],
+    background: new Color('rgba(0,0,0,1)')[COLOR_FORMAT],
     font: 'monospace',
     fps: 6,
     playPreview: true,

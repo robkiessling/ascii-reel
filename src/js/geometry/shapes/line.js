@@ -54,6 +54,7 @@ export default class Line extends Shape {
             this.props.path = this._initialDraw.path;
             this._clearCache();
         }
+        super.finishDraw();
     }
 
     _convertInitialDrawToProps() {

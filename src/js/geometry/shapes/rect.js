@@ -1,11 +1,14 @@
 import {isFunction} from "../../utils/utilities.js";
 import {
-    CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_PROPS, TEXT_PADDING_PROP
+    CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
+    TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_OVERFLOW_PROP, TEXT_PADDING_PROP, TEXT_PROP
 } from "./constants.js";
 import CellArea from "../cell_area.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import {registerShape} from "./registry.js";
-import Textbox from "./textbox.js";
+import BoxShape from "./box_shape.js";
+import TextLayout from "./text_layout.js";
+import Cell from "../cell.js";
 
 
 /**
@@ -57,27 +60,30 @@ const CHAR_SHEETS = {
     }
 }
 
-export default class Rect extends Textbox {
+export default class Rect extends BoxShape {
     static propDefinitions = [
         ...super.propDefinitions,
         { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.RECT] },
+        { prop: TEXT_PROP, default: "" },
+        { prop: TEXT_ALIGN_V_PROP, default: TEXT_ALIGN_V_OPTS.MIDDLE },
+        { prop: TEXT_ALIGN_H_PROP, default: TEXT_ALIGN_H_OPTS.CENTER },
+        { prop: TEXT_PADDING_PROP, default: 0 },
+        { prop: TEXT_OVERFLOW_PROP, default: false },
     ];
 
-    deleteOnTextFinished() {
-        return false;
-    }
-    showSelectionOnInitialDraw() {
-        return false;
-    }
-
-
     _cacheGeometry() {
-        const boundingArea = CellArea.fromOriginAndDimensions(this.props.topLeft, this.props.numRows, this.props.numCols);
-        const glyphs = this._initGlyphs(boundingArea);
-        const textLayout = this._buildTextLayout(boundingArea);
+        let origin = this.props.topLeft;
+        let boundingArea = CellArea.fromOriginAndDimensions(origin, this.props.numRows, this.props.numCols);
+        let glyphs = this._initGlyphs(boundingArea, this.props[TEXT_OVERFLOW_PROP]);
 
         this._applyStrokeAndFill(boundingArea, glyphs);
-        this._applyTextLayout(textLayout, glyphs);
+
+        const textLayout = this._buildTextLayout(boundingArea);
+        this._applyTextLayout(boundingArea, textLayout, glyphs);
+
+        // Glyphs may have overflowed due to TEXT_OVERFLOW_PROP. We do not update boundingArea accordingly;
+        // we want the boundingArea to still appear as original rect despite text appearing outside this area.
+        if (glyphs.supportOverflow) ({ glyphs } = this._processAnchoredGrid(glyphs, origin));
 
         const hasEmptyBackground = this._fillChar === EMPTY_CHAR;
         const innerArea = boundingArea.innerArea();
@@ -89,13 +95,7 @@ export default class Rect extends Textbox {
             return textLayout.includesCell(cell, false)
         })
 
-        this._cache = {
-            boundingArea,
-            origin: this.props.topLeft,
-            glyphs,
-            textLayout,
-            handles
-        }
+        this._cache = { boundingArea, origin, glyphs, textLayout, handles }
     }
 
     _applyStrokeAndFill(boundingArea, glyphs) {
@@ -130,9 +130,43 @@ export default class Rect extends Textbox {
         });
     }
 
+    // ------------------------------------------------------ Text
+
+    get canHaveText() {
+        return true;
+    }
+
     get textPadding() {
         // Add 1 for rect's natural outline
         return this.props[TEXT_PADDING_PROP] + 1;
+    }
+
+    _buildTextLayout(cellArea) {
+        return new TextLayout(
+            this.props[TEXT_PROP],
+            cellArea,
+            {
+                alignH: this.props[TEXT_ALIGN_H_PROP],
+                alignV: this.props[TEXT_ALIGN_V_PROP],
+                paddingH: this.textPadding,
+                paddingV: this.textPadding,
+                showOverflow: this.props[TEXT_OVERFLOW_PROP],
+                autoWidth: false,
+                autoHeight: false
+            }
+        );
+    }
+
+    _applyTextLayout(boundingArea, textLayout, glyphs) {
+        textLayout.charGrid.forEachCell((char, rowIndex, colIndex) => {
+            if (char !== undefined) {
+                const cell = new Cell(rowIndex, colIndex).changeRelativeOrigin(
+                    textLayout.textArea.topLeft,
+                    boundingArea.topLeft
+                );
+                this._setGlyph(glyphs, cell, char, this.props[COLOR_PROP])
+            }
+        })
     }
 
 }

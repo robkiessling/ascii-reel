@@ -69,6 +69,12 @@ export default class Vertex extends Point {
         return new Vertex(this.row - vertex.row, this.col - vertex.col)
     }
 
+    // Returns a new Vertex that represents this relative vertex's absolute coords. To do so, have to supply what this
+    // vertex is relative to.
+    makeAbsolute(relativeOrigin) {
+        return new Vertex(this.row + relativeOrigin.row, this.col + relativeOrigin.col);
+    }
+
     toString() {
         return `V{r:${this.row},c:${this.col}}`
     }

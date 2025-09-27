@@ -1,7 +1,7 @@
 import Cell from "../cell.js";
 import {TEXT_ALIGN_H_OPTS, TEXT_ALIGN_V_OPTS} from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
-import {create2dArray} from "../../utils/arrays.js";
+import {AnchoredGrid, create2dArray} from "../../utils/arrays.js";
 import CellArea from "../cell_area.js";
 import Vertex from "../vertex.js";
 import VertexArea from "../vertex_area.js";
@@ -21,26 +21,25 @@ const DEBUG = false;
  * Handles wrapping and aligning text to fit into a rectangular cellArea.
  */
 export default class TextLayout {
-    constructor(text = '', borderArea, options = {}) {
+    constructor(text = '', shapeArea, options = {}) {
         // todo convert tabs to 2 spaces
         // todo convert /r/n to /n
         this.text = text;
-        this.borderArea = borderArea;
+        this.shapeArea = shapeArea;
         this.options = {...DEFAULT_OPTIONS, ...options};
 
-        // Note: textArea might grow longer if options.showOverflow is true. Will depend on how long the text is.
+        // textArea starts off as the shape's area minus padding. It can be come larger if
+        // showOverflow is true and text doesn't fit, or if autoWidth is enabled.
         this.textArea = new CellArea(
-            this.borderArea.topLeft.clone().translate(this.paddingV, this.paddingH),
-            this.borderArea.bottomRight.clone().translate(-this.paddingV, -this.paddingH)
+            this.shapeArea.topLeft.clone().translate(this.paddingV, this.paddingH),
+            this.shapeArea.bottomRight.clone().translate(-this.paddingV, -this.paddingH)
         )
 
-        if (DEBUG) {
-            console.log(`textArea: ${this.textArea}`)
-        }
+        if (DEBUG) console.log(`starting textArea:\n${this.textArea}\nautoWidth:${this.options.autoWidth}`)
 
         this.unabridgedLines = [];
         this.lines = [];
-        this.grid = create2dArray(this.textArea.numRows, this.textArea.numCols, EMPTY_CHAR);
+        this.charGrid = AnchoredGrid.filledGrid(0, 0)
 
         if (this.textArea.numRows >= 1 && this.textArea.numCols >= 1) {
             this._wrapText();
@@ -74,32 +73,25 @@ export default class TextLayout {
     getCellForCaretIndex(caretIndex) {
         if (!this.lines.length) return null;
 
-        const translateCell = (row, col) => {
-            const cell = new Cell(row, col);
-
-            // Convert to absolute since this.lines is relative
-            return cell.translate(this.borderArea.topLeft.row, this.borderArea.topLeft.col);
-        }
-
         if (caretIndex < this.minCaretIndex) {
             // Out of bounds in the negative direction -> return first cell
             const firstLine = this.lines.at(0);
             const minCol = firstLine.colOffset;
-            return translateCell(firstLine.row, minCol);
+            return new Cell(firstLine.row, minCol).makeAbsolute(this.textArea.topLeft)
         }
 
         for (const { caretStart, caretEnd, displayLength, row, colOffset } of this.lines) {
             if (caretIndex >= caretStart && caretIndex < caretEnd) {
                 const maxCol = colOffset + displayLength;
                 const desiredCol = colOffset + (caretIndex - caretStart);
-                return translateCell(row, Math.min(desiredCol, maxCol))
+                return new Cell(row, Math.min(desiredCol, maxCol)).makeAbsolute(this.textArea.topLeft)
             }
         }
 
         // Out of bounds in the positive direction -> return final cell
         const lastLine = this.lines.at(-1);
         const maxCol = lastLine.colOffset + lastLine.displayLength;
-        return translateCell(lastLine.row, maxCol);
+        return new Cell(lastLine.row, maxCol).makeAbsolute(this.textArea.topLeft)
     }
 
     /**
@@ -111,7 +103,7 @@ export default class TextLayout {
      * @returns {Number}
      */
     getCaretIndexForCell(cell) {
-        cell = cell.relativeTo(this.borderArea.topLeft); // Convert to relative since this.lines is relative
+        cell = cell.relativeTo(this.textArea.topLeft); // Convert to relative since this.lines is relative
 
         // Out of bounds in the negative direction -> return first caret index
         if (!this.lines.length || cell.row < this.lines.at(0).row) return this.minCaretIndex;
@@ -130,7 +122,7 @@ export default class TextLayout {
 
 
     isCellInVerticalBounds(cell) {
-        cell = cell.relativeTo(this.borderArea.topLeft); // Convert to relative since this.lines is relative
+        cell = cell.relativeTo(this.textArea.topLeft); // Convert to relative since this.lines is relative
 
         for (const { row } of this.lines) {
             if (row === cell.row) return true;
@@ -150,10 +142,8 @@ export default class TextLayout {
      */
     includesCell(cell, requireChar = true) {
         if (requireChar) {
-            cell = cell.relativeTo(this.borderArea.topLeft); // Convert to relative since this.grid is relative
-            if (this.grid[cell.row] === undefined) return false;
-            if (this.grid[cell.row][cell.col] === undefined) return false;
-            return this.grid[cell.row][cell.col] !== EMPTY_CHAR;
+            cell = cell.relativeTo(this.textArea.topLeft); // Convert to relative since this.charGrid is relative
+            return this.charGrid.get(cell.row, cell.col) !== undefined;
         } else {
             return this.textArea.includesCell(cell);
         }
@@ -184,13 +174,11 @@ export default class TextLayout {
             const clampedEndCol = Math.min(endCol, maxCol);
 
             // Build vertices for the selected span and translate to absolute coords
-            const leftVertex = new Vertex(line.row, clampedStartCol)
-            const rightVertex = new Vertex(line.row, clampedEndCol)
-            leftVertex.translate(this.borderArea.topLeft.row, this.borderArea.topLeft.col)
-            rightVertex.translate(this.borderArea.topLeft.row, this.borderArea.topLeft.col)
+            const leftVertex = new Vertex(line.row, clampedStartCol).makeAbsolute(this.textArea.topLeft)
+            const rightVertex = new Vertex(line.row, clampedEndCol).makeAbsolute(this.textArea.topLeft)
 
-            // Create a CellArea from the vertex span. Zero-width spans are expanded to 1
-            // column, aligned according to text alignment settings.
+            // Create a CellArea from the vertex span. Zero-width spans are expanded to 1 column, aligned according
+            // to text alignment settings.
             const vertexArea = new VertexArea(leftVertex, rightVertex);
             return vertexArea.toCellArea(
                 this.alignV !== TEXT_ALIGN_V_OPTS.BOTTOM,
@@ -267,7 +255,7 @@ export default class TextLayout {
      * hidden characters are traversed.
      */
     _wrapText() {
-        const usableCols = this.textArea.numCols;
+        const usableCols = this.options.autoWidth ? Infinity : this.textArea.numCols;
 
         let textIndex = 0;
         let lineStartIndex, lastSpaceIndex;
@@ -342,50 +330,54 @@ export default class TextLayout {
 
     /**
      * Aligns text according to horizontal and vertical alignment settings. Also applies padding.
-     * Will populate a 2d array of chars which it stores in `this.grid`
+     * Will populate a 2d array of chars which it stores in `this.charGrid`
      */
     _alignText() {
-        const usableRows = this.textArea.numRows;
-        const usableCols = this.textArea.numCols;
-        let offsetTop = this.paddingV;
+        // Determine maximum number of rows/cols based on auto-width/height options
+        const usableRows = this.options.autoHeight ? this.unabridgedLines.length : this.textArea.numRows;
+        const usableCols = this.options.autoWidth ? Infinity : this.textArea.numCols;
 
+        // Truncate extra lines if not showing overflow
         this.lines = this.options.showOverflow ? this.unabridgedLines : this.unabridgedLines.slice(0, usableRows);
 
+        // Calculate vertical offset based on alignment
+        let offsetTop = 0;
         if (this.lines.length <= usableRows) {
-            // Calculate vertical offset based on alignment
             if (this.alignV === TEXT_ALIGN_V_OPTS.MIDDLE) offsetTop += Math.floor((usableRows - this.lines.length) / 2);
             else if (this.alignV === TEXT_ALIGN_V_OPTS.BOTTOM) offsetTop += (usableRows - this.lines.length);
         }
 
-
+        // Determine visible line text based on usableCols
         this.lines.forEach((line, lineIndex) => {
             line.displayText = this._calcDisplayText(line, lineIndex, usableCols);
             line.displayLength = line.displayText.length;
+        });
 
+        // Determine the actual number of columns used. This is not always the same as usableCols; e.g. usableCols
+        // could be Infinity, but we only actually use 5 columns for text. For autoWidth, we also ensure at least 1 col.
+        const usedCols = this.options.autoWidth ? Math.max(...this.lines.map(line => line.displayLength), 1) : usableCols
+
+        // Fill grid with text
+        this.charGrid = AnchoredGrid.filledGrid(usableRows, usedCols)
+        this.lines.forEach((line, lineIndex) => {
             // Calculate horizontal offset based on alignment and display length
-            let offsetLeft = this.paddingH;
-            if (this.alignH === TEXT_ALIGN_H_OPTS.CENTER) offsetLeft += Math.floor((usableCols - line.displayLength) / 2);
-            else if (this.alignH === TEXT_ALIGN_H_OPTS.RIGHT) offsetLeft += (usableCols - line.displayLength);
+            let offsetLeft = 0;
+            if (this.alignH === TEXT_ALIGN_H_OPTS.CENTER) offsetLeft += Math.floor((usedCols - line.displayLength) / 2);
+            else if (this.alignH === TEXT_ALIGN_H_OPTS.RIGHT) offsetLeft += (usedCols - line.displayLength);
 
             // Update line metadata with final position
             line.row = offsetTop + lineIndex;
             line.colOffset = offsetLeft;
 
-            // Place characters in the grid
+            // Place characters in the charGrid
             for (let charIndex = 0; charIndex < line.displayLength; charIndex++) {
                 const col = offsetLeft + charIndex;
-
-                // Add new row if this is an overflow line
-                if (!this.grid[line.row]) {
-                    this.grid.push(Array(usableCols).fill(EMPTY_CHAR));
-                    this.textArea.bottomRight.translate(1, 0);
-                }
-
-                // Only place character if it fits within grid bounds
-                // if (col < this.numCols && line.row < this.numRows) this.grid[line.row][col] = line.displayText[charIndex];
-                this.grid[line.row][col] = line.displayText[charIndex];
+                this.charGrid.set(line.row, col, line.displayText[charIndex])
             }
         });
+
+        const usedRows = Math.max(this.charGrid.length, 1); // For autoWidth, ensure at least 1 row
+        this.textArea = CellArea.fromOriginAndDimensions(this.textArea.topLeft, usedRows, usedCols);
     }
 
     _calcDisplayText(line, lineIndex, usableCols) {
@@ -425,15 +417,18 @@ export default class TextLayout {
         console.log('---------------')
     }
     printGrid() {
-        console.log('---------------')
-        const borderLine = '#'.repeat(this.numCols + 2);
-        console.log(`Grid: ${this.numCols}x${this.numRows}`);
-        console.log(borderLine);
-        this.grid.forEach(row => {
-            console.log(`#${row.map(char => char === EMPTY_CHAR ? '•' : char).join('')}#`)
-        });
-        console.log(borderLine);
-        console.log('---------------')
+        console.log(`Grid:`);
+        this.charGrid.forEach(row => {
+            if (!row) {
+                console.log('~~~~~~~~~~~');
+                return
+            }
+            console.log(row.toArray().map(char => {
+                if (char === undefined) return '•';
+                if (char === EMPTY_CHAR) return 'X';
+                return char;
+            }).join(''))
+        })
     }
 
 }

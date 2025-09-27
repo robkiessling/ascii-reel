@@ -249,35 +249,6 @@ export default class Ellipse extends BoxShape {
         }
     }
 
-    // ------------------------------------------------------ Text
-
-    // _applyTextLayout(glyphs, cellArea) {
-    //     if (!this.props[TEXT_PROP]) return null;
-    //     if (cellArea.numCols < 3 || cellArea.numRows < 3) return null;
-    //
-    //     const textLayout = new TextLayout(
-    //         this.props[TEXT_PROP],
-    //         cellArea,
-    //         {
-    //             alignH: this.props[TEXT_ALIGN_H_PROP],
-    //             alignV: this.props[TEXT_ALIGN_V_PROP],
-    //             paddingH: this.props.textPadding + 1, // Add 1 for rect's natural outline
-    //             paddingV: this.props.textPadding + 1,
-    //         }
-    //     )
-    //
-    //     textLayout.grid.forEach((row, rowIndex) => {
-    //         row.forEach((char, colIndex) => {
-    //             if (char !== EMPTY_CHAR) {
-    //                 this._setGlyph(glyphs, { row: rowIndex, col: colIndex }, char, this.props[COLOR_PROP])
-    //             }
-    //         })
-    //     })
-    //
-    //     return textLayout;
-    // }
-
-
 }
 
 registerShape(SHAPE_TYPES.ELLIPSE, Ellipse);

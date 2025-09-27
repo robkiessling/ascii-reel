@@ -363,26 +363,30 @@ export class AnchoredGrid {
      *
      * @param {(value: any, row: number, col: number) => void} callback
      */
+    forEachCell(callback) {
+        this.forEach((row, rowIndex) => {
+            if (row) {
+                row.forEach((value, colIndex) => {
+                    callback(value, rowIndex, colIndex);
+                });
+            }
+        })
+    }
+
     forEach(callback) {
         // Rows before 0: most negative up to -1
         for (let r = this._rowsBefore.length - 1; r >= 0; r--) {
-            const row = this._rowsBefore[r];
-            if (row) {
-                row.forEach((value, col) => {
-                    callback(value, -r - 1, col);
-                });
-            }
+            callback(this._rowsBefore[r], -r - 1)
         }
 
         // Rows 0 and above
         for (let r = 0; r < this._rowsAfter.length; r++) {
-            const row = this._rowsAfter[r];
-            if (row) {
-                row.forEach((value, col) => {
-                    callback(value, r, col);
-                });
-            }
+            callback(this._rowsAfter[r], r)
         }
+    }
+
+    get length() {
+        return this._rowsBefore.length + this._rowsAfter.length;
     }
 
     /**
@@ -403,7 +407,7 @@ export class AnchoredGrid {
         let minCol = Infinity;
         let maxCol = -Infinity;
 
-        this.forEach((_, row, col) => {
+        this.forEachCell((_, row, col) => {
             minRow = Math.min(minRow, row);
             maxRow = Math.max(maxRow, row);
             minCol = Math.min(minCol, col);
@@ -422,7 +426,7 @@ export class AnchoredGrid {
         // const data = Array.from({ length: numRows }, () => Array(numCols).fill(undefined));
         const data = create2dArray(numRows, numCols);
 
-        this.forEach((value, row, col) => {
+        this.forEachCell((value, row, col) => {
             const r = row - minRow;
             const c = col - minCol;
             data[r][c] = value;
