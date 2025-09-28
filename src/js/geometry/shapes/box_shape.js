@@ -17,7 +17,7 @@ export default class BoxShape extends Shape {
         { prop: 'topLeft' },
         { prop: 'numRows' },
         { prop: 'numCols' },
-        { prop: FILL_PROP, default: FILL_OPTIONS.EMPTY },
+        { prop: FILL_PROP, default: FILL_OPTIONS.WHITESPACE },
     ];
 
     serializeProps() {
@@ -58,6 +58,10 @@ export default class BoxShape extends Shape {
     translate(rowOffset, colOffset) {
         this.props.topLeft.translate(rowOffset, colOffset);
         this._clearCache();
+    }
+
+    get topLeft() {
+        return this.props.topLeft;
     }
 
     static vertexHandles(shape, boundingArea) {

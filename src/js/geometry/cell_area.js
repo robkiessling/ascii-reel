@@ -40,18 +40,32 @@ export default class CellArea extends PixelRect {
     }
 
     static fromCells(cells) {
-        const top = Math.min(...cells.map(cell => cell.row));
-        const left = Math.min(...cells.map(cell => cell.col));
-        const bottom = Math.max(...cells.map(cell => cell.row));
-        const right = Math.max(...cells.map(cell => cell.col));
+        if (cells.length === 0) return null;
+
+        let top = Infinity, left = Infinity, bottom = -Infinity, right = -Infinity;
+
+        for (const cell of cells) {
+            if (cell.row < top) top = cell.row;
+            if (cell.col < left) left = cell.col;
+            if (cell.row > bottom) bottom = cell.row;
+            if (cell.col > right) right = cell.col;
+        }
+
         return new CellArea(new Cell(top, left), new Cell(bottom, right));
     }
 
     static mergeCellAreas(cellAreas) {
-        const top = Math.min(...cellAreas.map(cellArea => cellArea.topLeft.row));
-        const left = Math.min(...cellAreas.map(cellArea => cellArea.topLeft.col));
-        const bottom = Math.max(...cellAreas.map(cellArea => cellArea.bottomRight.row));
-        const right = Math.max(...cellAreas.map(cellArea => cellArea.bottomRight.col));
+        if (cellAreas.length === 0) return null;
+
+        let top = Infinity, left = Infinity, bottom = -Infinity, right = -Infinity;
+
+        for (const cellArea of cellAreas) {
+            if (cellArea.topLeft.row < top) top = cellArea.topLeft.row;
+            if (cellArea.topLeft.col < left) left = cellArea.topLeft.col;
+            if (cellArea.bottomRight.row > bottom) bottom = cellArea.bottomRight.row;
+            if (cellArea.bottomRight.col > right) right = cellArea.bottomRight.col;
+        }
+
         return new CellArea(new Cell(top, left), new Cell(bottom, right));
     }
 

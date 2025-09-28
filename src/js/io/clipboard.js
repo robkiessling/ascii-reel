@@ -7,6 +7,7 @@ import * as state from "../state/index.js";
 import * as actions from "./actions.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import {LAYER_TYPES} from "../state/constants.js";
+import Cell from "../geometry/cell.js";
 
 let copiedSelection = {};
 
@@ -120,7 +121,6 @@ function copy() {
     }
 
     writeClipboard(copiedSelection.text);
-    resetPasteOffset();
 }
 
 /**
@@ -146,28 +146,14 @@ function paste(limitToSelection) {
                 if (selectionController.vector.isEditingText()) {
                     selectionController.vector.insertText(latestText);
                 } else if (copiedSelection.shapes) {
-                    selectionController.vector.importShapes(copiedSelection.shapes.map(shape => shape.duplicate()), pasteOffset);
-                    incrementPasteOffset();
+                    selectionController.vector.importShapes(copiedSelection.shapes.map(shape => shape.duplicate()));
                 } else {
-                    console.warn("[Not implemented] create textbox with latestText")
+                    selectionController.vector.createTextboxWithText(latestText)
                 }
                 break;
         }
     });
 }
-
-// Controls how far down-and-right to paste the content, relative to its original copy
-const PASTE_OFFSET_INCREMENT = 1;
-let pasteOffset = PASTE_OFFSET_INCREMENT;
-
-function incrementPasteOffset() {
-    pasteOffset += PASTE_OFFSET_INCREMENT;
-}
-function resetPasteOffset() {
-    pasteOffset = PASTE_OFFSET_INCREMENT;
-}
-
-
 
 // Copies a single char to the clipboard
 export function copyChar(char) {

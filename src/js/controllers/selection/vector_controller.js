@@ -4,7 +4,7 @@ import {SELECTION_COLOR} from "../../config/colors.js";
 import {
     CARET_HANDLE_SELECTION_MODES, CHAR_PROP, COLOR_PROP,
     HANDLE_CELL_RADIUS, HANDLE_TYPES, SHAPE_BOX_PADDING, SHAPE_DASHED_OUTLINE_LENGTH,
-    SHAPE_OUTLINE_WIDTH, SHAPE_TEXT_ACTIONS, SHAPE_TYPES
+    SHAPE_OUTLINE_WIDTH, SHAPE_TEXT_ACTIONS, SHAPE_TYPES, TEXT_PROP
 } from "../../geometry/shapes/constants.js";
 import CellArea from "../../geometry/cell_area.js";
 import ShapeSelector from "./shape_selector.js";
@@ -16,6 +16,7 @@ import * as tools from "../tool_controller.js";
 import Shape from "../../geometry/shapes/shape.js";
 import {isFunction} from "../../utils/utilities.js";
 import {changeTool} from "../tool_controller.js";
+import Cell from "../../geometry/cell.js";
 
 /**
  * Vector selection controller.
@@ -127,22 +128,6 @@ export function selectedShapesGlyphs() {
     return shapeSelector.glyphs;
 }
 
-export function importShapes(serializedShapes, offset) {
-    const importedShapes = serializedShapes.map(serializedShape => {
-        const shape = Shape.deserialize(serializedShape);
-        state.addCurrentCelShape(shape);
-        return shape;
-    })
-
-    setSelectedShapeIds(importedShapes.map(shape => shape.id));
-
-    // Move pasted shapes a little down and right
-    shapeSelector.translate(offset, offset)
-
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    saveDistinctHistory()
-}
-
 
 // -------------------------------------------------------------------------------- Events / Shape Selector
 
@@ -154,12 +139,14 @@ let shapeSelector = new ShapeSelector(() => {
 
 let draggedHandle = null; // handle currently being dragged (only active during mousedown/move)
 let marquee = null;
+let pasteCell; // Remember latest mouseup/mousedown cells for use when pasting
 
 function setupEventBus() {
     let prevCell;
 
     eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas }) => {
         if (mouseEvent.button !== MOUSE.LEFT) return;
+        pasteCell = cell;
         if (state.getConfig('tool') !== 'select') return;
 
         const handle = getHandle(cell, mouseEvent, canvas);
@@ -183,9 +170,10 @@ function setupEventBus() {
         prevCell = cell;
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell }) => {
         if (draggedHandle) finishHandleDrag();
         if (marquee) finishMarquee(mouseEvent);
+        pasteCell = cell;
     })
 
     // Note: We handle the EVENTS.CANVAS.DBLCLICK (and higher) in the normal MOUSEDOWN event handler using mouseEvent.detail
@@ -344,8 +332,12 @@ function finishMarquee(mouseEvent) {
 }
 
 
-// ------------------------------------------------------------------------------------------------- Textbox
+// ------------------------------------------------------------------------------------------------- Textbox/Pasting
 
+/**
+ * Creates an empty 1x1 textbox at target cell location. Textbox will be immediately put into edit-mode.
+ * @param {Cell} cell - Position to place textbox
+ */
 function createEmptyTextbox(cell) {
     const textbox = Shape.begin(SHAPE_TYPES.TEXTBOX, {
         topLeft: cell,
@@ -364,6 +356,70 @@ function createEmptyTextbox(cell) {
     saveDistinctHistory();
 }
 
+/**
+ * Creates a new textbox pre‑filled with the given text.
+ * @param {string} text - Text to fill textbox with. May contain newline chars '\n'.
+ * @param {Cell} [cell] - The cell where the textbox should be created. If omitted/undefined, will use this controller's
+ *   current paste location (typically the cell of the most recent mouse-up/mouse-down event).
+ */
+export function createTextboxWithText(text, cell = nextPasteLocation()) {
+    if (!text) return;
+
+    const textbox = Shape.begin(SHAPE_TYPES.TEXTBOX, {
+        topLeft: cell,
+        numRows: 1, // doesn't actually matter since we have auto width enabled
+        numCols: 1,
+        [CHAR_PROP]: state.getConfig('primaryChar'),
+        [COLOR_PROP]: state.primaryColorIndex(),
+        [TEXT_PROP]: text
+    })
+    state.addCurrentCelShape(textbox);
+    changeTool('select', false);
+    setSelectedShapeIds([textbox.id])
+
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    eventBus.emit(EVENTS.SELECTION.CHANGED)
+    saveDistinctHistory();
+}
+
+/**
+ * Imports and inserts serialized shapes into the current canvas frame.
+ *
+ * Each shape is deserialized, added to the current cel, and selected. After insertion, all imported shapes are
+ * translated to the current paste location.
+ *
+ * @param {Array<Object>} serializedShapes - An array of shape data to deserialize and insert.
+ */
+export function importShapes(serializedShapes) {
+    const importedShapes = serializedShapes.map(serializedShape => {
+        const shape = Shape.deserialize(serializedShape);
+        state.addCurrentCelShape(shape);
+        return shape;
+    })
+
+    setSelectedShapeIds(importedShapes.map(shape => shape.id));
+
+    shapeSelector.translateTo(nextPasteLocation());
+
+    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    saveDistinctHistory()
+}
+
+/**
+ * Returns the next cell to paste content into. Each call returns a slightly offset location, so repeated pastes
+ * won't overlap.
+ *
+ * @returns {Cell} A clone of the current paste location before it is incremented.
+ */
+function nextPasteLocation() {
+    if (!pasteCell) pasteCell = new Cell(0,0);
+    const location = pasteCell.clone();
+
+    // Nudge the cached pasteCell diagonally (down and right) for the next paste
+    pasteCell.translate(1, 1);
+
+    return location;
+}
 
 // ------------------------------------------------------------------------------------------------- Keyboard
 

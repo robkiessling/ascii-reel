@@ -136,6 +136,19 @@ export default class Line extends Shape {
         this._clearCache();
     }
 
+    get topLeft() {
+        if (this.props.path.length === 0) throw new Error("Cannot compute topLeft of empty path");
+
+        let top = Infinity, left = Infinity;
+
+        for (const cell of this.props.path) {
+            if (cell.row < top) top = cell.row;
+            if (cell.col < left) left = cell.col;
+        }
+
+        return new Cell(top, left);
+    }
+
 
 }
 

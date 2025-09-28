@@ -1,7 +1,7 @@
 import BoxShape from "./box_shape.js";
 import {
     AUTO_TEXT_WIDTH_PROP,
-    COLOR_PROP, SHAPE_TYPES, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
+    COLOR_PROP, FILL_OPTIONS, FILL_PROP, SHAPE_TYPES, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
     TEXT_ALIGN_V_PROP, TEXT_PADDING_PROP, TEXT_PROP
 } from "./constants.js";
 import TextLayout from "./text_layout.js";
@@ -14,6 +14,7 @@ import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 export default class Textbox extends BoxShape {
     static propDefinitions = [
         ...super.propDefinitions,
+        { prop: FILL_PROP, default: FILL_OPTIONS.EMPTY },
         { prop: TEXT_PROP, default: "" },
         { prop: TEXT_ALIGN_H_PROP, default: TEXT_ALIGN_H_OPTS.LEFT }, // Textbox only has horizontal alignment
         { prop: TEXT_PADDING_PROP, default: 0 },

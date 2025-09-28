@@ -56,8 +56,8 @@ export default class ShapeSelector {
         const boundingArea = this.boundingArea;
 
         return new HandleCollection([
-            ...BoxShape.vertexHandles(null, boundingArea),
-            ...BoxShape.edgeHandles(null, boundingArea),
+            ...(boundingArea ? BoxShape.vertexHandles(null, boundingArea) : []),
+            ...(boundingArea ? BoxShape.edgeHandles(null, boundingArea) : []),
             ...selectionController.vector.selectedShapes().map(shape => shape.handles.body.at(0))
         ])
     }
@@ -202,6 +202,29 @@ export default class ShapeSelector {
      */
     finishTranslate() {
         return this._translateOccurred;
+    }
+
+    /**
+     * Translates all selected shapes so that their collective top-left corner aligns with the given cell.
+     *
+     * Shapes retain their relative positions to each other; only the top-left shape is moved directly to `cell`,
+     * the rest are offset by their relative delta.
+     *
+     * @param {Cell} cell - The target cell to align the top-left selected shape to.
+     */
+    translateTo(cell) {
+        let top = Infinity, left = Infinity;
+
+        for (const shape of selectionController.vector.selectedShapes()) {
+            const shapeTopLeft = shape.topLeft;
+            if (shapeTopLeft.row < top) top = shapeTopLeft.row;
+            if (shapeTopLeft.col < left) left = shapeTopLeft.col;
+        }
+
+        const rowOffset = cell.row - top;
+        const colOffset = cell.col - left;
+
+        selectionController.vector.updateSelectedShapes(shape => shape.translate(rowOffset, colOffset), false)
     }
 
 }

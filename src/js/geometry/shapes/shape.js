@@ -379,6 +379,14 @@ export default class Shape {
         throw new Error("translate must be implemented by subclass");
     }
 
+    /**
+     * Top-left cell of the shape. Useful when translating groups of shapes and you need to determine overall topLeft.
+     * @returns {Cell}
+     */
+    get topLeft() {
+        throw new Error("topLeft must be implemented by subclass");
+    }
+
     updateColorIndexes(callback) {
         if (this.props[COLOR_PROP] !== undefined) {
             callback(this.props[COLOR_PROP], newColorIndex => this.props[COLOR_PROP] = newColorIndex);
