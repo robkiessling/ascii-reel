@@ -216,12 +216,11 @@ function setupEventBus() {
                 handleDrawMousedown(SHAPE_TYPES.TEXTBOX, cell, currentPoint);
                 break;
             case 'eraser':
-                // Eraser is just a freeform line set to monochar style & empty char
-                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, currentPoint, {
-                    [STROKE_STYLE_PROPS[SHAPE_TYPES.FREEFORM]]: STROKE_STYLE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_MONOCHAR,
-                    [CHAR_PROP]: EMPTY_CHAR,
-                    [COLOR_PROP]: undefined
-                });
+                if (state.currentLayerType() === LAYER_TYPES.RASTER) {
+                    rasterEraser(cell, currentPoint);
+                } else {
+                    vectorEraser(cell);
+                }
                 break;
             case 'paint-brush':
                 // Paint brush is just a freeform line set to monochar style with undefined char and defined color
@@ -276,7 +275,6 @@ function setupEventBus() {
             case 'draw-rect':
             case 'draw-ellipse':
             case 'draw-textbox':
-            case 'eraser':
             case 'paint-brush':
                 if (isDragging && isNewCell) handleDrawMousemove(cell, currentPoint);
                 break;
@@ -287,6 +285,13 @@ function setupEventBus() {
             case 'draw-line':
                 // Intentionally not checking if isDragging; mouseup can occur between points on polyline
                 if (isNewCell) handleDrawMousemove(cell, currentPoint);
+                break;
+            case 'eraser':
+                if (state.currentLayerType() === LAYER_TYPES.RASTER) {
+                    if (isDragging && isNewCell) handleDrawMousemove(cell, currentPoint);
+                } else {
+                    if (isDragging && isNewCell) vectorEraser(cell);
+                }
                 break;
             case 'pan':
                 if (isDragging) {
@@ -317,9 +322,15 @@ function setupEventBus() {
             case 'draw-line':
             case 'draw-ellipse':
             case 'draw-textbox':
-            case 'eraser':
             case 'paint-brush':
                 handleDrawMouseup(cell, mouseEvent);
+                break;
+            case 'eraser':
+                if (state.currentLayerType() === LAYER_TYPES.RASTER) {
+                    handleDrawMouseup(cell, mouseEvent);
+                } else {
+                    vectorEraserFinished();
+                }
                 break;
             case 'move-all':
                 finishMoveAll();
@@ -476,7 +487,7 @@ function setupSelectionTools() {
             shortcutAbbr: shortcutAbbr
         });
     }
-    
+
     registerAction('move', () => selectionController.raster.toggleMovingContent(), false, `${modifierAbbr('metaKey')}Click`);
     registerAction('flip-v', e => selectionController.raster.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
     registerAction('flip-h', e => selectionController.raster.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
@@ -1023,6 +1034,40 @@ function finishDrawing() {
     }
 
     drawingContent = null;
+    eventBus.emit(EVENTS.REFRESH.ALL);
+    state.pushHistory();
+}
+
+
+// -------------------------------------------------------------------------------- Eraser
+
+// Raster eraser is just a freeform line set to monochar style & empty char. After creating this shape,
+// its mousemove/mouseup can simply be handled by the usual handleDrawMousemove/handleDrawMouseup.
+function rasterEraser(cell, currentPoint) {
+    handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, currentPoint, {
+        [STROKE_STYLE_PROPS[SHAPE_TYPES.FREEFORM]]: STROKE_STYLE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_MONOCHAR,
+        [CHAR_PROP]: EMPTY_CHAR,
+        [COLOR_PROP]: undefined
+    });
+}
+
+// Vector eraser deletes any shapes touched by the brush
+function vectorEraser(primaryCell) {
+    const shapeIds = new Set();
+
+    hoveredCells(primaryCell).forEach(cell => {
+        const handle = state.testCurrentCelShapeHitboxes(cell);
+        if (handle && handle.shapeId) shapeIds.add(handle.shapeId);
+    });
+
+    shapeIds.forEach(shapeId => state.deleteCurrentCelShape(shapeId));
+
+    if (shapeIds.size > 0) {
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    }
+}
+
+function vectorEraserFinished() {
     eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
 }
