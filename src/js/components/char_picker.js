@@ -4,7 +4,8 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 
 
 const SPECIAL_CHARS = new Map(Object.entries({
-    [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-delete-back-2-line', large: true },
+    // [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-delete-back-2-line', large: true },
+    [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-forbid-line', large: true },
     [WHITESPACE_CHAR]: { label: 'Space', value: WHITESPACE_CHAR, wellClass: 'ri-space' },
 }))
 const WELL_CLASSES = [...SPECIAL_CHARS.values()].map(special => special.wellClass).filter(Boolean);
@@ -57,6 +58,12 @@ const CHARS = [
 
 ]
 
+const DEFAULT_OPTIONS = {
+    initialValue: "A",
+    popupDirection: 'right',
+    popupOffset: 34
+}
+
 /**
  * A CharPicker is similar to a color picker, but for selecting chars.
  */
@@ -64,17 +71,22 @@ export default class CharPicker {
     /**
      * @param $container - jQuery element for the picker container
      * @param {Object} options - Picker options
-     * @param {string} [options.initialValue] - Initial char value
+     * @param {string} [options.initialValue="A"] - Initial char value
+     * @param {"right"|"bottom"} [options.popupDirection="right"] - Direction to open popup
+     * @param {Number} [options.popupOffset=34] - Amount to offset popup
      * @param {function} [options.onOpen] - Callback when picker is opened
      * @param {function} [options.onClose] - Callback when picker is closed
-     * @param {function} [options.onChange] - Callback when picker value changes. Will be called when initial value is set.
+     * @param {function} [options.onLoad] - Callback when picker value is set for the first time
+     * @param {function} [options.onChange] - Callback when picker value changes
+     * @param {() => tippy} [options.tooltip] - Function that attaches a tooltip to the picker
      */
     constructor($container, options = {}) {
         this.$well = $container.find('.char-well');
-        this.options = options;
+        this.options = { ...DEFAULT_OPTIONS, ...options };
 
         this._init();
-        this.value(this.options.initialValue || 'A')
+        this.value(this.options.initialValue, true)
+        if (this.options.onLoad) this.options.onLoad(this.value())
     }
 
     _init() {
@@ -92,6 +104,10 @@ export default class CharPicker {
             this.value($(e.currentTarget).attr('data-char'))
             this.close();
         });
+
+        this.$popup.addClass(`position-${this.options.popupDirection}`)
+
+        if (this.options.tooltip) this._tooltip = this.options.tooltip();
     }
 
     _buildPopupHTML() {
@@ -149,11 +165,22 @@ export default class CharPicker {
     open() {
         window.addEventListener('click', this._handleOutsideClick, true);
 
-        this.$popup.show().position({
-            my: "left bottom",
-            at: "right+34 bottom",
-            of: this.$well
-        });
+        let position;
+        switch(this.options.popupDirection) {
+            case 'bottom':
+                position = { my: "left top", at: `left bottom+${this.options.popupOffset}`, of: this.$well }
+                break;
+            case 'right':
+                position = { my: "left bottom", at: `right+${this.options.popupOffset} bottom`, of: this.$well }
+                break;
+            default:
+                console.warn(`Invalid char_picker popupDirection: ${this.options.popupDirection}`)
+                return;
+        }
+
+        this.$popup.show().position(position);
+
+        if (this._tooltip) this._tooltip.disable();
 
         if (this.options.onOpen) this.options.onOpen();
     }
@@ -161,6 +188,8 @@ export default class CharPicker {
         window.removeEventListener('click', this._handleOutsideClick, true);
 
         this.$popup.hide();
+
+        if (this._tooltip) this._tooltip.enable();
 
         if (this.options.onClose) this.options.onClose();
     }
@@ -173,7 +202,13 @@ export default class CharPicker {
         }
     }
 
-    value(newValue) {
+    /**
+     * Sets and gets the char picker value
+     * @param {String} [newValue] - If defined, sets the value of char picker. If undefined, char picker is not changed
+     * @param {Boolean} [silent=true] - If true, onChange event is not fired
+     * @returns {String} - Current value of the char picker
+     */
+    value(newValue, silent = false) {
         if (newValue !== undefined) {
             this._value = newValue;
 
@@ -185,7 +220,7 @@ export default class CharPicker {
             this.$well.removeClass(WELL_CLASSES.join(' '))
             if (special && special.wellClass) this.$well.addClass(special.wellClass);
 
-            if (this.options.onChange) this.options.onChange(newValue);
+            if (!silent && this.options.onChange) this.options.onChange(newValue);
         }
 
         return this._value;

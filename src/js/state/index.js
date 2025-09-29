@@ -3,19 +3,21 @@ import * as history from './history.js';
 import * as palette from './palette.js';
 import * as unicode from './unicode.js';
 import * as timeline from './timeline/index.js';
+import * as selection from './selection/index.js';
 
 import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "../storage/local_storage.js";
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {LAYER_TYPES} from "./constants.js";
 
 export {
-    numRows, numCols, setConfig, getConfig, fontFamily, getName, updateDrawType,
-    isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
+    numRows, numCols, setConfig, getConfig, fontFamily, getName,
+    isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, RASTER_TOOLS, VECTOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {
     // layers
-    layers, layerIndex, currentLayer, createLayer, deleteLayer, updateLayer,
+    layers, layerIndex, currentLayer, currentLayerType, nextLayerName,
     reorderLayer, toggleLayerVisibility,
 
     // frames
@@ -24,8 +26,12 @@ export {
     TICKS_OPTIONS,
 
     // cels
-    iterateCelsForCurrentLayer, iterateCels, iterateCellsForCel,
-    getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph, charInBounds, layeredGlyphs, translateCel,
+    iterateCelsForCurrentLayer, iterateCels,
+    getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph,
+    getCurrentCelShapes, getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape,
+    deleteCurrentCelShape, reorderCurrentCelShapes, canReorderCurrentCelShapes,
+    getCurrentCelShapeIdsAbove, testCurrentCelShapeHitboxes, testCurrentCelMarquee,
+    isCellInBounds, layeredGlyphs, translateCel,
     colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, colorSwap, hasCharContent
 } from './timeline/index.js'
@@ -37,23 +43,14 @@ export {
     sortedChars, importChars, setUnicodeSetting, getUnicodeSetting
 } from './unicode.js'
 export {
-    pushHistory, endHistoryModification, modifyHistory, isDirty, markClean
+    pushHistory, endHistoryModification, isDirty, markClean
 } from './history.js'
 
+export * as selection from './selection/index.js'
+// todo export the other slices like this ^ instead of writing every single method
 
 export function init() {
     history.setupActions();
-}
-
-export function loadBlankState() {
-    try {
-        load({
-            timeline: timeline.newSingleCelTimeline()
-        });
-    } catch (error) {
-        console.error("Failed to load blank state:", error);
-        onLoadError({});
-    }
 }
 
 export function loadNewState(projectType, dimensions, colorMode, background) {
@@ -64,15 +61,17 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
     }
 
     try {
-        load({
+        deserialize({
             config: {
                 projectType: projectType,
                 colorMode: colorMode,
                 dimensions: dimensions,
                 background: background,
                 primaryColor: primaryColor,
+                tool: 'draw-rect' // todo remove this
             },
-            timeline: timeline.newSingleCelTimeline(),
+            // timeline: timeline.newRasterCelTimeline(),
+            timeline: timeline.newVectorCelTimeline(),
             palette: paletteState
         })
     } catch (error) {
@@ -81,21 +80,34 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
     }
 }
 
-function load(data) {
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        config.deserialize(data.config, options);
+        timeline.deserialize(data.timeline, options);
+        palette.deserialize(data.palette, options);
+        unicode.deserialize(data.unicode, options);
+        selection.deserialize(data.selection, options);
+
+        // Since current tool is not saved to config history, have to ensure an undo operation does not
+        // put is in an invalid tool state.
+        // TODO are there other checks that need to be done here?
+        config.toolFallback();
+
+        return;
+    }
+
     valid = false; // State is considered invalid until it is fully loaded
 
     history.reset();
 
-    config.load(data.config); // Load this first so dimensions and other config data is available to loaders
-    timeline.load(data.timeline);
-    palette.load(data.palette);
-    unicode.load(data.unicode);
+    config.deserialize(data.config, options); // Load config first so dimensions are available to loaders
+    timeline.deserialize(data.timeline, options);
+    palette.deserialize(data.palette, options);
+    unicode.deserialize(data.unicode, options);
+    selection.deserialize(data.selection, options);
 
     validateProjectType();
     validateColorMode();
-
-    timeline.validate();
-    timeline.vacuumColorTable();
 
     valid = true; // State is now fully loaded
 
@@ -105,74 +117,32 @@ function load(data) {
     eventBus.emit(EVENTS.STATE.LOADED);
 }
 
-export function replaceState(newState) {
-    config.replaceState(newState.config);
-    timeline.replaceState(newState.timeline);
-    palette.replaceState(newState.palette);
-    unicode.replaceState(newState.unicode);
-}
-
-export function stateForLocalStorage() {
+export function serialize(options = {}) {
     return {
         version: CURRENT_VERSION,
-        config: config.getState(),
-        timeline: timeline.getState(),
-        palette: palette.getState(),
-        unicode: unicode.getState(),
+        config: config.serialize(options),
+        timeline: timeline.serialize(options),
+        palette: palette.serialize(options),
+        unicode: unicode.serialize(options),
+        selection: selection.serialize(options),
     }
 }
-export function loadFromLocalStorage(localStorageState) {
-    const originalState = structuredClone(localStorageState);
+
+export function loadFromStorage(storedState, fileName) {
+    const originalState = structuredClone(storedState);
 
     try {
-        migrateState(localStorageState, 'localStorage');
-
-        load(localStorageState);
-    } catch (error) {
-        console.error("Failed to load from local storage:", error);
-        onLoadError(originalState);
-    }
-}
-
-/**
- * Compresses the chars & colors arrays of every cel to minimize file size.
- *
- * Storing the chars/colors 2d arrays as-is is quite inefficient in JSON (the array is converted to a string, where every
- * comma and/or quotation mark uses 1 byte). Instead, we use pako to store these 2d arrays as compressed Base64 strings.
- *
- * @returns {Object}
- */
-export function stateForDiskStorage() {
-    return {
-        version: CURRENT_VERSION,
-        config: config.getState(),
-        palette: palette.getState(),
-        unicode: unicode.getState(),
-        timeline: timeline.encodeState()
-    }
-}
-
-/**
- * Reads the disk file, converting each cel's compressed chars/colors back into arrays.
- *
- * Also handles migrating older files to the current format, in case the webapp's code has changed since the file was saved.
- */
-export function loadFromDisk(diskState, fileName) {
-    const originalState = structuredClone(diskState);
-
-    try {
-        migrateState(diskState, 'disk');
-
-        // Decode timeline
-        diskState.timeline = timeline.decodeState(diskState.timeline, diskState?.config?.dimensions?.[1])
+        migrateState(storedState);
 
         // Always prefer the file's name over the name property stored in the json.
-        if (!diskState.config) diskState.config = {};
-        diskState.config.name = fileName;
+        if (fileName !== undefined) {
+            if (!storedState.config) storedState.config = {};
+            storedState.config.name = fileName;
+        }
 
-        load(diskState);
+        deserialize(storedState, { decompress: true });
     } catch (error) {
-        console.error("Failed to load file from disk:", error);
+        console.error("Failed to load from storage:", error);
         onLoadError(originalState);
     }
 }
@@ -187,13 +157,13 @@ export function loadFromTxt(txtContent, fileName) {
             dimensions = [chars.length, Math.max(...chars.map(row => row.length))]
         }
 
-        load({
+        deserialize({
             config: {
                 colorMode: 'monochrome',
                 dimensions: dimensions,
                 name: fileName
             },
-            timeline: timeline.newSingleCelTimeline(cel),
+            timeline: timeline.newRasterCelTimeline(cel),
         })
     } catch (error) {
         console.error("Failed to load txt file from disk:", error);
@@ -206,16 +176,14 @@ export function loadFromTxt(txtContent, fileName) {
 
 // When making breaking state changes, increment this version and provide migrations so that files loaded from local
 // storage or disk still work.
-const CURRENT_VERSION = 7;
+const CURRENT_VERSION = 8;
 
 /**
  * Migrates a state object to the latest version. A state object might be out-of-date if it was saved from an earlier
  * version of the app.
  * @param {Object} state - The state object to migrate
- * @param {'disk'|'localStorage'} source - Where the state is being loaded from. Might be useful if a migration only
- *    affects certain save types.
  */
-function migrateState(state, source) {
+function migrateState(state) {
     // State migrations (list will grow longer as more migrations are added):
     if (!state.version || state.version === 1) migrateToV2(state)
     if (state.version === 2) migrateToV3(state);
@@ -223,8 +191,10 @@ function migrateState(state, source) {
     if (state.version === 4) migrateToV5(state);
     if (state.version === 5) migrateToV6(state);
     if (state.version === 6) migrateToV7(state);
+    if (state.version === 7) migrateToV8(state);
+    // After adding a new migration here, remember to update CURRENT_VERSION above
 
-    if (state.version !== CURRENT_VERSION) console.error("Version error in state migration: ", state.version);
+    if (state.version !== CURRENT_VERSION) throw new Error(`Version error in state migration: ${state.version}`);
 }
 
 function migrateToV2(state) {
@@ -321,6 +291,28 @@ function migrateToV7(state) {
     state.version = 7
 }
 
+function migrateToV8(state) {
+    Object.keys(state.timeline).forEach(key => {
+        switch(key) {
+            case 'layerController':
+                state.timeline.layerData = state.timeline.layerController;
+                break;
+            case 'frameController':
+                state.timeline.frameData = state.timeline.frameController;
+                break;
+            case 'celController':
+                state.timeline.celData = state.timeline.celController;
+                break;
+        }
+    })
+
+    delete state.timeline.layerController;
+    delete state.timeline.frameController;
+    delete state.timeline.celController;
+
+    state.version = 8;
+}
+
 
 
 // --------------------------------------------------------------------------------
@@ -331,9 +323,7 @@ export function validateColorMode() {
 
         timeline.convertToMonochrome(charColor);
         palette.convertToMonochrome(charColor);
-        if (config.MULTICOLOR_TOOLS.has(config.getConfig('tool'))) {
-            config.setConfig('tool', 'text-editor'); // ensure tool is not one of the color-related ones
-        }
+        config.toolFallback();
         config.setConfig('primaryColor', charColor)
     }
     else {
@@ -374,11 +364,61 @@ export function validateProjectType() {
     }
 }
 
+// -------------------------------------------------------------------------------- Timeline API overrides
+
+export function changeFrameIndex(newIndex) {
+    if (timeline.frameIndex() !== newIndex) {
+        if (timeline.currentLayerType() === LAYER_TYPES.VECTOR) selection.clearSelection();
+
+        timeline.changeFrameIndex(newIndex);
+    }
+}
+
+export function changeLayerIndex(newIndex) {
+    if (timeline.layerIndex() !== newIndex) {
+        if (!timeline.currentLayer() || timeline.currentLayerType() !== timeline.layerAt(newIndex).type) {
+            selection.clearSelection();
+        }
+
+        timeline.changeLayerIndex(newIndex);
+        config.toolFallback();
+    }
+}
+
+export function createLayer(index, data) {
+    timeline.createLayer(index, data);
+    changeLayerIndex(index);
+}
+
+export function updateLayer(layer, updates) {
+    if (layer.type !== updates.type) {
+        selection.clearSelection();
+        timeline.updateLayer(layer, updates);
+        config.toolFallback();
+    } else {
+        timeline.updateLayer(layer, updates);
+    }
+}
+
+export function deleteLayer(index) {
+    timeline.deleteLayer(index);
+
+    const newIndex = Math.min(timeline.layerIndex(), timeline.layers().length - 1)
+
+    // Note: When a layer is deleted, the active layer may remain at the same numeric index even though the underlying
+    //       layer has changed. To ensure `changeLayerIndex(newIndex)` always runs its side-effects, we temporarily set
+    //       the index to -1 (an invalid value) so the subsequent call is guaranteed to be treated as a change.
+    timeline.changeLayerIndex(-1);
+
+    changeLayerIndex(newIndex);
+}
+
+
 
 
 // -------------------------------------------------------------------------------- Error handling
 const $loadError = $('#load-error');
-let valid = true;
+let valid = false;
 
 function onLoadError(attemptedData) {
     console.log('attemptedData:');

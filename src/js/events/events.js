@@ -18,7 +18,12 @@ import { EventEmitter } from 'events';
  *     regardless of the order they were attached.
  */
 export const eventBus = {
-    emit: (eventName, data = {}) => emitter.emit(eventName, data), // Intentionally passing just one `data` arg (not `...args`)
+    emit: (eventName, data = {}) => {
+        // console.log('emit: ', eventName);
+
+        // Intentionally passing just one `data` arg (not `...args`)
+        emitter.emit(eventName, data)
+    },
     on: (eventNameOrNames, handler, priority = 0) => {
         if (Array.isArray(eventNameOrNames)) {
             eventNameOrNames.forEach(eventName => addListener(eventName, handler, priority))
@@ -85,7 +90,8 @@ export const EVENTS = {
         ALL: 'resize:all'
     },
     STATE: {
-        LOADED: 'state:loaded'
+        LOADED: 'state:loaded',
+        INVALIDATED: 'state:invalidated' /* Notify listeners to reset any cached state derived from the current app state */
     },
     SELECTION: {
         CHANGED: 'selection:changed',
@@ -93,10 +99,11 @@ export const EVENTS = {
     CANVAS: {
         ZOOM_DELTA: 'canvas:zoom-delta', /* Event data: { delta, target } */
         ZOOM_TO_FIT: 'canvas:zoom-to-fit',
+        ZOOM_TO_DEFAULT: 'canvas:zoom-to-default',
         PAN_DELTA: 'canvas:pan-delta', /* Event data: { delta } */
         PAN_TO_TARGET: 'canvas:pan-to-target', /* Event data: { target } */
 
-        /* Event data: { mouseEvent, cell, tool, canvasControl } */
+        /* Event data: { mouseEvent, cell, tool, canvas } */
         MOUSEDOWN: 'canvas:mousedown',
         MOUSEMOVE: 'canvas:mousemove',
         MOUSEUP: 'canvas:mouseup',
@@ -126,11 +133,12 @@ export const EVENTS = {
     THEME: {
         CHANGED: 'theme:changed',
     },
-    UNICODE: {
-        CHANGED: 'unicode:changed'
+    PALETTE: {
+        COLOR_SELECTED: 'palette:color-selected',
     },
-    KEYBOARD: {
-        SHIFT_KEY: 'keyboard:shift-key'
+    UNICODE: {
+        UPDATED: 'unicode:updated',
+        CHAR_SELECTED: 'unicode:char-selected'
     }
 }
 

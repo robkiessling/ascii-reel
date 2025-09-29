@@ -1,13 +1,12 @@
-import Rect from "./rect.js";
+import PixelRect from "./pixel_rect.js";
 import {fontHeight, fontWidth} from "../config/font.js";
 import bresenham from "bresenham";
-import {charInBounds} from "../state/index.js";
 
 /**
  * A Cell is a particular row/column pair of the drawable area. It is useful so we can deal with rows/columns instead
  * of raw x/y values.
  */
-export default class Cell extends Rect {
+export default class Cell extends PixelRect {
     constructor(row, col) {
         super();
         this.row = row;
@@ -21,6 +20,12 @@ export default class Cell extends Rect {
     }
     static y(row) {
         return row * fontHeight;
+    }
+    static get width() {
+        return fontWidth;
+    }
+    static get height() {
+        return fontHeight;
     }
 
     // Convert to/from its object representation (so we can store it in json state)
@@ -59,6 +64,12 @@ export default class Cell extends Rect {
         return this;
     }
 
+    translateTo(cell) {
+        this.row = cell.row;
+        this.col = cell.col;
+        return this;
+    }
+
     // Note: Diagonal is considered adjacent
     isAdjacentTo(cell) {
         return (cell.row !== this.row || cell.col !== this.col) && // Has to be a different cell
@@ -84,16 +95,26 @@ export default class Cell extends Rect {
         }
     }
 
-    isInBounds() {
-        return charInBounds(this.row, this.col);
-    }
-
     // Returns a new Cell that represents the relative distance of this cell from another cell
     relativeTo(cell) {
         return new Cell(this.row - cell.row, this.col - cell.col)
     }
 
+    // Returns a new Cell that represents this relative cell's absolute coords. To do so, have to supply what this cell
+    // is relative to.
+    makeAbsolute(relativeOrigin) {
+        return new Cell(this.row + relativeOrigin.row, this.col + relativeOrigin.col);
+    }
+
+    // Make absolute compared to old origin, then make relative to new origin
+    changeRelativeOrigin(oldOrigin, newOrigin) {
+        return new Cell(
+            this.row + oldOrigin.row - newOrigin.row,
+            this.col + oldOrigin.col - newOrigin.col
+        )
+    }
+
     toString() {
-        return `[R:${this.row}, C:${this.col}]`
+        return `C{r:${this.row},c:${this.col}}`
     }
 }

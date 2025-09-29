@@ -6,7 +6,7 @@
  * to save more (would require a UI for choosing the desired file, deleting files, etc.)
  */
 
-import {stateForLocalStorage, isValid, replaceState} from "../state/index.js";
+import {serialize, isValid, deserialize} from "../state/index.js";
 import {eventBus, EVENTS} from "../events/events.js";
 
 export function init() {
@@ -42,7 +42,7 @@ function setLocalStorage(storageKey, value, msgData = {}) {
 
 // ------------------------------------------------------------------------- Storing State
 const STATE_KEY = 'ascii-reel-state';
-const AUTO_SAVE_INTERVAL = 10000;
+const AUTO_SAVE_INTERVAL = 30000; // Doesn't have to be too fast; we save before page change anyway
 
 export function readState() {
     return getLocalStorage(STATE_KEY);
@@ -55,7 +55,7 @@ export function saveState() {
         return;
     }
 
-    const stateObj = stateForLocalStorage();
+    const stateObj = serialize({ compress: true });
     setLocalStorage(STATE_KEY, stateObj, { state: stateObj })
 }
 
@@ -72,7 +72,7 @@ function setupAutoSave() {
 }
 
 function onAnotherTabStateUpdate(msgData) {
-    replaceState(msgData.state);
+    deserialize(msgData.state, { replace: true, decompress: true });
     eventBus.emit(EVENTS.REFRESH.ALL);
 }
 

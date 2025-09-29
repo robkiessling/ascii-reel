@@ -41,6 +41,10 @@
 }
 
 #unicode-dialog {
+  .unicode-chars-container {
+    display: block;
+    height: auto;
+  }
   textarea {
     margin-top: 6px;
     font-family: $font-monospace;

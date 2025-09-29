@@ -6,30 +6,25 @@ const ICOMOON = 'icomoon'
 const CUSTOM = 'custom'
 
 const ICON_DATA = {
-    // 'tools.draw-freeform-types.irregular-adaptive': { type: REMIXICON, content: 'ri-brush-line' },
-    // 'tools.draw-freeform-types.irregular-monochar': { type: PRE, content: 'AAAAA\nBBBBB\nCCCCC' },
+    'tools.shapes.freeformStroke.irregular-adaptive': { type: PRE, content: "  /'.\n| | |\n'./  " },
+    'tools.shapes.freeformStroke.irregular-monochar': { type: PRE, content: "  AAA\nA A A\nAAA  " },
 
-    'tools.draw-freeform-types.irregular-adaptive': { type: PRE, content: "  /'.\n| | |\n'./  " },
-    'tools.draw-freeform-types.irregular-monochar': { type: PRE, content: "  AAA\nA A A\nAAA  " },
+    'tools.shapes.lineStroke.straight-adaptive': { type: PRE, content: "  _,-\n-'   " },
+    'tools.shapes.lineStroke.straight-monochar': { type: PRE, content: '    AA\n  AA  \nAA    ' },
 
-    'tools.draw-line-types.straight-adaptive': { type: PRE, content: "  _,-\n-'   " },
-    'tools.draw-line-types.straight-monochar': { type: PRE, content: '    AA\n  AA  \nAA    ' },
+    'tools.shapes.rectStroke.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
+    'tools.shapes.rectStroke.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
+    'tools.shapes.rectStroke.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },
+    'tools.shapes.rectStroke.outline-unicode-2': { type: PRE, content: "╔═══╗\n║   ║\n╚═══╝" },
+    'tools.shapes.rectStroke.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
 
-    'tools.draw-line-types.elbow-line-ascii': { type: PRE, content: '+----\n|    \n|    ' },
-    'tools.draw-line-types.elbow-arrow-ascii': { type: PRE, content: '+--->\n|    \n|    ' },
-    'tools.draw-line-types.elbow-line-unicode': { type: PRE, content: '┌────\n│    \n│    ' },
-    'tools.draw-line-types.elbow-arrow-unicode': { type: PRE, content: '┌───▶\n│    \n│    ' },
-    'tools.draw-line-types.elbow-line-monochar': { type: PRE, content: 'AAAAA\nA    \nA    ' },
+    'tools.shapes.ellipseStroke.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
 
-    'tools.draw-rect-types.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
-    'tools.draw-rect-types.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
-    'tools.draw-rect-types.outline-unicode-1': { type: PRE, content: "┌───┐\n│   │\n└───┘" },
-    'tools.draw-rect-types.outline-unicode-2': { type: PRE, content: "╔═══╗\n║   ║\n╚═══╝" },
-    'tools.draw-rect-types.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
-    'tools.draw-rect-types.filled-monochar': { type: PRE, content: "AAAAA\nAAAAA\nAAAAA" },
-
-    'tools.draw-ellipse-types.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
-    'tools.draw-ellipse-types.filled-monochar': { type: PRE, content: " AAA \nAAAAA\n AAA " },
+    // 'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-delete-back-2-line' },
+    'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-forbid-line' },
+    'tools.shapes.fill.whitespace': { type: REMIXICON, content: 'ri-space' },
+    // 'tools.shapes.fill.monochar': { type: PRE, content: "A", style: "font-size: 1.5rem;" },
+    'tools.shapes.fill.monochar': { type: REMIXICON, content: 'ri-input-method-line' },
 
     'tools.selection.move': { type: REMIXICON, content: 'ri-drag-move-2-fill' },
     'tools.selection.flip-v': { type: REMIXICON, content: 'ri-flip-vertical-fill' },
@@ -50,6 +45,36 @@ const ICON_DATA = {
     },
     'tools.selection.resize': { type: REMIXICON, content: 'ri-crop-line' },
     'tools.selection.close': { type: REMIXICON, content: 'ri-close-line' },
+
+    'tools.brush.pixel-perfect': { type: REMIXICON, content: 'ri-crosshair-2-line' },
+    'tools.brush.square-1': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 0.5rem;" },
+    'tools.brush.square-2': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 0.75rem;" },
+    'tools.brush.square-3': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 1rem;" },
+    'tools.brush.square-5': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 1.25rem;" },
+    'tools.brush.square-10': { type: REMIXICON, content: 'ri-checkbox-blank-fill', style: "font-size: 1.5rem;" },
+    'tools.brush.diamond-3': { type: REMIXICON, content: 'ri-checkbox-blank-fill rotate45', style: "font-size: 1rem;" },
+    'tools.brush.diamond-5': { type: REMIXICON, content: 'ri-checkbox-blank-fill rotate45', style: "font-size: 1.25rem;" },
+    'tools.brush.diamond-10': { type: REMIXICON, content: 'ri-checkbox-blank-fill rotate45', style: "font-size: 1.5rem;" },
+
+    'tools.shapes.order': { type: REMIXICON, content: 'ri-stack-line' },
+    'tools.shapes.sendToBack': { type: REMIXICON, content: 'ri-contract-right-line rotate90' },
+    'tools.shapes.sendBackward': { type: REMIXICON, content: 'ri-arrow-right-line rotate90' },
+    'tools.shapes.bringForward': { type: REMIXICON, content: 'ri-arrow-right-line rotate270' },
+    'tools.shapes.bringToFront': { type: REMIXICON, content: 'ri-contract-right-line rotate270' },
+
+    'tools.shapes.delete': { type: REMIXICON, content: 'ri-delete-bin-line' },
+
+    'tools.shapes.editText': { type: REMIXICON, content: 'ri-text' },
+
+    'tools.shapes.textAlignH.alignLeft': { type: REMIXICON, content: 'ri-align-left' },
+    'tools.shapes.textAlignH.alignCenter': { type: REMIXICON, content: 'ri-align-center' },
+    'tools.shapes.textAlignH.alignRight': { type: REMIXICON, content: 'ri-align-right' },
+    // 'tools.shapes.textAlignV.alignTop': { type: REMIXICON, content: 'ri-align-top' },
+    // 'tools.shapes.textAlignV.alignMiddle': { type: REMIXICON, content: 'ri-align-vertically' },
+    // 'tools.shapes.textAlignV.alignBottom': { type: REMIXICON, content: 'ri-align-bottom' },
+    'tools.shapes.textAlignV.alignTop': { type: REMIXICON, content: 'ri-align-item-top-line' },
+    'tools.shapes.textAlignV.alignMiddle': { type: REMIXICON, content: 'ri-align-item-vertical-center-line' },
+    'tools.shapes.textAlignV.alignBottom': { type: REMIXICON, content: 'ri-align-item-bottom-line' },
 
     'themes.dark-mode': { type: REMIXICON, content: 'ri-moon-line' },
     'themes.light-mode': { type: REMIXICON, content: 'ri-sun-line' },

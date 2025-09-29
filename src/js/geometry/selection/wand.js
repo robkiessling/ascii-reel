@@ -1,15 +1,29 @@
-import * as state from "../../state/index.js";
 import Cell from "../cell.js";
-import SelectionPolygon from "./polygon.js";
+import SelectionShape from "./shape.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
+import {SELECTION_SHAPE_TYPES} from "./constants.js";
+import {getCurrentCelGlyph, isCellInBounds} from "../../state/index.js";
 
 /**
- * SelectionWand starts with a single cell and then finds all connected cells of the same color.
+ * WandSelection starts with a single cell and then finds all connected cells of the same color.
  * Supports the following options:
  * - diagonal: (boolean) Whether to include diagonally adjacent cells or not
  * - colorblind (boolean) If true, finds connected cells regardless of color.
  */
-export default class SelectionWand extends SelectionPolygon {
+export default class WandSelection extends SelectionShape {
+    static type = SELECTION_SHAPE_TYPES.WAND;
+
+    serialize() {
+        return { type: this.type, cells: this._cells.map(cell => cell.serialize()) };
+    }
+
+    static deserialize(data) {
+        const wand = new WandSelection(null, null);
+        wand._cells = data.cells.map(cell => Cell.deserialize(cell));
+        wand._cacheEndpoints();
+        wand.completed = true;
+        return wand;
+    }
 
     get cells() {
         return this._cells;
@@ -21,7 +35,7 @@ export default class SelectionWand extends SelectionPolygon {
 
     draw(context) {
         this._cells.forEach(cell => {
-            if (cell.isInBounds()) {
+            if (isCellInBounds(cell)) {
                 context.fillRect(...cell.xywh);
             }
         });
@@ -61,7 +75,7 @@ export default class SelectionWand extends SelectionPolygon {
     }
 
     complete() {
-        const [startChar, startColor] = state.getCurrentCelGlyph(this.start.row, this.start.col);
+        const [startChar, startColor] = getCurrentCelGlyph(this.start.row, this.start.col);
         const isBlank = startChar === EMPTY_CHAR;
         const charblind = this.options.charblind;
         const colorblind = this.options.colorblind;
@@ -79,7 +93,7 @@ export default class SelectionWand extends SelectionPolygon {
 
             if (visitedCells[key(cell)]) continue; // Skip cell if we've already visited it
 
-            const [char, color] = state.getCurrentCelGlyph(cell.row, cell.col);
+            const [char, color] = getCurrentCelGlyph(cell.row, cell.col);
             if (char === undefined) continue; // Skip cell if out of bounds
 
             // If starting character was blank, only keep blank cells. Otherwise only keep non-blank cells

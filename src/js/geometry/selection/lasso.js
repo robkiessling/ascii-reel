@@ -1,13 +1,31 @@
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
-import SelectionPolygon from "./polygon.js";
+import SelectionShape from "./shape.js";
+import {SELECTION_SHAPE_TYPES} from "./constants.js";
+import {isCellInBounds} from "../../state/index.js";
 
 /**
- * A SelectionLasso starts off as just an array of Cells (_lassoCells) as the user clicks and drags the mouse. When
+ * A LassoSelection starts off as just an array of Cells (_lassoCells) as the user clicks and drags the mouse. When
  * the mouse click is released the lasso will connect the end point to the start point to complete the polygon. Then
  * the polygon is filled in and stored as an array of rectangular CellAreas (_lassoAreas).
  */
-export default class SelectionLasso extends SelectionPolygon {
+export default class LassoSelection extends SelectionShape {
+    static type = SELECTION_SHAPE_TYPES.LASSO;
+
+    serialize() {
+        return {
+            type: this.type,
+            areas: (this._lassoAreas || []).map(area => area.serialize())
+        };
+    }
+
+    static deserialize(data) {
+        const lasso = new LassoSelection(null, null);
+        lasso._lassoAreas = data.areas.map(area => CellArea.deserialize(area));
+        lasso._cacheEndpoints();
+        lasso.completed = true;
+        return lasso;
+    }
 
     iterateCells(callback) {
         if (this._lassoAreas) {
@@ -24,7 +42,7 @@ export default class SelectionLasso extends SelectionPolygon {
         }
         else {
             this._lassoCells.forEach(cell => {
-                if (cell.isInBounds()) {
+                if (isCellInBounds(cell)) {
                     context.fillRect(...cell.xywh);
                 }
             });

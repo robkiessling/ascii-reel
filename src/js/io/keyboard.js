@@ -1,148 +1,134 @@
-import * as selection from "../features/selection.js";
+import * as selectionController from "../controllers/selection/index.js";
 import * as state from "../state/index.js";
-import * as tools from "../features/tools.js";
+import * as tools from "../controllers/tool_controller.js";
 import * as actions from "./actions.js";
-import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
-import {toggleQuickSwap} from "../features/tools.js";
-
-const $document = $(document);
 
 export function init() {
     setupKeydownListener();
     setupCompositionListener();
 }
 
+const $document = $(document);
+let prevKey;
 
 function setupKeydownListener() {
     $document.keydown(function(e) {
-        const char = e.key; // E.g. x X 1 Control Alt Shift Meta Enter [ { \ /
-        // console.log(char);
+        const key = e.key; // Keyboard key. E.g., 'a', 'A', '1', '+', 'Shift', 'Enter', 'Backspace', etc.
 
-        if (useStandardKeyboard()) {
-            handleStandardKeyboard(char, e);
-            return;
-        }
+        // console.log(`key: "${key}", prevKey: "${prevKey}"`)
 
-        if (char === 'Unidentified') {
-            console.warn(`Unidentified key for event: ${e}`);
-            return;
-        }
-
-        // A 'Dead' char is received when composition starts (see composition section below)
-        if (char === 'Dead' || isComposing) return;
-
-        // Ascii Reel Shortcuts
-        if (e.metaKey || e.ctrlKey || e.altKey) {
-            const modifiers = ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'].filter(modifier => e[modifier]);
-            if (actions.callActionByShortcut({ char: char, modifiers: modifiers })) {
-                e.preventDefault();
+        try {
+            if (useStandardKeyboard()) {
+                handleStandardKeyboard(key, e);
                 return;
             }
-        }
 
-        // If the metaKey/ctrlKey is down, and it did not reach one of our shortcuts, the user is likely performing
-        // a standard browser shortcut (e.g. cmd-R to reload). Return early (without preventing default) so that the
-        // browser shortcut works as normal. Note: a few browser shortcuts are prevented, see handleBrowserShortcut.
-        if (e.metaKey || e.ctrlKey) {
-            handleBrowserShortcut(e, char);
-            return;
-        }
+            if (key === 'Unidentified') {
+                console.warn(`Unidentified key for event: ${e}`);
+                return;
+            }
 
-        switch (char) {
-            case 'Escape':
-                handleEscapeKey();
-                break;
-            case 'Tab':
-                handleTabKey(e);
-                break;
-            case 'Enter':
-                handleEnterKey(e);
-                break;
-            case 'Backspace':
-            case 'Delete':
-                handleBackspaceKey(char);
-                break;
-            case 'ArrowLeft':
-            case 'ArrowUp':
-            case 'ArrowRight':
-            case 'ArrowDown':
-                handleArrowKey(e, char);
-                break;
-            case 'Shift':
-                handleShiftKey(e);
-                break;
-            default:
-                if (char.length !== 1) return; // Unrecognized input; let browser handle as normal
-                handleSingleCharKey(char);
-        }
+            // A 'Dead' key is received when composition starts (see composition section below)
+            if (key === 'Dead' || isComposing) return;
 
-        e.preventDefault();
+            // App Shortcuts
+            if (e.metaKey || e.ctrlKey || e.altKey) {
+                const modifiers = ['metaKey', 'ctrlKey', 'altKey', 'shiftKey'].filter(modifier => e[modifier]);
+                if (actions.callActionByShortcut({ key, modifiers })) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            // If the metaKey/ctrlKey is down, and it did not call an app shortcut, the user is likely performing
+            // a standard browser shortcut (e.g. cmd-R to reload). Return early (without preventing default) so that the
+            // browser shortcut works as normal. Note: a few browser shortcuts are prevented, see handleBrowserShortcut.
+            if (e.metaKey || e.ctrlKey) {
+                handleBrowserShortcut(e, key);
+                return;
+            }
+
+            switch (key) {
+                case 'Escape':
+                    handleEscapeKey();
+                    break;
+                case 'Tab':
+                    handleTabKey(e);
+                    break;
+                case 'Enter':
+                    handleEnterKey(key, e);
+                    break;
+                case 'Backspace':
+                case 'Delete':
+                    handleBackspaceKey(key);
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    handleArrowKey(key, e);
+                    break;
+                default:
+                    if (key.length !== 1) return; // Unrecognized input; let browser handle as normal
+                    handleCharKey(key);
+            }
+
+            e.preventDefault();
+        } finally {
+            prevKey = key;
+        }
     });
-
-    $document.keyup(function(e) {
-        const char = e.key; // E.g. x X 1 Control Alt Shift Meta Enter [ { \ /
-
-        switch (char) {
-            case 'Shift':
-                handleShiftKey(e);
-                break;
-            default:
-                // Do nothing
-        }
-    })
 }
+
+// -------------------------------------------------------------------------- Key handlers
+/**
+ * Each controller is given a chance to handle the key in order. If a controller consumes the event (by returning
+ * true), subsequent controllers are skipped.
+ */
 
 function handleEscapeKey() {
     state.endHistoryModification();
 
-    selection.clear();
-
-    if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
-    if (tools.isQuickSwapEnabled()) tools.toggleQuickSwap(false);
+    if (tools.handleEscapeKey()) return;
+    if (selectionController.raster.handleEscapeKey()) return;
+    if (selectionController.vector.handleEscapeKey()) return;
 }
 
 function handleTabKey(e) {
-    state.endHistoryModification();
+    if (selectionController.raster.handleTabKey(e.shiftKey)) return;
 
-    if (selection.caretCell()) {
-        selection.handleTabKey(e.shiftKey);
-    }
-    else {
-        actions.callActionByShortcut({ char: 'Tab' })
-    }
+    actions.callActionByShortcut({ key: 'Tab' })
 }
 
-function handleEnterKey(e) {
-    selection.handleEnterKey(e.shiftKey);
+function handleEnterKey(key, e) {
+    if (selectionController.raster.handleEnterKey(e.shiftKey)) return;
+    if (selectionController.vector.handleEnterKey(e.shiftKey)) return;
+
+    actions.callActionByShortcut({ key });
 }
 
-function handleBackspaceKey(char) {
-    handleChar(EMPTY_CHAR, () => selection.handleBackspaceKey(char === 'Delete'))
+function handleBackspaceKey(key) {
+    if (tools.handleCharKey(EMPTY_CHAR)) return;
+    if (selectionController.raster.handleBackspaceKey(key === 'Delete')) return;
+    if (selectionController.vector.handleBackspaceKey(key === 'Delete')) return;
+    actions.callActionByShortcut({ key });
 }
 
-function handleArrowKey(e, arrowKey) {
+function handleCharKey(char) {
+    if (tools.handleCharKey(char)) return;
+    if (selectionController.raster.handleCharKey(char)) return;
+    if (selectionController.vector.handleCharKey(char)) return;
+    actions.callActionByShortcut({ key: char });
+}
+
+function handleArrowKey(arrowKey, e) {
     const direction = arrowKeyToDirection(arrowKey);
 
-    if (selection.hasTarget()) {
-        state.endHistoryModification();
+    if (selectionController.raster.handleArrowKey(direction, e.shiftKey)) return;
+    if (selectionController.vector.handleArrowKey(direction, e.shiftKey)) return;
 
-        selection.handleArrowKey(direction, e.shiftKey);
-    }
-    else {
-        switch(direction) {
-            case 'left':
-                return actions.callAction('frames.previous-frame')
-            case 'up':
-                return actions.callAction('frames.previous-frame')
-            case 'right':
-                return actions.callAction('frames.next-frame')
-            case 'down':
-                return actions.callAction('frames.next-frame')
-            default:
-                console.warn(`Invalid direction: ${direction}`);
-        }
-    }
+    actions.callActionByShortcut({ key: arrowKey });
 }
 
 function arrowKeyToDirection(arrowKey) {
@@ -155,53 +141,6 @@ function arrowKeyToDirection(arrowKey) {
             return 'right';
         case 'ArrowDown':
             return 'down';
-    }
-}
-
-function handleShiftKey(e) {
-    eventBus.emit(EVENTS.KEYBOARD.SHIFT_KEY, { shiftKey: e.shiftKey });
-}
-
-function handleSingleCharKey(char, moveCaret = true) {
-    handleChar(char, () => selection.setSelectionToSingleChar(char, state.primaryColorIndex(), moveCaret))
-}
-
-function handleChar(char, selectionUpdater) {
-    if (tools.isCharPickerOpen()) {
-        tools.selectChar(char);
-        if (!isComposing) tools.toggleCharPicker(false);
-        return;
-    }
-
-    if (tools.isQuickSwapEnabled()) tools.selectChar(char);
-
-    if (selection.caretCell()) {
-        selectionUpdater()
-    } else if (tools.isQuickSwapEnabled()) {
-        if (selection.hasSelection()) selectionUpdater()
-    } else {
-        actions.callActionByShortcut({ char: char })
-    }
-}
-
-function handleStandardKeyboard(char, e) {
-    if (char === 'Enter') {
-        $document.trigger('keyboard:enter');
-        e.preventDefault();
-    }
-}
-
-const PREVENT_DEFAULT_BROWSER_SHORTCUTS = new Set([
-    // Preventing normal browser zoom in/out since we use these same keys to zoom in/out of the canvas. Normally our
-    // own shortcut already prevents normal browser behavior, but if the canvas is zoomed all the way in/out our action
-    // will actually be disabled, meaning our shortcut does not prevent default browser behavior.
-    '-', '=', '0'
-])
-
-// A few browser shortcuts are prevented. See PREVENT_DEFAULT_BROWSER_SHORTCUTS for details.
-function handleBrowserShortcut(e, char) {
-    if (PREVENT_DEFAULT_BROWSER_SHORTCUTS.has(char)) {
-        e.preventDefault();
     }
 }
 
@@ -241,23 +180,52 @@ function useStandardKeyboard() {
     return Object.values(standardKeyboardLocks).some(value => value === true)
 }
 
+function handleStandardKeyboard(key, e) {
+    if (key === 'Enter') {
+        $document.trigger('keyboard:enter');
+        e.preventDefault();
+    }
+}
 
+const PREVENT_DEFAULT_BROWSER_SHORTCUTS = new Set([
+    // Preventing normal browser zoom in/out since we use these same keys to zoom in/out of the canvas. Normally our
+    // own shortcut already prevents normal browser behavior, but if the canvas is zoomed all the way in/out our action
+    // will actually be disabled, meaning our shortcut does not prevent default browser behavior.
+    '-', '=', '0'
+])
+
+// A few browser shortcuts are prevented. See PREVENT_DEFAULT_BROWSER_SHORTCUTS for details.
+function handleBrowserShortcut(e, key) {
+    if (PREVENT_DEFAULT_BROWSER_SHORTCUTS.has(key)) {
+        e.preventDefault();
+    }
+}
 
 // ---------------------------------------------------------------------------------- Composition
 /**
- * Composition is a way to type special characters by pressing a sequence of keys. For example, on macOS you can
- * press option+e once to create a ´ character (with an underline under it). Then you can press another character
- * such as e, i, or a, to create é, í, or á, respectively.
+ * Composition is a way to enter special characters by pressing a sequence of keys.
+ * There are two common types of composition:
  *
- * We simulate this in the canvas by listening for compositionstart/update/end and drawing each intermediate
- * composition char.
+ * 1) Dead key composition. For example, on macOS you can press Option+E once to start an accent composition. The
+ *    accent "´" appears with an underline, indicating that the accent is pending. The next key determines the
+ *    final character: pressing e → "é", i → "í", a → "á", etc. In this case the first keystroke ("´") is reported
+ *    as a 'Dead' key and composition begins immediately.
+ *
+ * 2) IME composition. For example, when using Chinese Pinyin input on macOS, typing "mei" is converted to "美".
+ *    However, the first keystroke "m" is inserted as normal text because composition has not started yet.
+ *    When the second key "e" is pressed, composition begins, and editors must roll back the previously
+ *    inserted "m" so it can be included in the composition buffer.
+ *
+ * We try to simulate this as best we can in the canvas by listening for compositionstart/update/end and drawing each
+ * intermediate composition char.
  */
 
 let isComposing = false;
 
 function setupCompositionListener() {
     // To ensure composition works (even though the user is not typing into an input) we create a hidden input
-    // offscreen that we focus on keydown
+    // offscreen that we focus on keydown.
+    // TODO For IME composition, it may be helpful if this <input> is shown near the cursor, so they can see autocompletes
     let hiddenInput = $("<input>").css({
         position: "absolute",
         left: "-9999px",
@@ -270,26 +238,33 @@ function setupCompositionListener() {
 
     $document.on('compositionstart', e => {
         isComposing = true;
+
+        // IME compositions need to rollback the previous character. See comment at start of this section for more info.
+        const rollbackPrevChar = prevKey !== 'Dead';
+
+        if (tools.handleCompositionStart(rollbackPrevChar)) return;
+        if (selectionController.raster.handleCompositionStart(rollbackPrevChar)) return;
+        if (selectionController.vector.handleCompositionStart(rollbackPrevChar)) return;
     });
 
     $document.on('compositionupdate', e => {
         const str = e.originalEvent.data;
 
-        // The str can be two characters long if composition failed, e.g. "`" + "x" = "`x"
-        // We always take the last character, so even if composition failed we still print the failing char (e.g. "x")
-        const char = str.charAt(str.length - 1)
+        // The composed str can be multiple characters long if dead char composition failed (e.g. "´" + "x" = "´x"), or
+        // if using IME composition. We pass the last string char as a second parameter to handlers in case they only
+        // support strings of length 1.
+        const char = str.charAt(str.length - 1);
 
-        // When writing the char, do not move the caret yet (moveCaret=false) because we might not be done composing
-        handleSingleCharKey(char, false);
+        if (tools.handleCompositionUpdate(str, char)) return;
+        if (selectionController.raster.handleCompositionUpdate(str, char)) return;
+        if (selectionController.vector.handleCompositionUpdate(str, char)) return;
     });
 
     $document.on('compositionend', e => {
         isComposing = false;
 
-        if (tools.isCharPickerOpen()) tools.toggleCharPicker(false);
-
-        // Since we didn't move the caret in compositionupdate (moveCaret=false), we move the caret now that
-        // composition is finished
-        selection.moveInDirection('right', { updateCaretOrigin: false })
+        if (tools.handleCompositionEnd()) return;
+        if (selectionController.raster.handleCompositionEnd()) return;
+        if (selectionController.vector.handleCompositionEnd()) return;
     })
 }

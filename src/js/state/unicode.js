@@ -11,15 +11,18 @@ const SETTINGS = new Set(['autoAddAscii', 'autoAddUnicode'])
 let state = {};
 let unicodeCache = new Set();
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE, newState);
-    importChars(newState.chars || [])
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        state = data;
+        unicodeCache = new Set(state.chars);
+        return;
+    }
+
+    state = $.extend(true, {}, DEFAULT_STATE, data);
+    importChars(data.chars || [])
 }
-export function replaceState(newState) {
-    state = newState;
-    unicodeCache = new Set(state.chars);
-}
-export function getState() {
+
+export function serialize() {
     return state;
 }
 
@@ -30,7 +33,7 @@ export function sortedChars() {
 export function importChars(newChars) {
     unicodeCache = new Set(newChars); // Remove any dups
     state.chars = [...unicodeCache].filter(char => char.length === 1);
-    eventBus.emit(EVENTS.UNICODE.CHANGED);
+    eventBus.emit(EVENTS.UNICODE.UPDATED);
 }
 
 export function setUnicodeSetting(key, value) {
@@ -61,6 +64,6 @@ export function addToCache(char) {
     if (!unicodeCache.has(char)) {
         unicodeCache.add(char);
         state.chars = [...unicodeCache];
-        eventBus.emit(EVENTS.UNICODE.CHANGED);
+        eventBus.emit(EVENTS.UNICODE.UPDATED);
     }
 }

@@ -1,4 +1,4 @@
-import ArrayRange from "../../utils/arrays.js";
+import {ArrayRange} from "../../utils/arrays.js";
 
 const DEFAULT_STATE = {
     frames: [],
@@ -17,21 +17,22 @@ export const TICKS_OPTIONS = [0, 1, 2, 3, 4, 5, 10];
 let state = {};
 let idSequence = 0;
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE);
-
-    if (newState.frames) {
-        state.frames = newState.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame));
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        state = data;
+        return;
     }
 
-    state.currentIndex = 0; // Do not import from newState; always start at 0
+    state = $.extend(true, {}, DEFAULT_STATE, data);
+
+    if (data.frames) {
+        state.frames = data.frames.map(frame => $.extend(true, {}, FRAME_DEFAULTS, frame));
+    }
 
     idSequence = Math.max(...state.frames.map(frame => frame.id), 0);
 }
-export function replaceState(newState) {
-    state = newState;
-}
-export function getState() {
+
+export function serialize() {
     return state;
 }
 
@@ -39,9 +40,12 @@ export function frames() {
     return state.frames;
 }
 
-export function frameIndex(newIndex) {
-    if (newIndex !== undefined) state.currentIndex = newIndex;
+export function frameIndex() {
     return state.currentIndex;
+}
+
+export function changeFrameIndex(newIndex) {
+    state.currentIndex = newIndex;
 }
 
 /**
@@ -87,7 +91,7 @@ export function previousFrame() {
 }
 
 export function createFrame(index, data) {
-    const frame = $.extend({}, FRAME_DEFAULTS, {
+    const frame = $.extend(true, {}, FRAME_DEFAULTS, {
         id: ++idSequence
     }, data);
 
@@ -104,7 +108,7 @@ export function duplicateFrames(range) {
     const mappings = [];
     range.iterate(frameIndex => {
         const originalFrame = state.frames[frameIndex];
-        const dupFrame = $.extend({}, originalFrame, {
+        const dupFrame = $.extend(true, {}, originalFrame, {
             id: ++idSequence
         });
         mappings.push({ originalFrame, dupFrame })

@@ -35,7 +35,7 @@ export async function openFile() {
     if (type === 'text/plain' || ext === 'txt') {
         state.loadFromTxt(fileText, fileNameWithoutExtension(file.name, 'txt'));
     } else {
-        state.loadFromDisk(JSON.parse(fileText), fileNameWithoutExtension(file.name, FILE_EXTENSION));
+        state.loadFromStorage(JSON.parse(fileText), fileNameWithoutExtension(file.name, FILE_EXTENSION));
     }
 }
 
@@ -53,7 +53,7 @@ export async function openFile() {
 export async function saveFile(saveToActiveFile) {
     if (saveToActiveFile && !fileHandle) throw new Error(`No handle found for saveToActiveFile`);
 
-    const serializedState = JSON.stringify(state.stateForDiskStorage());
+    const serializedState = JSON.stringify(state.serialize({ compress: true }));
     const blob = new Blob([serializedState], {
         type: MIME_TYPE,
     });

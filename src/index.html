@@ -45,7 +45,8 @@
 
                     <div class="standard-tool-row">
                         <div class="standard-tool-column">
-                            <div class="standard-tool" data-tool="text-editor"><span class="ri ri-fw ri-text"></span></div>
+                            <div class="standard-tool vector-tool" data-tool="select"><span class="ri ri-fw ri-cursor-line"></span></div>
+                            <div class="standard-tool raster-tool" data-tool="text-editor"><span class="ri ri-fw ri-input-field"></span></div>
                         </div>
                     </div>
 
@@ -59,16 +60,18 @@
                             <div class="standard-tool" data-tool="eraser"><span class="ri ri-fw ri-eraser-line"></span></div>
                             <div class="standard-tool" data-tool="draw-rect"><span class="icon-rect-solid"></span></div>
 
-                            <div class="standard-tool" data-tool="fill-char">
+                            <div class="standard-tool raster-tool" data-tool="fill-char">
                                 <span class="ri ri-fw ri-paint-fill ri-paint-fill-no-droplet"></span>
                                 <span class="picked-char">A</span>
                             </div>
+
+                            <div class="standard-tool vector-tool" data-tool="draw-textbox"><span class="ri ri-fw ri-t-box-line"></span></div>
                         </div>
                     </div>
 
-                    <div class="spacer"></div>
+                    <div class="spacer raster-tool"></div>
 
-                    <div class="standard-tool-row">
+                    <div class="standard-tool-row raster-tool">
                         <div class="standard-tool-column">
                             <div class="standard-tool" data-tool="selection-rect"><span class="icon-rect-dashed"></span></div>
                             <div class="standard-tool" data-tool="selection-lasso"><span class="icon-lasso-dashed"></span></div>
@@ -90,9 +93,9 @@
                         </div>
                     </div>
 
-                    <div class="spacer color-tool"></div>
+                    <div class="spacer color-tool raster-tool"></div>
 
-                    <div class="standard-tool-row color-tool">
+                    <div class="standard-tool-row color-tool raster-tool">
                         <div class="standard-tool-column">
                             <div class="standard-tool" data-tool="paint-brush"><span class="ri ri-fw ri-brush-line"></span></div>
                             <div class="standard-tool" data-tool="color-swap"><span class="ri ri-fw ri-palette-line"></span></div>
@@ -126,7 +129,7 @@
                     </div>
 
                 </div>
-                <div id="context-tools">
+                <div id="context-tools-left">
                     <div id="selection-tools" class="sub-tool-menu" style="display: none;">
                         <div class="sub-tool" data-tool="move"></div>
                         <div class="sub-tool" data-tool="flip-v"></div>
@@ -139,55 +142,56 @@
                         <div class="sub-tool" data-tool="resize"></div>
                         <div class="sub-tool" data-tool="close"></div>
                     </div>
-                    <div id="draw-freeform-types" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-type="irregular-adaptive"></div>
-                        <div class="sub-tool" data-type="irregular-monochar"></div>
-                    </div>
-                    <div id="draw-rect-types" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-type="outline-ascii-1"></div>
-                        <div class="sub-tool" data-type="outline-ascii-2"></div>
-                        <div class="sub-tool" data-type="outline-unicode-1"></div>
-                        <div class="sub-tool" data-type="outline-unicode-2"></div>
-                        <div class="sub-tool" data-type="outline-monochar"></div>
-                        <div class="sub-tool" data-type="filled-monochar"></div>
-                    </div>
-                    <div id="draw-line-types" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-type="straight-adaptive"></div>
-                        <div class="sub-tool" data-type="straight-monochar"></div>
-                        <div class="sub-tool" data-type="elbow-line-ascii"></div>
-                        <div class="sub-tool" data-type="elbow-arrow-ascii"></div>
-                        <div class="sub-tool" data-type="elbow-line-unicode"></div> <!-- TODO -->
-                        <div class="sub-tool" data-type="elbow-arrow-unicode"></div>
-                        <div class="sub-tool" data-type="elbow-line-monochar"></div>
-                    </div>
-                    <div id="draw-ellipse-types" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-type="outline-monochar"></div>
-                        <div class="sub-tool" data-type="filled-monochar"></div>
-                    </div>
-                    <div id="brush-shapes" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-shape="square" data-size="1">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.5rem;"></span>
+                </div>
+
+                <div id="context-tools-top">
+                    <div id="shape-properties" class="sub-tool-menu" style="display: none;">
+                        <div class="property-group" id="shape-stroke-menu-group">
+                            <span class="group-title">Stroke</span>
+                            <div class="group-actions"></div>
                         </div>
-                        <div class="sub-tool" data-shape="square" data-size="2">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 0.75rem;"></span>
+                        <div class="property-group" id="shape-brush-menu-group">
+                            <span class="group-title">Brush</span>
+                            <div class="group-actions"></div>
                         </div>
-                        <div class="sub-tool" data-shape="square" data-size="3">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1rem;"></span>
+                        <div class="property-group" id="shape-fill-menu-group">
+                            <span class="group-title">Fill</span>
+                            <div class="group-actions"></div>
                         </div>
-                        <div class="sub-tool" data-shape="square" data-size="5">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.25rem;"></span>
+                        <div class="property-group" data-static="true" id="shape-char-menu-group">
+                            <span class="group-title">Char</span>
+                            <div class="group-actions">
+                                <div class="char-picker-container" id="shape-char">
+                                    <div class="char-well-border">
+                                        <div class="char-well"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="sub-tool" data-shape="square" data-size="10">
-                            <span class="ri ri-fw ri-checkbox-blank-fill" style="font-size: 1.5rem;"></span>
+                        <div class="property-group" data-static="true" id="shape-color-menu-group">
+                            <span class="group-title">Color</span>
+                            <div class="group-actions">
+                                <div id="shape-color" class="color-well"></div>
+                            </div>
                         </div>
-                        <div class="sub-tool" data-shape="circle" data-size="3">
-                            <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1rem;"></span>
+                        <div class="property-group" id="shape-text-align">
+                            <span class="group-title">Text Align</span>
+                            <div class="group-actions">
+                                <div id="shape-text-align-h"></div>
+                                <div id="shape-text-align-v"></div>
+                            </div>
                         </div>
-                        <div class="sub-tool" data-shape="circle" data-size="5">
-                            <span class="ri ri-fw ri-checkbox-blank-circle-fill" style="font-size: 1.25rem;"></span>
+                        <div class="property-group">
+                            <span class="group-title">Actions</span>
+                            <div class="group-actions">
+                                <div id="shape-order"></div>
+                                <div class="action-button" data-action="tools.shapes.editText"></div>
+                                <div class="action-button" data-action="tools.shapes.delete"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div id="canvas-message" style="display: none;"></div>
                 <div id="canvas-container">
                     <canvas id="char-canvas" class="absolute-center full"></canvas>
@@ -282,6 +286,7 @@
                     </div>
                 </div>
                 <div class="layer-template layer">
+                    <span class="layer-type ri ri-fw"></span>
                     <span class="layer-name"></span>
                     <button class="toggle-visibility">
                         <span class="ri ri-fw"></span>
@@ -442,7 +447,7 @@
     <div id="grid-dialog" title="Grid Settings" class="dialog-form">
         <div id="major-grid-settings">
             <label>
-                <input type="checkbox" class="enable-grid"> Show Major Grid
+                <input type="checkbox" class="enable-grid"> Enable Major Grid
             </label>
             <div class="grid-settings">
                 <label>
@@ -456,7 +461,7 @@
 
         <div id="minor-grid-settings">
             <label>
-                <input type="checkbox" class="enable-grid"> Show Minor Grid
+                <input type="checkbox" class="enable-grid"> Enable Minor Grid
             </label>
             <div class="grid-settings">
                 <label>
@@ -467,15 +472,25 @@
         </div>
     </div>
 
-    <div id="edit-layer-dialog" title="Edit Layer">
+    <div id="edit-layer-dialog" class="dialog-form">
+        <input type="hidden" name="is-new-layer">
+        <div class="label-header">Name:</div>
         <label>
-            Name<br>
-            <input type="text" class="name highlight">
+            <input type="text" name="layer-name" class="highlight long">
         </label>
+        <div class="label-header mt-1">Layer Type:</div>
+        <label>
+            <input type="radio" name="layer-type" value="raster" checked /> Raster
+        </label>
+        <label>
+            <input type="radio" name="layer-type" value="vector" /> Vector
+        </label>
+        <div class="rasterize-warning info-popup"></div>
+        <div class="vectorize-warning info-popup"></div>
     </div>
 
     <div id="unicode-dialog" title="Unicode Reference" class="dialog-form">
-        <label>
+        <label class="unicode-chars-container">
             Enter the characters you'd like to have available in the quick reference:
             <textarea id="unicode-chars"></textarea>
         </label>

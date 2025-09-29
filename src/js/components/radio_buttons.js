@@ -11,7 +11,7 @@ export default class RadioButtons {
         this.id = ++RadioButtons.idSequence;
 
         this.$container = $container;
-        this.options = $.extend({}, DEFAULT_OPTIONS, options);
+        this.options = $.extend(true, {}, DEFAULT_OPTIONS, options);
         this._init();
     }
 

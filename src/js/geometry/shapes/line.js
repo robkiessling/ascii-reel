@@ -1,0 +1,155 @@
+import {
+    CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_OPTIONS, STROKE_STYLE_PROPS,
+} from "./constants.js";
+import Shape from "./shape.js";
+import Cell from "../cell.js";
+import CellArea from "../cell_area.js";
+import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
+import CellCache from "../cell_cache.js";
+import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
+import {forEachAdjPair} from "../../utils/arrays.js";
+import BoxShape from "./box_shape.js";
+import {straightAsciiLine} from "./algorithms/traverse_straight.js";
+import {registerShape} from "./registry.js";
+
+
+export default class Line extends Shape {
+    static propDefinitions = [
+        ...super.propDefinitions,
+        { prop: 'path' },
+        { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.LINE] },
+    ];
+
+    serializeProps() {
+        const { path, ...restProps } = this.props;
+        const result = structuredClone(restProps);
+        result.path = path.map(cell => cell.serialize());
+        return result;
+    }
+
+    static deserializeProps(props) {
+        const { path, ...restProps } = props;
+        const result = structuredClone(restProps);
+        result.path = path.map(cell => Cell.deserialize(cell));
+        return result;
+    }
+
+    handleDrawMouseup(cell) {
+        // If already in a multi-point drawing, return false (shape is not finished)
+        if (this._initialDraw.multiPointDrawing) return false;
+
+        // If not yet in a multi-point drawing, determine if a multi-point drawing should be started.
+        // If mouseup occurs on the starting point of the line, user wants to start a multi-point drawing
+        if (cell.equals(this._initialDraw.anchor)) {
+            this._initialDraw.multiPointDrawing = true;
+            return false; // shape is not finished
+        } else {
+            return true; // shape is finished
+        }
+    }
+
+    finishDraw() {
+        if (this._initialDraw.multiPointDrawing) {
+            // When finished, set props according to final path (does not include latest hover cell)
+            this.props.path = this._initialDraw.path;
+            this._clearCache();
+        }
+        super.finishDraw();
+    }
+
+    _convertInitialDrawToProps() {
+        // During draw, include the latest hover cell as the final step in the path
+        this.props.path = [...this._initialDraw.path, this._initialDraw.hover];
+
+        this._clearCache();
+    }
+
+    resize(oldBox, newBox) {
+        const snapshot = this.resizeSnapshot;
+
+        const oldArea = CellArea.fromCells(snapshot.path);
+        const { area: newArea, cellMapper } = translateAreaWithBoxResizing(oldArea, oldBox, newBox);
+
+        this.props.path = snapshot.path.map(cell => cellMapper(cell));
+        this._clearCache();
+    }
+
+    _cacheGeometry() {
+        const boundingArea = CellArea.fromCells(this.props.path);
+        const glyphs = this._initGlyphs(boundingArea);
+        const hitbox = new CellCache();
+
+        const setGlyph = (absCell, char) => {
+            const relativeCell = absCell.relativeTo(boundingArea.topLeft);
+            this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
+            hitbox.add(absCell);
+        }
+
+        switch(this._strokeStyle) {
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
+                forEachAdjPair(this.props.path, (a, b) => {
+                    a.lineTo(b).forEach(cell => setGlyph(cell, this.props[CHAR_PROP]))
+                })
+                break;
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
+                const cornerChar = '+';
+                setGlyph(this.props.path.at(0), cornerChar)
+                forEachAdjPair(this.props.path, (a, b) => {
+                    straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char))
+                    setGlyph(b, cornerChar)
+                })
+                break;
+            // case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
+            //     forEachAdjPair(this.props.path, (a, b, i) => {
+            //         straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char), i === 0, true);
+            //     })
+            //     break;
+            default:
+                throw new Error(`Invalid stroke: ${this._strokeStyle}`)
+        }
+
+        const handles = new HandleCollection([
+            ...this.props.path.map((cell, i) => new CellHandle(this, cell, i)),
+
+            // Only including box handles if line has more than 2 points
+            ...(this.props.path.length > 2 ? BoxShape.vertexHandles(this, boundingArea) : []),
+            ...(this.props.path.length > 2 ? BoxShape.edgeHandles(this, boundingArea) : []),
+
+            new BodyHandle(this, cell => hitbox.has(cell))
+        ])
+
+        this._cache = {
+            boundingArea,
+            origin: boundingArea.topLeft,
+            glyphs,
+            handles
+        }
+    }
+
+    dragCellHandle(handle, position, options) {
+        this.props.path[handle.pointIndex].translateTo(position);
+        this._clearCache();
+    }
+
+    translate(rowOffset, colOffset) {
+        this.props.path.forEach(cell => cell.translate(rowOffset, colOffset))
+        this._clearCache();
+    }
+
+    get topLeft() {
+        if (this.props.path.length === 0) throw new Error("Cannot compute topLeft of empty path");
+
+        let top = Infinity, left = Infinity;
+
+        for (const cell of this.props.path) {
+            if (cell.row < top) top = cell.row;
+            if (cell.col < left) left = cell.col;
+        }
+
+        return new Cell(top, left);
+    }
+
+
+}
+
+registerShape(SHAPE_TYPES.LINE, Line);

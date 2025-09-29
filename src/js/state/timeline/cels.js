@@ -1,86 +1,91 @@
 
 import {isObject, transformValues} from "../../utils/objects.js";
 import {numCols, numRows, getConfig, setConfig} from "../config.js";
-import {create2dArray, split1DArrayInto2D} from "../../utils/arrays.js";
 import {mod} from "../../utils/numbers.js";
 import {DEFAULT_COLOR} from "../palette.js";
-import pako from "pako";
-import {addToCache} from "../unicode.js";
-import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
+import CelFactory from "./cel/factory.js";
+import {LAYER_TYPES} from "../constants.js";
+import RasterCel from "./cel/raster.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
-// -------------------------------------------------------------------------------- Cels
-// The term "cel" is short for "celluloid" https://en.wikipedia.org/wiki/Cel
-// In this app, it represents one image in a specific frame and layer
-// Note: This is different from a "Cell" (in this app, a "cell" refers to a row/column pair in the canvas)
+export function getCelGlyphs(cel, ...args) { return cel.glyphs(...args) }
+export function setCelGlyph(cel, ...args) { return cel.setGlyph(...args) }
+export function translateCel(cel, ...args) { return cel.translate(...args) }
+export function colorSwapCel(cel, ...args) { return cel.colorSwap(...args) }
+
+export function getCelShapes(cel) { return cel.shapes(); }
+export function getCelShape(cel, ...args) { return cel.getShape(...args) }
+export function addCelShape(cel, ...args) { return cel.addShape(...args) }
+export function updateCelShape(cel, ...args) { return cel.updateShape(...args) }
+export function deleteCelShape(cel, ...args) { return cel.deleteShape(...args) }
+export function reorderCelShapes(cel, ...args) { return cel.reorderShapes(...args) }
+export function canReorderCelShapes(cel, ...args) { return cel.canReorderShapes(...args) }
 
 const DEFAULT_STATE = {
     cels: {},
     colorTable: []
 }
 
-const CEL_DEFAULTS = {
-    chars: [[]],
-    colors: [[]]
-}
-
 let state = {};
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE);
+export const COLOR_DEPTH_8_BIT = '8bit';
+export const COLOR_DEPTH_16_BIT = '16bit';
 
-    if (newState.colorTable) state.colorTable = [...newState.colorTable];
-    if (newState.cels) state.cels = transformValues(newState.cels, (celId, cel) => normalizeCel(cel));
-}
-export function replaceState(newState) {
-    state = newState;
-}
-export function getState() {
-    return state;
+export function deserialize(data = {}, options = {}) {
+    // Not using options.replace short circuit here -- we cannot replace state by reference; we always need to
+    // deserialize each Cel. However, options.replace does get passed to CelFactory.deserialize to skip normalization.
+
+    const celOptions = celSerializationOptions(options, data);
+
+    state = $.extend(true, {}, DEFAULT_STATE, data);
+
+    if (data.colorTable) state.colorTable = [...data.colorTable];
+    if (data.cels) state.cels = transformValues(data.cels, (celId, cel) => CelFactory.deserialize(cel, celOptions))
 }
 
-export function createCel(layer, frame, data = {}) {
+export function serialize(options = {}) {
+    if (options.compress) {
+        vacuumColorTable();
+    }
+
+    const celOptions = celSerializationOptions(options, state);
+
+    return {
+        cels: transformValues(state.cels, (celId, cel) => cel.serialize(celOptions)),
+        colorTable: state.colorTable,
+    }
+}
+
+function celSerializationOptions(options, data) {
+    if (options.compress || options.decompress) {
+        options = $.extend(true, {}, options, {
+            colorDepth: data.colorTable.length > 0xFF ? COLOR_DEPTH_16_BIT : COLOR_DEPTH_8_BIT,
+            rowLength: numCols()
+        });
+    }
+
+    return options;
+}
+
+export function createCel(layer, frame) {
     const celId = getCelId(layer.id, frame.id);
-    state.cels[celId] = normalizeCel(data);
+    state.cels[celId] = CelFactory.blank(layer.type);
+}
+
+export function duplicateCel(toLayer, toFrame, originalCel) {
+    const celId = getCelId(toLayer.id, toFrame.id);
+    state.cels[celId] = CelFactory.deserialize(structuredClone(originalCel.serialize()));
 }
 
 export function deleteCel(celId) {
     delete state.cels[celId]
 }
 
-function normalizeCel(cel) {
-    let normalizedCel = $.extend({}, CEL_DEFAULTS);
-
-    // Copy over everything except for chars/colors
-    Object.keys(cel).filter(key => key !== 'chars' && key !== 'colors').forEach(key => normalizedCel[key] = cel[key]);
-
-    // Build chars/colors arrays, making sure every row/col has a value, and boundaries are followed
-    normalizedCel.chars = [];
-    normalizedCel.colors = [];
-
-    let row, col, char, color, rowLength = numRows(), colLength = numCols();
-    for (row = 0; row < rowLength; row++) {
-        normalizedCel.chars[row] = [];
-        normalizedCel.colors[row] = [];
-
-        for (col = 0; col < colLength; col++) {
-            char = undefined;
-            color = undefined;
-
-            if (cel.chars && cel.chars[row] && cel.chars[row][col] !== undefined) {
-                char = cel.chars[row][col];
-            }
-            if (cel.colors && cel.colors[row] && cel.colors[row][col] !== undefined) {
-                color = cel.colors[row][col];
-            }
-            if (char === undefined) { char = EMPTY_CHAR; }
-            if (color === undefined) { color = 0; }
-
-            normalizedCel.chars[row][col] = char;
-            normalizedCel.colors[row][col] = color;
-        }
-    }
-
-    return normalizedCel;
+export function rasterizeCel(celId) {
+    const vectorCel = cel(celId);
+    if (vectorCel.layerType !== LAYER_TYPES.VECTOR) throw new Error(`Cannot rasterize ${celId} - it is not a vector cel`)
+    const { chars, colors } = vectorCel.glyphs();
+    state.cels[celId] = new RasterCel(chars, colors);
 }
 
 /**
@@ -89,7 +94,7 @@ function normalizeCel(cel) {
  *   the cel for that given id. If it is a Layer object, must also provide a Frame object as second parameter. The cel
  *   for that given layer & frame is returned.
  * @param {Object} [frame] - Frame object (only applicable if celIdOrLayer was a Layer object)
- * @returns {Object} - The cel at the given layer/frame
+ * @returns {RasterCel|VectorCel} - The cel at the given layer/frame
  */
 export function cel(celIdOrLayer, frame) {
     if (arguments.length === 1 && typeof celIdOrLayer === 'string') {
@@ -119,71 +124,20 @@ export function iterateAllCels(callback) {
     }
 }
 
-export function iterateCellsForCel(cel, callback) {
-    let row, col, rowLength = numRows(), colLength = numCols();
-    for (row = 0; row < rowLength; row++) {
-        for (col = 0; col < colLength; col++) {
-            callback(row, col, cel.chars[row][col], cel.colors[row][col]);
-        }
-    }
+export function isCellInBounds(cell) {
+    return cell.row >= 0 && cell.row < numRows() && cell.col >= 0 && cell.col < numCols();
 }
 
-
-// -------------------------------------------------------------------------------- Glyphs
-// In this app, "glyph" is the term I'm using for the combination of a char and a color
-
-export function setCelGlyph(cel, row, col, char, color) {
-    if (charInBounds(row, col)) {
-        if (char !== undefined) {
-            addToCache(char);
-            cel.chars[row][col] = char;
-        }
-        if (color !== undefined) { cel.colors[row][col] = color; }
-    }
-}
-
-export function charInBounds(row, col) {
-    return row >= 0 && row < numRows() && col >= 0 && col < numCols();
-}
-
-
-/**
- * Shifts all the contents (chars/colors) of a cel.
- * @param {cel} cel - The cel to affect
- * @param {number} rowOffset - How many rows to shift (can be negative)
- * @param {number} colOffset - How many columns to shift content (can be negative)
- * @param {boolean} [wrap=false] - If true, shifting content past the cel boundaries will wrap it around to the other side
- */
-export function translateCel(cel, rowOffset, colOffset, wrap = false) {
-    let chars = create2dArray(numRows(), numCols(), EMPTY_CHAR);
-    let colors = create2dArray(numRows(), numCols(), 0);
-
-    let celR, celC, r, c;
-    for (celR = 0; celR < cel.chars.length; celR++) {
-        for (celC = 0; celC < cel.chars[celR].length; celC++) {
-            ({ r, c } = getOffsetPosition(celR, celC, rowOffset, colOffset, wrap));
-
-            if (charInBounds(r, c)) {
-                chars[r][c] = cel.chars[celR][celC];
-                colors[r][c] = cel.colors[celR][celC];
-            }
-        }
-    }
-
-    cel.chars = chars;
-    cel.colors = colors;
-}
-
-export function getOffsetPosition(r, c, rowOffset, colOffset, wrap) {
-    r += rowOffset;
-    c += colOffset;
+export function getOffsetPosition(row, col, rowOffset, colOffset, wrap) {
+    row += rowOffset;
+    col += colOffset;
 
     if (wrap) {
-        r = mod(r, numRows());
-        c = mod(c, numCols());
+        row = mod(row, numRows());
+        col = mod(col, numCols());
     }
 
-    return { r, c }
+    return { row, col }
 }
 
 
@@ -202,6 +156,8 @@ export function colorStr(colorIndex) {
 // if, for example, some text was drawn with that color but then re-painted with a new color.
 // This method also ensures all cel colors actually exist in the colorTable.
 export function vacuumColorTable() {
+    const originalLength = state.colorTable ? state.colorTable.length : 0;
+
     // Ensure colorTable has at least one entry so we can use index 0 as a fallback
     if (!state.colorTable[0]) state.colorTable[0] = DEFAULT_COLOR;
 
@@ -209,27 +165,31 @@ export function vacuumColorTable() {
     const vacuumMap = new Map(); // maps original colorIndexes to their new vacuumed colorIndex
     const dupUpdateMap = getDupColorUpdateMap(); // keeps track of any duplicate colorTable values
 
-    iterateAllCels(cel => {
-        iterateCellsForCel(cel, (r, c, char, colorIndex) => {
-            // If colorTable does not have a value for the current colorIndex, we set the colorIndex to 0
-            if (!state.colorTable[colorIndex]) colorIndex = 0;
+    iterateAllCels(cel => cel.updateColorIndexes((colorIndex, updater) => {
+        // If colorTable does not have a value for the current colorIndex, we set the colorIndex to 0
+        if (!state.colorTable[colorIndex]) colorIndex = 0;
 
-            // If the color value of a colorIndex is duplicated by an earlier colorIndex, we use that earlier colorIndex
-            if (dupUpdateMap.has(colorIndex)) colorIndex = dupUpdateMap.get(colorIndex);
+        // If the color value of a colorIndex is duplicated by an earlier colorIndex, we use that earlier colorIndex
+        if (dupUpdateMap.has(colorIndex)) colorIndex = dupUpdateMap.get(colorIndex);
 
-            // Add any new color indexes to the vacuum map
-            if (!vacuumMap.has(colorIndex)) vacuumMap.set(colorIndex, newIndex++)
+        // Add any new color indexes to the vacuum map
+        if (!vacuumMap.has(colorIndex)) vacuumMap.set(colorIndex, newIndex++)
 
-            // Update the cel color to use the vacuumed index
-            cel.colors[r][c] = vacuumMap.get(colorIndex);
-        })
-    })
+        // Update the cel color to use the vacuumed index
+        updater(vacuumMap.get(colorIndex));
+    }))
 
-    const vacuumedColorTable = [];
-    for (const [oldIndex, newIndex] of vacuumMap.entries()) {
-        vacuumedColorTable[newIndex] = state.colorTable[oldIndex];
+    if (vacuumMap.size) {
+        const vacuumedColorTable = [];
+        for (const [oldIndex, newIndex] of vacuumMap.entries()) {
+            vacuumedColorTable[newIndex] = state.colorTable[oldIndex];
+        }
+        state.colorTable = vacuumedColorTable;
     }
-    state.colorTable = vacuumedColorTable;
+
+    // Color indices may have been shuffled. State now reflects the correct colors, but any external caches of color
+    // data (e.g. rendering snapshots) may be stale and should be invalidated.
+    if (originalLength !== state.colorTable.length) eventBus.emit(EVENTS.STATE.INVALIDATED);
 }
 
 // Returns a map of any duplicate colorTable values, where the key is the dup index and the value is the original index.
@@ -272,9 +232,7 @@ export function primaryColorIndex() {
 
 export function convertToMonochrome(color) {
     state.colorTable = [color]
-    iterateAllCels(cel => {
-        cel.colors = create2dArray(numRows(), numCols(), 0);
-    })
+    iterateAllCels(cel => cel.convertToMonochrome())
 }
 
 /**
@@ -288,21 +246,9 @@ export function hasCharContent(matchingColor) {
         matchingColorIndex = hasColor(matchingColor) ? colorIndex(matchingColor) : -1;
     }
 
-    // Not using iterateAllCels or iterateCellsForCel so we can terminate early
+    // Not using iterateAllCels so we can terminate early
     for (const cel of Object.values(state.cels)) {
-        let row, col, char, color, rowLength = numRows(), colLength = numCols();
-
-        for (row = 0; row < rowLength; row++) {
-            for (col = 0; col < colLength; col++) {
-                char = cel.chars[row][col];
-                color = cel.colors[row][col];
-
-                if (
-                    (char !== EMPTY_CHAR && char !== WHITESPACE_CHAR) &&
-                    (matchingColorIndex === undefined || matchingColorIndex === color)
-                ) return true
-            }
-        }
+        if (cel.hasContent(matchingColorIndex)) return true;
     }
 
     return false;
@@ -351,140 +297,8 @@ export function resize(newDimensions, rowOffset, colOffset) {
             break;
     }
 
-    iterateAllCels(cel => {
-        let resizedChars = [];
-        let resizedColors = [];
-
-        for (let r = 0; r < newDimensions[0]; r++) {
-            for (let c = 0; c < newDimensions[1]; c++) {
-                if (resizedChars[r] === undefined) { resizedChars[r] = []; }
-                if (resizedColors[r] === undefined) { resizedColors[r] = []; }
-
-                let oldRow = r + rowOffset;
-                let oldCol = c + colOffset;
-
-                resizedChars[r][c] = cel.chars[oldRow] && cel.chars[oldRow][oldCol] ? cel.chars[oldRow][oldCol] : EMPTY_CHAR;
-                resizedColors[r][c] = cel.colors[oldRow] && cel.colors[oldRow][oldCol] ? cel.colors[oldRow][oldCol] : 0;
-            }
-        }
-
-        cel.chars = resizedChars;
-        cel.colors = resizedColors;
-    });
+    iterateAllCels(cel => cel.resize(newDimensions, rowOffset, colOffset));
 
     setConfig('dimensions', newDimensions);
-}
-
-
-
-export function encodeState() {
-    vacuumColorTable();
-    const req16BitColors = state.colorTable.length > 0xFF;
-
-    return {
-        colorTable: state.colorTable,
-        cels: transformValues(state.cels, (celId, cel) => {
-            return {
-                chars: encodeChars(cel.chars),
-                colors: encodeColors(cel.colors, req16BitColors),
-            }
-        })
-    }
-}
-export function decodeState(encodedState, celRowLength) {
-    const req16BitColors = (encodedState.colorTable.length || 0) > 0xFF;
-
-    return {
-        colorTable: encodedState.colorTable,
-        cels: transformValues(encodedState.cels, (celId, cel) => {
-            return {
-                chars: decodeChars(cel.chars, celRowLength || 1),
-                colors: decodeColors(cel.colors, celRowLength || 1, req16BitColors),
-            }
-        })
-    }
-}
-
-const ENCODED_EMPTY_CHAR = "\0";
-
-/**
- * Encode a 2d chars array into a compressed Base64 string.
- * @param {string[][]} chars - 2d array of chars. Note: EMPTY_CHAR is a valid char.
- * @returns {string} - Base 64 string representing the compressed 2d array
- */
-function encodeChars(chars) {
-    const flatStr = chars.flat().map(char => char === EMPTY_CHAR ? ENCODED_EMPTY_CHAR : char).join(''); // convert to flat string
-    const compressed = pako.deflate(flatStr); // convert to compressed Uint8Array
-    return window.btoa(String.fromCharCode(...compressed)); // convert to Base64 string
-
-    // todo does spread operator cap out at 10000 elements? maybe use TextDecoder? https://github.com/nodeca/pako/issues/206#issuecomment-1835315482
-    //      or https://stackoverflow.com/a/66046176/4904996
-}
-
-/**
- * Decodes a compressed Base64 string into a 2d chars array
- * @param {string} base64String - Base 64 string representing the compressed 2d array (from encodeChars function)
- * @param {number} rowLength - How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
- * @returns {string[][]} - 2d array of chars
- */
-function decodeChars(base64String, rowLength) {
-    const compressed = Uint8Array.from(window.atob(base64String), c => c.charCodeAt(0)); // convert to compressed Uint8Array
-    const flatStr = pako.inflate(compressed, {to: 'string'}) // convert to uncompressed flat string
-    return split1DArrayInto2D(flatStr.split('').map(char => char === ENCODED_EMPTY_CHAR ? EMPTY_CHAR : char), rowLength) // convert to 2d chars array
-}
-
-/**
- * Encode a 2d colors array into a compressed Base64 string.
- * @param {number[][]} colors - 2d array of color integers
- * @param {Boolean} has16BitNumbers - If your colors array contains integers greater than 255 you must set this param
- *   to be true, otherwise they won't be encoded correctly
- * @returns {string} - Base 64 string representing the compressed 2d array
- */
-function encodeColors(colors, has16BitNumbers) {
-    let uncompressed;
-    const flatColors = colors.flat();
-
-    // Convert to Uint8Array typed array for compression
-    if (has16BitNumbers) {
-        // pako only supports Uint8Array, so if there are 16-bit numbers we need to split each 16-bit number into 2 bytes
-        uncompressed = new Uint8Array(flatColors.length * 2);
-        for (let i = 0; i < flatColors.length; i++) {
-            uncompressed[i * 2] = (flatColors[i] >> 8) & 0xFF; // Most significant byte
-            uncompressed[i * 2 + 1] = flatColors[i] & 0xFF;    // Least significant byte
-        }
-    }
-    else {
-        uncompressed = new Uint8Array(flatColors)
-    }
-
-    const compressed = pako.deflate(uncompressed); // convert to compressed Uint8Array
-    return btoa(String.fromCharCode(...compressed)); // Convert to Base64 string for json
-}
-
-/**
- * Decodes a compressed Base64 string into a 2d colors array
- * @param {string} base64String - Base 64 string representing the compressed 2d array (from encodeColors function)
- * @param {number} rowLength - How many columns are in a row (this is needed to convert the decoded flat array into a 2d array)
- * @param {boolean} has16BitNumbers - If the encoded colors array contains integers greater than 255, you must set this param
- *   to be true, otherwise they won't be decoded correctly
- * @returns {number[][]} - 2d array of color integers
- */
-function decodeColors(base64String, rowLength, has16BitNumbers) {
-    const compressed = Uint8Array.from(atob(base64String), c => c.charCodeAt(0)); // Base64 string -> compressed Uint8Array
-    const uncompressed = pako.inflate(compressed); // convert to uncompressed Uint8Array
-
-    let flatColors;
-    if (has16BitNumbers) {
-        // Convert pairs of two consecutive bytes back into one 16-bit number
-        flatColors = [];
-        for (let i = 0; i < uncompressed.length; i += 2) {
-            flatColors.push((uncompressed[i] << 8) | uncompressed[i + 1]);
-        }
-    }
-    else {
-        flatColors = Array.from(uncompressed); // Convert to array of 8-bit numbers
-    }
-
-    return split1DArrayInto2D(flatColors, rowLength)
 }
 

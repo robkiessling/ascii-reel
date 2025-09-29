@@ -1,3 +1,4 @@
+import {LAYER_TYPES} from "../constants.js";
 
 const DEFAULT_STATE = {
     layers: [],
@@ -6,27 +7,28 @@ const DEFAULT_STATE = {
 
 const LAYER_DEFAULTS = {
     name: 'Layer',
-    visible: true
+    visible: true,
+    type: LAYER_TYPES.VECTOR
 }
 
 let state = {};
 let idSequence = 0;
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE);
-
-    if (newState.layers) {
-        state.layers = newState.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer));
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        state = data;
+        return;
     }
 
-    state.currentIndex = 0; // Do not import from newState; always start at 0
+    state = $.extend(true, {}, DEFAULT_STATE, data);
+    if (data.layers) {
+        state.layers = data.layers.map(layer => $.extend(true, {}, LAYER_DEFAULTS, layer));
+    }
 
     idSequence = Math.max(...state.layers.map(layer => layer.id), 0);
 }
-export function replaceState(newState) {
-    state = newState;
-}
-export function getState() {
+
+export function serialize() {
     return state;
 }
 
@@ -38,16 +40,34 @@ export function layerAt(index) {
     return state.layers[index];
 }
 
-export function layerIndex(newIndex) {
-    if (newIndex !== undefined) state.currentIndex = newIndex;
+export function layerIndex() {
     return state.currentIndex;
+}
+
+export function changeLayerIndex(newIndex) {
+    state.currentIndex = newIndex;
 }
 
 export function currentLayer() {
     return state.layers[layerIndex()];
 }
 
+export function currentLayerType() {
+    return currentLayer().type;
+}
+
 export function createLayer(index, data) {
+    const layer = $.extend(true, {}, LAYER_DEFAULTS, {
+        id: ++idSequence,
+        name: nextLayerName()
+    }, data);
+
+    state.layers.splice(index, 0, layer);
+
+    return layer;
+}
+
+export function nextLayerName() {
     let max = 0;
 
     state.layers.map(layer => layer.name).forEach(name => {
@@ -58,14 +78,7 @@ export function createLayer(index, data) {
         }
     });
 
-    const layer = $.extend({}, LAYER_DEFAULTS, {
-        id: ++idSequence,
-        name: `Layer ${max + 1}`
-    }, data);
-
-    state.layers.splice(index, 0, layer);
-
-    return layer;
+    return `Layer ${max + 1}`
 }
 
 export function deleteLayer(index) {

@@ -1,10 +1,9 @@
 import * as actions from "../io/actions.js";
-import {getStateForHistory as getConfigState, updateStateFromHistory as updateConfigState} from "./config.js";
-import {getState as getTimelineState, replaceState as replaceTimelineState, hasCharContent} from "./timeline/index.js";
-import {getState as getPaletteState, replaceState as replacePaletteState} from "./palette.js";
-import {getState as getUnicodeState, replaceState as replaceUnicodeState} from "./unicode.js";
+import {hasCharContent} from "./timeline/index.js";
 import {eventBus, EVENTS} from '../events/events.js'
+import {deserialize, serialize} from "./index.js";
 
+const DEBUG = false;
 
 // -------------------------------------------------------------------------------- History (undo / redo)
 // Implementing undo/redo using the memento pattern https://en.wikipedia.org/wiki/Memento_pattern
@@ -47,22 +46,19 @@ export function pushHistory(options = {}) {
 
     // Build the snapshot to be saved in the history
     const snapshot = {
-        state: $.extend(true, {},
-            { config: getConfigState() },
-            { timeline: getTimelineState() },
-            { palette: getPaletteState() },
-            { unicode: getUnicodeState() },
-        ),
+        state: $.extend(true, {}, serialize({ history: true })),
         options: options,
     };
 
     // If modifiable option is a match, we just update the current slice and return
     if (history.length && options.modifiable && options.modifiable === history[historyIndex].options.modifiable) {
         history[historyIndex] = snapshot;
+        logState(`modified history [${historyIndex}] (${options.modifiable}): `, snapshot);
         return;
     }
 
     endHistoryModification();
+    logState(`pushed history [${historyIndex === undefined ? 0 : historyIndex + 1}]: `, snapshot);
 
     history.push(snapshot);
     historyIndex = historyIndex === undefined ? 0 : historyIndex + 1;
@@ -79,11 +75,9 @@ function loadStateFromHistory(newIndex, oldIndex) {
 
     const newState = history[newIndex];
     const oldState = history[oldIndex];
+    logState('popped history: ', newState);
 
-    updateConfigState(structuredClone(newState.state.config));
-    replaceTimelineState(structuredClone(newState.state.timeline));
-    replacePaletteState(structuredClone(newState.state.palette));
-    replaceUnicodeState(structuredClone(newState.state.unicode));
+    deserialize(structuredClone(newState.state), { replace: true, history: true })
 
     // When emitting, include any options that were true in either the newState or the oldState:
     const trueOptions = Object.fromEntries(
@@ -102,6 +96,7 @@ function canUndo() {
 function undo() {
     if (canUndo()) {
         endHistoryModification();
+        log(`undo: ${historyIndex} -> ${historyIndex - 1}`)
         loadStateFromHistory(historyIndex - 1, historyIndex);
         historyIndex -= 1;
     }
@@ -113,6 +108,7 @@ function canRedo() {
 
 function redo() {
     if (canRedo()) {
+        log(`redo: ${historyIndex} -> ${historyIndex + 1}`)
         loadStateFromHistory(historyIndex + 1, historyIndex);
         historyIndex += 1;
     }
@@ -121,14 +117,23 @@ function redo() {
 // Ends further modifications to the current history slice. See pushHistory for more info.
 export function endHistoryModification() {
     if (history.length) {
+        log(`endHistoryModification [${historyIndex}]`)
         history[historyIndex].options.modifiable = undefined;
     }
 }
 
-// Modifies the current history slice
-export function modifyHistory(callback) {
-    if (history.length) {
-        callback(history[historyIndex].state)
+// -------------------------------------------------------------------------------- Logging / debugging
+
+function logState(prefix, snapshot) {
+    if (DEBUG) {
+        const loggableState = JSON.stringify(snapshot.state.selection.rasterSelection, undefined, 2)
+        log(prefix, loggableState);
+    }
+}
+
+function log(message) {
+    if (DEBUG) {
+        console.log(message);
     }
 }
 

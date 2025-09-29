@@ -2,16 +2,20 @@ import {getFormattedDateTime} from "../utils/strings.js";
 import {COLOR_FORMAT, DEFAULT_COLOR} from "./palette.js";
 import {pick} from "../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
+import {BRUSHES, DEFAULT_STROKE_STYLES} from "../geometry/shapes/constants.js";
+import {LAYER_TYPES} from "./constants.js";
+import * as timeline from "./timeline/index.js";
 
 // TODO There are a lot of strings that should be constants
 // TODO Organize this better? E.g. projectSettings could contain certain keys
 export const DEFAULT_STATE = {
     name: '',
     projectType: 'animation',
+    layerType: LAYER_TYPES.RASTER,
     colorMode: 'monochrome',
     createdAt: undefined,
     dimensions: [15, 30], // [numRows, numCols]
-    background: new Color('rgba(255,255,255,1)')[COLOR_FORMAT],
+    background: new Color('rgba(0,0,0,1)')[COLOR_FORMAT],
     font: 'monospace',
     fps: 6,
     playPreview: true,
@@ -29,49 +33,60 @@ export const DEFAULT_STATE = {
     tool: 'text-editor',
     primaryColor: DEFAULT_COLOR,
     primaryChar: 'A',
-    brush: {
-        shape: 'square',
-        size: 1
-    },
-    drawTypes: {
-        'draw-freeform': 'irregular-adaptive',
-        'draw-rect': 'outline-ascii-1',
-        'draw-line': 'straight-adaptive',
-        'draw-ellipse': 'outline-monochar',
-    },
+    brush: Object.keys(BRUSHES)[0], // todo brushType/brushSize
+    drawStrokeStyles: DEFAULT_STROKE_STYLES,
     lastExportOptions: null,
-    caretPosition: {},
-    caretStyle: 'I-beam' // vs. block
+    caretStyle: 'I-beam', // vs. block
 }
 
 // Only the following config keys are saved to history; undo/redo will not affect the other config
 const CONFIG_KEYS_SAVED_TO_HISTORY = [
-    'font', 'dimensions', 'background', 'caretPosition', 'projectType', 'colorMode'
+    'font', 'dimensions', 'background', 'projectType', 'colorMode'
 ]
 
 // These tools are only available if colorMode is multicolor
 export const MULTICOLOR_TOOLS = new Set(['paint-brush', 'color-swap', 'fill-color', 'eyedropper'])
 
+// These tools are only available depending on layerType
+export const RASTER_TOOLS = new Set([
+    'text-editor', 'fill-char', 'selection-rect', 'selection-lasso', 'selection-line', 'selection-wand',
+    'paint-brush', 'color-swap', 'fill-color', 'eyedropper'
+])
+export const VECTOR_TOOLS = new Set(['select', 'draw-textbox']);
+
+// Tool fallbacks for when the current tool isn't valid for the current layer type
+const VECTOR_TOOL_TO_RASTER_FALLBACK = {
+    default: 'text-editor',
+    'draw-textbox': 'fill-char'
+}
+const RASTER_TOOL_TO_VECTOR_FALLBACK = {
+    default: 'select',
+    'fill-char': 'draw-textbox',
+}
 
 let state = {};
 
-export function load(newState = {}) {
-    state = $.extend(true, {}, DEFAULT_STATE, { createdAt: new Date().toISOString() }, newState);
-}
-export function replaceState(newState) {
-    state = newState;
-}
-export function getState() {
-    return state;
+export function deserialize(data = {}, options = {}) {
+    if (options.replace) {
+        if (options.history) {
+            for (const [key, value] of Object.entries(pick(data, CONFIG_KEYS_SAVED_TO_HISTORY))) {
+                state[key] = value;
+            }
+        } else {
+            state = data;
+        }
+        return;
+    }
+
+    state = $.extend(true, {}, DEFAULT_STATE, { createdAt: new Date().toISOString() }, data);
 }
 
-// Only certain keys are stored to history (e.g. we don't want undo to change what tool the user has selected)
-export function getStateForHistory() {
-    return pick(state, CONFIG_KEYS_SAVED_TO_HISTORY);
-}
-export function updateStateFromHistory(updates) {
-    for (const [key, value] of Object.entries(pick(updates, CONFIG_KEYS_SAVED_TO_HISTORY))) {
-        state[key] = value;
+export function serialize(options = {}) {
+    if (options.history) {
+        // Only certain keys are stored to history (e.g. we don't want undo to change what tool the user has selected)
+        return pick(state, CONFIG_KEYS_SAVED_TO_HISTORY)
+    } else {
+        return state;
     }
 }
 
@@ -116,14 +131,30 @@ export function getName(includeDefaultTimestamp = true) {
     }
 }
 
-export function updateDrawType(toolKey, newType) {
-    state.drawTypes[toolKey] = newType;
-}
-
 export function isAnimationProject() {
     return getConfig('projectType') === 'animation';
 }
 
 export function isMultiColored() {
     return getConfig('colorMode') === 'multicolor';
+}
+
+// Certain tools are only available in certain modes. This ensures the current tool is valid
+export function toolFallback() {
+    switch(timeline.currentLayerType()) {
+        case LAYER_TYPES.RASTER:
+            if (getConfig('colorMode') === 'monochrome' && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
+                setConfig('tool', VECTOR_TOOL_TO_RASTER_FALLBACK.default)
+            } else if (VECTOR_TOOLS.has(getConfig('tool'))) {
+                setConfig('tool', VECTOR_TOOL_TO_RASTER_FALLBACK[getConfig('tool')] || VECTOR_TOOL_TO_RASTER_FALLBACK.default)
+            }
+            break;
+        case LAYER_TYPES.VECTOR:
+            if (getConfig('colorMode') === 'monochrome' && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
+                setConfig('tool', RASTER_TOOL_TO_VECTOR_FALLBACK.default)
+            } else if (RASTER_TOOLS.has(getConfig('tool'))) {
+                setConfig('tool', RASTER_TOOL_TO_VECTOR_FALLBACK[getConfig('tool')] || RASTER_TOOL_TO_VECTOR_FALLBACK.default)
+            }
+            break;
+    }
 }

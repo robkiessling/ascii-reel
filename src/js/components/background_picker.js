@@ -21,7 +21,7 @@ export default class BackgroundPicker {
         this.id = ++BackgroundPicker.idSequence;
 
         this.$container = $container;
-        this.options = $.extend({}, DEFAULT_OPTIONS, options);
+        this.options = $.extend(true, {}, DEFAULT_OPTIONS, options);
         this._init();
     }
 

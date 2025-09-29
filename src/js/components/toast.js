@@ -15,7 +15,7 @@ const visibleToastsByKey = {};
  */
 export default class Toast {
     constructor(options) {
-        this.options = $.extend({}, DEFAULT_OPTIONS, options);
+        this.options = $.extend(true, {}, DEFAULT_OPTIONS, options);
         this._init();
     }
     
@@ -47,7 +47,7 @@ export default class Toast {
     }
 
     restart(newOptions) {
-        this.options = $.extend({}, this.options, newOptions);
+        this.options = $.extend(true, {}, this.options, newOptions);
         clearTimeout(this.fadeTimeout);
         clearTimeout(this.removalTimeout);
         this.$toast.addClass('show');

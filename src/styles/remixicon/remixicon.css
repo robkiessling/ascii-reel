@@ -8,7 +8,7 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1746746563496") format("woff2");
+    src: url("remixicon/remixicon.woff2?t=1758488743086") format("woff2");
     font-display: swap;
 }
 
@@ -94,3 +94,22 @@
 .ri-keyboard-line:before { content: "\ee75"; }
 .ri-timer-line:before { content: "\f215"; }
 .ri-forbid-line:before { content: "\ed95"; }
+.ri-cursor-line:before { content: "\ec0a"; }
+.ri-text-snippet:before { content: "\f46e"; }
+.ri-contract-right-line:before { content: "\f301"; }
+.ri-arrow-right-line:before { content: "\ea6c"; }
+.ri-align-left:before { content: "\ea27"; }
+.ri-align-center:before { content: "\ea25"; }
+.ri-align-right:before { content: "\ea28"; }
+.ri-align-top:before { content: "\ea29"; }
+.ri-align-vertically:before { content: "\ea2a"; }
+.ri-align-bottom:before { content: "\ea24"; }
+.ri-t-box-line:before { content: "\f1d3"; }
+.ri-input-method-line:before { content: "\ee60"; }
+.ri-shape-line:before { content: "\f0f2"; }
+.ri-align-item-top-line:before { content: "\f4c2"; }
+.ri-align-item-bottom-line:before { content: "\f4ba"; }
+.ri-align-item-vertical-center-line:before { content: "\f4c4"; }
+.ri-grid-line:before { content: "\eddf"; }
+.ri-input-field:before { content: "\f47a"; }
+.ri-crosshair-2-line:before { content: "\f3b3"; }

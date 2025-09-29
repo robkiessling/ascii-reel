@@ -1,16 +1,18 @@
 import Cell from "../cell.js";
 import * as state from "../../state/index.js";
 import CellArea from "../cell_area.js";
-import SelectionPolygon from "./polygon.js";
+import SelectionShape from "./shape.js";
+import {SELECTION_SHAPE_TYPES} from "./constants.js";
 
 /**
  * A selection of cells in a rectangular shape. Supports the following options:
  * - outline: (boolean) If true, only the cells along the border of the rectangle are included
  */
-export default class SelectionRect extends SelectionPolygon {
+export default class RectSelection extends SelectionShape {
+    static type = SELECTION_SHAPE_TYPES.RECT;
 
     static drawableArea() {
-        return new SelectionRect(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
+        return new RectSelection(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
     }
 
     iterateCells(callback) {
@@ -46,7 +48,7 @@ export default class SelectionRect extends SelectionPolygon {
         }
     }
 
-    // Note: SelectionRect is the only Polygon that needs to implement `stroke`, because we only use stroke() for
+    // Note: RectSelection is the only Polygon that needs to implement `stroke`, because we only use stroke() for
     // outlinePolygon() and the outline is always a rectangle.
     stroke(context) {
         context.beginPath();
