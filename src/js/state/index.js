@@ -87,6 +87,12 @@ export function deserialize(data = {}, options = {}) {
         palette.deserialize(data.palette, options);
         unicode.deserialize(data.unicode, options);
         selection.deserialize(data.selection, options);
+
+        // Since current tool is not saved to config history, have to ensure an undo operation does not
+        // put is in an invalid tool state.
+        // TODO are there other checks that need to be done here?
+        config.toolFallback();
+
         return;
     }
 
@@ -370,7 +376,9 @@ export function changeFrameIndex(newIndex) {
 
 export function changeLayerIndex(newIndex) {
     if (timeline.layerIndex() !== newIndex) {
-        if (!timeline.currentLayer() || timeline.currentLayerType() !== timeline.layerAt(newIndex).type) selection.clearSelection();
+        if (!timeline.currentLayer() || timeline.currentLayerType() !== timeline.layerAt(newIndex).type) {
+            selection.clearSelection();
+        }
 
         timeline.changeLayerIndex(newIndex);
         config.toolFallback();

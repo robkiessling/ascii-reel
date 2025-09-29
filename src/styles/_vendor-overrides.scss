@@ -50,6 +50,10 @@
 // ---------------------------------------------------------------------- vanilla-picker (color picker)
 
 .picker_wrapper {
+  &.popup {
+    z-index: 4 !important;
+  }
+
   .picker_editor {
     width: 7rem;
   }

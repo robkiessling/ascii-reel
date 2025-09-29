@@ -132,7 +132,8 @@ export default class VectorCel {
     }
 
     convertToMonochrome() {
-        // todo
+        // Set all shapes to color index 0
+        this.shapes().forEach(shape => shape.updateColorIndexes((colorIndex, updater) => updater(0)))
         this._clearCachedGlyphs();
     }
 

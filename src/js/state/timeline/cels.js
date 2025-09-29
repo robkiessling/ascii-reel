@@ -156,6 +156,8 @@ export function colorStr(colorIndex) {
 // if, for example, some text was drawn with that color but then re-painted with a new color.
 // This method also ensures all cel colors actually exist in the colorTable.
 export function vacuumColorTable() {
+    const originalLength = state.colorTable ? state.colorTable.length : 0;
+
     // Ensure colorTable has at least one entry so we can use index 0 as a fallback
     if (!state.colorTable[0]) state.colorTable[0] = DEFAULT_COLOR;
 
@@ -187,7 +189,7 @@ export function vacuumColorTable() {
 
     // Color indices may have been shuffled. State now reflects the correct colors, but any external caches of color
     // data (e.g. rendering snapshots) may be stale and should be invalidated.
-    eventBus.emit(EVENTS.STATE.INVALIDATED);
+    if (originalLength !== state.colorTable.length) eventBus.emit(EVENTS.STATE.INVALIDATED);
 }
 
 // Returns a map of any duplicate colorTable values, where the key is the dup index and the value is the original index.
