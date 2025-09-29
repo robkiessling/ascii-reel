@@ -42,7 +42,7 @@ function setLocalStorage(storageKey, value, msgData = {}) {
 
 // ------------------------------------------------------------------------- Storing State
 const STATE_KEY = 'ascii-reel-state';
-const AUTO_SAVE_INTERVAL = 15000; // Doesn't have to be too fast; we save before page change anyway
+const AUTO_SAVE_INTERVAL = 30000; // Doesn't have to be too fast; we save before page change anyway
 
 export function readState() {
     return getLocalStorage(STATE_KEY);

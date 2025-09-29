@@ -6,6 +6,7 @@ import {DEFAULT_COLOR} from "../palette.js";
 import CelFactory from "./cel/factory.js";
 import {LAYER_TYPES} from "../constants.js";
 import RasterCel from "./cel/raster.js";
+import {eventBus, EVENTS} from "../../events/events.js";
 
 export function getCelGlyphs(cel, ...args) { return cel.glyphs(...args) }
 export function setCelGlyph(cel, ...args) { return cel.setGlyph(...args) }
@@ -183,6 +184,10 @@ export function vacuumColorTable() {
         }
         state.colorTable = vacuumedColorTable;
     }
+
+    // Color indices may have been shuffled. State now reflects the correct colors, but any external caches of color
+    // data (e.g. rendering snapshots) may be stale and should be invalidated.
+    eventBus.emit(EVENTS.STATE.INVALIDATED);
 }
 
 // Returns a map of any duplicate colorTable values, where the key is the dup index and the value is the original index.

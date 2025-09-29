@@ -90,7 +90,8 @@ export const EVENTS = {
         ALL: 'resize:all'
     },
     STATE: {
-        LOADED: 'state:loaded'
+        LOADED: 'state:loaded',
+        INVALIDATED: 'state:invalidated' /* Notify listeners to reset any cached state derived from the current app state */
     },
     SELECTION: {
         CHANGED: 'selection:changed',

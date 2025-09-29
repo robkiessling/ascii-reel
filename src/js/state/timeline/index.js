@@ -307,14 +307,18 @@ export function layeredGlyphs(frame, options = {}) {
             case LAYER_TYPES.RASTER:
                 // For raster layers, we calculate cel glyphs without an offset, then merge them into result using offset
                 const rasterGlyphs = celData.getCelGlyphs(celData.cel(layer, frame));
-                mergeGlyphs({ chars, colors }, rasterGlyphs, new Cell(offset.row, offset.col));
+                mergeGlyphs({ chars, colors }, rasterGlyphs, new Cell(offset.row, offset.col), (char, color) => {
+                    return char !== undefined && char !== EMPTY_CHAR;
+                });
                 break;
             case LAYER_TYPES.VECTOR:
                 // For vector layers, we must retrieve cel glyphs using the offset, then merge them into result at
                 // no offset. This is required because vector shapes can go beyond the borders, so when we move them
                 // inside more content can appear.
                 const vectorGlyphs = celData.getCelGlyphs(celData.cel(layer, frame), offset);
-                mergeGlyphs({ chars, colors }, vectorGlyphs, new Cell(0, 0));
+                mergeGlyphs({ chars, colors }, vectorGlyphs, new Cell(0, 0), (char, color) => {
+                    return char !== undefined && char !== EMPTY_CHAR;
+                });
                 break;
             default:
                 throw new Error(`Invalid layer type: ${layer.type}`)

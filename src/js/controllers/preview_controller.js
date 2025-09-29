@@ -19,7 +19,7 @@ const POPUP_RESIZE_DEBOUNCE_LENGTH = 200;
 
 let $container, $fpsValue, $fpsSlider, $previewControls;
 let previewCanvas;
-let previewInterval, previewIndex, previewGlyphsCache, numPreviewFrames, previewFps;
+let previewInterval, previewIndex, numPreviewFrames, previewFps;
 let actionButtons;
 let popup, popupCanvas;
 let minimizer;
@@ -85,7 +85,7 @@ function redraw() {
 
 // Reset the preview interval (e.g. if fps changes, if a frame got deleted, etc.)
 function reset() {
-    previewGlyphsCache = null;
+    resetCache();
 
     // Update fps slider/label
     const fps = state.getConfig('fps');
@@ -125,21 +125,6 @@ function reset() {
         }, intervalDelay)
     }
 }
-
-// Caches the layered glyphs so that they don't have to be recalculated every loop
-// TODO I've disabled caching - it doesn't work because autosave -> vacuums colorTable -> colors get out of sync
-function getPreviewGlyphs() {
-    // let frame = state.expandedFrames()[previewIndex];
-    //
-    // if (!previewGlyphsCache) previewGlyphsCache = new Map();
-    // if (!previewGlyphsCache.has(frame.id)) previewGlyphsCache.set(frame.id, state.layeredGlyphs(frame));
-    //
-    // return previewGlyphsCache.get(frame.id);
-
-    if (!previewGlyphsCache) previewGlyphsCache = new Map();
-    return state.layeredGlyphs(state.expandedFrames()[previewIndex]);
-}
-
 
 function setupActions() {
     actions.registerAction('preview.toggle-component', () => {
@@ -183,8 +168,32 @@ function setupEventBus() {
     })
 
     eventBus.on([EVENTS.REFRESH.ALL], () => reset())
+
+    eventBus.on([EVENTS.STATE.INVALIDATED], () => resetCache())
 }
 
+// --------------------------------------------------------------------------- Glyph cache
+// When preview is running, it needs to render the layeredGlyphs over and over for each frame (often at high fps).
+// We cache these layeredGlyphs so they don't have to be recalculated every frame.
+
+let previewGlyphsCache;
+
+function getPreviewGlyphs() {
+    let frame = state.expandedFrames()[previewIndex];
+
+    if (!previewGlyphsCache) previewGlyphsCache = new Map();
+    if (!previewGlyphsCache.has(frame.id)) previewGlyphsCache.set(frame.id, state.layeredGlyphs(frame));
+
+    return previewGlyphsCache.get(frame.id);
+}
+
+function resetCache() {
+    previewGlyphsCache = null;
+}
+
+
+
+// --------------------------------------------------------------------------- Popup
 
 function openPopup() {
     // Manually hide 'open-popup' button tooltip since we are leaving the page and it won't detect mouseleave
