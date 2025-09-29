@@ -163,7 +163,7 @@ function setupEventBus() {
 
     eventBus.on(EVENTS.REFRESH.CURRENT_FRAME, () => {
         // current frame changed -> clear cache for that frame and redraw
-        previewGlyphsCache.delete(state.currentFrame().id);
+        deletedCachedFrame(state.currentFrame().id);
         redraw();
     })
 
@@ -191,6 +191,9 @@ function resetCache() {
     previewGlyphsCache = null;
 }
 
+function deletedCachedFrame(frameId) {
+    if (previewGlyphsCache) previewGlyphsCache.delete(frameId);
+}
 
 
 // --------------------------------------------------------------------------- Popup

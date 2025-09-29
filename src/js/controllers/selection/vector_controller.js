@@ -144,7 +144,7 @@ let pasteCell; // Remember latest mouseup/mousedown cells for use when pasting
 function setupEventBus() {
     let prevCell;
 
-    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas, mouseCoords }) => {
         if (mouseEvent.button !== MOUSE.LEFT) return;
         pasteCell = cell;
         if (state.getConfig('tool') !== 'select') return;
@@ -157,22 +157,24 @@ function setupEventBus() {
             createEmptyTextbox(cell);
         } else {
             if (!mouseEvent.shiftKey) deselectAllShapes();
-            startMarquee(canvas, mouseEvent);
+            startMarquee(canvas, mouseCoords);
         }
 
         prevCell = cell;
     })
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas }) => {
-        if (draggedHandle) updateHandleDrag(canvas, mouseEvent, cell, prevCell);
-        if (marquee) updateMarquee(mouseEvent);
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ cell, canvas, isDragging, mouseCoords }) => {
+        if (!isDragging) return;
+
+        if (draggedHandle) updateHandleDrag(canvas, mouseCoords, cell, prevCell);
+        if (marquee) updateMarquee(mouseCoords);
 
         prevCell = cell;
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseCoords, cell }) => {
         if (draggedHandle) finishHandleDrag();
-        if (marquee) finishMarquee(mouseEvent);
+        if (marquee) finishMarquee(mouseCoords);
         pasteCell = cell;
     })
 
@@ -211,12 +213,12 @@ function startHandleDrag(canvas, mouseEvent, cell, handle) {
 // Note: This is distinct from `prevCell`, which tracks unrounded positions.
 let prevRoundedCell;
 
-function updateHandleDrag(canvas, mouseEvent, cell, prevCell) {
+function updateHandleDrag(canvas, mouseCoords, cell, prevCell) {
     switch (draggedHandle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
         case HANDLE_TYPES.CELL:
-            const roundedCell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).roundedCell;
+            const roundedCell = canvas.screenToWorld(mouseCoords.x, mouseCoords.y).roundedCell;
             if (prevRoundedCell && prevRoundedCell.equals(roundedCell)) return;
             prevRoundedCell = roundedCell.clone();
             shapeSelector.resize(draggedHandle, cell, roundedCell)
@@ -226,7 +228,7 @@ function updateHandleDrag(canvas, mouseEvent, cell, prevCell) {
             shapeSelector.translate(cell.row - prevCell.row, cell.col - prevCell.col)
             break;
         case HANDLE_TYPES.CARET:
-            updateTextSelection(canvas, mouseEvent, cell, draggedHandle)
+            updateTextSelection(canvas, mouseCoords, cell, draggedHandle)
             break;
         default:
             throw new Error(`Unknown handle type: ${draggedHandle.type}`)
@@ -291,14 +293,14 @@ export function getHandle(cell, mouseEvent, canvas) {
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.
 
-function startMarquee(canvas, mouseEvent) {
+function startMarquee(canvas, mouseCoords) {
     const isFreshMarquee = !hasSelectedShapes();
     const originalSelection = selectedShapeIds();
 
     marquee = new VectorMarquee({
         canvas,
-        startX: mouseEvent.offsetX,
-        startY: mouseEvent.offsetY,
+        startX: mouseCoords.x,
+        startY: mouseCoords.y,
         onUpdate: area => {
             const marqueeShapeIds = state.testCurrentCelMarquee(area).map(shape => shape.id);
 
@@ -319,13 +321,13 @@ function startMarquee(canvas, mouseEvent) {
     })
 }
 
-function updateMarquee(mouseEvent) {
-    marquee.update(mouseEvent.offsetX, mouseEvent.offsetY);
+function updateMarquee(mouseCoords) {
+    marquee.update(mouseCoords.x, mouseCoords.y);
     eventBus.emit(EVENTS.SELECTION.CHANGED)
 }
 
-function finishMarquee(mouseEvent) {
-    marquee.update(mouseEvent.offsetX, mouseEvent.offsetY);
+function finishMarquee(mouseCoords) {
+    marquee.update(mouseCoords.x, mouseCoords.y);
     marquee.finish();
     marquee = null;
     eventBus.emit(EVENTS.SELECTION.CHANGED)
@@ -878,15 +880,15 @@ function startTextSelection(canvas, mouseEvent, cell, handle) {
  * - PARAGRAPH: extend the selection by paragraph
  *
  * @param {Canvas} canvas - Canvas instance, used to convert mouse coords to text cells.
- * @param {MouseEvent} mouseEvent - Current mouse event during drag.
+ * @param {{x: number, y: number}} mouseCoords - Current mouse coords during drag.
  * @param {Cell} cell - The text cell under the mouse.
  * @param {CaretHandle} handle - Caret handle tracking selection state.
  */
-function updateTextSelection(canvas, mouseEvent, cell, handle) {
+function updateTextSelection(canvas, mouseCoords, cell, handle) {
     switch(handle.selectionMode) {
         case CARET_HANDLE_SELECTION_MODES.CHAR:
             // When single clicking, we do not just use the provided `cell`. We round up or down; see Cell#caretCell definition.
-            const caretCell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell
+            const caretCell = canvas.screenToWorld(mouseCoords.x, mouseCoords.y).caretCell
             const mouseIndex = handle.shape.textLayout.getCaretIndexForCell(caretCell);
             if (mouseIndex < handle.initialSelection[0]) {
                 setSelectedTextRange(handle.initialSelection[1], mouseIndex);

@@ -193,7 +193,7 @@ function setupEventBus() {
 
     let prevCell; // Used to keep track of whether the mousemove is entering a new cell
 
-    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas, mouseDownButton }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEDOWN, ({ mouseEvent, cell, canvas, mouseDownButton, currentPoint }) => {
         const tool = toolForMouseButton(mouseDownButton);
         $canvasContainer.css('cursor', cursorStyle(tool, true, mouseEvent, cell, canvas));
 
@@ -201,23 +201,23 @@ function setupEventBus() {
 
         switch(tool) {
             case 'draw-freeform':
-                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, currentPoint);
                 break;
             case 'draw-rect':
-                handleDrawMousedown(SHAPE_TYPES.RECT, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.RECT, cell, currentPoint);
                 break;
             case 'draw-line':
-                handleDrawMousedown(SHAPE_TYPES.LINE, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.LINE, cell, currentPoint);
                 break;
             case 'draw-ellipse':
-                handleDrawMousedown(SHAPE_TYPES.ELLIPSE, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.ELLIPSE, cell, currentPoint);
                 break;
             case 'draw-textbox':
-                handleDrawMousedown(SHAPE_TYPES.TEXTBOX, cell, canvas, mouseEvent);
+                handleDrawMousedown(SHAPE_TYPES.TEXTBOX, cell, currentPoint);
                 break;
             case 'eraser':
                 // Eraser is just a freeform line set to monochar style & empty char
-                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, canvas, mouseEvent, {
+                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, currentPoint, {
                     [STROKE_STYLE_PROPS[SHAPE_TYPES.FREEFORM]]: STROKE_STYLE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_MONOCHAR,
                     [CHAR_PROP]: EMPTY_CHAR,
                     [COLOR_PROP]: undefined
@@ -225,7 +225,7 @@ function setupEventBus() {
                 break;
             case 'paint-brush':
                 // Paint brush is just a freeform line set to monochar style with undefined char and defined color
-                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, canvas, mouseEvent, {
+                handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, currentPoint, {
                     [STROKE_STYLE_PROPS[SHAPE_TYPES.FREEFORM]]: STROKE_STYLE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_MONOCHAR,
                     [CHAR_PROP]: undefined,
                     [COLOR_PROP]: state.primaryColorIndex()
@@ -264,7 +264,7 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas, isDragging, originalPoint, currentPoint, mouseDownButton }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({mouseEvent, cell, canvas, isDragging, originalPoint, currentPoint, mouseDownButton}) => {
         const tool = toolForMouseButton(mouseDownButton);
         $canvasContainer.css('cursor', cursorStyle(tool, isDragging, mouseEvent, cell, canvas));
 
@@ -278,15 +278,15 @@ function setupEventBus() {
             case 'draw-textbox':
             case 'eraser':
             case 'paint-brush':
-                if (isDragging && isNewCell) handleDrawMousemove(cell, canvas, mouseEvent);
+                if (isDragging && isNewCell) handleDrawMousemove(cell, currentPoint);
                 break;
             case 'draw-freeform':
                 // Intentionally not checking if isNewCell; we update the char based on pixels not cells
-                if (isDragging) handleDrawMousemove(cell, canvas, mouseEvent);
+                if (isDragging) handleDrawMousemove(cell, currentPoint);
                 break;
             case 'draw-line':
                 // Intentionally not checking if isDragging; mouseup can occur between points on polyline
-                if (isNewCell) handleDrawMousemove(cell, canvas, mouseEvent);
+                if (isNewCell) handleDrawMousemove(cell, currentPoint);
                 break;
             case 'pan':
                 if (isDragging) {
@@ -974,7 +974,7 @@ function getDrawingModifiersTooltip(tool, drawType) {
     return result;
 }
 
-function handleDrawMousedown(shapeType, cell, canvas, mouseEvent, options = {}) {
+function handleDrawMousedown(shapeType, cell, currentPoint, options = {}) {
     if (!drawingContent) {
         selectionController.vector.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
 
@@ -988,15 +988,15 @@ function handleDrawMousedown(shapeType, cell, canvas, mouseEvent, options = {}) 
         });
     }
 
-    drawingContent.handleDrawMousedown(cell, { point: mousePoint(canvas, mouseEvent) });
+    drawingContent.handleDrawMousedown(cell, { point: currentPoint });
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
-function handleDrawMousemove(cell, canvas, mouseEvent, options = {}) {
+function handleDrawMousemove(cell, currentPoint, options = {}) {
     if (!drawingContent) return;
     if (!cell) return;
 
-    drawingContent.handleDrawMousemove(cell, { point: mousePoint(canvas, mouseEvent), ...options });
+    drawingContent.handleDrawMousemove(cell, { point: currentPoint, ...options });
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
@@ -1026,11 +1026,6 @@ function finishDrawing() {
     eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
 }
-
-function mousePoint(canvas, mouseEvent) {
-    return canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY)
-}
-
 
 
 // -------------------------------------------------------------------------------- Move-all tool

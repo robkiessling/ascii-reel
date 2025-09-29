@@ -242,14 +242,11 @@ export default class VectorCel {
     }
 
     testMarquee(cellArea) {
-        // Find all shapes that fit in the cellArea bounds
-        const shapes = [];
-        this.shapes().forEach(shape => {
-            if (shape.fitsInside(cellArea)) {
-                shapes.push(shape);
-            }
-        })
-        return shapes;
+        // Option 1: Include shapes that completely fit in the cellArea bounds
+        // return this.shapes().filter(shape => shape.fitsInside(cellArea));
+
+        // Option 2: Include shapes that partially overlap with cellArea bounds
+        return this.shapes().filter(shape => shape.overlaps(cellArea));
     }
 
 }

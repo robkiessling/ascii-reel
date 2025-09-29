@@ -161,11 +161,34 @@ export default class CellArea extends PixelRect {
         )
     }
 
+    /**
+     * Returns whether the provided cellArea fits entirely within this cellArea.
+     * Comparison is inclusive: edges must lie within or on the boundaries.
+     *
+     * @param {CellArea} cellArea - The area to check for containment.
+     * @returns {boolean} - True if `cellArea` is fully inside this area.
+     */
     contains(cellArea) {
         return this.topLeft.row <= cellArea.topLeft.row &&
             this.topLeft.col <= cellArea.topLeft.col &&
             this.bottomRight.row >= cellArea.bottomRight.row &&
             this.bottomRight.col >= cellArea.bottomRight.col;
+    }
+
+    /**
+     * Returns true if this cellArea overlaps with the given cellArea.
+     * Overlap is defined as any shared cells, including edge or corner contact.
+     *
+     * @param {CellArea} cellArea - The other area to test for overlap.
+     * @returns {boolean} - True if the two areas share any overlapping space.
+     */
+    overlaps(cellArea) {
+        return !(
+            this.bottomRight.row < cellArea.topLeft.row ||
+            this.topLeft.row > cellArea.bottomRight.row ||
+            this.bottomRight.col < cellArea.topLeft.col ||
+            this.topLeft.col > cellArea.bottomRight.col
+        );
     }
 
     toString() {

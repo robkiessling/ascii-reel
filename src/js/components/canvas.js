@@ -829,10 +829,23 @@ export default class Canvas {
 
         const runCallback = (callback, evt, includeMouseDownArgs = false) => {
             if (!this.initialized) return;
-            const cell = this.screenToWorld(evt.offsetX, evt.offsetY).cell;
-            const currentPoint = this.screenToWorld(evt.offsetX, evt.offsetY);
 
-            const callbackArgs = {evt, cell, currentPoint};
+            // offsetX/offsetY only report correct values when the event target is the canvas. If the mouse is dragging
+            // outside the canvas, compute canvas-relative coordinates manually using clientX/clientY and the canvas's
+            // bounding rect. The is stored under `mouseCoords` for outside handlers to use.
+            const rect = this.canvasElement.getBoundingClientRect();
+            const mouseCoords = { 
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
+
+            // const inCanvas = evt.clientX >= rect.left && evt.clientX <= rect.right &&
+            //     evt.clientY >= rect.top && evt.clientY <= rect.bottom;
+
+            const cell = this.screenToWorld(mouseCoords.x, mouseCoords.y).cell;
+            const currentPoint = this.screenToWorld(mouseCoords.x, mouseCoords.y);
+
+            const callbackArgs = {evt, cell, currentPoint, mouseCoords/*, inCanvas*/};
             if (includeMouseDownArgs) $.extend(callbackArgs, {isDragging, originalPoint, mouseDownButton})
             callback(callbackArgs);
         }
@@ -849,11 +862,16 @@ export default class Canvas {
             })
 
             if (this.options.onMouseMove) {
-                this.$canvas.on('mousemove', evt => runCallback(this.options.onMouseMove, evt, true))
+                // Attaching mousemove to document so handlers continue to work even if mouse drags off of the canvas.
+                // Most (but not all) handlers will ignore the event unless isDragging is true (i.e. mousedown originated
+                // on the canvas and hasn't been released yet).
+                $(document).on('mousemove', evt => runCallback(this.options.onMouseMove, evt, true))
             }
 
+            // Attaching mouseup to document so handlers continue to work even if mouse drags off of the canvas.
+            // This event will only fire if the mousedown occurred on the canvas due to mouseDownButton comparison
             $(document).on('mouseup', evt => {
-                // Ignore multiple mouse buttons being pressed at the same time
+                // Ignore multiple mouse buttons being pressed at the same time, and ensure mousedown occurred on canvas.
                 if (evt.button !== mouseDownButton) return;
 
                 if (this.options.onMouseUp) runCallback(this.options.onMouseUp, evt, true)

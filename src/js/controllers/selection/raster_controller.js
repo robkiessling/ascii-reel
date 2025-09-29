@@ -713,10 +713,12 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ cell, canvas, mouseCoords, isDragging }) => {
+        if (!isDragging) return;
+
         // Special text-editor cell rounding to better mirror a real text editor -- see Cell.caretCell
         if (isDrawing && state.getConfig('tool') === 'text-editor' && state.getConfig('caretStyle') === 'I-beam') {
-            cell = canvas.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY).caretCell;
+            cell = canvas.screenToWorld(mouseCoords.x, mouseCoords.y).caretCell;
         }
 
         const isNewCell = !prevCell || !prevCell.equals(cell);

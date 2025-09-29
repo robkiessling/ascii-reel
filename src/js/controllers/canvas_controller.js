@@ -40,20 +40,20 @@ export function init() {
 
     // selection-canvas is on the top of the canvas stack, so it handles all the mouse events
     selectionCanvas = new Canvas($('#selection-canvas'), {
-        onMouseDown: ({evt, cell, currentPoint, mouseDownButton}) => {
+        onMouseDown: ({evt, cell, currentPoint, mouseDownButton, mouseCoords}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEDOWN, {
-                mouseEvent: evt, canvas: selectionCanvas, cell, currentPoint, mouseDownButton
+                mouseEvent: evt, canvas: selectionCanvas, cell, currentPoint, mouseDownButton, mouseCoords
             })
         },
-        onMouseMove: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton}) => {
+        onMouseMove: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEMOVE, {
-                mouseEvent: evt, canvas: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton
+                mouseEvent: evt, canvas: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords
             })
             eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
         },
-        onMouseUp: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton}) => {
+        onMouseUp: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEUP, {
-                mouseEvent: evt, canvas: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton
+                mouseEvent: evt, canvas: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords
             })
         },
 

@@ -237,6 +237,10 @@ export default class Shape {
         return cellArea.contains(this.boundingArea);
     }
 
+    overlaps(cellArea) {
+        return cellArea.overlaps(this.boundingArea);
+    }
+
     get canHaveText() {
         return false;
     }
