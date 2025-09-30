@@ -2,6 +2,7 @@ import 'jquery-ui/ui/widgets/sortable.js';
 import 'jquery-ui/ui/widgets/slider.js';
 import 'jquery-ui/ui/widgets/dialog.js';
 import 'jquery-visible';
+import 'simplebar/dist/simplebar.min.css'; // https://github.com/Grsmto/simplebar/issues/721#issuecomment-2880174890
 import '../styles/app.scss'
 
 import { init as initClipboard } from "./io/clipboard.js"
