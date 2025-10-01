@@ -13,7 +13,7 @@ import {LAYER_TYPES} from "./constants.js";
 import {COLOR_STR_PROP} from "../geometry/shapes/constants.js";
 
 export {
-    numRows, numCols, setConfig, getConfig, fontFamily, getName, getDrawingChar, getDrawingColor, setDrawingColor,
+    numRows, numCols, setConfig, getConfig, fontFamily, getName, getDrawingChar, getDrawingColor, updateDrawingProp,
     isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, RASTER_TOOLS, VECTOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {
@@ -327,12 +327,12 @@ export function validateColorMode() {
         timeline.convertToMonochrome(charColor);
         palette.convertToMonochrome(charColor);
         config.toolFallback();
-        config.setDrawingColor(charColor);
+        config.updateDrawingProp(COLOR_STR_PROP, charColor);
     }
     else {
         // Ensure primaryColor does not clash with background
         if (config.getDrawingColor() === config.getConfig('background')) {
-            config.setDrawingColor(config.getConfig('background') === palette.BLACK ? palette.WHITE : palette.BLACK);
+            config.updateDrawingProp(COLOR_STR_PROP, config.getConfig('background') === palette.BLACK ? palette.WHITE : palette.BLACK);
         }
     }
 }

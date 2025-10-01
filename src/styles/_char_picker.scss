@@ -43,9 +43,8 @@ $char-picker-arrow-border-size: $char-picker-arrow-size + 2px;
 }
 $quick-swap-border: linear-gradient(
                 var(--char-picker-angle),
-                var(--color-contrast) 0%,
-                var(--color-contrast) 20%,
-                var(--color-primary) 60%,
+                var(--color-surface-hover) 0%,
+                var(--color-primary) 70%,
                 var(--color-primary) 100%
 );
 .char-picker-container.animated-border {
@@ -55,7 +54,7 @@ $quick-swap-border: linear-gradient(
     width: calc($sub-tool-size - $border-size * 2);
     border: $border-size solid #0000;
     background: linear-gradient(to bottom, var(--color-surface), var(--color-surface)) padding-box, $quick-swap-border border-box;
-    animation: 3s char-picker-rotate linear infinite;
+    animation: 6s char-picker-rotate linear infinite;
 
     &:hover:not(.disabled):not(.active) {
       background: linear-gradient(to bottom, var(--color-surface-hover), var(--color-surface-hover)) padding-box,

@@ -146,7 +146,7 @@ export const DEFAULT_DRAW_PROPS = {
     [BRUSH_PROP]: Object.keys(BRUSHES)[0],
     [FILL_PROP]: Object.values(FILL_OPTIONS)[0],
     [CHAR_PROP]: 'A',
-    [COLOR_STR_PROP]: new Color('rgba(0,0,0,1)').hex, // todo this should use DEFAULT_COLOR, once we move that to a constants file
+    [COLOR_STR_PROP]: '', // Will be overridden during `deserialize`
     [TEXT_PROP]: '',
     [TEXT_ALIGN_H_PROP]: TEXT_ALIGN_H_OPTS.CENTER,
     [TEXT_ALIGN_V_PROP]: TEXT_ALIGN_V_OPTS.MIDDLE

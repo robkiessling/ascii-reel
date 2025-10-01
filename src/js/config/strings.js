@@ -192,11 +192,6 @@ export const STRINGS = {
     'tools.shapes.fill.monochar.name': 'Solid Char',
     'tools.shapes.fill.monochar.description': "Fills the background with the shape's selected character",
 
-    'tools.shapes.char-picker.name': 'Shape Character',
-    'tools.shapes.char-picker.description': 'Character used for certain stroke/fill styles. While open, pressing a key will select that character.',
-    'tools.shapes.color-picker.name': 'Shape Color',
-    'tools.shapes.color-picker.description': 'Click to open the color picker.',
-
     'tools.shapes.order.name': 'Re-order Shape',
     'tools.shapes.sendToBack.name': 'Send To Back',
     'tools.shapes.sendBackward.name': 'Send Backward',

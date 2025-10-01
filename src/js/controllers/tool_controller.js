@@ -347,16 +347,8 @@ function setupEventBus() {
         }
     });
 
-    eventBus.on(EVENTS.PALETTE.COLOR_SELECTED, ({ color }) => {
-        applyColor(color);
-
-        if (selectionController.vector.hasSelectedShapes()) {
-            shapeColorPicker.value(color)
-        }
-    })
-    eventBus.on(EVENTS.UNICODE.CHAR_SELECTED, ({ char }) => {
-        applyPrimaryChar(char);
-    })
+    eventBus.on(EVENTS.PALETTE.COLOR_SELECTED, ({ color }) => applyColor(color));
+    eventBus.on(EVENTS.UNICODE.CHAR_SELECTED, ({ char }) => applyPrimaryChar(char));
 }
 
 
@@ -670,6 +662,8 @@ function activeShapeTypes() {
  */
 function activeShapeProps() {
     if (selectionController.vector.hasSelectedShapes()) {
+        // If there are one or more shapes selected, we gather props from all the selected shapes. If, for example,
+        // one shape had `fill:none` and one had `fill:whitespace`, the result would be `fill:[none,whitespace]`.
         let result = {};
         selectedShapes().forEach(shape => {
             for (const [propKey, propValue] of Object.entries(shape.props)) {
@@ -679,55 +673,74 @@ function activeShapeProps() {
         })
         return transformValues(result, (k, v) => [...v]);
     } else {
-        const transformDrawProps = allowedProps => {
-            const filteredProps = filterObject(state.getConfig('drawProps'), (prop, _) => allowedProps.has(prop));
-            console.log('filtered: ', JSON.stringify(filteredProps));
-
-            return transformObject(filteredProps, (propKey, propValue) => {
-                // Shapes use COLOR_PROP, drawing uses COLOR_STR_PROP
-                if (propKey === COLOR_PROP) {
-                    return [COLOR_STR_PROP, [state.colorStr(propValue)]]
-                } else {
-                    return [propKey, [propValue]];
-                }
-            });
-        }
-
+        // If there are no shapes selected, we use portions of config's drawProps based on the current tool
+        let allowedProps;
         switch(state.getConfig('tool')) {
             case 'draw-rect':
             case 'draw-freeform':
             case 'draw-line':
             case 'draw-ellipse':
             case 'draw-textbox':
-                return transformDrawProps(getConstructor(activeShapeTypes()[0]).allowedProps);
+                allowedProps = new Set(getConstructor(activeShapeTypes()[0]).allowedProps);
+                // TODO [color prop issue]
+                if (allowedProps.has(COLOR_PROP)) {
+                    allowedProps.delete(COLOR_PROP);
+                    allowedProps.add(COLOR_STR_PROP);
+                }
+                break;
             case 'fill-char':
-                return transformDrawProps(new Set([CHAR_PROP]))
+                allowedProps = new Set([CHAR_PROP]);
+                break;
             case 'paint-brush':
-                return transformDrawProps(new Set([BRUSH_PROP, COLOR_STR_PROP]))
+                allowedProps = new Set([BRUSH_PROP, COLOR_STR_PROP]);
+                break;
             case 'eraser':
-                return transformDrawProps(new Set([BRUSH_PROP]))
+                allowedProps = new Set([BRUSH_PROP]);
+                break;
             case 'color-swap':
             case 'fill-color':
             case 'eyedropper':
             case 'text-editor':
-                return transformDrawProps(new Set([COLOR_STR_PROP]))
+                allowedProps = new Set([COLOR_STR_PROP]);
+                break;
             default:
-                return {};
+                allowedProps = new Set();
         }
+
+        const filteredProps = filterObject(state.getConfig('drawProps'), (prop, _) => {
+            if (prop === COLOR_STR_PROP && !state.isMultiColored()) return false;
+            return allowedProps.has(prop)
+        });
+        return transformValues(filteredProps, (propKey, propValue) => [propValue]);
     }
 }
+
+// TODO [color prop issue] - would something like this be cleaner?
+// function drawPropsForShape() {
+//     const drawProps = structuredClone(state.getConfig('drawProps'));
+//     drawProps[COLOR_PROP] = state.colorIndex(drawProps[COLOR_STR_PROP]);
+//     delete drawProps[COLOR_STR_PROP];
+//     return drawProps;
+// }
+// function drawPropsForConfig() {
+//     const drawProps = structuredClone(state.getConfig('drawProps'));
+//     drawProps[COLOR_PROP] = state.colorIndex(drawProps[COLOR_STR_PROP]);
+//     delete drawProps[COLOR_STR_PROP];
+//     return drawProps;
+// }
+
+
 function firstActiveShapeProp(propKey) {
     const props = activeShapeProps();
     return props[propKey] === undefined ? undefined : props[propKey][0];
 }
 function updateActiveShapeProp(propKey, propValue, propagate = true) {
-    let refreshTools = false;
+    let refreshTools = state.getConfig('drawProps')[propKey] !== propValue; // refresh tools if drawing property changes
 
-    const drawProps = structuredClone(state.getConfig('drawProps'));
-    if (drawProps[propKey] !== propValue) refreshTools = true; // refresh tools if drawing property changes
-    drawProps[propKey] = propValue;
-    state.setConfig('drawProps', drawProps);
+    // Always update the drawing prop
+    state.updateDrawingProp(propKey, propValue);
 
+    // Also update any selected shape's props, if propagate is true
     if (propagate && selectionController.vector.hasSelectedShapes()) {
         const shapesUpdated = selectionController.vector.updateSelectedShapes(shape => shape.updateProp(propKey, propValue))
         if (shapesUpdated) refreshTools = false; // if shapes were updated, that will refresh tools, no need to refresh again
@@ -873,7 +886,6 @@ function setupOrderMenu() {
 }
 
 function refreshShapeProperties() {
-    console.log(activeShapeProps());
     const isVisible = !isEmptyObject(activeShapeProps());
     $shapeProperties.toggle(isVisible);
 
@@ -967,8 +979,13 @@ function handleDrawMousedown(shapeType, cell, currentPoint, options = {}) {
     if (!drawingContent) {
         selectionController.vector.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
 
+        // TODO [color prop issue]
+        const drawProps = structuredClone(state.getConfig('drawProps'));
+        drawProps[COLOR_PROP] = state.colorIndex(drawProps[COLOR_STR_PROP]);
+        delete drawProps[COLOR_STR_PROP];
+
         drawingContent = Shape.begin(shapeType, {
-            ...state.getConfig('drawProps'),
+            ...drawProps,
             ...options
         });
     }
@@ -1109,10 +1126,14 @@ function setupCharPicker() {
         popupDirection: 'bottom',
         popupOffset: 22,
         tooltip: () => {
-            return standardTip($shapeChar, 'tools.shapes.char-picker', {
-                placement: 'bottom',
-                offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-            });
+            return setupTooltips(
+                $shapeChar.toArray(),
+                'tools.shapes.charPicker',
+                {
+                    placement: 'bottom',
+                    offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
+                }
+            ).tooltips[0];
         }
     })
 
@@ -1141,8 +1162,10 @@ function showCharPicker() {
 }
 
 function refreshCharPicker() {
-    console.log('refreshCharPicker: ', firstActiveShapeProp(CHAR_PROP));
-    setPrimaryChar(firstActiveShapeProp(CHAR_PROP));
+    const char = firstActiveShapeProp(CHAR_PROP);
+    if (char === undefined) return; // if active shape has no char prop, cannot refresh picker
+
+    setPrimaryChar(char);
     $shapeChar.toggleClass('animated-border', isQuickSwapEnabled());
     $quickSwap.toggleClass('active', isQuickSwapEnabled());
 }
@@ -1197,12 +1220,12 @@ function setupColorPicker() {
             popup: 'bottom'
         },
         tooltip: () => {
-            return standardTip($shapeColor, 'tools.shapes.color-picker', {
+            return standardTip($shapeColor, 'tools.shapes.colorPicker', {
                 placement: 'bottom',
                 offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
             })
         },
-        onChange: color => setColor(color),
+        onChange: color => setColor(color, false),
         onDone: color => applyColor(color),
     })
 }
@@ -1210,25 +1233,28 @@ function setupColorPicker() {
 function showColorPicker() {
     if (!state.isMultiColored()) return false;
 
-    return activeShapeProps()[selectionController.vector.hasSelectedShapes() ? COLOR_PROP : COLOR_STR_PROP] !== undefined;
+    return activeShapeProps()[useColorIndex() ? COLOR_PROP : COLOR_STR_PROP] !== undefined;
 }
 
 function refreshColorPicker() {
-    if (!showColorPicker()) return;
+    const color = useColorIndex() ? state.colorStr(firstActiveShapeProp(COLOR_PROP)) : firstActiveShapeProp(COLOR_STR_PROP)
 
-    const color = selectionController.vector.hasSelectedShapes() ?
-        state.colorStr(firstActiveShapeProp(COLOR_PROP)) :
-        firstActiveShapeProp(COLOR_STR_PROP)
+    if (color === undefined) return; // if active shape has no color prop, cannot refresh picker
 
     setColor(color);
 }
 
-function setColor(colorStr) {
-    if (shapeColorPicker) shapeColorPicker.value(colorStr, true);
+// TODO [color prop issue]
+function useColorIndex() {
+    return selectionController.vector.hasSelectedShapes();
+}
 
-    const colorIndex = state.colorIndex(colorStr);
-    updateActiveShapeProp(COLOR_PROP, colorIndex, false);
+function setColor(colorStr, updatePicker = true) {
+    if (shapeColorPicker && updatePicker) shapeColorPicker.value(colorStr, true);
+
+    // Always save to COLOR_STR_PROP, regardless of whether we are editing shapes or not (do not set draw CHAR_PROP)
     updateActiveShapeProp(COLOR_STR_PROP, colorStr, false);
+
     eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
 }
 
@@ -1238,7 +1264,7 @@ function applyColor(colorStr) {
     const colorIndex = state.colorIndex(colorStr);
 
     // TODO MAYBE WRONG SPOT FOR THIS?
-    selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+    if (useColorIndex()) selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
 }
 
 
