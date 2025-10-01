@@ -59,8 +59,8 @@ let actionIdToShortcut = {
     'tools.standard.move-all': { key: 'm' },
     'tools.standard.paint-brush': { key: 'b' },
     'tools.standard.eyedropper': { key: 'y' },
-    'tools.standard.char-picker': { key: 'c' },
-    'tools.standard.quick-swap-char': { key: 'q' },
+    'tools.shapes.charPicker': { key: 'c' },
+    'tools.shapes.quickSwapChar': { key: 'q' },
 };
 
 let shortcutToActionId = {};

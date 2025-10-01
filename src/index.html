@@ -106,28 +106,6 @@
                         </div>
                     </div>
 
-                    <div class="spacer"></div>
-                    <div class="standard-tool-row">
-                        <div class="standard-tool-column">
-                            <div class="char-picker-container" id="current-char">
-                                <div class="char-well-border">
-                                    <div class="char-well"></div>
-                                </div>
-                                <button class="char-well-corner-button">
-                                    <span class="ri ri-fw ri-keyboard-line"></span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="spacer color-tool"></div>
-                    <div class="standard-tool-row color-tool">
-                        <div class="standard-tool-column">
-                            <div id="current-color"></div>
-                        </div>
-                        <div class="standard-tool-column"></div>
-                    </div>
-
                 </div>
                 <div id="context-tools-left">
                     <div id="selection-tools" class="sub-tool-menu" style="display: none;">
@@ -162,10 +140,9 @@
                             <span class="group-title">Char</span>
                             <div class="group-actions">
                                 <div class="char-picker-container" id="shape-char">
-                                    <div class="char-well-border">
-                                        <div class="char-well"></div>
-                                    </div>
+                                    <div class="char-well"></div>
                                 </div>
+                                <div class="action-button" data-action="tools.shapes.quickSwapChar"></div>
                             </div>
                         </div>
                         <div class="property-group" data-static="true" id="shape-color-menu-group">
@@ -181,7 +158,7 @@
                                 <div id="shape-text-align-v"></div>
                             </div>
                         </div>
-                        <div class="property-group">
+                        <div class="property-group" id="shape-actions">
                             <span class="group-title">Actions</span>
                             <div class="group-actions">
                                 <div id="shape-order"></div>

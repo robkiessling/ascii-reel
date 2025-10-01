@@ -39,7 +39,7 @@ export default class ColorPicker {
 
                 if (!this._$addToPalette) {
                     this._$addToPalette = this.$picker.find('.picker_sample');
-                    this._addToPaletteTooltip = standardTip(this._$addToPalette, 'tools.standard.color-picker-add', {
+                    this._addToPaletteTooltip = standardTip(this._$addToPalette, 'tools.shapes.colorPickerAdd', {
                         placement: 'right',
                         offset: [0, 20],
                     })

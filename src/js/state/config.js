@@ -2,9 +2,10 @@ import {getFormattedDateTime} from "../utils/strings.js";
 import {COLOR_FORMAT, DEFAULT_COLOR} from "./palette.js";
 import {pick} from "../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
-import {BRUSHES, DEFAULT_STROKE_STYLES} from "../geometry/shapes/constants.js";
+import {CHAR_PROP, COLOR_PROP, COLOR_STR_PROP, DEFAULT_DRAW_PROPS} from "../geometry/shapes/constants.js";
 import {LAYER_TYPES} from "./constants.js";
 import * as timeline from "./timeline/index.js";
+import {colorIndex} from "./timeline/index.js";
 
 // TODO There are a lot of strings that should be constants
 // TODO Organize this better? E.g. projectSettings could contain certain keys
@@ -31,10 +32,7 @@ export const DEFAULT_STATE = {
     showTicks: false,
     lockLayerVisibility: true,
     tool: 'text-editor',
-    primaryColor: DEFAULT_COLOR,
-    primaryChar: 'A',
-    brush: Object.keys(BRUSHES)[0], // todo brushType/brushSize
-    drawStrokeStyles: DEFAULT_STROKE_STYLES,
+    drawProps: DEFAULT_DRAW_PROPS,
     lastExportOptions: null,
     caretStyle: 'I-beam', // vs. block
 }
@@ -129,6 +127,19 @@ export function getName(includeDefaultTimestamp = true) {
                 return 'Untitled';
         }
     }
+}
+
+export function getDrawingChar() {
+    return getConfig('drawProps')[CHAR_PROP];
+}
+export function getDrawingColor() {
+    return getConfig('drawProps')[COLOR_STR_PROP];
+}
+export function setDrawingColor(colorStr) {
+    const drawProps = structuredClone(getConfig('drawProps'));
+    drawProps[COLOR_STR_PROP] = colorStr;
+    drawProps[COLOR_PROP] = colorIndex(colorStr);
+    setConfig('drawProps', drawProps);
 }
 
 export function isAnimationProject() {

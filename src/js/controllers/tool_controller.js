@@ -9,7 +9,6 @@ import * as state from '../state/index.js';
 import * as selectionController from "./selection/index.js";
 import * as actions from "../io/actions.js";
 import {setupTooltips, shouldModifyAction} from "../io/actions.js";
-import {STRINGS} from "../config/strings.js";
 import {modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import CharPicker from "../components/char_picker.js";
@@ -23,7 +22,7 @@ import {
     STROKE_STYLE_OPTIONS,
     SHAPE_TYPES,
     STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP,
-    BRUSH_PROP, LINKED_PROPS
+    BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
 import {standardTip} from "../components/tooltips.js";
@@ -32,17 +31,10 @@ import {MOUSE} from "../io/mouse.js";
 import {LAYER_TYPES} from "../state/constants.js";
 import {diamondBrushCells, squareBrushCells} from "../geometry/shapes/algorithms/brush.js";
 import Shape from "../geometry/shapes/shape.js";
+import {selectedShapes} from "../state/selection/vector_selection.js";
+import {filterObject, isEmptyObject, transformObject, transformValues} from "../utils/objects.js";
+import {getConstructor} from "../geometry/shapes/registry.js";
 
-
-const DRAWING_MODIFIERS = {
-    'draw-line': {
-        'elbow-line-ascii': { 'shiftKey': 'change-route' },
-        'elbow-arrow-ascii': { 'shiftKey': 'change-route' },
-        'elbow-line-unicode': { 'shiftKey': 'change-route' },
-        'elbow-arrow-unicode': { 'shiftKey': 'change-route' },
-        'elbow-line-monochar': { 'shiftKey': 'change-route' },
-    }
-}
 
 const SUB_TOOL_MENU_TOOLTIP_OFFSET = [0, 15];
 
@@ -58,8 +50,6 @@ export function init() {
     setupEventBus();
     setupStandardTools();
     setupSelectionTools();
-    setupDrawSubMenus();
-    setupBrushSubMenu();
     setupColorPicker();
     setupCharPicker();
     setupShapeProperties();
@@ -93,8 +83,11 @@ export function handleEscapeKey() {
         return true;
     }
 
-    // Turning off quick-swap does not consume the keyboard event
-    if (isQuickSwapEnabled()) toggleQuickSwap(false);
+    if (isQuickSwapEnabled()) {
+        toggleQuickSwap(false);
+        return true;
+    }
+
     return false;
 }
 
@@ -231,7 +224,7 @@ function setupEventBus() {
                 });
                 break;
             case 'fill-char':
-                fillConnectedCells(cell, state.getConfig('primaryChar'), state.primaryColorIndex(), {
+                fillConnectedCells(cell, state.getDrawingChar(), state.primaryColorIndex(), {
                     diagonal: shouldModifyAction('tools.standard.fill-char.diagonal', mouseEvent),
                     charblind: false,
                     colorblind: shouldModifyAction('tools.standard.fill-char.colorblind', mouseEvent)
@@ -355,7 +348,7 @@ function setupEventBus() {
     });
 
     eventBus.on(EVENTS.PALETTE.COLOR_SELECTED, ({ color }) => {
-        selectColor(color);
+        applyColor(color);
 
         if (selectionController.vector.hasSelectedShapes()) {
             shapeColorPicker.value(color)
@@ -492,7 +485,7 @@ function setupSelectionTools() {
     registerAction('flip-v', e => selectionController.raster.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
     registerAction('flip-h', e => selectionController.raster.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
     registerAction('clone', () => selectionController.raster.cloneToAllFrames());
-    registerAction('fill-char', () => fillSelection(state.getConfig('primaryChar'), undefined));
+    registerAction('fill-char', () => fillSelection(state.getDrawingChar(), undefined));
     registerAction('fill-color', () => fillSelection(undefined, state.primaryColorIndex()));
     registerAction('convert-to-whitespace', () => replaceInSelection(EMPTY_CHAR, WHITESPACE_CHAR));
     registerAction('convert-to-empty', () => replaceInSelection(WHITESPACE_CHAR, EMPTY_CHAR));
@@ -566,22 +559,23 @@ function resizeToSelection() {
 
 const BRUSH_TOOLS = ['draw-freeform', 'eraser', 'paint-brush'];
 
-function isDrawBrushEnabled() {
-    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return false;
-
-    switch(state.getConfig('tool')) {
-        case 'draw-freeform':
-            // Brush is only used when drawing irregular-monochar (not other types of freeform drawings)
-            return state.getConfig('drawStrokeStyles')[SHAPE_TYPES.FREEFORM] === 'irregular-monochar';
-        default:
-            return true;
-    }
+// Brush option is disabled if there is a linked prop enforcing a different brush option
+function isBrushDisabled(brush, currentShapeProps) {
+    return LINKED_PROPS.some(({ when, enforce }) => {
+        return currentShapeProps[when.prop] &&
+            currentShapeProps[when.prop].includes(when.value) &&
+            enforce.prop === BRUSH_PROP && enforce.value !== brush
+    })
 }
 
 export function hoveredCells(primaryCell) {
     if (!primaryCell) return [];
-    if (!isDrawBrushEnabled()) return [primaryCell];
-    const { type, size } = BRUSHES[state.getConfig('brush')];
+    if (!BRUSH_TOOLS.includes(state.getConfig('tool'))) return [primaryCell];
+
+    const brush = firstActiveShapeProp(BRUSH_PROP);
+    if (isBrushDisabled(brush, activeShapeProps())) return [primaryCell];
+
+    const { type, size } = BRUSHES[brush];
 
     switch(type) {
         case BRUSH_TYPES.PIXEL_PERFECT:
@@ -595,32 +589,6 @@ export function hoveredCells(primaryCell) {
     }
 }
 
-
-function setupBrushSubMenu() {
-    const $container = $('#context-tools-left');
-    const $menu = $('<div>', {
-        class: 'sub-tool-menu'
-    }).appendTo($container);
-
-    const menu = new IconMenu($menu, {
-        items: Object.keys(BRUSHES).map(brush => {
-            return {
-                value: brush,
-                icon: `tools.brush.${brush}`,
-                tooltip: `tools.brush.${brush}`
-            }
-        }),
-        visible: () => BRUSH_TOOLS.includes(state.getConfig('tool')),
-        disabled: () => !isDrawBrushEnabled(),
-        getValue: () => state.getConfig('brush'),
-        onSelect: newValue => {
-            state.setConfig('brush', newValue)
-            refresh();
-        }
-    })
-
-    subMenus.push(menu);
-}
 
 // -------------------------------------------------------------------------------- Shape Properties
 
@@ -672,9 +640,100 @@ function setupShapeProperties() {
         $shapeProperties.find('.action-button').toArray(),
         element => $(element).data('action'),
         {
-            placement: 'bottom'
+            placement: 'bottom',
+            offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
         }
     );
+}
+
+function activeShapeTypes() {
+    if (selectionController.vector.hasSelectedShapes()) {
+        return [...new Set(selectedShapes().map(shape => shape.type))];
+    } else {
+        switch(state.getConfig('tool')) {
+            case 'draw-rect': return [SHAPE_TYPES.RECT];
+            case 'draw-freeform': return [SHAPE_TYPES.FREEFORM];
+            case 'draw-line': return [SHAPE_TYPES.LINE];
+            case 'draw-ellipse': return [SHAPE_TYPES.ELLIPSE];
+            case 'draw-textbox': return [SHAPE_TYPES.TEXTBOX];
+            default: return [];
+        }
+    }
+}
+
+/**
+ * Collects the shared prop values across all currently selected shapes.
+ *
+ * @returns {Object.<string, any[]>} An object where each key is a prop name, and each value is an array of all
+ *   distinct values for that property across the selection. All strings listed in SHARED_SHAPE_PROPS will be included
+ *   as result keys (their values may be empty arrays). Array values will not contain duplicates.
+ */
+function activeShapeProps() {
+    if (selectionController.vector.hasSelectedShapes()) {
+        let result = {};
+        selectedShapes().forEach(shape => {
+            for (const [propKey, propValue] of Object.entries(shape.props)) {
+                if (!result[propKey]) result[propKey] = new Set();
+                result[propKey].add(propValue);
+            }
+        })
+        return transformValues(result, (k, v) => [...v]);
+    } else {
+        const transformDrawProps = allowedProps => {
+            const filteredProps = filterObject(state.getConfig('drawProps'), (prop, _) => allowedProps.has(prop));
+            console.log('filtered: ', JSON.stringify(filteredProps));
+
+            return transformObject(filteredProps, (propKey, propValue) => {
+                // Shapes use COLOR_PROP, drawing uses COLOR_STR_PROP
+                if (propKey === COLOR_PROP) {
+                    return [COLOR_STR_PROP, [state.colorStr(propValue)]]
+                } else {
+                    return [propKey, [propValue]];
+                }
+            });
+        }
+
+        switch(state.getConfig('tool')) {
+            case 'draw-rect':
+            case 'draw-freeform':
+            case 'draw-line':
+            case 'draw-ellipse':
+            case 'draw-textbox':
+                return transformDrawProps(getConstructor(activeShapeTypes()[0]).allowedProps);
+            case 'fill-char':
+                return transformDrawProps(new Set([CHAR_PROP]))
+            case 'paint-brush':
+                return transformDrawProps(new Set([BRUSH_PROP, COLOR_STR_PROP]))
+            case 'eraser':
+                return transformDrawProps(new Set([BRUSH_PROP]))
+            case 'color-swap':
+            case 'fill-color':
+            case 'eyedropper':
+            case 'text-editor':
+                return transformDrawProps(new Set([COLOR_STR_PROP]))
+            default:
+                return {};
+        }
+    }
+}
+function firstActiveShapeProp(propKey) {
+    const props = activeShapeProps();
+    return props[propKey] === undefined ? undefined : props[propKey][0];
+}
+function updateActiveShapeProp(propKey, propValue, propagate = true) {
+    let refreshTools = false;
+
+    const drawProps = structuredClone(state.getConfig('drawProps'));
+    if (drawProps[propKey] !== propValue) refreshTools = true; // refresh tools if drawing property changes
+    drawProps[propKey] = propValue;
+    state.setConfig('drawProps', drawProps);
+
+    if (propagate && selectionController.vector.hasSelectedShapes()) {
+        const shapesUpdated = selectionController.vector.updateSelectedShapes(shape => shape.updateProp(propKey, propValue))
+        if (shapesUpdated) refreshTools = false; // if shapes were updated, that will refresh tools, no need to refresh again
+    }
+
+    if (propagate && refreshTools) refresh();
 }
 
 function setupStrokeMenu($menu, shapeType) {
@@ -690,28 +749,15 @@ function setupStrokeMenu($menu, shapeType) {
                 tooltip: `tools.shapes.${strokeProp}.${stroke}`,
             }
         }),
-        visible: () => selectionController.vector.selectedShapeTypes().includes(shapeType),
-        getValue: () => selectionController.vector.selectedShapeProps()[strokeProp][0],
-        onSelect: newValue => {
-            selectionController.vector.updateSelectedShapes(shape => {
-                return shape.type === shapeType && shape.updateProp(strokeProp, newValue);
-            });
-        },
+        visible: () => activeShapeTypes().includes(shapeType),
+        getValue: () => firstActiveShapeProp(strokeProp),
+        onSelect: newValue => updateActiveShapeProp(strokeProp, newValue),
         tooltipOptions: {
             placement: 'right'
         }
     })
 
     shapeSubMenus[strokeProp] = styleMenu;
-}
-
-
-// Brush option is disabled if there is a linked prop enforcing a different brush option
-function isBrushDisabled(brush, currentShapeProps) {
-    return LINKED_PROPS.some(({ when, enforce }) => {
-        return currentShapeProps[when.prop].includes(when.value) &&
-            enforce.prop === BRUSH_PROP && enforce.value !== brush
-    })
 }
 
 function setupBrushMenu() {
@@ -727,18 +773,18 @@ function setupBrushMenu() {
                 tooltip: `tools.brush.${option}`,
 
                 // Currently there is no need to disable individual items because linked prop causes entire menu to be hidden
-                // disabled: () => isBrushDisabled(option, selectionController.vector.selectedShapeProps())
+                // disabled: () => isBrushDisabled(option, activeShapeProps())
             }
         }),
         visible: () => {
-            if (!selectionController.vector.selectedShapeProps()[BRUSH_PROP].length) return false;
+            const shapeProps = activeShapeProps();
+            if (shapeProps[BRUSH_PROP] === undefined) return false;
 
             // Only visible if more than one option is enabled
-            const shapeProps = selectionController.vector.selectedShapeProps();
             return Object.keys(BRUSHES).filter(brush => !isBrushDisabled(brush, shapeProps)).length > 1;
         },
-        getValue: () => selectionController.vector.selectedShapeProps()[BRUSH_PROP][0],
-        onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(BRUSH_PROP, newValue)),
+        getValue: () => firstActiveShapeProp(BRUSH_PROP),
+        onSelect: newValue => updateActiveShapeProp(BRUSH_PROP, newValue),
         tooltipOptions: {
             placement: 'right'
         }
@@ -758,9 +804,9 @@ function setupTextAlignMenu($menu, prop, options) {
                 tooltip: `tools.shapes.${prop}.${option}`,
             }
         }),
-        visible: () => selectionController.vector.selectedShapeProps()[prop].length,
-        getValue: () => selectionController.vector.selectedShapeProps()[prop][0],
-        onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(prop, newValue)),
+        visible: () => activeShapeProps()[prop] !== undefined && activeShapeProps()[TEXT_PROP].some(text => text.length > 0),
+        getValue: () => firstActiveShapeProp(prop),
+        onSelect: newValue => updateActiveShapeProp(prop, newValue),
         tooltipOptions: {
             placement: 'right'
         }
@@ -782,9 +828,9 @@ function setupFillMenu() {
                 tooltip: `tools.shapes.${FILL_PROP}.${option}`,
             }
         }),
-        visible: () => selectionController.vector.selectedShapeProps()[FILL_PROP].length,
-        getValue: () => selectionController.vector.selectedShapeProps()[FILL_PROP][0],
-        onSelect: newValue => selectionController.vector.updateSelectedShapes(shape => shape.updateProp(FILL_PROP, newValue)),
+        visible: () => activeShapeProps()[FILL_PROP] !== undefined,
+        getValue: () => firstActiveShapeProp(FILL_PROP),
+        onSelect: newValue => updateActiveShapeProp(FILL_PROP, newValue),
         tooltipOptions: {
             placement: 'right'
         }
@@ -827,7 +873,8 @@ function setupOrderMenu() {
 }
 
 function refreshShapeProperties() {
-    const isVisible = selectionController.vector.hasSelectedShapes();
+    console.log(activeShapeProps());
+    const isVisible = !isEmptyObject(activeShapeProps());
     $shapeProperties.toggle(isVisible);
 
     if (isVisible) {
@@ -843,8 +890,10 @@ function refreshShapeProperties() {
             shapeSubMenus[TEXT_ALIGN_H_PROP].isVisible() || shapeSubMenus[TEXT_ALIGN_V_PROP].isVisible()
         )
         $shapeProperties.find('#shape-fill-menu-group').toggle(shapeSubMenus[FILL_PROP].isVisible())
-        $shapeProperties.find('#shape-color-menu-group').toggle(state.isMultiColored())
-        $shapeProperties.find('#shape-char-menu-group').toggle(selectedShapesUseCharPicker())
+        $shapeProperties.find('#shape-color-menu-group').toggle(showColorPicker())
+        $shapeProperties.find('#shape-char-menu-group').toggle(showCharPicker())
+
+        $shapeProperties.find('#shape-actions').toggle(selectionController.vector.hasSelectedShapes())
 
         // Refresh action buttons
         $shapeProperties.find('.action-button').each((i, element) => {
@@ -854,24 +903,22 @@ function refreshShapeProperties() {
             $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
             $element.toggle(actions.isActionVisible(actionId));
         });
+
+        // Add vertical borders between groups. Have to do this in JS (not CSS) due to children visibility toggles
+        let firstVisible = true;
+        $shapeProperties.find('.property-group').each((i, group) => {
+            const $group = $(group);
+            $group.removeClass('border-left');
+
+            if ($group.is(':visible')) {
+                if (!firstVisible) $group.addClass('border-left');
+                firstVisible = false;
+            }
+        });
     } else {
         shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
         // todo hide tooltips for other stuff like shape char picker
     }
-}
-
-function selectedShapesUseCharPicker() {
-    let strokeUsesChar = false;
-    Object.values(STROKE_STYLE_PROPS).forEach(strokeProp => {
-        const strokes = selectionController.vector.selectedShapeProps()[strokeProp];
-
-        // TODO This is basing monochar styles off of their key name... change to a real property
-        if (strokes.some(stroke => stroke.includes('monochar'))) strokeUsesChar = true;
-    })
-
-    const fillUsesChar = selectionController.vector.selectedShapeProps()[FILL_PROP].some(fill => fill === FILL_OPTIONS.MONOCHAR);
-
-    return strokeUsesChar || fillUsesChar;
 }
 
 // -------------------------------------------------------------------------------- Color Tools
@@ -903,7 +950,7 @@ function colorSwap(cell, options) {
 function eyedropper(cell, options) {
     const [char, colorIndex] = state.getCurrentCelGlyph(cell.row, cell.col);
     const colorStr = state.colorStr(colorIndex);
-    selectColor(colorStr);
+    applyColor(colorStr);
 
     if (options.addToPalette) {
         state.addColor(colorStr);
@@ -916,85 +963,12 @@ function eyedropper(cell, options) {
 // -------------------------------------------------------------------------------- Drawing
 export let drawingContent = null;
 
-function setupDrawSubMenus() {
-    setupDrawSubMenu('draw-freeform', SHAPE_TYPES.FREEFORM);
-    setupDrawSubMenu('draw-rect', SHAPE_TYPES.RECT);
-    setupDrawSubMenu('draw-line', SHAPE_TYPES.LINE);
-    setupDrawSubMenu('draw-ellipse', SHAPE_TYPES.ELLIPSE);
-}
-
-function setupDrawSubMenu(toolKey, shapeType) {
-    const $container = $('#context-tools-left');
-    const $menu = $('<div>', {
-        class: 'sub-tool-menu'
-    }).appendTo($container);
-
-    const strokeProp = STROKE_STYLE_PROPS[shapeType]
-
-    const menu = new IconMenu($menu, {
-        items: Object.values(STROKE_STYLE_OPTIONS[shapeType]).map(stroke => {
-            return {
-                value: stroke,
-                icon: `tools.shapes.${strokeProp}.${stroke}`,
-                tooltip: `tools.shapes.${strokeProp}.${stroke}`,
-            }
-        }),
-        visible: () => state.getConfig('tool') === toolKey,
-        getValue: () => state.getConfig('drawStrokeStyles')[shapeType],
-        onSelect: newValue => {
-            const currentStrokes = structuredClone(state.getConfig('drawStrokeStyles'));
-            currentStrokes[shapeType] = newValue;
-            state.setConfig('drawStrokeStyles', currentStrokes);
-            refresh();
-        },
-        // TODO getDrawingModifiersTooltip(toolKey, style)
-    })
-
-    subMenus.push(menu);
-}
-
-function getDrawingModifiers(mouseEvent) {
-    const result = {}
-
-    const tool = state.getConfig('tool');
-    const drawType = state.getConfig('drawTypes')[tool]
-
-    if (!DRAWING_MODIFIERS[tool] || !DRAWING_MODIFIERS[tool][drawType]) return result;
-
-    for (const [modKey, modifier] of Object.entries(DRAWING_MODIFIERS[tool][drawType])) {
-        if (mouseEvent[modKey]) result[modifier] = true;
-    }
-
-    return result;
-}
-
-function getDrawingModifiersTooltip(tool, drawType) {
-    let result = ''
-    if (!DRAWING_MODIFIERS[tool] || !DRAWING_MODIFIERS[tool][drawType]) return result;
-
-    for (const [modKey, modifier] of Object.entries(DRAWING_MODIFIERS[tool][drawType])) {
-        const modifierKey = modifierWord(modKey);
-        const modifierDesc = STRINGS[`tools.${tool}-types.${drawType}.${modifier}`];
-        if (modifierDesc) {
-            result += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
-        }
-        else {
-            console.warn(`No modifier description found for: [${tool}, ${drawType}]`)
-        }
-    }
-    return result;
-}
-
 function handleDrawMousedown(shapeType, cell, currentPoint, options = {}) {
     if (!drawingContent) {
         selectionController.vector.deselectAllShapes(false); // Don't push to history; we will push history when drawing finished
 
-        // todo rename drawingShape?
         drawingContent = Shape.begin(shapeType, {
-            [CHAR_PROP]: state.getConfig('primaryChar'),
-            [COLOR_PROP]: state.primaryColorIndex(),
-            [STROKE_STYLE_PROPS[shapeType]]: state.getConfig('drawStrokeStyles')[shapeType],
-            [BRUSH_PROP]: state.getConfig('brush'),
+            ...state.getConfig('drawProps'),
             ...options
         });
     }
@@ -1117,81 +1091,67 @@ function finishMoveAll() {
 
 // -------------------------------------------------------------------------------- Char Picker
 
-let $charPicker, primaryCharPicker, shapeCharPicker, charQuickSwapTooltip;
+let $shapeChar, shapeCharPicker, $quickSwap;
 
 function setupCharPicker() {
-    $charPicker = $('#current-char');
-
-    actions.registerAction('tools.standard.char-picker', {
+    actions.registerAction('tools.shapes.charPicker', {
         callback: () => toggleCharPicker(true),
     })
-    actions.registerAction('tools.standard.quick-swap-char', {
+    actions.registerAction('tools.shapes.quickSwapChar', {
         callback: () => toggleQuickSwap(true),
         shortcutAbbr: `Q to enter, Esc to exit`
     })
 
-    primaryCharPicker = new CharPicker($charPicker, {
-        initialValue: 'A',
-        onLoad: newValue => setPrimaryChar(newValue),
-        onChange: newValue => applyPrimaryChar(newValue),
-        onOpen: () => {
-            charQuickSwapTooltip.disable();
-        },
-        onClose: () => {
-            charQuickSwapTooltip.enable();
-        },
-        popupDirection: 'right',
-        popupOffset: 34,
-        tooltip: () => {
-            return setupTooltips(
-                $charPicker.toArray(),
-                'tools.standard.char-picker',
-                { offset: tooltipOffset('center') }
-            ).tooltips[0];
-        }
-    })
-
-    const $shapeChar = $('#shape-char');
+    $shapeChar = $('#shape-char');
     shapeCharPicker = new CharPicker($shapeChar, {
+        // onLoad: newValue => setPrimaryChar(newValue),
         onChange: newValue => applyPrimaryChar(newValue),
         popupDirection: 'bottom',
         popupOffset: 22,
         tooltip: () => {
             return standardTip($shapeChar, 'tools.shapes.char-picker', {
                 placement: 'bottom',
-                offset: [0, 15]
-            })
+                offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
+            });
         }
     })
 
-    const $quickSwap = $charPicker.find('.char-well-corner-button');
-    $quickSwap.off('click').on('click', () => toggleQuickSwap());
+    $quickSwap = $('#shape-char-menu-group').find('.action-button[data-action="tools.shapes.quickSwapChar"]');
 
-    charQuickSwapTooltip = setupTooltips($quickSwap.toArray(), 'tools.standard.quick-swap-char', {
-        offset: tooltipOffset('center-corner-button')
-    }).tooltips[0];
+    // Override quick-swap action button: we do not want to call the actual action. The actual action always just
+    // enables quick-swap mode since we have different shortcuts for enabling (q) vs disabling (esc). Instead, we make
+    // clicking the button manually toggle the mode.
+    $quickSwap.off('click').on('click', () => toggleQuickSwap());
+}
+
+function showCharPicker() {
+    const shapeProps = activeShapeProps();
+
+    const strokeUsesChar = Object.values(STROKE_STYLE_PROPS).some(strokeProp => {
+        const shapeStrokes = shapeProps[strokeProp];
+
+        // TODO This is basing monochar styles off of their key name... change to a real property
+        return shapeStrokes && shapeStrokes.some(stroke => stroke.includes('monochar'));
+    })
+
+    const shapeFills = shapeProps[FILL_PROP];
+    const fillUsesChar = shapeFills && shapeFills.some(fill => fill === FILL_OPTIONS.MONOCHAR);
+
+    return !!(strokeUsesChar || fillUsesChar);
 }
 
 function refreshCharPicker() {
-    const char = selectionController.vector.hasSelectedShapes() ?
-        selectionController.vector.selectedShapeProps()[CHAR_PROP][0] :
-        state.getConfig('primaryChar');
-
-    setPrimaryChar(char);
-
-    $charPicker.toggleClass('animated-border', isQuickSwapEnabled());
+    console.log('refreshCharPicker: ', firstActiveShapeProp(CHAR_PROP));
+    setPrimaryChar(firstActiveShapeProp(CHAR_PROP));
+    $shapeChar.toggleClass('animated-border', isQuickSwapEnabled());
+    $quickSwap.toggleClass('active', isQuickSwapEnabled());
 }
 
 function isCharPickerOpen() {
-    return primaryCharPicker.isOpen || shapeCharPicker.isOpen;
+    return shapeCharPicker.isOpen;
 }
 function toggleCharPicker(open) {
-    if (open) {
-        primaryCharPicker.toggle(true);
-    } else {
-        primaryCharPicker.toggle(false);
-        shapeCharPicker.toggle(false);
-    }
+    shapeCharPicker.toggle(open)
 }
 
 function applyPrimaryChar(char) {
@@ -1202,9 +1162,8 @@ function applyPrimaryChar(char) {
 }
 
 function setPrimaryChar(char) {
-    if (primaryCharPicker) primaryCharPicker.value(char, true);
     if (shapeCharPicker) shapeCharPicker.value(char, true);
-    state.setConfig('primaryChar', char);
+    updateActiveShapeProp(CHAR_PROP, char, false);
     eventBus.emit(EVENTS.TOOLS.CHAR_CHANGED);
 }
 
@@ -1213,6 +1172,7 @@ let quickSwapEnabled = false;
 
 function isQuickSwapEnabled() {
     if (selectionController.raster.hasSelection()) return true;
+    if (!showCharPicker()) return false;
     return quickSwapEnabled;
 }
 
@@ -1224,28 +1184,11 @@ function toggleQuickSwap(enabled) {
 
 // -------------------------------------------------------------------------------- Color Picker
 
-let primaryColorPicker, shapeColorPicker;
+let shapeColorPicker;
 
 function setupColorPicker() {
-    const $colorPicker = $('#current-color');
-
-    actions.registerAction('tools.standard.color-picker', {
+    actions.registerAction('tools.shapes.colorPicker', {
         // callback: () => toggleColorPicker(true),
-    })
-
-    primaryColorPicker = new ColorPicker($colorPicker, {
-        pickerOptions: {
-            popup: 'right'
-        },
-        tooltip: () => {
-            return setupTooltips(
-                $colorPicker.toArray(),
-                'tools.standard.color-picker',
-                { offset: tooltipOffset('center') }
-            ).tooltips[0]
-        },
-        onChange: color => selectColorFromPicker(color, primaryColorPicker),
-        onDone: color => selectColor(color)
     })
 
     const $shapeColor = $('#shape-color');
@@ -1256,50 +1199,47 @@ function setupColorPicker() {
         tooltip: () => {
             return standardTip($shapeColor, 'tools.shapes.color-picker', {
                 placement: 'bottom',
-                offset: [0, 15]
+                offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
             })
         },
-        onChange: color => selectColorFromPicker(color, shapeColorPicker),
-        onDone: color => selectColor(color),
+        onChange: color => setColor(color),
+        onDone: color => applyColor(color),
     })
 }
 
-function selectColor(colorStr, triggerUpdates = true) {
-    if (primaryColorPicker) primaryColorPicker.value(colorStr, true);
-    if (shapeColorPicker) shapeColorPicker.value(colorStr, true);
+function showColorPicker() {
+    if (!state.isMultiColored()) return false;
 
-    state.setConfig('primaryColor', colorStr);
-    eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
-
-    if (triggerUpdates) {
-        const colorIndex = state.colorIndex(colorStr);
-        selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
-    }
-}
-
-// When one picker selects a color, we update the value in the other picker. We call updateSelectedShapes
-// with historyMode:false because the picker will trigger update events for every pixel that the mouse
-// moves over while changing the color. We want the shapes to update in real time, but we do not commit the
-// change to history until the picker's onDone is called.
-function selectColorFromPicker(colorStr, fromPicker) {
-    if (fromPicker !== primaryColorPicker) primaryColorPicker.value(colorStr, true);
-    if (fromPicker !== shapeColorPicker) shapeColorPicker.value(colorStr, true);
-
-    state.setConfig('primaryColor', colorStr);
-    eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
-
-    const colorIndex = state.colorIndex(colorStr);
-    selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex), false);
+    return activeShapeProps()[selectionController.vector.hasSelectedShapes() ? COLOR_PROP : COLOR_STR_PROP] !== undefined;
 }
 
 function refreshColorPicker() {
-    const color = selectionController.vector.hasSelectedShapes() ?
-        state.colorStr(selectionController.vector.selectedShapeProps()[COLOR_PROP][0]) :
-        state.getConfig('primaryColor');
+    if (!showColorPicker()) return;
 
-    selectColor(color, false);
+    const color = selectionController.vector.hasSelectedShapes() ?
+        state.colorStr(firstActiveShapeProp(COLOR_PROP)) :
+        firstActiveShapeProp(COLOR_STR_PROP)
+
+    setColor(color);
 }
 
+function setColor(colorStr) {
+    if (shapeColorPicker) shapeColorPicker.value(colorStr, true);
+
+    const colorIndex = state.colorIndex(colorStr);
+    updateActiveShapeProp(COLOR_PROP, colorIndex, false);
+    updateActiveShapeProp(COLOR_STR_PROP, colorStr, false);
+    eventBus.emit(EVENTS.TOOLS.COLOR_CHANGED);
+}
+
+function applyColor(colorStr) {
+    setColor(colorStr);
+
+    const colorIndex = state.colorIndex(colorStr);
+
+    // TODO MAYBE WRONG SPOT FOR THIS?
+    selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+}
 
 
 // -------------------------------------------------------------------------------- Misc.

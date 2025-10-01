@@ -18,7 +18,6 @@ import * as state from "../state/index.js";
 import {majorGridColor, minorGridColor, PRIMARY_COLOR} from "../config/colors.js";
 import * as tools from "./tool_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
-import {currentFrame} from "../state/index.js";
 import {EMPTY_CHAR} from "../config/chars.js";
 import RectSelection from "../geometry/selection/rect.js";
 import {LAYER_TYPES} from "../state/constants.js";
@@ -258,7 +257,7 @@ function redrawCharCanvas() {
     });
 
     // 5. Draw onion at lower opacity
-    if (state.getConfig('showOnion') && state.previousFrame() !== currentFrame()) {
+    if (state.getConfig('showOnion') && state.previousFrame() !== state.currentFrame()) {
         // TODO Add an option in case user wants onion to apply to all layers?
         const onionGlyphs = state.layeredGlyphs(state.previousFrame(), {
             layers: [state.currentLayer()],
@@ -288,7 +287,7 @@ function redrawSelection() {
 
     if (selectionController.raster.caretCell()) {
         const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(selectionController.raster.caretCell(), state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
+        caretCanvas.startCaretAnimation(selectionController.raster.caretCell(), state.getConfig('caretStyle'), () => state.getDrawingColor());
     }
 
     selectionController.vector.drawShapeSelection(selectionCanvas);
@@ -301,7 +300,7 @@ function redrawSelection() {
     const vectorCaret = selectionController.vector.caretCell();
     if (vectorCaret) {
         const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => state.getConfig('primaryColor'));
+        caretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => state.getDrawingColor());
     }
 
     refreshCanvasDetails();

@@ -5,8 +5,7 @@ import {
     reorderCurrentCelShapes,
     updateCurrentCelShape
 } from "../index.js";
-import {SHARED_SHAPE_PROPS, TEXT_OVERFLOW_PROP} from "../../geometry/shapes/constants.js";
-import {transformValues} from "../../utils/objects.js";
+import {TEXT_OVERFLOW_PROP} from "../../geometry/shapes/constants.js";
 import {areArraysEqual} from "../../utils/arrays.js";
 
 const DEFAULT_STATE = {
@@ -89,31 +88,6 @@ export function deselectAllShapes() {
 
 export function selectedShapes() {
     return selectedShapeIds().map(shapeId => getCurrentCelShape(shapeId));
-}
-export function selectedShapeTypes() {
-    return [...new Set(selectedShapes().map(shape => shape.type))];
-}
-
-/**
- * Collects the shared prop values across all currently selected shapes.
- *
- * @returns {Object.<string, any[]>} An object where each key is a prop name, and each value is an array of all
- *   distinct values for that property across the selection. All strings listed in SHARED_SHAPE_PROPS will be included
- *   as result keys (their values may be empty arrays). Array values will not contain duplicates.
- */
-export function selectedShapeProps() {
-    const result = {};
-    const shapes = selectedShapes();
-
-    SHARED_SHAPE_PROPS.forEach(prop => {
-        if (!result[prop]) result[prop] = new Set();
-        shapes.forEach(shape => {
-            const value = shape.props[prop];
-            if (value !== undefined) result[prop].add(value)
-        })
-    })
-
-    return transformValues(result, (k, v) => [...v]);
 }
 
 export function updateSelectedShapes(updater) {

@@ -112,5 +112,5 @@ function refresh() {
 
 function refreshSelectedChar() {
     $charList.find('.unicode-option.selected').removeClass('selected');
-    $charList.find(`.unicode-option[data-char="${state.getConfig('primaryChar')}"]`).addClass('selected');
+    $charList.find(`.unicode-option[data-char="${state.getDrawingChar()}"]`).addClass('selected');
 }

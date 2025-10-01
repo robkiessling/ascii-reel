@@ -106,17 +106,6 @@ export const STRINGS = {
     'tools.standard.eyedropper.description': 'Click on a cell to put its color in the color picker.',
     'tools.standard.eyedropper.add-to-palette': 'Also add the color to the current palette.',
 
-    'tools.standard.char-picker.name': 'Selected Character',
-    'tools.standard.char-picker.description': 'Click to open the character picker. While open, pressing a key will select that character.',
-    'tools.standard.quick-swap-char.name': 'Quick-Swap Mode',
-    'tools.standard.quick-swap-char.description': 'While active, pressing any key selects that character instead of switching tools.\n\n' +
-        "If a raster selection is active, Quick-Swap Mode is automatically enabled&mdash;pressing a key will fill the selection with the chosen character.",
-
-    'tools.standard.color-picker.name': 'Selected Color',
-    'tools.standard.color-picker.description': 'Click to open the color picker.',
-    'tools.standard.color-picker-add.name': 'Add Color To Palette',
-    'tools.standard.color-picker-add.description': 'This color is not currently saved to your palette. Click here if you want to add it.',
-
     'tools.selection.move.name': 'Move Selected Content',
     'tools.selection.move.description': 'When activated, clicking and dragging on the selected area will move the content.',
     'tools.selection.flip-v.name': 'Flip Vertically',
@@ -218,6 +207,17 @@ export const STRINGS = {
 
     'tools.shapes.editText.name': 'Edit Text',
     'tools.shapes.editText.description': 'Change the text inside the selected shape.',
+
+    'tools.shapes.charPicker.name': 'Selected Character',
+    'tools.shapes.charPicker.description': 'Click to open the character picker. While open, pressing a key will select that character.',
+    'tools.shapes.quickSwapChar.name': 'Quick-Swap Mode',
+    'tools.shapes.quickSwapChar.description': 'While active, pressing any key selects that character instead of switching tools.\n\n' +
+        "If a raster selection is active, Quick-Swap Mode is automatically enabled&mdash;pressing a key will fill the selection with the chosen character.",
+
+    'tools.shapes.colorPicker.name': 'Selected Color',
+    'tools.shapes.colorPicker.description': 'Click to open the color picker.',
+    'tools.shapes.colorPickerAdd.name': 'Add Color To Palette',
+    'tools.shapes.colorPickerAdd.description': 'This color is not currently saved to your palette. Click here if you want to add it.',
 
     'tools.shapes.textAlignH.name': 'Horizontal Alignment',
     'tools.shapes.textAlignH.alignLeft.name': 'Align Left',

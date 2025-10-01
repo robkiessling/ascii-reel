@@ -1,6 +1,6 @@
 
 import {isObject, transformValues} from "../../utils/objects.js";
-import {numCols, numRows, getConfig, setConfig} from "../config.js";
+import {numCols, numRows, getConfig, setConfig, getDrawingColor} from "../config.js";
 import {mod} from "../../utils/numbers.js";
 import {DEFAULT_COLOR} from "../palette.js";
 import CelFactory from "./cel/factory.js";
@@ -227,7 +227,7 @@ function hasColor(colorStr) {
 }
 
 export function primaryColorIndex() {
-    return colorIndex(getConfig('primaryColor'));
+    return colorIndex(getDrawingColor());
 }
 
 export function convertToMonochrome(color) {

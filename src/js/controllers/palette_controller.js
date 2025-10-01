@@ -104,7 +104,7 @@ function refresh() {
 
 function refreshSelectedColor() {
     $colorList.find('.color.selected').removeClass('selected');
-    $colorList.find(`.color[data-color="${state.getConfig('primaryColor')}"]`).addClass('selected');
+    $colorList.find(`.color[data-color="${state.getDrawingColor()}"]`).addClass('selected');
 
     $actions.each((i, element) => {
         const $element = $(element);

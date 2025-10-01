@@ -10,9 +10,10 @@ import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {LAYER_TYPES} from "./constants.js";
+import {COLOR_STR_PROP} from "../geometry/shapes/constants.js";
 
 export {
-    numRows, numCols, setConfig, getConfig, fontFamily, getName,
+    numRows, numCols, setConfig, getConfig, fontFamily, getName, getDrawingChar, getDrawingColor, setDrawingColor,
     isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, RASTER_TOOLS, VECTOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {
@@ -67,7 +68,9 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
                 colorMode: colorMode,
                 dimensions: dimensions,
                 background: background,
-                primaryColor: primaryColor,
+                drawProps: {
+                    [COLOR_STR_PROP]: primaryColor
+                },
                 tool: 'draw-rect' // todo remove this
             },
             // timeline: timeline.newRasterCelTimeline(),
@@ -324,12 +327,12 @@ export function validateColorMode() {
         timeline.convertToMonochrome(charColor);
         palette.convertToMonochrome(charColor);
         config.toolFallback();
-        config.setConfig('primaryColor', charColor)
+        config.setDrawingColor(charColor);
     }
     else {
         // Ensure primaryColor does not clash with background
-        if (config.getConfig('primaryColor') === config.getConfig('background')) {
-            config.setConfig('primaryColor', config.getConfig('background') === palette.BLACK ? palette.WHITE : palette.BLACK);
+        if (config.getDrawingColor() === config.getConfig('background')) {
+            config.setDrawingColor(config.getConfig('background') === palette.BLACK ? palette.WHITE : palette.BLACK);
         }
     }
 }

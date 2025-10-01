@@ -3,6 +3,10 @@ export function isObject(val) {
     return val !== null && typeof val === 'object' && Array.isArray(val) === false;
 }
 
+export function isEmptyObject(obj) {
+    return Object.keys(obj).length === 0;
+}
+
 /**
  * Creates a new object by transforming all the values of a given object.
  * @param {Object} obj - The object whose values you want to transform
@@ -14,6 +18,25 @@ export function transformValues(obj, transformer) {
     return Object.fromEntries(
         Object.entries(obj).map(([k, v]) => [k, transformer(k, v)])
     )
+}
+
+/**
+ * Creates a new object by transforming each key-value pair of the input object.
+ *
+ * @param {Object} obj - The source object to transform.
+ * @param {(key: string, value: *) => [string, *]} transformer -
+ *   A function that receives each key-value pair and returns a new `[key, value]` tuple.
+ * @returns {Object} A new object containing the transformed entries.
+ *
+ * @example
+ * const input = { a: 1, b: 2 };
+ * const output = mapObject(input, (k, v) => [k.toUpperCase(), v * 2]);
+ * // => { A: 2, B: 4 }
+ */
+export function transformObject(obj, transformer) {
+    return Object.fromEntries(
+        Object.entries(obj).map(([k, v]) => transformer(k, v))
+    );
 }
 
 /**

@@ -244,10 +244,11 @@ export default class VectorCel {
 
     testMarquee(cellArea) {
         // Option 1: Include shapes that completely fit in the cellArea bounds
-        // return this.shapes().filter(shape => shape.fitsInside(cellArea));
+        return this.shapes().filter(shape => shape.fitsInside(cellArea));
 
         // Option 2: Include shapes that partially overlap with cellArea bounds
-        return this.shapes().filter(shape => shape.overlaps(cellArea));
+        // TODO this has problems, e.g. empty rect still gets selected when clicking inside
+        // return this.shapes().filter(shape => shape.overlaps(cellArea));
     }
 
 }

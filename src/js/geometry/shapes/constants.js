@@ -1,6 +1,7 @@
 
 // Note: This is in a priority order - the earlier handles are checked for mouse events before later handles
-import {transformValues} from "../../utils/objects.js";
+import {transformObject, transformValues} from "../../utils/objects.js";
+import Color from "@sphinxxxx/color-conversion";
 
 export const HANDLE_TYPES = {
     VERTEX: 'vertex',
@@ -80,8 +81,6 @@ export const STROKE_STYLE_OPTIONS = {
     }
 }
 
-export const DEFAULT_STROKE_STYLES = transformValues(STROKE_STYLE_OPTIONS, (k, v) => Object.values(v)[0])
-
 export const BRUSH_PROP = 'brush';
 
 export const BRUSH_TYPES = {
@@ -119,7 +118,8 @@ export const ARROWHEAD_OPTIONS = {
 }
 
 export const CHAR_PROP = 'char';
-export const COLOR_PROP = 'color';
+export const COLOR_PROP = 'color'; // todo rename COLOR_INDEX_PROP/'colorIndex'?
+export const COLOR_STR_PROP = 'colorString';
 
 export const TEXT_PROP = 'text';
 
@@ -141,18 +141,16 @@ export const TEXT_ALIGN_V_OPTS = {
 
 // ------------------------------------------------------ Prop bundles
 
-export const SHARED_SHAPE_PROPS = [
-    ...Object.values(STROKE_STYLE_PROPS),
-    BRUSH_PROP,
-    FILL_PROP,
-    CHAR_PROP, 
-    COLOR_PROP,
-    TEXT_PROP,
-    TEXT_ALIGN_H_PROP,
-    TEXT_ALIGN_V_PROP,
-    TEXT_PADDING_PROP,
-    TEXT_OVERFLOW_PROP,
-];
+export const DEFAULT_DRAW_PROPS = {
+    ...transformObject(STROKE_STYLE_OPTIONS, (shapeType, options) => [STROKE_STYLE_PROPS[shapeType], Object.values(options)[0]]),
+    [BRUSH_PROP]: Object.keys(BRUSHES)[0],
+    [FILL_PROP]: Object.values(FILL_OPTIONS)[0],
+    [CHAR_PROP]: 'A',
+    [COLOR_STR_PROP]: new Color('rgba(0,0,0,1)').hex, // todo this should use DEFAULT_COLOR, once we move that to a constants file
+    [TEXT_PROP]: '',
+    [TEXT_ALIGN_H_PROP]: TEXT_ALIGN_H_OPTS.CENTER,
+    [TEXT_ALIGN_V_PROP]: TEXT_ALIGN_V_OPTS.MIDDLE
+};
 
 /**
  * A list of linked property rules used to enforce consistency between shape props. This is useful when one prop

@@ -59,8 +59,6 @@ export function deselectAllShapes(saveHistory = true) {
 }
 
 export function selectedShapes() { return state.selection.vector.selectedShapes() }
-export function selectedShapeTypes() { return state.selection.vector.selectedShapeTypes() }
-export function selectedShapeProps() { return state.selection.vector.selectedShapeProps() }
 
 export function selectAll() {
     if (isEditingText()) {
@@ -84,9 +82,10 @@ export function selectAll() {
  *   - true: Always push history (if any shapes were selected)
  *   - false: Never push history
  *   - function: Calls a custom function that may save history as it chooses
+ * @returns {boolean} - Whether any shapes were updated
  */
 export function updateSelectedShapes(updater, historyMode) {
-    if (!hasSelectedShapes()) return; // Do not emit event or push history
+    if (!hasSelectedShapes()) return false; // Do not emit event or push history
 
     const updated = state.selection.vector.updateSelectedShapes(updater);
 
@@ -102,6 +101,8 @@ export function updateSelectedShapes(updater, historyMode) {
     } else if (historyMode === true) {
         saveDistinctHistory();
     }
+
+    return updated;
 }
 
 export function deleteSelectedShapes() {
@@ -345,7 +346,7 @@ function createEmptyTextbox(cell) {
         topLeft: cell,
         numRows: 1,
         numCols: 1,
-        [CHAR_PROP]: state.getConfig('primaryChar'),
+        [CHAR_PROP]: state.getDrawingChar(),
         [COLOR_PROP]: state.primaryColorIndex(),
     })
     state.addCurrentCelShape(textbox);
@@ -371,7 +372,7 @@ export function createTextboxWithText(text, cell = nextPasteLocation()) {
         topLeft: cell,
         numRows: 1, // doesn't actually matter since we have auto width enabled
         numCols: 1,
-        [CHAR_PROP]: state.getConfig('primaryChar'),
+        [CHAR_PROP]: state.getDrawingChar(),
         [COLOR_PROP]: state.primaryColorIndex(),
         [TEXT_PROP]: text
     })
