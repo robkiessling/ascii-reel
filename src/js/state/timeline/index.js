@@ -307,18 +307,14 @@ export function layeredGlyphs(frame, options = {}) {
             case LAYER_TYPES.RASTER:
                 // For raster layers, we calculate cel glyphs without an offset, then merge them into result using offset
                 const rasterGlyphs = celData.getCelGlyphs(celData.cel(layer, frame));
-                mergeGlyphs({ chars, colors }, rasterGlyphs, new Cell(offset.row, offset.col), (char, color) => {
-                    return char !== undefined && char !== EMPTY_CHAR;
-                });
+                mergeGlyphs({ chars, colors }, rasterGlyphs, new Cell(offset.row, offset.col));
                 break;
             case LAYER_TYPES.VECTOR:
-                // For vector layers, we must retrieve cel glyphs using the offset, then merge them into result at
-                // no offset. This is required because vector shapes can go beyond the borders, so when we move them
-                // inside more content can appear.
+                // For vector layers, the cel glyphs must be calculated using the offset (cannot add it in post like
+                // raster layers). This is required because vector shapes can go beyond borders, so when we offset
+                // them (e.g. during a move) we need that outside content to appear in the canvas.
                 const vectorGlyphs = celData.getCelGlyphs(celData.cel(layer, frame), offset);
-                mergeGlyphs({ chars, colors }, vectorGlyphs, new Cell(0, 0), (char, color) => {
-                    return char !== undefined && char !== EMPTY_CHAR;
-                });
+                mergeGlyphs({ chars, colors }, vectorGlyphs, new Cell(0, 0));
                 break;
             default:
                 throw new Error(`Invalid layer type: ${layer.type}`)
@@ -326,19 +322,13 @@ export function layeredGlyphs(frame, options = {}) {
 
         // If there is movableContent, show it on top of the rest of the layer
         if (options.movableContent && options.movableContent.glyphs && isCurrentLayer && isCurrentFrame) {
-            mergeGlyphs({ chars, colors }, options.movableContent.glyphs, options.movableContent.origin, (char, color) => {
-                return char !== undefined && char !== EMPTY_CHAR;
-            })
+            mergeGlyphs({ chars, colors }, options.movableContent.glyphs, options.movableContent.origin)
         }
 
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
         if (options.drawingContent && isCurrentLayer && isCurrentFrame) {
-            // todo vector drawings can't use this because they need EMPTY_CHAR to not override (so it's consistent
-            //      with vector_cel mergeGlyphs). To reproduce problem, in a vector layer try drawing an empty
-            //      ellipse over a background. It will block background until you finish shape, then it is unblocking.
-            //      Possible solutions: vectors don't use drawingContent; just addShape and updateShape immediately
-            //      Or, do something here based on vector layer type
-            mergeGlyphs({ chars, colors }, options.drawingContent.glyphs, options.drawingContent.origin);
+            const { glyphs: drawGlyphs, origin: drawOrigin } = options.drawingContent.rasterize();
+            mergeGlyphs({ chars, colors }, drawGlyphs, drawOrigin, options.drawingContent.writeEmptyChars);
         }
 
         if (options.convertEmptyStrToSpace) {

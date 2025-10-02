@@ -4,8 +4,25 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 
 
 const SPECIAL_CHARS = new Map(Object.entries({
-    // [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-delete-back-2-line', large: true },
-    [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-forbid-line', large: true },
+    /**
+     * Note: EMPTY_CHAR has been deliberately removed as a char picker option.
+     *
+     * For shapes:
+     * - Drawing with an empty char doesn't make sense; an empty char means "do nothing" in that cell.
+     *   For example, drawing a rectangle with an empty stroke would render nothing.
+     * - If the user wants the fill to be transparent (empty), we already support that via a separate fill option.
+     *
+     * For tools like the fill-char (paint bucket):
+     * - Allowing users to "fill" an area with EMPTY_CHAR would effectively clear it (on raster layers).
+     * - While this might seem useful, it introduces confusion; the paint bucket is meant to paint, not erase.
+     * - Users can still clear irregular areas using tools like the wand or lasso, then pressing Backspace.
+     *
+     * Overall:
+     * - Removing EMPTY_CHAR simplifies intent: the char picker is for *drawing*, not for clearing.
+     * - It prevents user error and makes behavior more predictable.
+     */
+    // [EMPTY_CHAR]: { label: 'Empty', value: EMPTY_CHAR, wellClass: 'ri-forbid-line', large: true },
+
     [WHITESPACE_CHAR]: { label: 'Space', value: WHITESPACE_CHAR, wellClass: 'ri-space' },
 }))
 const WELL_CLASSES = [...SPECIAL_CHARS.values()].map(special => special.wellClass).filter(Boolean);
@@ -17,7 +34,7 @@ const BREAK = '__break__'
 const CHARS = [
     ASCII_TITLE,
     [
-        SPECIAL_CHARS.get(EMPTY_CHAR), SPACER, SPECIAL_CHARS.get(WHITESPACE_CHAR)
+        SPECIAL_CHARS.get(WHITESPACE_CHAR)
     ],
     [
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',

@@ -139,6 +139,9 @@ export const TEXT_ALIGN_V_OPTS = {
     BOTTOM: 'alignBottom',
 }
 
+// This prop causes empty/undefined chars to be merged into canvas during rasterization. See chars.js for more info.
+export const WRITE_EMPTY_CHARS_PROP = 'writeEmptyChars';
+
 // ------------------------------------------------------ Prop bundles
 
 export const DEFAULT_DRAW_PROPS = {

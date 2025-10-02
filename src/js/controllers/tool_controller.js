@@ -22,7 +22,7 @@ import {
     STROKE_STYLE_OPTIONS,
     SHAPE_TYPES,
     STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP,
-    BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP
+    BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP, WRITE_EMPTY_CHARS_PROP
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
 import {standardTip} from "../components/tooltips.js";
@@ -220,13 +220,14 @@ function setupEventBus() {
                 handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, currentPoint, {
                     [STROKE_STYLE_PROPS[SHAPE_TYPES.FREEFORM]]: STROKE_STYLE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_MONOCHAR,
                     [CHAR_PROP]: undefined,
-                    [COLOR_PROP]: state.primaryColorIndex()
+                    [COLOR_PROP]: state.primaryColorIndex(),
+                    [WRITE_EMPTY_CHARS_PROP]: true
                 });
                 break;
             case 'fill-char':
                 fillConnectedCells(cell, state.getDrawingChar(), state.primaryColorIndex(), {
                     diagonal: shouldModifyAction('tools.standard.fill-char.diagonal', mouseEvent),
-                    charblind: false,
+                    charblind: false, // todo should this be an option? 
                     colorblind: shouldModifyAction('tools.standard.fill-char.colorblind', mouseEvent)
                 });
                 break;
@@ -689,7 +690,7 @@ function activeShapeProps() {
                 }
                 break;
             case 'fill-char':
-                allowedProps = new Set([CHAR_PROP]);
+                allowedProps = new Set([CHAR_PROP, COLOR_STR_PROP]);
                 break;
             case 'paint-brush':
                 allowedProps = new Set([BRUSH_PROP, COLOR_STR_PROP]);
@@ -1038,7 +1039,8 @@ function rasterEraser(cell, currentPoint) {
     handleDrawMousedown(SHAPE_TYPES.FREEFORM, cell, currentPoint, {
         [STROKE_STYLE_PROPS[SHAPE_TYPES.FREEFORM]]: STROKE_STYLE_OPTIONS[SHAPE_TYPES.FREEFORM].IRREGULAR_MONOCHAR,
         [CHAR_PROP]: EMPTY_CHAR,
-        [COLOR_PROP]: undefined
+        [COLOR_PROP]: undefined,
+        [WRITE_EMPTY_CHARS_PROP]: true
     });
 }
 
@@ -1158,7 +1160,9 @@ function showCharPicker() {
     const shapeFills = shapeProps[FILL_PROP];
     const fillUsesChar = shapeFills && shapeFills.some(fill => fill === FILL_OPTIONS.MONOCHAR);
 
-    return !!(strokeUsesChar || fillUsesChar);
+    const toolUsesChar = state.getConfig('tool') === 'fill-char';
+
+    return !!(strokeUsesChar || fillUsesChar || toolUsesChar);
 }
 
 function refreshCharPicker() {

@@ -1,6 +1,6 @@
 import Cell from "../cell.js";
 import SelectionShape from "./shape.js";
-import {EMPTY_CHAR} from "../../config/chars.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {SELECTION_SHAPE_TYPES} from "./constants.js";
 import {getCurrentCelGlyph, isCellInBounds} from "../../state/index.js";
 
@@ -102,8 +102,9 @@ export default class WandSelection extends SelectionShape {
             // Character values have to match unless charblind option is true
             if (!isBlank && !charblind && char !== startChar) continue;
 
-            // Character colors have to match unless colorblind option is true
-            if (!isBlank && !colorblind && color !== startColor) continue;
+            // Character colors have to match unless colorblind option is true. The only exception is whitespace
+            // chars: they do not really have a color so they always match.
+            if (!isBlank && !colorblind && color !== startColor && char !== WHITESPACE_CHAR) continue;
 
             visitedCells[key(cell)] = cell;
 

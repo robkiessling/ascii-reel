@@ -195,7 +195,7 @@ function redrawCharCanvas() {
             glyphs: selectionController.raster.movableContent(),
             origin: selectionController.raster.movableContent() ? selectionController.raster.getSelectedCellArea().topLeft : null
         },
-        drawingContent: tools.drawingContent ? tools.drawingContent.rasterize() : undefined,
+        drawingContent: tools.drawingContent,
     })
 
     // If showing all layers, build glyphs for all-layers-below-current and all-layers-above-current.:

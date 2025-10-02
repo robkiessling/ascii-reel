@@ -109,7 +109,6 @@ function handleEnterKey(key, e) {
 }
 
 function handleBackspaceKey(key) {
-    if (tools.handleCharKey(EMPTY_CHAR)) return;
     if (selectionController.raster.handleBackspaceKey(key === 'Delete')) return;
     if (selectionController.vector.handleBackspaceKey(key === 'Delete')) return;
     actions.callActionByShortcut({ key });

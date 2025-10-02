@@ -6,7 +6,7 @@ import {
     FILL_OPTIONS,
     FILL_PROP, LINKED_PROPS,
     SHAPE_TEXT_ACTIONS, STROKE_STYLE_PROPS,
-    TEXT_PROP
+    TEXT_PROP, WRITE_EMPTY_CHARS_PROP
 } from "./constants.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {deleteBackward, deleteForward, deleteRange, insertAt} from "../../utils/strings.js";
@@ -17,6 +17,7 @@ export default class Shape {
     static propDefinitions = [
         { prop: CHAR_PROP },
         { prop: COLOR_PROP },
+        { prop: WRITE_EMPTY_CHARS_PROP, default: false }
     ]
 
     static get allowedProps() {
@@ -231,6 +232,10 @@ export default class Shape {
             glyphs: this._cache.glyphs,
             origin: this._cache.origin
         };
+    }
+
+    get writeEmptyChars() {
+        return this.props[WRITE_EMPTY_CHARS_PROP];
     }
 
     fitsInside(cellArea) {

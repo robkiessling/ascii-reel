@@ -1,4 +1,5 @@
 import {isFunction} from "./utilities.js";
+import {EMPTY_CHAR} from "../config/chars.js";
 
 /**
  * Creates an array of arrays
@@ -97,15 +98,15 @@ export function translateGlyphs(glyphs, cell, callback) {
  * @param {{chars: string[][], colors: number[][]}} baseGlyphs - The content to merge newGlyphs into
  * @param {{chars: string[][], colors: number[][]}} newGlyphs - The content to merge into baseGlyphs
  * @param {Cell} origin - Position to merge newGlyphs in at
- * @param {(char: string, color: number) => boolean} [filter] - Optional filter. If provided, glyph will
- *   only be merged if it passes filter
+ * @param {boolean} [writeEmptyChars=false] - All empty/undefined chars will be skipped unless this is true
  */
-export function mergeGlyphs(baseGlyphs, newGlyphs, origin, filter) {
+export function mergeGlyphs(baseGlyphs, newGlyphs, origin, writeEmptyChars = false) {
     translateGlyphs(newGlyphs, origin, (r, c, char, color) => {
-        if (isIn2dArrayBounds(baseGlyphs.chars, r, c) && (!filter || filter(char, color))) {
-            if (char !== undefined) baseGlyphs.chars[r][c] = char;
-            if (color !== undefined) baseGlyphs.colors[r][c] = color;
-        }
+        if (!isIn2dArrayBounds(baseGlyphs.chars, r, c)) return;
+        if (!writeEmptyChars && (char === undefined || char === EMPTY_CHAR)) return;
+
+        if (char !== undefined) baseGlyphs.chars[r][c] = char;
+        if (color !== undefined) baseGlyphs.colors[r][c] = color;
     });
 }
 

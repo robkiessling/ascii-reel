@@ -194,7 +194,7 @@ export default class RasterCel {
     // Shapes are immediately rasterized and merged into chars/colors state
     addShape(shape) {
         const { glyphs: shapeGlyphs, origin: shapeOrigin } = shape.rasterize();
-        mergeGlyphs({ chars: this.chars, colors: this.colors }, shapeGlyphs, shapeOrigin);
+        mergeGlyphs({ chars: this.chars, colors: this.colors }, shapeGlyphs, shapeOrigin, shape.writeEmptyChars);
     }
 
     // ------------------ Raster-specific functions:

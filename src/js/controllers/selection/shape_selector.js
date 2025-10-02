@@ -40,9 +40,7 @@ export default class ShapeSelector {
 
         selectionController.vector.selectedShapes().forEach(shape => {
             const { glyphs: shapeGlyphs, origin: shapeOrigin } = shape.rasterize();
-            mergeGlyphs(result, shapeGlyphs, shapeOrigin.relativeTo(boundingArea.topLeft), (char, color) => {
-                return char !== undefined && char !== EMPTY_CHAR;
-            })
+            mergeGlyphs(result, shapeGlyphs, shapeOrigin.relativeTo(boundingArea.topLeft))
         })
 
         return result;
