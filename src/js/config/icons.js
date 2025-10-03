@@ -65,7 +65,7 @@ const ICON_DATA = {
     'tools.shapes.delete': { type: REMIXICON, content: 'ri-delete-bin-line' },
 
     'tools.shapes.editText': { type: REMIXICON, content: 'ri-text' },
-    'tools.shapes.quickSwapChar': { type: REMIXICON, content: 'ri-keyboard-line' },
+    'tools.shapes.quickSwapChar': { type: REMIXICON, content: 'ri-flashlight-line' },
 
     'tools.shapes.textAlignH.alignLeft': { type: REMIXICON, content: 'ri-align-left' },
     'tools.shapes.textAlignH.alignCenter': { type: REMIXICON, content: 'ri-align-center' },

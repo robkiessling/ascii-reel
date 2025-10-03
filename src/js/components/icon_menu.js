@@ -153,14 +153,14 @@ export default class IconMenu {
         });
 
         this._dropdown.$button.off('click').on('click', evt => {
-            defer(() => this._toggleDropdown())
+            defer(() => this.toggleDropdown())
         });
 
         this._dropdown.$ul.off('click', '.icon-dropdown-option').on('click', '.icon-dropdown-option', evt => {
             const $option = $(evt.currentTarget);
             if ($option.hasClass('disabled')) return; // have to manually abort; pointer events are allowed so tooltips work when disabled
 
-            if (this.options.closeDropdownOnSelect) this._toggleDropdown(false);
+            if (this.options.closeDropdownOnSelect) this.toggleDropdown(false);
             this.options.onSelect($option.data('value'));
             this.refresh();
         });
@@ -182,10 +182,18 @@ export default class IconMenu {
         }
     }
 
-    _toggleDropdown(open) {
+    toggleDropdown(open) {
+        if (!this.options.dropdown) return; // Not applicable
+
         if (open === undefined) open = !this._dropdown.open;
         this._dropdown.open = open;
         this.refresh();
+    }
+    
+    get isOpen() {
+        if (!this.options.dropdown) return false; // Not applicable
+
+        return this._dropdown.open;
     }
 
     _refreshDropdown() {
@@ -228,7 +236,7 @@ export default class IconMenu {
         if (enable) {
             $(document).off(`click.${namespace}`).on(`click.${namespace}`, evt => {
                 // If the click was outside the dropdown, close it
-                if (!this.$container.get(0).contains(evt.target)) this._toggleDropdown(false);
+                if (!this.$container.get(0).contains(evt.target)) this.toggleDropdown(false);
             });
         } else {
             $(document).off(`click.${namespace}`);

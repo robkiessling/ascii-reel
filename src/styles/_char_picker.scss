@@ -49,12 +49,12 @@ $quick-swap-border: linear-gradient(
 );
 .char-picker-container.animated-border {
   .char-well {
-    $border-size: 2px;
+    $border-size: 3px;
     height: calc($sub-tool-size - $border-size * 2);
     width: calc($sub-tool-size - $border-size * 2);
     border: $border-size solid #0000;
     background: linear-gradient(to bottom, var(--color-surface), var(--color-surface)) padding-box, $quick-swap-border border-box;
-    animation: 6s char-picker-rotate linear infinite;
+    animation: 4s char-picker-rotate linear infinite;
 
     &:hover:not(.disabled):not(.active) {
       background: linear-gradient(to bottom, var(--color-surface-hover), var(--color-surface-hover)) padding-box,

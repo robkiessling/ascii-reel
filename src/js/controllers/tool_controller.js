@@ -78,11 +78,19 @@ export function changeTool(newTool, saveHistoryOnSelectionClear = true) {
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
 export function handleEscapeKey() {
+    // Close char picker if it's open
     if (isCharPickerOpen()) {
         toggleCharPicker(false);
         return true;
     }
 
+    // Close any submenus if they are open
+    if (Object.values(shapeSubMenus).some(menu => menu.isOpen)) {
+        Object.values(shapeSubMenus).forEach(menu => menu.toggleDropdown(false))
+        return true;
+    }
+
+    // Disable quick-swap if it's enabled
     if (isQuickSwapEnabled()) {
         toggleQuickSwap(false);
         return true;
@@ -585,7 +593,7 @@ export function hoveredCells(primaryCell) {
 
 // -------------------------------------------------------------------------------- Shape Properties
 
-let $shapeProperties, shapeTooltips;
+let $shapeProperties, shapeTooltips = [];
 const shapeSubMenus = {};
 
 function setupShapeProperties() {
@@ -624,19 +632,22 @@ function setupShapeProperties() {
         shortcutAbbr: 'Enter'
     })
 
-    $shapeProperties.off('click', '.action-button').on('click', '.action-button', evt => {
+    // quickSwapChar action-button is handled separately by char picker
+    const $standardActionButtons = $shapeProperties.find('.action-button:not([data-action="tools.shapes.quickSwapChar"])')
+
+    $standardActionButtons.on('click', evt => {
         const $element = $(evt.currentTarget);
         actions.callAction($element.data('action'), evt);
     });
 
-    shapeTooltips = setupTooltips(
-        $shapeProperties.find('.action-button').toArray(),
+    shapeTooltips.concat(setupTooltips(
+        $standardActionButtons.toArray(),
         element => $(element).data('action'),
         {
             placement: 'bottom',
             offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
         }
-    );
+    ).tooltips);
 }
 
 function activeShapeTypes() {
@@ -929,7 +940,7 @@ function refreshShapeProperties() {
             }
         });
     } else {
-        shapeTooltips.tooltips.forEach(tooltip => tooltip.hide())
+        shapeTooltips.forEach(tooltip => tooltip.hide())
         // todo hide tooltips for other stuff like shape char picker
     }
 }
@@ -1115,6 +1126,7 @@ let $shapeChar, shapeCharPicker, $quickSwap;
 function setupCharPicker() {
     actions.registerAction('tools.shapes.charPicker', {
         callback: () => toggleCharPicker(true),
+        enabled: () => showCharPicker()
     })
     actions.registerAction('tools.shapes.quickSwapChar', {
         callback: () => toggleQuickSwap(true),
@@ -1139,7 +1151,16 @@ function setupCharPicker() {
         }
     })
 
-    $quickSwap = $('#shape-char-menu-group').find('.action-button[data-action="tools.shapes.quickSwapChar"]');
+    $quickSwap = $('#shape-char-menu-group').find('[data-action="tools.shapes.quickSwapChar"]');
+
+    shapeTooltips.concat(setupTooltips(
+        $quickSwap.toArray(),
+        element => $(element).data('action'),
+        {
+            placement: 'bottom',
+            offset: [0, 56]
+        }
+    ).tooltips);
 
     // Override quick-swap action button: we do not want to call the actual action. The actual action always just
     // enables quick-swap mode since we have different shortcuts for enabling (q) vs disabling (esc). Instead, we make
@@ -1148,6 +1169,8 @@ function setupCharPicker() {
 }
 
 function showCharPicker() {
+    if (!shapeCharPicker) return false;
+
     const shapeProps = activeShapeProps();
 
     const strokeUsesChar = Object.values(STROKE_STYLE_PROPS).some(strokeProp => {
