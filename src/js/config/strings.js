@@ -93,7 +93,7 @@ export const STRINGS = {
     'tools.standard.move-all.all-frames': 'Apply to all frames',
     'tools.standard.move-all.wrap': 'Wrap canvas borders',
     'tools.standard.paint-brush.name': 'Paint Brush',
-    'tools.standard.paint-brush.description': 'Click and drag to color cells with the selected color.',
+    'tools.standard.paint-brush.description': 'Click and drag to color cells with the selected color. Does not affect the cell\'s char.',
     'tools.standard.fill-color.name': 'Fill Color',
     'tools.standard.fill-color.description': 'Fill a connected area of matching colors with the selected color.',
     'tools.standard.fill-color.diagonal': 'Include diagonally connected cells',
@@ -116,11 +116,11 @@ export const STRINGS = {
     'tools.selection.flip-h.mirror': 'Mirrors characters when possible, e.g. b => d',
     'tools.selection.clone.name': 'Clone Selection',
     'tools.selection.clone.description': 'Clones the current selection to all frames.',
-    'tools.selection.fill-char.name': 'Fill Selection With Character',
-    'tools.selection.fill-char.description': 'Fills the selected area with the selected character. \n\n' +
-        'Alternatively, press any key on your keyboard to fill the selection with that character.',
-    'tools.selection.fill-color.name': 'Fill Selection With Color',
-    'tools.selection.fill-color.description': 'Paints the selected area with the selected color.',
+    // 'tools.selection.fill-char.name': 'Fill Selection With Character',
+    // 'tools.selection.fill-char.description': 'Fills the selected area with the selected character. \n\n' +
+    //     'Alternatively, press any key on your keyboard to fill the selection with that character.',
+    // 'tools.selection.fill-color.name': 'Fill Selection With Color',
+    // 'tools.selection.fill-color.description': 'Paints the selected area with the selected color.',
     'tools.selection.convert-to-whitespace.name': 'Fill Blank Cells with Whitespace',
     'tools.selection.convert-to-whitespace.description': 'Replaces all blank cells with whitespace cells. ' +
         'Whitespace blocks lower layers when multiple layers are visible.',
@@ -129,8 +129,8 @@ export const STRINGS = {
         'Blank cells allow lower layers to show through.',
     'tools.selection.resize.name': 'Resize Canvas',
     'tools.selection.resize.description': 'Resizes the canvas to match the selected area.',
-    'tools.selection.close.name': 'Close',
-    'tools.selection.close.description': 'Closes the current selection.',
+    // 'tools.selection.close.name': 'Close',
+    // 'tools.selection.close.description': 'Closes the current selection.',
 
     'tools.shapes.brush.name': 'Brush Shape',
     'tools.shapes.brush.description': 'Controls the shape and size of the area affected when drawing.',
@@ -138,7 +138,8 @@ export const STRINGS = {
     'tools.brush.pixel-perfect.name': 'Pixel Perfect',
     'tools.brush.pixel-perfect.description': 'Attempts to maintain 1-cell-wide strokes, even on diagonals.',
     'tools.brush.square-1.name': '1x1 Square',
-    'tools.brush.square-1.description': 'Standard 1-cell brush. Includes every cell the line passes through, which may make it appear thicker than 1 cell when crossing diagonals.',
+    'tools.brush.square-1.description': 'Standard 1-cell brush. Every brushed cell is included, ' +
+        'which may cause the line to appear thicker than 1 cell when drawing diagonally.',
     'tools.brush.square-2.name': '2x2 Square',
     'tools.brush.square-2.description': 'Square-shaped brush with 2x2 diameter.',
     'tools.brush.square-3.name': '3x3 Square',

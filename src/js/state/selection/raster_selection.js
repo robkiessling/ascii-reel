@@ -17,7 +17,11 @@ const DEFAULT_STATE = {
     caretOriginCol: null, // Which col to move to upon return key
 }
 
-let state = {};
+let state = {
+    // TODO - I have this here so hasSelection() does not break during page initialization due to tooltip setup
+    //        Need to find a way to perhaps defer tooltip loading until state is loaded
+    selectionShapes: []
+};
 
 export function deserialize(data = {}, options = {}) {
     const newSelectionShapes = (data.selectionShapes || []).map(shape => deserializeSelectionShape(shape));

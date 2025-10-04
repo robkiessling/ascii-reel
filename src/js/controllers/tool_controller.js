@@ -49,7 +49,6 @@ export function init() {
 
     setupEventBus();
     setupStandardTools();
-    setupSelectionTools();
     setupColorPicker();
     setupCharPicker();
     setupShapeProperties();
@@ -59,7 +58,6 @@ function refresh() {
     refreshCharPicker();
     refreshColorPicker();
     refreshStandardTools();
-    refreshSelectionTools();
     subMenus.forEach(subMenu => subMenu.refresh());
     refreshShapeProperties();
 }
@@ -466,67 +464,8 @@ function tooltipOffset(column) {
     }
 }
 
-// -------------------------------------------------------------------------------- Selection Tools
+// -------------------------------------------------------------------------------- Raster Selection Tools
 
-function setupSelectionTools() {
-    $selectionTools = $('#selection-tools');
-
-    function registerAction(tool, callback, disableOnMove = true, shortcutAbbr) {
-        actions.registerAction(actionIdForSelectionTool(tool), {
-            callback: callback,
-            enabled: () => {
-                if (disableOnMove && selectionController.raster.movableContent()) { return false; }
-                return true;
-            },
-            shortcutAbbr: shortcutAbbr
-        });
-    }
-
-    registerAction('move', () => selectionController.raster.toggleMovingContent(), false, `${modifierAbbr('metaKey')}Click`);
-    registerAction('flip-v', e => selectionController.raster.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e)));
-    registerAction('flip-h', e => selectionController.raster.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e)));
-    registerAction('clone', () => selectionController.raster.cloneToAllFrames());
-    registerAction('fill-char', () => fillSelection(state.getDrawingChar(), undefined));
-    registerAction('fill-color', () => fillSelection(undefined, state.primaryColorIndex()));
-    registerAction('convert-to-whitespace', () => replaceInSelection(EMPTY_CHAR, WHITESPACE_CHAR));
-    registerAction('convert-to-empty', () => replaceInSelection(WHITESPACE_CHAR, EMPTY_CHAR));
-    registerAction('resize', () => resizeToSelection());
-    registerAction('close', () => selectionController.raster.clear(), true, 'Esc');
-
-    $selectionTools.off('click', '.sub-tool').on('click', '.sub-tool', evt => {
-        const $element = $(evt.currentTarget);
-        actions.callAction(actionIdForSelectionTool($element.data('tool')), evt);
-    });
-
-    selectionTooltips = setupTooltips(
-        $selectionTools.find('.sub-tool').toArray(),
-        element => actionIdForSelectionTool($(element).data('tool')),
-        {
-            offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-        }
-    );
-}
-
-function actionIdForSelectionTool(tool) {
-    return `tools.selection.${tool}`;
-}
-
-function refreshSelectionTools() {
-    const isVisible = selectionController.raster.hasSelection() && !selectionController.raster.caretCell();
-    $selectionTools.toggle(isVisible);
-    if (!isVisible) selectionTooltips.tooltips.forEach(tooltip => tooltip.hide())
-
-    $selectionTools.find('.sub-tool[data-tool="move"]').toggleClass('active', !!selectionController.raster.movableContent());
-
-    $selectionTools.find('.sub-tool').each((i, element) => {
-        const $element = $(element);
-        const actionId = actionIdForSelectionTool($element.data('tool'));
-        $element.html(getIconHTML(actionId))
-        $element.toggleClass('disabled', !actions.isActionEnabled(actionId));
-    });
-
-    $selectionTools.find('.color-tool').toggleClass('hidden', !state.isMultiColored())
-}
 
 function fillSelection(char, color) {
     selectionController.raster.getSelectedCells().forEach(cell => {
@@ -596,6 +535,9 @@ export function hoveredCells(primaryCell) {
 let $shapeProperties, shapeTooltips = [];
 const shapeSubMenus = {};
 
+// Most menus are based on shape props and are keyed off the prop. There is no 'prop' for order, so we give it its own key.
+const ORDER_MENU = '__ORDER__';
+
 function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
@@ -621,6 +563,7 @@ function setupShapeProperties() {
 
     actions.registerAction('tools.shapes.delete', {
         callback: () => selectionController.vector.deleteSelectedShapes(),
+        visible: () => selectionController.vector.hasSelectedShapes(),
         enabled: () => selectionController.vector.hasSelectedShapes(),
         shortcutAbbr: 'Delete'
     })
@@ -631,6 +574,21 @@ function setupShapeProperties() {
         enabled: () => selectionController.vector.canEnterEditMode(),
         shortcutAbbr: 'Enter'
     })
+
+    registerRasterSelectionAction('move', () => {
+        selectionController.raster.toggleMovingContent()
+    }, false, `${modifierAbbr('metaKey')}Click`);
+    registerRasterSelectionAction('flip-v', e => {
+        selectionController.raster.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e))
+    });
+    registerRasterSelectionAction('flip-h', e => {
+        selectionController.raster.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e))
+    });
+    registerRasterSelectionAction('clone', () => selectionController.raster.cloneToAllFrames());
+    registerRasterSelectionAction('convert-to-whitespace', () => replaceInSelection(EMPTY_CHAR, WHITESPACE_CHAR));
+    registerRasterSelectionAction('convert-to-empty', () => replaceInSelection(WHITESPACE_CHAR, EMPTY_CHAR));
+    registerRasterSelectionAction('resize', () => resizeToSelection());
+    registerRasterSelectionAction('close', () => selectionController.raster.clear(), true, 'Esc');
 
     // quickSwapChar action-button is handled separately by char picker
     const $standardActionButtons = $shapeProperties.find('.action-button:not([data-action="tools.shapes.quickSwapChar"])')
@@ -648,6 +606,15 @@ function setupShapeProperties() {
             offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
         }
     ).tooltips);
+}
+
+function registerRasterSelectionAction(tool, callback, disableWhenMoving = true, shortcutAbbr) {
+    actions.registerAction(`tools.selection.${tool}`, {
+        callback: callback,
+        enabled: () => !(disableWhenMoving && selectionController.raster.movableContent()),
+        visible: () => selectionController.raster.hasSelection(),
+        shortcutAbbr: shortcutAbbr
+    });
 }
 
 function activeShapeTypes() {
@@ -888,17 +855,18 @@ function setupOrderMenu() {
                 disabled: () => !actions.isActionEnabled(actionId)
             }
         }),
+        visible: () => selectionController.vector.hasSelectedShapes(),
         onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
         tooltipOptions: {
             placement: 'right'
         }
     })
 
-    shapeSubMenus['ORDER'] = menu;
+    shapeSubMenus[ORDER_MENU] = menu;
 }
 
 function refreshShapeProperties() {
-    const isVisible = !isEmptyObject(activeShapeProps());
+    const isVisible = !isEmptyObject(activeShapeProps()) || selectionController.raster.hasSelection();
     $shapeProperties.toggle(isVisible);
 
     if (isVisible) {
@@ -916,8 +884,11 @@ function refreshShapeProperties() {
         $shapeProperties.find('#shape-fill-menu-group').toggle(shapeSubMenus[FILL_PROP].isVisible())
         $shapeProperties.find('#shape-color-menu-group').toggle(showColorPicker())
         $shapeProperties.find('#shape-char-menu-group').toggle(showCharPicker())
+        $shapeProperties.find('#move-menu-group').toggle(selectionController.raster.hasSelection())
 
-        $shapeProperties.find('#shape-actions').toggle(selectionController.vector.hasSelectedShapes())
+        $shapeProperties.find('#shape-actions').toggle(
+            selectionController.vector.hasSelectedShapes() || selectionController.raster.hasSelection()
+        )
 
         // Refresh action buttons
         $shapeProperties.find('.action-button').each((i, element) => {

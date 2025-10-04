@@ -107,23 +107,18 @@
                     </div>
 
                 </div>
-                <div id="context-tools-left">
-                    <div id="selection-tools" class="sub-tool-menu" style="display: none;">
-                        <div class="sub-tool" data-tool="move"></div>
-                        <div class="sub-tool" data-tool="flip-v"></div>
-                        <div class="sub-tool" data-tool="flip-h"></div>
-                        <div class="sub-tool" data-tool="clone"></div>
-                        <div class="sub-tool" data-tool="fill-char"></div>
-                        <div class="sub-tool color-tool" data-tool="fill-color"></div>
-                        <div class="sub-tool" data-tool="convert-to-whitespace"></div>
-                        <div class="sub-tool" data-tool="convert-to-empty"></div>
-                        <div class="sub-tool" data-tool="resize"></div>
-                        <div class="sub-tool" data-tool="close"></div>
-                    </div>
-                </div>
+
+                <div id="context-tools-left"><!-- No longer used --></div>
 
                 <div id="context-tools-top">
                     <div id="shape-properties" class="sub-tool-menu" style="display: none;">
+                        <div class="property-group" id="move-menu-group">
+                            <div class="group-title">Move</div>
+                            <div class="group-actions">
+                                <div class="action-button" data-action="tools.selection.move"></div>
+                            </div>
+                        </div>
+
                         <div class="property-group" id="shape-stroke-menu-group">
                             <div class="group-title">Stroke</div>
                             <div class="group-actions"></div>
@@ -166,6 +161,13 @@
                                 <div id="shape-order"></div>
                                 <div class="action-button" data-action="tools.shapes.editText"></div>
                                 <div class="action-button" data-action="tools.shapes.delete"></div>
+
+                                <div class="action-button" data-action="tools.selection.flip-v"></div>
+                                <div class="action-button" data-action="tools.selection.flip-h"></div>
+                                <div class="action-button" data-action="tools.selection.clone"></div>
+                                <div class="action-button" data-action="tools.selection.convert-to-whitespace"></div>
+                                <div class="action-button" data-action="tools.selection.convert-to-empty"></div>
+                                <div class="action-button" data-action="tools.selection.resize"></div>
                             </div>
                         </div>
                     </div>
