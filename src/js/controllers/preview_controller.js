@@ -168,8 +168,6 @@ function setupEventBus() {
     })
 
     eventBus.on([EVENTS.REFRESH.ALL], () => reset())
-
-    eventBus.on([EVENTS.STATE.INVALIDATED], () => resetCache())
 }
 
 // --------------------------------------------------------------------------- Glyph cache

@@ -1,6 +1,6 @@
-import Picker from "vanilla-picker";
 import {COLOR_FORMAT, BLACK, WHITE} from "../state/index.js";
 import Color from "@sphinxxxx/color-conversion";
+import ColorPicker from "./color_picker.js";
 
 // TODO Move these constants elsewhere and combine with color_mode_picker.js etc.
 const BLACK_AND_WHITE_MODE = 'monochrome';
@@ -53,8 +53,7 @@ export default class BackgroundPicker {
         else {
             // All other colors
             this.$types.filter(`[value="${CUSTOM}"]`).prop('checked', true);
-            this._ignoreNextOnChange();
-            this.colorPicker.setColor(newValue, false);
+            this.colorPicker.value(newValue);
         }
     }
 
@@ -79,22 +78,19 @@ export default class BackgroundPicker {
         this.$types = this.$container.find(`input[name="${this._radioInputName()}"]`);
         this.$types.on('change', () => this._onChange());
 
-        const $colorWell = this.$container.find(`.color-well`);
-
-        this._ignoreNextOnChange(); // Required since vanilla-picker's initial `color` property triggers its onChange
-        this.colorPicker = new Picker({
-            parent: $colorWell.get(0),
-            popup: 'right',
-            color: DEFAULT_COLORED_BACKGROUND,
+        this.colorPicker = new ColorPicker(this.$container.find('.color-picker'), {
+            initialValue: DEFAULT_COLORED_BACKGROUND,
             onOpen: () => {
-                this.$types.filter(`[value="${CUSTOM}"]`).prop('checked', true)
-            },
-            onChange: (color) => {
-                this.pickerValue = color[COLOR_FORMAT];
-                $colorWell.css('background', this.pickerValue);
+                this.$types.filter(`[value="${CUSTOM}"]`).prop('checked', true);
                 this._onChange();
             },
+            onDone: color => {
+                this.pickerValue = color;
+                this._onChange();
+            }
         });
+
+        this.pickerValue = this.colorPicker.value();
     }
 
     _createHTML() {
@@ -107,7 +103,7 @@ export default class BackgroundPicker {
             </label>
             <label class="conditional-field" data-show-if="mode=${COLORED_MODE}">
                 <input type="radio" name="${this._radioInputName()}" value="${CUSTOM}"> Custom
-                <span class="color-well"></span>
+                <div class="color-picker"></div>
             </label>
         `);
 
@@ -117,18 +113,7 @@ export default class BackgroundPicker {
         // </label>
     }
 
-    // Workaround for when we need the vanilla-picker's onChange to fire, but don't want it to
-    // trigger the background-picker's onChange
-    _ignoreNextOnChange() {
-        this._nextOnChangeIgnored = true;
-    }
-
     _onChange() {
-        if (this._nextOnChangeIgnored) {
-            this._nextOnChangeIgnored = false;
-            return;
-        }
-
         this.options.onChange(this.value);
     }
 

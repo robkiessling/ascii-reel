@@ -51,14 +51,27 @@ function setupActions() {
             refresh();
         }
     });
-    actions.registerAction('palette.delete-color', {
+
+    // TODO deleting single colors needs to be updated - we can't allow you to delete used colors
+    // actions.registerAction('palette.delete-color', {
+    //     enabled: () => {
+    //         return $colorList.find('.selected').length;
+    //     },
+    //     callback: () => {
+    //         state.deleteColor($colorList.find('.selected').data('color'));
+    //         refresh();
+    //         state.pushHistory();
+    //     }
+    // });
+
+    actions.registerAction('palette.delete-unused-colors', {
         enabled: () => {
             return $colorList.find('.selected').length;
         },
         callback: () => {
-            state.deleteColor($colorList.find('.selected').data('color'));
-            refresh();
+            state.vacuumColorTable();
             state.pushHistory();
+            eventBus.emit(EVENTS.REFRESH.ALL); // Even though visible colors don't change, need to reset preview cache
         }
     });
     actions.registerAction('palette.open-settings', () => {
@@ -72,7 +85,7 @@ function setupActions() {
 
 function setupEventBus() {
     eventBus.on(EVENTS.TOOLS.COLOR_CHANGED, () => refreshSelectedColor())
-    eventBus.on([EVENTS.TOOLS.COLOR_ADDED, EVENTS.REFRESH.ALL], () => refresh())
+    eventBus.on([EVENTS.TOOLS.COLOR_ADDED, EVENTS.REFRESH.CURRENT_FRAME, EVENTS.REFRESH.ALL], () => refresh())
 }
 
 function refresh() {

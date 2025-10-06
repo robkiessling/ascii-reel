@@ -25,7 +25,7 @@ import {
     BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP, WRITE_EMPTY_CHARS_PROP
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
-import {standardTip} from "../components/tooltips.js";
+import {refreshableTooltips, standardTip, standardTipContentBuilder} from "../components/tooltips.js";
 import IconMenu from "../components/icon_menu.js";
 import {MOUSE} from "../io/mouse.js";
 import {LAYER_TYPES} from "../state/constants.js";
@@ -91,7 +91,11 @@ export function handleEscapeKey() {
     // Disable quick-swap if it's enabled
     if (isQuickSwapEnabled()) {
         toggleQuickSwap(false);
-        return true;
+
+        // Normally, we consume this event to prevent further handling. However, if a raster selection exists, we allow
+        // the event through. This is because raster selections are tied to quick-swap mode, and letting the event
+        // propagate allows the selection to be cleared as well.
+        return !selectionController.raster.hasSelection();
     }
 
     return false;
@@ -588,7 +592,7 @@ function setupShapeProperties() {
     registerRasterSelectionAction('convert-to-whitespace', () => replaceInSelection(EMPTY_CHAR, WHITESPACE_CHAR));
     registerRasterSelectionAction('convert-to-empty', () => replaceInSelection(WHITESPACE_CHAR, EMPTY_CHAR));
     registerRasterSelectionAction('resize', () => resizeToSelection());
-    registerRasterSelectionAction('close', () => selectionController.raster.clear(), true, 'Esc');
+    // registerRasterSelectionAction('close', () => selectionController.raster.clear(), true, 'Esc');
 
     // quickSwapChar action-button is handled separately by char picker
     const $standardActionButtons = $shapeProperties.find('.action-button:not([data-action="tools.shapes.quickSwapChar"])')
@@ -1218,13 +1222,27 @@ function setupColorPicker() {
             popup: 'bottom'
         },
         tooltip: () => {
-            return standardTip($shapeColor, 'tools.shapes.colorPicker', {
-                placement: 'bottom',
-                offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-            })
+            return refreshableTooltips(
+                $shapeColor,
+                standardTipContentBuilder(() => {
+                    if (!state.isValid()) return ''; // TODO [pending state init] - can't call this until state initialized
+                    if (state.currentLayerType() === LAYER_TYPES.RASTER) {
+                        return selectionController.raster.hasSelection() ? 'tools.standard.selection.color' : 'tools.standard.color'
+                    }
+                    return 'tools.shapes.colorPicker';
+                }),
+                {
+                    placement: 'bottom',
+                    offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
+                }
+            )
         },
-        onChange: color => setColor(color, false),
         onDone: color => applyColor(color),
+
+        // For raster selections, the color picker is shown in split mode. This allows users to apply the current color
+        // to highlighted text with a single click. Without split mode, they'd have to reopen the color picker and
+        // manually reselect the same color.
+        splitMode: () => selectionController.raster.hasSelection()
     })
 }
 
@@ -1247,8 +1265,8 @@ function useColorIndex() {
     return selectionController.vector.hasSelectedShapes();
 }
 
-function setColor(colorStr, updatePicker = true) {
-    if (shapeColorPicker && updatePicker) shapeColorPicker.value(colorStr, true);
+function setColor(colorStr) {
+    if (shapeColorPicker) shapeColorPicker.value(colorStr, true);
 
     // Always save to COLOR_STR_PROP, regardless of whether we are editing shapes or not (do not set draw CHAR_PROP)
     updateActiveShapeProp(COLOR_STR_PROP, colorStr, false);
@@ -1261,8 +1279,11 @@ function applyColor(colorStr) {
 
     const colorIndex = state.colorIndex(colorStr);
 
-    // TODO MAYBE WRONG SPOT FOR THIS?
-    if (useColorIndex()) selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+    if (selectionController.raster.hasSelection()) {
+        fillSelection(undefined, colorIndex)
+    } else if (selectionController.vector.hasSelectedShapes()) {
+        selectionController.vector.updateSelectedShapes(shape => shape.updateProp(COLOR_PROP, colorIndex));
+    }
 }
 
 

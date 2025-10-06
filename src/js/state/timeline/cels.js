@@ -2,7 +2,7 @@
 import {isObject, transformValues} from "../../utils/objects.js";
 import {numCols, numRows, getConfig, setConfig, getDrawingColor} from "../config.js";
 import {mod} from "../../utils/numbers.js";
-import {DEFAULT_COLOR} from "../palette.js";
+import {colorDepth, colorIndex, DEFAULT_COLOR, isNewColor} from "../palette.js";
 import CelFactory from "./cel/factory.js";
 import {LAYER_TYPES} from "../constants.js";
 import RasterCel from "./cel/raster.js";
@@ -23,48 +23,23 @@ export function canReorderCelShapes(cel, ...args) { return cel.canReorderShapes(
 
 const DEFAULT_STATE = {
     cels: {},
-    colorTable: []
 }
 
 let state = {};
-
-export const COLOR_DEPTH_8_BIT = '8bit';
-export const COLOR_DEPTH_16_BIT = '16bit';
 
 export function deserialize(data = {}, options = {}) {
     // Not using options.replace short circuit here -- we cannot replace state by reference; we always need to
     // deserialize each Cel. However, options.replace does get passed to CelFactory.deserialize to skip normalization.
 
-    const celOptions = celSerializationOptions(options, data);
-
     state = $.extend(true, {}, DEFAULT_STATE, data);
 
-    if (data.colorTable) state.colorTable = [...data.colorTable];
-    if (data.cels) state.cels = transformValues(data.cels, (celId, cel) => CelFactory.deserialize(cel, celOptions))
+    if (data.cels) state.cels = transformValues(data.cels, (celId, cel) => CelFactory.deserialize(cel, options))
 }
 
 export function serialize(options = {}) {
-    if (options.compress) {
-        vacuumColorTable();
-    }
-
-    const celOptions = celSerializationOptions(options, state);
-
     return {
-        cels: transformValues(state.cels, (celId, cel) => cel.serialize(celOptions)),
-        colorTable: state.colorTable,
+        cels: transformValues(state.cels, (celId, cel) => cel.serialize(options)),
     }
-}
-
-function celSerializationOptions(options, data) {
-    if (options.compress || options.decompress) {
-        options = $.extend(true, {}, options, {
-            colorDepth: data.colorTable.length > 0xFF ? COLOR_DEPTH_16_BIT : COLOR_DEPTH_8_BIT,
-            rowLength: numCols()
-        });
-    }
-
-    return options;
 }
 
 export function createCel(layer, frame) {
@@ -141,97 +116,7 @@ export function getOffsetPosition(row, col, rowOffset, colOffset, wrap) {
 }
 
 
-// -------------------------------------------------------------------------------- Colors / Palettes
-// - colorTable includes all colors used in rendering
-// - palette.colors includes only colors that have been saved to the palette
-
-export function colorTable() {
-    return state.colorTable.slice(0); // Returning a dup; colorTable should only be modified by colorIndex/vacuum
-}
-export function colorStr(colorIndex) {
-    return state.colorTable[colorIndex] === undefined ? DEFAULT_COLOR : state.colorTable[colorIndex];
-}
-
-// Cleans out any unused colors from colorTable (adjusting cel color indices appropriately). Colors can become unused
-// if, for example, some text was drawn with that color but then re-painted with a new color.
-// This method also ensures all cel colors actually exist in the colorTable.
-export function vacuumColorTable() {
-    const originalLength = state.colorTable ? state.colorTable.length : 0;
-
-    // Ensure colorTable has at least one entry so we can use index 0 as a fallback
-    if (!state.colorTable[0]) state.colorTable[0] = DEFAULT_COLOR;
-
-    let newIndex = 0;
-    const vacuumMap = new Map(); // maps original colorIndexes to their new vacuumed colorIndex
-    const dupUpdateMap = getDupColorUpdateMap(); // keeps track of any duplicate colorTable values
-
-    iterateAllCels(cel => cel.updateColorIndexes((colorIndex, updater) => {
-        // If colorTable does not have a value for the current colorIndex, we set the colorIndex to 0
-        if (!state.colorTable[colorIndex]) colorIndex = 0;
-
-        // If the color value of a colorIndex is duplicated by an earlier colorIndex, we use that earlier colorIndex
-        if (dupUpdateMap.has(colorIndex)) colorIndex = dupUpdateMap.get(colorIndex);
-
-        // Add any new color indexes to the vacuum map
-        if (!vacuumMap.has(colorIndex)) vacuumMap.set(colorIndex, newIndex++)
-
-        // Update the cel color to use the vacuumed index
-        updater(vacuumMap.get(colorIndex));
-    }))
-
-    if (vacuumMap.size) {
-        const vacuumedColorTable = [];
-        for (const [oldIndex, newIndex] of vacuumMap.entries()) {
-            vacuumedColorTable[newIndex] = state.colorTable[oldIndex];
-        }
-        state.colorTable = vacuumedColorTable;
-    }
-
-    // Color indices may have been shuffled. State now reflects the correct colors, but any external caches of color
-    // data (e.g. rendering snapshots) may be stale and should be invalidated.
-    if (originalLength !== state.colorTable.length) eventBus.emit(EVENTS.STATE.INVALIDATED);
-}
-
-// Returns a map of any duplicate colorTable values, where the key is the dup index and the value is the original index.
-// E.g. if colorTable is ['#000000', '#ff0000', '#00ff00', '#ff0000'], index 3 (the second '#ff0000') is a duplicate,
-// so the returned map would be { 3 => 1 }, since any cel that uses colorIndex 3 can be replaced with colorIndex 1.
-function getDupColorUpdateMap() {
-    const updateMap = new Map();
-    const colorStrToIndexMap = new Map();
-    state.colorTable.forEach((colorStr, colorIndex) => {
-        if (colorStrToIndexMap.has(colorStr)) {
-            // It is a duplicate
-            updateMap.set(colorIndex, colorStrToIndexMap.get(colorStr))
-        }
-        else {
-            // It is an original
-            colorStrToIndexMap.set(colorStr, colorIndex);
-        }
-    })
-    return updateMap;
-}
-
-export function colorIndex(colorStr) {
-    let index = state.colorTable.indexOf(colorStr);
-
-    if (index === -1) {
-        state.colorTable.push(colorStr);
-        index = state.colorTable.length - 1;
-    }
-
-    return index;
-}
-
-function hasColor(colorStr) {
-    return state.colorTable.indexOf(colorStr) !== -1;
-}
-
-export function primaryColorIndex() {
-    return colorIndex(getDrawingColor());
-}
-
-export function convertToMonochrome(color) {
-    state.colorTable = [color]
+export function convertToMonochrome() {
     iterateAllCels(cel => cel.convertToMonochrome())
 }
 
@@ -243,7 +128,7 @@ export function convertToMonochrome(color) {
 export function hasCharContent(matchingColor) {
     let matchingColorIndex;
     if (matchingColor !== undefined) {
-        matchingColorIndex = hasColor(matchingColor) ? colorIndex(matchingColor) : -1;
+        matchingColorIndex = isNewColor(matchingColor) ? -1 : colorIndex(matchingColor);
     }
 
     // Not using iterateAllCels so we can terminate early

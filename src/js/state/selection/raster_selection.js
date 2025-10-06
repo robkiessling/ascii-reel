@@ -18,8 +18,8 @@ const DEFAULT_STATE = {
 }
 
 let state = {
-    // TODO - I have this here so hasSelection() does not break during page initialization due to tooltip setup
-    //        Need to find a way to perhaps defer tooltip loading until state is loaded
+    // TODO [pending state init] I have this here so hasSelection() does not break during page initialization due to
+    //   tooltip setup. Need to find a way to perhaps defer tooltip loading until state is loaded
     selectionShapes: []
 };
 

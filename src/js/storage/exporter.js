@@ -17,8 +17,6 @@ import {hideFullScreenLoader, showFullScreenLoader} from "../utils/overlays.js";
  * @returns {Promise<string>} - Returns the name of the saved export file (will be undefined if File System API not supported).
  */
 export async function exportAnimation(options, exportToActiveFile) {
-    state.vacuumColorTable(); // We embed the colorTable into some formats; this ensures it is as small as possible
-
     let filename;
 
     switch(options.format) {

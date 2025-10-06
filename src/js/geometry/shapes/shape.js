@@ -71,6 +71,10 @@ export default class Shape {
         return structuredClone(props);
     }
 
+    isAllowedProp(propKey) {
+        return this.constructor.allowedProps.has(propKey);
+    }
+
     /**
      * Updates one of the shape's properties. Property must be included in the shape's static allowedProps
      * for it to be updated.
@@ -81,7 +85,7 @@ export default class Shape {
      */
     updateProp(propKey, newValue) {
         const standardUpdate = (key, value) => {
-            if (this.constructor.allowedProps.has(key) && this.props[key] !== value) {
+            if (this.isAllowedProp(key) && this.props[key] !== value) {
                 this.props[key] = value;
                 this._clearCache();
                 return true;
@@ -396,14 +400,9 @@ export default class Shape {
         throw new Error("topLeft must be implemented by subclass");
     }
 
-    updateColorIndexes(callback) {
-        if (this.props[COLOR_PROP] !== undefined) {
-            callback(this.props[COLOR_PROP], newColorIndex => this.props[COLOR_PROP] = newColorIndex);
-        }
-
-        this._clearCache();
-    }
     colorSwap(oldColorIndex, newColorIndex) {
+        if (!this.isAllowedProp(COLOR_PROP)) return;
+
         if (this.props[COLOR_PROP] === oldColorIndex) {
             this.props[COLOR_PROP] = newColorIndex;
         }

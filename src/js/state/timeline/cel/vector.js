@@ -2,7 +2,7 @@ import {areArraysEqual, create2dArray, mergeGlyphs, moveOneStep} from "../../../
 import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {transformValues} from "../../../utils/objects.js";
-import {HANDLE_TYPES, REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
+import {COLOR_PROP, HANDLE_TYPES, REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
 import {LAYER_TYPES} from "../../constants.js";
 import Shape from "../../../geometry/shapes/shape.js";
 
@@ -110,11 +110,14 @@ export default class VectorCel {
 
 
     hasContent(matchingColorIndex) {
-        let result = false;
-        this.shapes().forEach(shape => {
-            // todo check if shape uses color index
-        })
-        return result;
+        if (matchingColorIndex === undefined) {
+            return this.shapes().length > 0;
+        } else {
+            for (const shape of this.shapes()) {
+                if (shape.isAllowedProp(COLOR_PROP) && shape.props[COLOR_PROP] === matchingColorIndex) return true;
+            }
+            return false;
+        }
     }
 
     translate(rowOffset, colOffset) {
@@ -128,17 +131,27 @@ export default class VectorCel {
     }
 
     convertToMonochrome() {
-        // Set all shapes to color index 0
-        this.shapes().forEach(shape => shape.updateColorIndexes((colorIndex, updater) => updater(0)))
+        this.shapes().forEach(shape => shape.updateProp(COLOR_PROP, 0))
         this._clearCachedGlyphs();
     }
 
-    updateColorIndexes(callback) {
-        this.shapes().forEach(shape => shape.updateColorIndexes(callback))
+    getUniqueColorIndexes() {
+        const result = new Set();
+        this.shapes().forEach(shape => {
+            if (shape.isAllowedProp(COLOR_PROP)) result.add(shape.props[COLOR_PROP])
+        })
+        return result;
+    }
+
+    updateColorIndexes(mapper) {
+        this.shapes().forEach(shape => {
+            if (shape.isAllowedProp(COLOR_PROP)) shape.updateProp(COLOR_PROP, mapper.get(shape.props[COLOR_PROP]))
+        });
         this._clearCachedGlyphs();
     }
+
     colorSwap(oldColorIndex, newColorIndex) {
-        this.shapes().forEach(shape => shape.colorSwap(newColorIndex, newColorIndex))
+        this.shapes().forEach(shape => shape.colorSwap(oldColorIndex, newColorIndex))
         this._clearCachedGlyphs();
     }
 

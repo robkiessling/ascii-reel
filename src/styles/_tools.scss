@@ -130,6 +130,7 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
         height: 1rem;
         border-radius: 2px;
         padding: 4px;
+        margin-right: -4px;
 
         display: flex;
         justify-content: center;
@@ -168,7 +169,6 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
     font-size: 1.5rem;
     overflow: hidden;
     cursor: pointer;
-    padding: 0.1rem;
 
     border-radius: 0.5rem;
     //background: var(--color-surface-hover);
@@ -192,6 +192,14 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
   // Color picker popup actually becomes a child element of color-well, so cannot use overflow:hidden like other buttons
   .color-well {
     overflow: inherit;
+  }
+  .color-picker {
+    .picker_wrapper {
+      top: 60px;
+    }
+    &.split-mode .picker_wrapper {
+      left: -30px;
+    }
   }
 
   &.disabled {

@@ -11,6 +11,7 @@ import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.
 import {eventBus, EVENTS} from "../events/events.js";
 import {LAYER_TYPES} from "./constants.js";
 import {COLOR_STR_PROP} from "../geometry/shapes/constants.js";
+import {COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT} from "./palette.js";
 
 export {
     numRows, numCols, setConfig, getConfig, fontFamily, getName, getDrawingChar, getDrawingColor, updateDrawingProp,
@@ -33,11 +34,11 @@ export {
     deleteCurrentCelShape, reorderCurrentCelShapes, canReorderCurrentCelShapes,
     getCurrentCelShapeIdsAbove, testCurrentCelShapeHitboxes, testCurrentCelMarquee,
     isCellInBounds, layeredGlyphs, translateCel,
-    colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
     resize, colorSwap, hasCharContent
 } from './timeline/index.js'
 export {
     sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy,
+    colorTable, colorStr, colorIndex, primaryColorIndex, vacuumColorTable,
     importPalette, COLOR_FORMAT, BLACK, WHITE, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
 } from './palette.js'
 export {
@@ -84,6 +85,8 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
 }
 
 export function deserialize(data = {}, options = {}) {
+    if (options.compress || options.decompress) options = { ...options, ...celDeserializationOptions(data) };
+
     if (options.replace) {
         config.deserialize(data.config, options);
         timeline.deserialize(data.timeline, options);
@@ -121,6 +124,8 @@ export function deserialize(data = {}, options = {}) {
 }
 
 export function serialize(options = {}) {
+    if (options.compress || options.decompress) options = { ...options, ...celSerializationOptions() };
+
     return {
         version: CURRENT_VERSION,
         config: config.serialize(options),
@@ -128,6 +133,21 @@ export function serialize(options = {}) {
         palette: palette.serialize(options),
         unicode: unicode.serialize(options),
         selection: selection.serialize(options),
+    }
+}
+
+// TODO What if we store this instead of calculating it again?
+function celDeserializationOptions(data) {
+    return {
+        colorDepth: data.palette.colors.length > 0xFF ? COLOR_DEPTH_16_BIT : COLOR_DEPTH_8_BIT,
+        rowLength: data.config.dimensions[1] // TODO Standardize `rowLength` meaning
+    }
+}
+
+function celSerializationOptions() {
+    return {
+        colorDepth: palette.colorTable().length > 0xFF ? COLOR_DEPTH_16_BIT : COLOR_DEPTH_8_BIT,
+        rowLength: config.numCols()
     }
 }
 
@@ -352,7 +372,7 @@ export function invertInvisibleChars() {
     }
 
     if (oldColor && newColor) {
-        timeline.colorSwap(timeline.colorIndex(oldColor), timeline.colorIndex(newColor), {
+        timeline.colorSwap(palette.colorIndex(oldColor), palette.colorIndex(newColor), {
             allLayers: true, allFrames: true
         })
     }

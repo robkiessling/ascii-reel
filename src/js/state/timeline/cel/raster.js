@@ -1,10 +1,11 @@
 import {create2dArray, mergeGlyphs, split1DArrayInto2D} from "../../../utils/arrays.js";
 import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
-import {isCellInBounds, COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT, getOffsetPosition} from "../cels.js";
+import {isCellInBounds, getOffsetPosition} from "../cels.js";
 import {addToCache} from "../../unicode.js";
 import pako from "pako";
 import {LAYER_TYPES} from "../../constants.js";
+import {COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT} from "../../palette.js";
 
 const ENCODED_EMPTY_CHAR = "\0";
 
@@ -171,20 +172,22 @@ export default class RasterCel {
         this.colors = create2dArray(numRows(), numCols(), 0);
     }
 
-    /**
-     * Updates all instances of a color index
-     * @param {(colorIndex: number, updater: function) => void} callback - Function to call for each color instance.
-     *   The 1st arg is the given colorIndex so that the caller has a record of what color indexes are in use.
-     *   The 2nd arg is an updater function {(newColorIndex: number) => void} that is given the new color index to use
-     *
-     * TODO Maybe split this into 2 functions?
-     *   getUniqueColorIndexes & updateColorIndexes?
-     */
-    updateColorIndexes(callback) {
+    getUniqueColorIndexes() {
+        const result = new Set();
+
+        // TODO This could be cached for performance improvements, especially if we call this a lot (e.g. if we
+        //      implement `canVacuumColorTable` and end up calling this on every refresh.
         this._iterateCells((r, c, char, colorIndex) => {
-            callback(colorIndex, newColorIndex => this.colors[r][c] = newColorIndex);
-        })
+            if (char !== EMPTY_CHAR && char !== WHITESPACE_CHAR) result.add(colorIndex)
+        });
+
+        return result;
     }
+
+    updateColorIndexes(mapper) {
+        this._iterateCells((r, c, char, colorIndex) => this.colors[r][c] = mapper.get(colorIndex));
+    }
+
     colorSwap(oldColorIndex, newColorIndex) {
         this._iterateCells((r, c, char, colorIndex) => {
             if (colorIndex === oldColorIndex) this.setGlyph(r, c, undefined, newColorIndex);

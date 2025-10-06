@@ -21,7 +21,6 @@ export function deserialize(data = {}, options = {}) {
 
     if (!options.replace) {
         validate();
-        celData.vacuumColorTable();
     }
 }
 export function serialize(options = {}) {
@@ -175,9 +174,7 @@ export function deleteLayer(index) {
 // --------------------------------------------------------------------------- Cels API
 
 export {
-    hasCharContent, setCelGlyph, isCellInBounds, translateCel,
-    colorTable, colorStr, vacuumColorTable, colorIndex, primaryColorIndex,
-    resize, convertToMonochrome
+    hasCharContent, setCelGlyph, isCellInBounds, translateCel, resize, convertToMonochrome
 } from './cels.js'
 
 function currentCel() {

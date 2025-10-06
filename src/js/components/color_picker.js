@@ -1,26 +1,38 @@
 import Picker from "vanilla-picker";
-import * as keyboard from "../io/keyboard.js";
-import {standardTip} from "./tooltips.js";
-import * as state from "../state/index.js";
-import {eventBus, EVENTS} from "../events/events.js";
-import {setupTooltips} from "../io/actions.js";
 import Color from "@sphinxxxx/color-conversion";
+import * as keyboard from "../io/keyboard.js";
+import {COLOR_FORMAT} from "../state/index.js";
 
 export default class ColorPicker {
     /**
-     * @param $picker - jQuery element for the picker container
+     * Wrapper around vanilla-picker's color picker.
+     *
+     * Sets up a vanilla-picker with 'Ok' and 'Cancel' buttons. This wrapper's onDone event will only fire when the 'Ok'
+     * button is clicked; clicking 'Cancel' or anywhere else in the window to close the picker will cause the changes
+     * to be lost. Clicking 'Ok' will update the picker's color-well element with the new color.
+     *
+     * Picker supports a "split" mode, where the color picker shows two UI buttons:
+     * - A large "apply" button on the left with a paint-bucket fill icon
+     * - A small dropdown button on the right that opens the color picker
+     * This UX mirrors tools like Word/PowerPoint, where a main button applies the color and a dropdown opens the palette.
+     *
+     * @param $container - jQuery element for the picker container
      * @param {Object} options - Picker options
      * @param {string} [options.initialValue] - Initial char value
      * @param {function} [options.onLoad] - Callback when picker value is set for the first time
-     * @param {function} [options.onChange] - Callback when picker value changes. Will be rapidly called if user clicks
-     *   and drags their mouse in the rainbow. Use onDone instead to only fire when 'Ok' button is clicked / popup is closed
-     * @param {function} [options.onDone] - Callback when picker 'Ok' button is clicked, picker is closed, or value
-     *   is set programmatically
-     * @param {function} [options.pickerOptions] - Options to pass to vanilla-picker
-     * @param {() => tippy} [options.tooltip] - Function that attaches a tooltip to the picker
+     * @param {function} [options.onOpen] - Callback when picker is opened
+     * @param {function} [options.onClose] - Callback when picker is closed
+     * @param {function} [options.onDone] - Callback when picker 'Ok' button is clicked, or value is set programmatically
+     * @param {function} [options.pickerOptions] - Options to pass to vanilla-picker. Do not override vanilla-picker's
+     *   onOpen, onClose, or onDone here; those are already overridden by this class. Instead, use this class's
+     *   `options.onOpen` option, etc.
+     * @param {() => boolean} [options.splitMode] - Function that returns whether the color picker should be in "split"
+     *   mode (true) or normal mode (false). See documentation above for more info on split mode.
+     * @param {() => tippy} [options.tooltip] - If the picker should have a tooltip, provide a function that instantiates
+     *   the tooltip. Tooltip will be enabled/disabled when picker is open.
      */
-    constructor($picker, options = {}) {
-        this.$picker = $picker;
+    constructor($container, options = {}) {
+        this.$container = $container;
         this.options = options;
 
         this._init();
@@ -29,82 +41,59 @@ export default class ColorPicker {
     }
 
     _init() {
-        this.picker = new Picker($.extend({
-            parent: this.$picker.get(0),
+        this.$apply = $('<div class="apply-color"><span class="ri ri-fw ri-paint-fill"></span></div>')
+            .appendTo(this.$container);
+
+        this.$well = $('<div class="color-well"><span class="ri ri-arrow-down-s-fill"></span></div>')
+            .appendTo(this.$container);
+
+        this.picker = new Picker({
+            parent: this.$well.get(0),
             popup: 'right',
+            cancelButton: true,
+            template: this._pickerTemplate(),
             onOpen: () => {
                 keyboard.toggleStandard('color-picker', true);
-                this._tooltip.disable();
-                this.$picker.addClass('picker-open');
-
-                if (!this._$addToPalette) {
-                    this._$addToPalette = this.$picker.find('.picker_sample');
-                    this._addToPaletteTooltip = standardTip(this._$addToPalette, 'tools.shapes.colorPickerAdd', {
-                        placement: 'right',
-                        offset: [0, 20],
-                    })
-                }
-
-                this._refreshAddToPalette();
+                if (this._tooltip) this._tooltip.disable();
+                this.$container.addClass('picker-open');
+                this.picker.setColor(this._value, true);
+                if (this.options.onOpen) this.options.onOpen();
+            },
+            onDone: (color) => {
+                this._storeValue(color[COLOR_FORMAT])
+                if (this.options.onDone) this.options.onDone(this._value);
             },
             onClose: () => {
                 keyboard.toggleStandard('color-picker', false);
-                this._tooltip.enable();
-                this.$picker.removeClass('picker-open');
-
-                if (this.options.onDone) this.options.onDone(this._value);
+                if (this._tooltip) this._tooltip.enable();
+                this.$container.removeClass('picker-open');
+                if (this.options.onClose) this.options.onClose();
             },
-            onChange: (color) => {
-                this._storeValue(color[state.COLOR_FORMAT])
-                if (this.options.onChange) this.options.onChange(this._value);
-            },
-        }, this.options.pickerOptions));
+            ...this.options.pickerOptions
+        });
 
         if (this.options.tooltip) this._tooltip = this.options.tooltip();
 
-        this.$picker.on('click', '.add-to-palette', () => {
-            state.addColor(this._value);
-            this._refreshAddToPalette();
-            eventBus.emit(EVENTS.TOOLS.COLOR_ADDED);
-            state.pushHistory();
+        this.$apply.on('click', () => {
+            if (this.options.onDone) this.options.onDone(this._value);
         })
     }
 
-    _refreshAddToPalette() {
-        if (!this._$addToPalette) return;
-
-        this._$addToPalette.empty();
-
-        if (state.isNewColor(this._value)) {
-            this._$addToPalette.addClass('add-to-palette');
-
-            const [h, s, l, a] = new Color(this._value).hsla; // Break colorStr into hsla components
-
-            $('<span>', {
-                css: { color: l <= 0.5 ? 'white' : 'black' },
-                class: 'ri ri-fw ri-alert-line'
-            }).appendTo(this._$addToPalette);
-
-            this._addToPaletteTooltip.enable();
-        }
-        else {
-            this._$addToPalette.removeClass('add-to-palette');
-            this._addToPaletteTooltip.disable();
-        }
+    _getIconColor() {
+        const [h, s, l, a] = new Color(this._value).hsla; // Break colorStr into hsla components
+        return l <= 0.5 ? 'white' : 'black';
     }
-
 
     /**
      * Sets and gets the char picker value
      * @param {String} [newValue] - If defined, sets the value of char picker. If undefined, char picker is not changed
-     * @param {Boolean} [silent=true] - If true, onChange/onDone events are not fired
+     * @param {Boolean} [silent=true] - If true, onDone event is not fired
      * @returns {String} - Current value of the char picker
      */
     value(newValue, silent = false) {
         if (newValue !== undefined) {
             this.picker.setColor(newValue, true); // Silent; so vanilla-picker's onDone doesn't fire
             this._storeValue(newValue);
-            if (!silent && this.options.onChange) this.options.onChange(this._value);
             if (!silent && this.options.onDone) this.options.onDone(this._value);
         }
 
@@ -113,9 +102,54 @@ export default class ColorPicker {
     
     _storeValue(newValue) {
         this._value = newValue;
-        this.$picker.css('background', this._value);
-        this._refreshAddToPalette();
+        this._refreshWell();
     }
 
+    _refreshWell() {
+        const isSplitMode = this.options.splitMode ? !!this.options.splitMode() : false;
+
+        this.$container.toggleClass('split-mode', isSplitMode)
+        this.$apply.toggle(isSplitMode)
+
+        if (isSplitMode) {
+            this.$well.css('background', '');
+            this.$apply.css('background', this._value);
+            this.$apply.css('color', this._getIconColor());
+        } else {
+            this.$well.css('background', this._value);
+        }
+
+        // If tooltip is refreshable, refresh its content
+        if (this._tooltip && this._tooltip.refreshContent) this._tooltip.refreshContent();
+    }
+
+    // This is the same as the default color-picker template, except:
+    // - I've re-ordered the bottom row so the picker_sample is on the far-left
+    _pickerTemplate() {
+        return `
+            <div class="picker_wrapper" tabindex="-1">
+                <div class="picker_arrow"></div>
+                <div class="picker_hue picker_slider">
+                    <div class="picker_selector"></div>
+                </div>
+                <div class="picker_sl">
+                    <div class="picker_selector"></div>
+                </div>
+                <div class="picker_alpha picker_slider">
+                    <div class="picker_selector"></div>
+                </div>
+                <div class="picker_sample"></div>
+                <div class="picker_editor">
+                    <input aria-label="Type a color name or hex value"/>
+                </div>
+                <div class="picker_done">
+                    <button>Ok</button>
+                </div>
+                <div class="picker_cancel">
+                    <button>Cancel</button>
+                </div>
+            </div>
+        `;
+    }
 
 }

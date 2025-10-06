@@ -210,10 +210,13 @@ export const STRINGS = {
     'tools.shapes.quickSwapChar.description': 'While active, pressing any key selects that character instead of switching tools.\n\n' +
         "If a raster selection is active, Quick-Swap Mode is automatically enabled&mdash;pressing a key will fill the selection with the chosen character.",
 
-    'tools.shapes.colorPicker.name': 'Selected Color',
-    'tools.shapes.colorPicker.description': 'Click to open the color picker.',
-    'tools.shapes.colorPickerAdd.name': 'Add Color To Palette',
-    'tools.shapes.colorPickerAdd.description': 'This color is not currently saved to your palette. Click here if you want to add it.',
+    'tools.shapes.colorPicker.name': 'Color',
+    'tools.shapes.colorPicker.description': "Controls the shape's color.",
+    'tools.standard.color.name': 'Color',
+    'tools.standard.color.description': "Controls the active tool's color.",
+    'tools.standard.selection.color.name': 'Apply Color',
+    'tools.standard.selection.color.description': 'Click to apply the current color to the selection. ' +
+        'Use the dropdown to choose a new color.',
 
     'tools.shapes.textAlignH.name': 'Horizontal Alignment',
     'tools.shapes.textAlignH.alignLeft.name': 'Align Left',
@@ -281,15 +284,17 @@ export const STRINGS = {
     'palette.sort-colors.name.lightness': 'Sorting By: Lightness',
     'palette.sort-colors.name.alpha': 'Sorting By: Alpha',
     'palette.sort-colors.description': 'Click to change sorting method.',
-    'palette.delete-color.name': 'Delete Color',
-    'palette.delete-color.description': 'Removes the selected color from your palette. This does not affect characters already using the color.',
+    // 'palette.delete-color.name': 'Delete Color',
+    // 'palette.delete-color.description': 'Removes the selected color from your palette. This does not affect characters already using the color.',
+    'palette.delete-unused-colors.name': 'Delete Unused Colors',
+    'palette.delete-unused-colors.description': 'Removes all unused colors from the palette.',
     'palette.open-settings.name': 'Palette Settings',
     'palette.open-settings.description': 'TODO',
     'palette.empty': 'No colors added.',
 
     'unicode.information.name': 'Unicode Quick Reference',
     'unicode.information.description': "Unicode characters aren't part of standard ASCII, but they're sometimes used in " +
-        "ASCII art for their unique shapes and styles. Any time you use a Unicode character in your drawing it'll automatically " +
+        "ASCII art for their unique shapes. Any time you use a Unicode character in your drawing it'll automatically " +
         'appear here for easy access and reuse.\n\n' +
         'Click a character below to select it in the character picker. ' +
         "This may also have additional effects depending on the tool you're using:\n" +

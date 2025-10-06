@@ -25,10 +25,6 @@ $char-picker-arrow-border-size: $char-picker-arrow-size + 2px;
   font-family: $font-monospace;
   position: relative;
   overflow: hidden;
-
-  &.ri-space {
-    padding-top: 1rem;
-  }
 }
 
 @keyframes char-picker-rotate {

@@ -1,0 +1,154 @@
+
+// ---------------------------------------------------------------------- color-picker well/button css
+
+.color-picker {
+  display: flex;
+  flex-direction: row;
+
+  .color-well {
+    cursor: pointer;
+
+    .ri {
+      display: none;
+    }
+  }
+}
+
+.color-picker.split-mode {
+  .apply-color, .color-well {
+    border: 1px solid var(--color-well-hover);
+    box-sizing: border-box;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+
+  .apply-color {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+
+    width: 2.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+  }
+
+  .color-well {
+    display: flex;
+    align-items: center;
+
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+
+    width: 1.5rem;
+
+    .ri {
+      display: inline;
+    }
+  }
+
+  &.picker-open {
+    .color-well {
+      background: var(--color-well-hover);
+    }
+  }
+}
+
+
+// ---------------------------------------------------------------------- vanilla-picker overrides
+
+.picker_wrapper {
+  width: 26.3em !important; // Chosen so that the bottom-left .picker_sample is square
+
+  &.popup {
+    z-index: 4 !important;
+  }
+
+  .picker_editor {
+    width: 7rem;
+  }
+
+  .picker_done, .picker_cancel {
+    button {
+      box-shadow: none !important;
+      width: auto;
+      padding: 0 0.5rem;
+      margin: 0;
+    }
+  }
+
+  // Overriding to make look like a call-out button. Cannot just add call-out class because
+  // needs to be higher priority than color-picker's styles.
+  .picker_done button {
+    background: var(--color-button-confirm-bg);
+    color: var(--color-button-confirm-font);
+    border-color: var(--color-button-confirm-bg);
+    &:hover {
+      background: color-mix(in srgb, var(--color-button-confirm-bg) 90%, black);
+    }
+  }
+  .picker_cancel button {
+    color: var(--color-button-font);
+    background: var(--color-button-bg);
+    border-color: var(--color-button-font);
+    &:hover {
+      background: var(--color-button-bg-hover);
+    }
+  }
+}
+
+// The default way popup:'right' works is: the popup opens to the right and then DOWN. I've changed this
+// so that the popup opens to the right and then UP.
+.picker_wrapper.popup.popup_right {
+  top: auto;
+  bottom: 0;
+  left: 160%;
+
+  .picker_arrow {
+    top: auto;
+    bottom: 0;
+
+    &::before, &::after {
+      top: auto;
+      bottom: 0;
+    }
+
+    &::before {
+      //transform: scaleY(-1)
+      transform: skew(135deg);
+      transform-origin: 0 0;
+    }
+  }
+}
+
+[data-theme="dark"] {
+  .picker_wrapper.popup {
+    background: var(--color-tooltip-bg);
+    border: 1px solid #000;
+
+    .picker_arrow::before {
+      border: 1px solid #000;
+      bottom: -1px;
+    }
+
+    .picker_arrow::before, .picker_arrow::after {
+      background: var(--color-tooltip-bg);
+    }
+  }
+
+  .picker_editor, .picker_hue, .picker_sl, .picker_alpha, .picker_sample {
+    //box-shadow: 0 0 0 1px #fff;
+  }
+}
+
+//[data-theme="light"] {
+//  .picker_wrapper.popup {
+//    background: var(--color-tooltip-bg);
+//
+//    .picker_arrow::before, .picker_arrow::after {
+//      background: var(--color-tooltip-bg);
+//    }
+//  }
+//}

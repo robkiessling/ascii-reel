@@ -178,6 +178,7 @@ export function callActionByShortcut(shortcut, callbackData) {
  * @returns {{tooltips: Tippy[], refreshContent: function}}
  */
 export function setupTooltips(targets, getActionId, options = {}) {
+    // TODO use tooltips helpers
     const tooltips = tippy(targets, $.extend({}, {
         content: tooltipContentBuilder(getActionId),
         placement: 'right',
