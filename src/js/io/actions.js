@@ -5,6 +5,7 @@ import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {isObject} from "../utils/objects.js";
+import {refreshableTooltips} from "../components/tooltips.js";
 
 let actions;
 
@@ -168,39 +169,54 @@ export function callActionByShortcut(shortcut, callbackData) {
 }
 
 /**
- * Sets up tippy tooltips for a group of action buttons
- * @param {string | Element[]} targets - Can be a DOM query selector or an Array of DOM elements. These elements are the
- *   action buttons that the tooltips will be attached to.
- * @param {string | function(element):string} getActionId - Can be an action-id string, or a function that returns an action-id.
- *   The function will be passed an `element` that refers to each target.
- * @param options - Standard tippy options
- * @returns {{tooltips: Tippy[], refreshContent: function}}
+ * Sets up tippy tooltips for a group of action buttons. Tooltips are built purely based on action-ids:
+ * - the tooltip's title/content will come from STRINGS['action-id.name'] and STRINGS['action-id.description'], respectively.
+ * - if the action has a shortcut, that shortcut will be shown next to the title.
+ * - if the action has any modifiers, those modifier keys / descriptions will be shown at the bottom of the tooltip.
+ * @param {string | Element[]} $elements - jQuery elements to attach tooltip(s) to
+ * @param {string | function(element):string} getActionId - Can be an action-id string, or a function that returns an
+ *   action-id. All tooltip content will be derived based on this action-id.
+ * @param overrides - Standard tippy options
+ * @returns {{tooltips: import('tippy.js').Instance[], refreshContent: function}}
  */
-export function setupTooltips(targets, getActionId, options = {}) {
-    // TODO use tooltips helpers
-    const tooltips = tippy(targets, $.extend({}, {
-        content: tooltipContentBuilder(getActionId),
-        placement: 'right',
-        hideOnClick: false,
-        allowHTML: true,
-        onShow(tooltipInstance) {
-            // If there is no tooltip content (e.g. action has no name/description), hide the tip (do not show an empty bubble)
-            if (tooltipInstance.props.content.length === 0) return false;
-        }
-    }, options));
+export function setupActionTooltips($elements, getActionId, overrides = {}) {
+    const contentBuilder = element => {
+        const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
+        const actionInfo = getActionInfo(actionId);
+        if (!actionInfo) return '';
+        if (!actionInfo.name && !actionInfo.description) return '';
 
-    const refreshContent = () => {
-        tooltips.forEach(tooltip => {
-            tooltip.setContent(tooltipContentBuilder(getActionId));
-        })
+        let modifiers = '';
+        if (ACTION_MODIFIERS[actionId]) {
+            ACTION_MODIFIERS[actionId].forEach(modification => {
+                const modifierKey = modifierWord(MODIFIER_KEYS[modification]);
+                const modifierDesc = STRINGS[modification];
+                modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
+            });
+        }
+
+        const htmlDescription = actionInfo.description ? strToHTML(actionInfo.description) : '';
+
+        if (actionInfo.name) {
+            return `<div class="header">` +
+                `<span class="title">${actionInfo.name}</span>` +
+                `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
+                `</div>` +
+                `<div class="description">${htmlDescription}</div>` +
+                modifiers;
+        }
+        else {
+            return `<div class="description">${htmlDescription}</div>` +
+                modifiers;
+        }
     }
 
-    return { tooltips, refreshContent };
+    return refreshableTooltips($elements, contentBuilder, overrides)
 }
 
 /**
  * Looks for any buttons with [data-action] attributes in the $container and attaches the appropriate action to them.
- * Also sets up tooltips.
+ * Also sets up tooltips (see setupActionTooltips for more info).
  * @param $container - Element containing buttons
  * @param {Object} [tooltipOptions] - Standard tippy options
  * @returns {{tooltips: Tippy[], refreshContent: function}}
@@ -211,7 +227,7 @@ export function setupActionButtons($container, tooltipOptions = {}) {
     const $buttons = $container.find('[data-action]');
     const getActionId = (button) => $(button).data('action')
 
-    const { tooltips, refreshContent: refreshTooltips } = setupTooltips($buttons.toArray(), getActionId, tooltipOptions)
+    const { tooltips, refreshContent: refreshTooltips } = setupActionTooltips($buttons, getActionId, tooltipOptions)
 
     return {
         tooltips: tooltips,
@@ -242,40 +258,6 @@ function attachClickHandlers($container) {
         }
     });
 }
-
-function tooltipContentBuilder(getActionId) {
-    return element => {
-        const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
-        const actionInfo = getActionInfo(actionId);
-        if (!actionInfo) return '';
-        if (!actionInfo.name && !actionInfo.description) return '';
-
-        let modifiers = '';
-        if (ACTION_MODIFIERS[actionId]) {
-            ACTION_MODIFIERS[actionId].forEach(modification => {
-                const modifierKey = modifierWord(MODIFIER_KEYS[modification]);
-                const modifierDesc = STRINGS[modification];
-                modifiers += `<div class="modifier-desc"><span class="modifier-key">${modifierKey}</span><span>${modifierDesc}</span></div>`;
-            });
-        }
-
-        const htmlDescription = actionInfo.description ? strToHTML(actionInfo.description) : '';
-
-        if (actionInfo.name) {
-            return `<div class="header">` +
-                `<span class="title">${actionInfo.name}</span>` +
-                `<span class="shortcut">${actionInfo.shortcutAbbr ? actionInfo.shortcutAbbr : ''}</span>` +
-                `</div>` +
-                `<div class="description">${htmlDescription}</div>` +
-                modifiers;
-        }
-        else {
-            return `<div class="description">${htmlDescription}</div>` +
-                modifiers;
-        }
-    }
-}
-
 
 /**
  * Some actions have modifiers (e.g. shift, alt) that affect what they do. These modifiers are determined by the following

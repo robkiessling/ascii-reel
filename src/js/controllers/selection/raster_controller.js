@@ -1,4 +1,3 @@
-import * as actions from "../../io/actions.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js"
 import * as tools from "../tool_controller.js";

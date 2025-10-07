@@ -8,7 +8,7 @@
 import * as state from '../state/index.js';
 import * as selectionController from "./selection/index.js";
 import * as actions from "../io/actions.js";
-import {setupTooltips, shouldModifyAction} from "../io/actions.js";
+import {setupActionTooltips, shouldModifyAction} from "../io/actions.js";
 import {modifierAbbr, modifierWord} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import CharPicker from "../components/char_picker.js";
@@ -401,16 +401,16 @@ function setupStandardTools() {
         actions.callAction(actionIdForStandardTool($element.data('tool')));
     });
 
-    const $leftTools = $standardTools.find('.standard-tool-column:first-child:not(:last-child) .standard-tool').toArray();
-    const $centerTools = $standardTools.find('.standard-tool-column:first-child:last-child .standard-tool').toArray();
-    const $rightTools = $standardTools.find('.standard-tool-column:last-child:not(:first-child) .standard-tool').toArray();
-    setupTooltips($leftTools, element => actionIdForStandardTool($(element).data('tool')), {
+    const $leftTools = $standardTools.find('.standard-tool-column:first-child:not(:last-child) .standard-tool');
+    const $centerTools = $standardTools.find('.standard-tool-column:first-child:last-child .standard-tool');
+    const $rightTools = $standardTools.find('.standard-tool-column:last-child:not(:first-child) .standard-tool');
+    setupActionTooltips($leftTools, element => actionIdForStandardTool($(element).data('tool')), {
         offset: tooltipOffset('left')
     });
-    setupTooltips($centerTools, element => actionIdForStandardTool($(element).data('tool')), {
+    setupActionTooltips($centerTools, element => actionIdForStandardTool($(element).data('tool')), {
         offset: tooltipOffset('center')
     });
-    setupTooltips($rightTools, element => actionIdForStandardTool($(element).data('tool')), {
+    setupActionTooltips($rightTools, element => actionIdForStandardTool($(element).data('tool')), {
         offset: tooltipOffset('right')
     });
 }
@@ -590,8 +590,8 @@ function setupShapeProperties() {
         actions.callAction($element.data('action'), evt);
     });
 
-    shapeTooltips.concat(setupTooltips(
-        $standardActionButtons.toArray(),
+    shapeTooltips.concat(setupActionTooltips(
+        $standardActionButtons,
         element => $(element).data('action'),
         {
             placement: 'bottom',
@@ -1101,8 +1101,8 @@ function setupCharPicker() {
         popupDirection: 'bottom',
         popupOffset: 22,
         tooltip: () => {
-            return setupTooltips(
-                $shapeChar.toArray(),
+            return setupActionTooltips(
+                $shapeChar,
                 'tools.shapes.charPicker',
                 {
                     placement: 'bottom',
@@ -1114,8 +1114,8 @@ function setupCharPicker() {
 
     $quickSwap = $('#shape-char-menu-group').find('[data-action="tools.shapes.quickSwapChar"]');
 
-    shapeTooltips.concat(setupTooltips(
-        $quickSwap.toArray(),
+    shapeTooltips.concat(setupActionTooltips(
+        $quickSwap,
         element => $(element).data('action'),
         {
             placement: 'bottom',

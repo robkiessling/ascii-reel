@@ -24,9 +24,9 @@ export default class Ellipse extends BoxShape {
         const color = this.props[COLOR_PROP];
 
         this._setupEllipseRecord();
-        if (boundingArea.numCells < 9) {
-            // Normal ellipse algorithm looks strange at very small sizes (it will be mostly empty space), so we just
-            // draw a rect outline
+        if (boundingArea.numRows < 3 || boundingArea.numCols < 3) {
+            // Normal ellipse algorithm looks strange without at least 3 rows/cols (it will be mostly empty space), so
+            // we just draw a rect outline
             boundingArea.iterateRelative((row, col) => this._markOutline(row, col));
         } else {
             this._plotSymmetric(boundingArea);
