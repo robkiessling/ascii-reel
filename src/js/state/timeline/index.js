@@ -282,7 +282,7 @@ export function testCurrentCelMarquee(cellArea) {
  *   null if the layers option is provided and there are no valid layers.
  */
 export function layeredGlyphs(frame, options = {}) {
-    const layerIds = options.layers ? new Set(options.layers.filter(layer => layer.visible).map(layer => layer.id)) : null;
+    const layerIds = options.layers ? new Set(options.layers.map(layer => layer.id)) : null;
     if (layerIds && layerIds.size === 0) return null; // Short circuit
 
     const chars = create2dArray(numRows(), numCols(), EMPTY_CHAR);

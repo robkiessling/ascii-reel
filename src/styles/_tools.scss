@@ -62,11 +62,9 @@
   }
 }
 
-$left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
-
 #context-tools-left {
   position: absolute;
-  left: $left-tools-width + $main-spacing;
+  left: $tools-bar-width + $main-spacing;
   top: 50%;
   transform: translate(0, -50%);
   z-index: 2;
@@ -83,7 +81,7 @@ $left-tools-width: $standard-tool-size * 2 + $main-spacing * 2;
 #context-tools-top {
   position: absolute;
   top: $main-spacing;
-  left: calc(50% + #{$left-tools-width} / 2);
+  left: calc(50% + #{$tools-bar-width} / 2);
   transform: translate(-50%, 0);
   z-index: 2;
 

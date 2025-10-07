@@ -187,5 +187,6 @@ $palette-icon-spacing: 4px;
 $unicode-icon-size: 1.8rem;
 $unicode-triangle-size: 6px;
 $standard-tool-size: 3rem; // TODO tools.js uses this amount to offset the tooltip for left-side buttons
+$tools-bar-width: $standard-tool-size * 2 + $main-spacing * 2;
 $sub-tool-size: 2.5rem;
 $well-border-size: 3px;

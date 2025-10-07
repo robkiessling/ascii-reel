@@ -16,11 +16,9 @@
 
 #canvas-message {
   position: absolute;
-  top: 0;
-  left: 50%;
+  bottom: 1rem;
+  left: calc(50% + #{$tools-bar-width} / 2);
   transform: translate(-50%, 0);
-  margin-left: calc(#{$standard-tool-size} / 2);
-  margin-top: 4px;
   z-index: 1;
 
   display: flex;

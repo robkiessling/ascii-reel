@@ -211,7 +211,13 @@ export function setupActionTooltips($elements, getActionId, overrides = {}) {
         }
     }
 
-    return refreshableTooltips($elements, contentBuilder, overrides)
+    return refreshableTooltips($elements, contentBuilder, {
+        onShow(tooltipInstance) {
+            // If there is no tooltip content (e.g. action has no name/description), hide the tip (do not show an empty bubble)
+            if (tooltipInstance.props.content.length === 0) return false;
+        },
+        ...overrides
+    })
 }
 
 /**

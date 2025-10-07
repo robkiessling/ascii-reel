@@ -190,7 +190,7 @@ function redrawCharCanvas() {
     // Build glyphs for current layer
     const currentGlyphs = state.layeredGlyphs(state.currentFrame(), {
         ...layeredGlyphsOptions,
-        layers: [state.currentLayer()],
+        layers: [state.currentLayer()].filter(layer => layer.visible),
         movableContent: {
             glyphs: selectionController.raster.movableContent(),
             origin: selectionController.raster.movableContent() ? selectionController.raster.getSelectedCellArea().topLeft : null
@@ -203,11 +203,11 @@ function redrawCharCanvas() {
     if (!state.getConfig('lockLayerVisibility')) {
         belowGlyphs = state.layeredGlyphs(state.currentFrame(), {
             ...layeredGlyphsOptions,
-            layers: state.layers().slice(0, state.layerIndex())
+            layers: state.layers().slice(0, state.layerIndex()).filter(layer => layer.visible)
         });
         aboveGlyphs = state.layeredGlyphs(state.currentFrame(), {
             ...layeredGlyphsOptions,
-            layers: state.layers().slice(state.layerIndex() + 1)
+            layers: state.layers().slice(state.layerIndex() + 1).filter(layer => layer.visible)
         });
     }
 
@@ -260,7 +260,7 @@ function redrawCharCanvas() {
     if (state.getConfig('showOnion') && state.previousFrame() !== state.currentFrame()) {
         // TODO Add an option in case user wants onion to apply to all layers?
         const onionGlyphs = state.layeredGlyphs(state.previousFrame(), {
-            layers: [state.currentLayer()],
+            layers: [state.currentLayer()].filter(layer => layer.visible),
         })
         charCanvas.drawGlyphs(onionGlyphs, {
             opacity: ONION_OPACITY
