@@ -65,6 +65,7 @@
     "pako": "^2.1.0",
     "regenerator-runtime": "^0.14.1",
     "simplebar": "^6.3.0",
+    "stats.js": "^0.17.0",
     "tippy.js": "^6.3.7",
     "vanilla-picker": "^2.12.3"
   }

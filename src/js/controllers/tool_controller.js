@@ -569,18 +569,22 @@ function setupShapeProperties() {
 
     registerRasterSelectionAction('move', () => {
         selectionController.raster.toggleMovingContent()
-    }, false, `${modifierAbbr('metaKey')}Click`);
+    }, {
+        enabled: () => true,
+        shortcutAbbr: `${modifierAbbr('metaKey')}Click`
+    });
     registerRasterSelectionAction('flip-v', e => {
         selectionController.raster.flipVertically(shouldModifyAction('tools.selection.flip-v.mirror', e))
     });
     registerRasterSelectionAction('flip-h', e => {
         selectionController.raster.flipHorizontally(shouldModifyAction('tools.selection.flip-h.mirror', e))
     });
-    registerRasterSelectionAction('clone', () => selectionController.raster.cloneToAllFrames());
+    registerRasterSelectionAction('clone', () => selectionController.raster.cloneToAllFrames(), {
+        visible: () => state.isAnimationProject() && selectionController.raster.hasSelection(),
+    });
     registerRasterSelectionAction('convert-to-whitespace', () => replaceInSelection(EMPTY_CHAR, WHITESPACE_CHAR));
     registerRasterSelectionAction('convert-to-empty', () => replaceInSelection(WHITESPACE_CHAR, EMPTY_CHAR));
     registerRasterSelectionAction('resize', () => resizeToSelection());
-    // registerRasterSelectionAction('close', () => selectionController.raster.clear(), true, 'Esc');
 
     // quickSwapChar action-button is handled separately by char picker
     const $standardActionButtons = $shapeProperties.find('.action-button:not([data-action="tools.shapes.quickSwapChar"])')
@@ -600,12 +604,12 @@ function setupShapeProperties() {
     ).tooltips);
 }
 
-function registerRasterSelectionAction(tool, callback, disableWhenMoving = true, shortcutAbbr) {
+function registerRasterSelectionAction(tool, callback, overrides = {}) {
     actions.registerAction(`tools.selection.${tool}`, {
         callback: callback,
-        enabled: () => !(disableWhenMoving && selectionController.raster.movableContent()),
+        enabled: () => !selectionController.raster.movableContent(), // Default is to disable action while moving
         visible: () => selectionController.raster.hasSelection(),
-        shortcutAbbr: shortcutAbbr
+        ...overrides
     });
 }
 

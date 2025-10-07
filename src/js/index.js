@@ -64,7 +64,7 @@ function setupEventBus() {
 
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: false, resetZoom: true })
 
-        // eventBus.emit(EVENTS.CANVAS.ZOOM_TO_DEFAULT);
+        eventBus.emit(EVENTS.CANVAS.ZOOM_TO_DEFAULT);
     })
 
     $(window).on('resize', debounce(() => eventBus.emit(EVENTS.RESIZE.ALL)));

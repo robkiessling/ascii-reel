@@ -21,6 +21,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
 import RectSelection from "../geometry/selection/rect.js";
 import {LAYER_TYPES} from "../state/constants.js";
+import {callAction} from "../io/actions.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -93,6 +94,8 @@ export function init() {
         mouseCoordinates: $canvasDetailsContainer.find('.mouse-coordinates'),
         mouseCoordinatesValue: $canvasDetailsContainer.find('.mouse-coordinates .value')
     }
+
+    $canvasDetails.canvasDimensionsValue.on('click', () => callAction('settings.open-resize-dialog'));
 
     setupEventBus();
 }

@@ -71,8 +71,7 @@ export function loadNewState(projectType, dimensions, colorMode, background) {
                 background: background,
                 drawProps: {
                     [COLOR_STR_PROP]: primaryColor
-                },
-                tool: 'draw-rect' // todo remove this
+                }
             },
             // timeline: timeline.newRasterCelTimeline(),
             timeline: timeline.newVectorCelTimeline(),

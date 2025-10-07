@@ -14,7 +14,7 @@ export const DEFAULT_STATE = {
     layerType: LAYER_TYPES.RASTER,
     colorMode: 'monochrome',
     createdAt: undefined,
-    dimensions: [15, 30], // [numRows, numCols]
+    dimensions: [30, 60], // [numRows, numCols]
     background: new Color('rgba(0,0,0,1)')[COLOR_FORMAT],
     font: 'monospace',
     fps: 6,

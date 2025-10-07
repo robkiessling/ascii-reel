@@ -43,6 +43,10 @@
       margin-right: 1rem;
     }
   }
+
+  .canvas-dimensions .value {
+    cursor: pointer;
+  }
 }
 
 #export-canvas-container {

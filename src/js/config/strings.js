@@ -48,6 +48,8 @@ export const STRINGS = {
     'themes.select-light-mode.name': 'Light',
     'themes.select-dark-mode.name': 'Dark',
 
+    'tools.standard.select.name': 'Select Tool',
+    'tools.standard.select.description': 'Click on a shape to select it. Drag to move it, or use handles to resize and edit.',
     'tools.standard.text-editor.name': 'Text Editor',
     'tools.standard.text-editor.description': 'Use this tool to edit text directly on the canvas.\n\n' +
         'Click to place the cursor and start typing. Click and drag to select text for copying, moving, or applying transformations.',
@@ -66,8 +68,9 @@ export const STRINGS = {
         'Click once to start a multi-point line. Double click to finish drawing the multi-point line.',
     'tools.standard.draw-ellipse.name': 'Draw Ellipse',
     'tools.standard.draw-ellipse.description': 'Click and drag to draw an ellipse.',
-    'tools.standard.draw-textbox.name': 'Draw Textbox',
-    'tools.standard.draw-textbox.description': 'Draws a text box that can be filled with text.',
+    'tools.standard.draw-textbox.name': 'Create Textbox',
+    'tools.standard.draw-textbox.description': 'Click and drag to create a textbox with a fixed width. ' +
+        'Click once to create a textbox that expands as you type.',
     'tools.standard.selection.multiple': 'Create multiple selections',
     'tools.standard.selection-rect.name': 'Rectangle Selection',
     'tools.standard.selection-rect.description': 'Click and drag to select a rectangular area. ' +
@@ -241,7 +244,8 @@ export const STRINGS = {
     'layers.add-layer.name': 'Add Layer',
     'layers.add-layer.description': 'Creates a new layer.',
     'layers.edit-layer.name': 'Edit Layer',
-    'layers.edit-layer.description': 'Edit the current layer\'s name. Layers can also be reordered by clicking and dragging them.',
+    'layers.edit-layer.description': "Edit the current layer's name and type. " +
+        "Layers can also be reordered by clicking and dragging them.",
     'layers.delete-layer.name': 'Delete Layer',
     'layers.delete-layer.description': 'Deletes the current layer.',
     'layers.toggle-visibility-lock.name': 'Toggle Layer Visibility',
@@ -249,11 +253,12 @@ export const STRINGS = {
         'When unlocked, you can manually show/hide all layers.',
     'layers.layerType.vector.name': 'Vector Layer',
     'layers.layerType.vector.description': "In vector layers, shapes are preserved as editable objects, allowing you to continually modify or resize them. " +
-        'Vector layers are ideal for diagrams, flowcharts, schematics, and other structured layouts.',
+        'Vector layers are best suited for diagrams, flowcharts, schematics, and other structured layouts.',
     'layers.layerType.vectorize.warning': 'Raster layers cannot be converted to vector layers.',
     'layers.layerType.raster.name': 'Raster Layer',
     'layers.layerType.raster.description': 'In raster layers, each grid cell is independent and holds its own character. ' +
-        'You can freely erase, overwrite, or repaint any part of the canvas. Raster layers are ideal for detailed editing and creating ASCII art.',
+        'You can freely erase, overwrite, or repaint any part of the canvas. ' +
+        'Raster layers are best suited for detailed editing and creating ASCII art.',
     'layers.layerType.rasterize.warning': 'This layer will be rasterized: it will appear the same, but all shapes will be converted to raw characters.',
 
     'preview.open-popup.name': 'Preview Popup',

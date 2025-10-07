@@ -33,16 +33,22 @@ const ZOOM_DEFAULT = 2; // What to set zoom to during initial load
 
 // Static threshold value limiting how far you can zoom in
 const ZOOM_IN_THRESHOLD_VALUE = 30;
+const ZOOM_OUT_THRESHOLD_VALUE = 1; // only applicable if USE_STATIC_ZOOM_OUT_THRESHOLD:true
 
 // Threshold value limiting how far you can zoom out (actual value depends on length of largest axis)
 // E.g. ratio of 1.25 means show 125% more than the largest axis
-const ZOOM_OUT_THRESHOLD_RATIO = 1.5;
+const ZOOM_OUT_THRESHOLD_RATIO = 1.5; // only applicable if USE_STATIC_ZOOM_OUT_THRESHOLD:false
+
+// Controls whether the zoom-out threshold is a static value or relative to the project's dimensions
+const USE_STATIC_ZOOM_OUT_THRESHOLD = true;
 
 // Base zoom multiplier per scroll step (e.g., 1.1 = 10% zoom change per unit)
 const ZOOM_SCROLL_FACTOR = 1.3;
 
 const ZOOM_BOOST_FACTOR = 3; // How aggressively small zoom values are boosted
 const ZOOM_BOOST_THRESHOLD = 10; // Maximum delta where boosting applies
+
+const PAN_BOUNDARY_PADDING = 100; // how far you can pan away from main content (when zoomed out)
 
 
 /**
@@ -654,20 +660,27 @@ export default class Canvas {
      *   the boundaries, so if that is the desired zoom state we have an option to leave it zoomed out.
      */
     _buildZoomPanBoundaries(zoomOutToMax) {
-        this._zoomOutThreshold = this._zoomLevelForFit() / ZOOM_OUT_THRESHOLD_RATIO;
+        this._zoomOutThreshold = USE_STATIC_ZOOM_OUT_THRESHOLD ? ZOOM_OUT_THRESHOLD_VALUE :
+            this._zoomLevelForFit() / ZOOM_OUT_THRESHOLD_RATIO;
         this._zoomInThreshold = ZOOM_IN_THRESHOLD_VALUE;
+
+        const calcPanBoundaries = () => {
+            this.zoomOutToMax();
+
+            // Similar to currentViewRect(), but adding a little padding so you can pan away from the canvas content.
+            // This ensures context menu at top of canvas never blocks anything.
+            const topLeft = this.screenToWorld(-PAN_BOUNDARY_PADDING, -PAN_BOUNDARY_PADDING);
+            const bottomRight = this.screenToWorld(this.outerWidth + PAN_BOUNDARY_PADDING, this.outerHeight + PAN_BOUNDARY_PADDING);
+            this._panBoundaries = new PixelRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+        }
 
         // We need to calculate the zoom boundaries by zooming out all the way and snapshotting the view rect.
         // If param zoomOutToMax is false, we don't want the zoom changes to persist so we do it in a temporary context.
         if (zoomOutToMax) {
-            this.zoomOutToMax();
-            this._panBoundaries = this.currentViewRect();
+            calcPanBoundaries();
         }
         else {
-            this._withTemporaryCamera(() => {
-                this.zoomOutToMax();
-                this._panBoundaries = this.currentViewRect();
-            })
+            this._withTemporaryCamera(() => calcPanBoundaries());
         }
     }
 

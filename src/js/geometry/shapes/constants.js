@@ -146,8 +146,8 @@ export const WRITE_EMPTY_CHARS_PROP = 'writeEmptyChars';
 
 export const DEFAULT_DRAW_PROPS = {
     ...transformObject(STROKE_STYLE_OPTIONS, (shapeType, options) => [STROKE_STYLE_PROPS[shapeType], Object.values(options)[0]]),
-    [BRUSH_PROP]: Object.keys(BRUSHES)[0],
-    [FILL_PROP]: Object.values(FILL_OPTIONS)[0],
+    [BRUSH_PROP]: 'square-1',
+    [FILL_PROP]: FILL_OPTIONS.WHITESPACE,
     [CHAR_PROP]: 'A',
     [COLOR_STR_PROP]: '', // Will be overridden during `deserialize`
     [TEXT_PROP]: '',

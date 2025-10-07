@@ -122,7 +122,7 @@ function reset() {
         previewInterval = setIntervalUsingRAF(() => {
             if (previewFps !== 0) previewIndex = (previewIndex + 1) % numPreviewFrames;
             redraw();
-        }, intervalDelay)
+        }, intervalDelay, false, true)
     }
 }
 

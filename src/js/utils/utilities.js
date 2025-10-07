@@ -1,3 +1,4 @@
+import Stats from 'stats.js';
 
 export function isFunction(value) {
     return typeof value === 'function';
@@ -22,18 +23,31 @@ export function defer(callback, delay = 1) {
  *
  * @param {function} callback - The function to call every interval
  * @param {number} delay - Time in milliseconds between intervals
- * @param {boolean} [evaluateImmediately=false] - If true, callback immediately fires instead of waiting for first interval
- *   to pass.
+ * @param {boolean} [evaluateImmediately=false] - If true, callback immediately fires instead of waiting for first
+ *   interval to pass.
+ * @param {boolean} [benchmark=false] - If true, the interval will be benchmarked by a stats.js panel [DEV ONLY].
  * @returns {{stop: function}} - `stop` is a function that can be called to clear the interval
  */
-export function setIntervalUsingRAF(callback, delay, evaluateImmediately = false) {
+export function setIntervalUsingRAF(callback, delay, evaluateImmediately = false, benchmark = false) {
     let now = performance.now();
     let then = performance.now();
     let progress = evaluateImmediately ? delay : 0;
     let stop = false;
 
+    // let stats;
+    // if (benchmark) {
+    //     stats = new Stats();
+    //     stats.showPanel(0);
+    //     document.body.appendChild(stats.dom);
+    // }
+
     function loop() {
-        if (stop) return;
+        if (stop) {
+            // if (stats) stats.dom.remove();
+            return;
+        }
+
+        // if (stats) stats.begin();
 
         now = performance.now();
         progress += (now - then);
@@ -48,6 +62,8 @@ export function setIntervalUsingRAF(callback, delay, evaluateImmediately = false
             }
             progress = progress % delay;
         }
+
+        // if (stats) stats.end();
 
         window.requestAnimationFrame(loop);
     }
