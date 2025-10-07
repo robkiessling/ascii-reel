@@ -54,37 +54,35 @@ export const STRINGS = {
     'tools.standard.eraser.name': 'Eraser',
     'tools.standard.eraser.description': 'Click and drag to remove characters.',
     'tools.standard.fill-char.name': 'Fill Character',
-    // 'tools.standard.fill-char.description': 'Fill a connected area of matching characters with the selected character.',
-    // 'tools.standard.fill-char.diagonal': 'Include diagonally connected cells',
-    // 'tools.standard.fill-char.colorblind': 'Include connected cells regardless of color',
-    'tools.standard.fill-char.description': 'Fill an area with the selected character.',
+    'tools.standard.fill-char.description': 'Click a cell to fill the connected area. ' +
+        'Cells are considered connected if they are adjacent and share the same character and color.',
     'tools.standard.fill-char.diagonal': 'Fills across diagonal connections',
-    'tools.standard.fill-char.colorblind': 'Fills connected cells regardless of color',
     'tools.standard.draw-freeform.name': 'Draw Freeform Line',
-    'tools.standard.draw-freeform.description': 'Draws a freeform line. Can either use the selected character or an auto-generated ASCII sequence.',
+    'tools.standard.draw-freeform.description': 'Click and drag to draw a freeform line.',
     'tools.standard.draw-rect.name': 'Draw Rectangle',
-    'tools.standard.draw-rect.description': 'Draws a rectangle out of ASCII characters.',
+    'tools.standard.draw-rect.description': 'Click and drag to draw a rectangle.',
     'tools.standard.draw-line.name': 'Draw Line',
-    'tools.standard.draw-line.description': 'Draws a line out of ASCII characters.',
+    'tools.standard.draw-line.description': 'Click and drag to draw a single straight line.\n\n' +
+        'Click once to start a multi-point line. Double click to finish drawing the multi-point line.',
     'tools.standard.draw-ellipse.name': 'Draw Ellipse',
-    'tools.standard.draw-ellipse.description': 'Draws an ellipse out of ASCII characters.',
+    'tools.standard.draw-ellipse.description': 'Click and drag to draw an ellipse.',
     'tools.standard.draw-textbox.name': 'Draw Textbox',
     'tools.standard.draw-textbox.description': 'Draws a text box that can be filled with text.',
     'tools.standard.selection.multiple': 'Create multiple selections',
     'tools.standard.selection-rect.name': 'Rectangle Selection',
-    'tools.standard.selection-rect.description': 'Select a rectangular area to move, copy, or modify. ' +
+    'tools.standard.selection-rect.description': 'Click and drag to select a rectangular area. ' +
         'After a selection has been made, press any key to fill the selection with that character.',
     'tools.standard.selection-rect.outline': 'Only select rectangle outline',
     'tools.standard.selection-line.name': 'Line Selection',
-    'tools.standard.selection-line.description': 'Select a linear area to move, copy, or modify. ' +
+    'tools.standard.selection-line.description': 'Click and drag to select a linear area. ' +
         'After a selection has been made, press any key to fill the selection with that character.',
     'tools.standard.selection-lasso.name': 'Lasso Selection',
-    'tools.standard.selection-lasso.description': 'Select an irregular area to move, copy, or modify. ' +
+    'tools.standard.selection-lasso.description': 'Click and drag to select an irregular area. ' +
         'After a selection has been made, press any key to fill the selection with that character.',
     'tools.standard.selection-wand.name': 'Shape Selection',
-    'tools.standard.selection-wand.description': 'Select a connected area of matching colors. ',
+    'tools.standard.selection-wand.description': 'Click on a cell to select a connected area. ' +
+        'Cells are considered connected if they are adjacent and share the same character and color.',
     'tools.standard.selection-wand.diagonal': 'Include diagonally connected cells',
-    'tools.standard.selection-wand.colorblind': 'Include connected cells regardless of color',
     'tools.standard.pan.name': 'Hand (Panning Tool)',
     'tools.standard.pan.description': 'Click and drag to pan the view.',
     'tools.standard.move-all.name': 'Move All Content',
@@ -93,18 +91,11 @@ export const STRINGS = {
     'tools.standard.move-all.all-frames': 'Apply to all frames',
     'tools.standard.move-all.wrap': 'Wrap canvas borders',
     'tools.standard.paint-brush.name': 'Paint Brush',
-    'tools.standard.paint-brush.description': 'Click and drag to color cells with the selected color. Does not affect the cell\'s char.',
-    'tools.standard.fill-color.name': 'Fill Color',
-    'tools.standard.fill-color.description': 'Fill a connected area of matching colors with the selected color.',
-    'tools.standard.fill-color.diagonal': 'Include diagonally connected cells',
-    'tools.standard.fill-color.colorblind': 'Include connected cells regardless of color',
+    'tools.standard.paint-brush.description': "Click and drag to apply color to cells. This tool only changes the cell's color; the character remains unchanged.",
     'tools.standard.color-swap.name': 'Color Swap',
-    'tools.standard.color-swap.description': 'Click on a cell to replace all instances of that cell\'s color with the selected color.',
+    'tools.standard.color-swap.description': "Click on a cell to replace all instances of that cell's color with the selected color.",
     'tools.standard.color-swap.all-layers': 'Apply to all layers',
     'tools.standard.color-swap.all-frames': 'Apply to all frames',
-    'tools.standard.eyedropper.name': 'Eyedropper',
-    'tools.standard.eyedropper.description': 'Click on a cell to put its color in the color picker.',
-    'tools.standard.eyedropper.add-to-palette': 'Also add the color to the current palette.',
 
     'tools.selection.move.name': 'Move Selected Content',
     'tools.selection.move.description': 'When activated, clicking and dragging on the selected area will move the content.',
@@ -116,11 +107,6 @@ export const STRINGS = {
     'tools.selection.flip-h.mirror': 'Mirrors characters when possible, e.g. b => d',
     'tools.selection.clone.name': 'Clone Selection',
     'tools.selection.clone.description': 'Clones the current selection to all frames.',
-    // 'tools.selection.fill-char.name': 'Fill Selection With Character',
-    // 'tools.selection.fill-char.description': 'Fills the selected area with the selected character. \n\n' +
-    //     'Alternatively, press any key on your keyboard to fill the selection with that character.',
-    // 'tools.selection.fill-color.name': 'Fill Selection With Color',
-    // 'tools.selection.fill-color.description': 'Paints the selected area with the selected color.',
     'tools.selection.convert-to-whitespace.name': 'Fill Blank Cells with Whitespace',
     'tools.selection.convert-to-whitespace.description': 'Replaces all blank cells with whitespace cells. ' +
         'Whitespace blocks lower layers when multiple layers are visible.',
@@ -207,8 +193,7 @@ export const STRINGS = {
     'tools.shapes.charPicker.name': 'Selected Character',
     'tools.shapes.charPicker.description': 'Click to open the character picker. While open, pressing a key will select that character.',
     'tools.shapes.quickSwapChar.name': 'Quick-Swap Mode',
-    'tools.shapes.quickSwapChar.description': 'While active, pressing any key selects that character instead of switching tools.\n\n' +
-        "If a raster selection is active, Quick-Swap Mode is automatically enabled&mdash;pressing a key will fill the selection with the chosen character.",
+    'tools.shapes.quickSwapChar.description': 'While active, pressing any key selects that character instead of switching tools.',
 
     'tools.shapes.colorPicker.name': 'Color',
     'tools.shapes.colorPicker.description': "Controls the shape's color.",

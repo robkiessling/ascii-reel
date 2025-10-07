@@ -237,15 +237,8 @@ function setupEventBus() {
             case 'fill-char':
                 fillConnectedCells(cell, state.getDrawingChar(), state.primaryColorIndex(), {
                     diagonal: shouldModifyAction('tools.standard.fill-char.diagonal', mouseEvent),
-                    charblind: false, // todo should this be an option? 
-                    colorblind: shouldModifyAction('tools.standard.fill-char.colorblind', mouseEvent)
-                });
-                break;
-            case 'fill-color':
-                fillConnectedCells(cell, undefined, state.primaryColorIndex(), {
-                    diagonal: shouldModifyAction('tools.standard.fill-color.diagonal', mouseEvent),
-                    charblind: true,
-                    colorblind: shouldModifyAction('tools.standard.fill-color.colorblind', mouseEvent)
+                    charblind: false,
+                    colorblind: false
                 });
                 break;
             case 'color-swap':
@@ -253,11 +246,6 @@ function setupEventBus() {
                     allLayers: shouldModifyAction('tools.standard.color-swap.all-layers', mouseEvent),
                     allFrames: shouldModifyAction('tools.standard.color-swap.all-frames', mouseEvent)
                 })
-                break;
-            case 'eyedropper':
-                eyedropper(cell, {
-                    addToPalette: shouldModifyAction('tools.standard.eyedropper.add-to-palette', mouseEvent)
-                });
                 break;
             case 'move-all':
                 startMoveAll(cell, mouseEvent);
@@ -681,10 +669,20 @@ function activeShapeProps() {
                 allowedProps = new Set([BRUSH_PROP]);
                 break;
             case 'color-swap':
-            case 'fill-color':
-            case 'eyedropper':
             case 'text-editor':
                 allowedProps = new Set([COLOR_STR_PROP]);
+                break;
+            case 'selection-rect':
+            case 'selection-lasso':
+            case 'selection-line':
+            case 'selection-wand':
+                // Note: I used to show char prop when there was a raster selection (because quick mode is always
+                //       enabled in that case), but turned it off for two reasons:
+                //       1) The char picker doesn't represent the current state of the selection (we should make it like
+                //          the color picker where it has a split mode).
+                //       2) Choosing a char doesn't fill the selection (this is probably an easy fix though).
+                //       There is a drawback with hiding the char picker: it is hard to set a selection to a new unicode char.
+                allowedProps = new Set(selectionController.raster.hasSelection() ? [COLOR_STR_PROP] : [])
                 break;
             default:
                 allowedProps = new Set();
@@ -946,18 +944,6 @@ function colorSwap(cell, options) {
     state.pushHistory();
 }
 
-function eyedropper(cell, options) {
-    const [char, colorIndex] = state.getCurrentCelGlyph(cell.row, cell.col);
-    const colorStr = state.colorStr(colorIndex);
-    applyColor(colorStr);
-
-    if (options.addToPalette) {
-        state.addColor(colorStr);
-        eventBus.emit(EVENTS.TOOLS.COLOR_ADDED);
-        state.pushHistory();
-    }
-}
-
 
 // -------------------------------------------------------------------------------- Drawing
 export let drawingContent = null;
@@ -1154,13 +1140,16 @@ function showCharPicker() {
         // TODO This is basing monochar styles off of their key name... change to a real property
         return shapeStrokes && shapeStrokes.some(stroke => stroke.includes('monochar'));
     })
+    if (strokeUsesChar) return true;
 
     const shapeFills = shapeProps[FILL_PROP];
     const fillUsesChar = shapeFills && shapeFills.some(fill => fill === FILL_OPTIONS.MONOCHAR);
+    if (fillUsesChar) return true;
 
     const toolUsesChar = state.getConfig('tool') === 'fill-char';
+    if (toolUsesChar) return true;
 
-    return !!(strokeUsesChar || fillUsesChar || toolUsesChar);
+    return false;
 }
 
 function refreshCharPicker() {
@@ -1311,9 +1300,7 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvas) {
         case 'fill-char':
         case 'eraser':
         case 'paint-brush':
-        case 'fill-color':
         case 'color-swap':
-        case 'eyedropper':
             return 'crosshair';
         case 'pan':
         case 'move-all':

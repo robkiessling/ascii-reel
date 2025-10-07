@@ -34,7 +34,6 @@ const ICON_DATA = {
         type: CUSTOM,
         content: '<span class="ri ri-fw ri-paint-fill ri-paint-fill-no-droplet"></span><span class="picked-char">A</span>'
     },
-    'tools.selection.fill-color': { type: REMIXICON, content: 'ri-paint-fill' },
     'tools.selection.convert-to-whitespace': { type: REMIXICON, content: 'ri-space' },
     'tools.selection.convert-to-empty': {
         type: CUSTOM,

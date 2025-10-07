@@ -58,7 +58,6 @@ let actionIdToShortcut = {
     'tools.standard.pan': { key: 'h' },
     'tools.standard.move-all': { key: 'm' },
     'tools.standard.paint-brush': { key: 'b' },
-    'tools.standard.eyedropper': { key: 'y' },
     'tools.shapes.charPicker': { key: 'c' },
     'tools.shapes.quickSwapChar': { key: 'q' },
 };
@@ -289,35 +288,28 @@ function tooltipContentBuilder(getActionId) {
  *      b) the strings.js const (this is where it gets the modification description)
  */
 const ACTION_MODIFIERS = {
-    'tools.standard.fill-char': ['tools.standard.fill-char.diagonal', 'tools.standard.fill-char.colorblind'],
+    'tools.standard.fill-char': ['tools.standard.fill-char.diagonal'],
     'tools.standard.selection-rect': ['tools.standard.selection.multiple', 'tools.standard.selection-rect.outline'],
     'tools.standard.selection-line': ['tools.standard.selection.multiple'],
     'tools.standard.selection-lasso': ['tools.standard.selection.multiple'],
-    'tools.standard.selection-wand': ['tools.standard.selection.multiple', 'tools.standard.selection-wand.diagonal', 'tools.standard.selection-wand.colorblind'],
+    'tools.standard.selection-wand': ['tools.standard.selection.multiple', 'tools.standard.selection-wand.diagonal'],
     'tools.standard.move-all': ['tools.standard.move-all.all-layers', 'tools.standard.move-all.all-frames', 'tools.standard.move-all.wrap'],
-    'tools.standard.fill-color': ['tools.standard.fill-color.diagonal', 'tools.standard.fill-color.colorblind'],
     'tools.standard.color-swap': ['tools.standard.color-swap.all-layers', 'tools.standard.color-swap.all-frames'],
-    'tools.standard.eyedropper': ['tools.standard.eyedropper.add-to-palette'],
     'tools.selection.flip-v': ['tools.selection.flip-v.mirror'],
     'tools.selection.flip-h': ['tools.selection.flip-h.mirror'],
 }
 
 // Defines what modifier key is used for the effect. These are static; they won't be customizable by the user.
 const MODIFIER_KEYS = {
-    'tools.standard.fill-char.diagonal': 'altKey',
-    'tools.standard.fill-char.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
+    'tools.standard.fill-char.diagonal': isMacOS() ? 'metaKey' : 'ctrlKey',
     'tools.standard.selection.multiple': 'shiftKey',
     'tools.standard.selection-rect.outline': isMacOS() ? 'metaKey' : 'ctrlKey',
-    'tools.standard.selection-wand.diagonal': 'altKey',
-    'tools.standard.selection-wand.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
-    'tools.standard.fill-color.diagonal': 'altKey',
-    'tools.standard.fill-color.colorblind': isMacOS() ? 'metaKey' : 'ctrlKey',
+    'tools.standard.selection-wand.diagonal': isMacOS() ? 'metaKey' : 'ctrlKey',
     'tools.standard.move-all.all-layers': 'shiftKey',
     'tools.standard.move-all.all-frames': isMacOS() ? 'metaKey' : 'ctrlKey',
     'tools.standard.move-all.wrap': 'altKey',
     'tools.standard.color-swap.all-layers': 'shiftKey',
     'tools.standard.color-swap.all-frames': isMacOS() ? 'metaKey' : 'ctrlKey',
-    'tools.standard.eyedropper.add-to-palette': isMacOS() ? 'metaKey' : 'ctrlKey',
     'tools.selection.flip-v.mirror': isMacOS() ? 'metaKey' : 'ctrlKey',
     'tools.selection.flip-h.mirror': isMacOS() ? 'metaKey' : 'ctrlKey',
 }

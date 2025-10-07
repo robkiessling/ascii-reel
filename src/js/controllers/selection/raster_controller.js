@@ -686,8 +686,10 @@ function setupEventBus() {
                 case 'selection-wand':
                     const wand = new WandSelection(cell, undefined, {
                         diagonal: shouldModifyAction('tools.standard.selection-wand.diagonal', mouseEvent),
-                        charblind: true,
-                        colorblind: shouldModifyAction('tools.standard.selection-wand.colorblind', mouseEvent)
+                        charblind: false,
+                        colorblind: false
+                        // TODO I could an an option for "line char tolerance" - in other words, if you click on something
+                        //      like '|', it considers all line chars to be connected, like '/', '\', '-', etc.
                     });
                     wand.complete();
                     addSelectionShape(wand);

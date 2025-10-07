@@ -42,12 +42,12 @@ const CONFIG_KEYS_SAVED_TO_HISTORY = [
 ]
 
 // These tools are only available if colorMode is multicolor
-export const MULTICOLOR_TOOLS = new Set(['paint-brush', 'color-swap', 'fill-color', 'eyedropper'])
+export const MULTICOLOR_TOOLS = new Set(['paint-brush', 'color-swap'])
 
 // These tools are only available depending on layerType
 export const RASTER_TOOLS = new Set([
     'text-editor', 'fill-char', 'selection-rect', 'selection-lasso', 'selection-line', 'selection-wand',
-    'paint-brush', 'color-swap', 'fill-color', 'eyedropper'
+    'paint-brush', 'color-swap'
 ])
 export const VECTOR_TOOLS = new Set(['select', 'draw-textbox']);
 
