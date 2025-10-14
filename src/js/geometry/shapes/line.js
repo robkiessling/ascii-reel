@@ -11,6 +11,7 @@ import {forEachAdjPair} from "../../utils/arrays.js";
 import BoxShape from "./box_shape.js";
 import {straightAsciiLine} from "./algorithms/traverse_straight.js";
 import {registerShape} from "./registry.js";
+import {orthogonalConnector} from "./algorithms/orthogonal_connections.js";
 
 
 export default class Line extends Shape {
@@ -99,11 +100,20 @@ export default class Line extends Shape {
                     setGlyph(b, cornerChar)
                 })
                 break;
+            // TODO IS this better? inclusive start/ends
             // case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
             //     forEachAdjPair(this.props.path, (a, b, i) => {
             //         straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char), i === 0, true);
             //     })
             //     break;
+
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR:
+                orthogonalConnector(this.props.path.at(0), this.props.path.at(-1), (cell, char) => setGlyph(cell, this.props[CHAR_PROP]))
+                break;
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_ADAPTIVE:
+                // TODO only using first and last points, maybe better to update path?
+                orthogonalConnector(this.props.path.at(0), this.props.path.at(-1), (cell, char) => setGlyph(cell, char))
+                break;
             default:
                 throw new Error(`Invalid stroke: ${this._strokeStyle}`)
         }

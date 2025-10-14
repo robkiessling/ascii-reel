@@ -75,6 +75,8 @@ export const STROKE_STYLE_OPTIONS = {
     [SHAPE_TYPES.LINE]: {
         STRAIGHT_ADAPTIVE: 'straight-adaptive',
         STRAIGHT_MONOCHAR: 'straight-monochar',
+        ELBOW_ADAPTIVE: 'elbow-adaptive',
+        ELBOW_MONOCHAR: 'elbow-monochar',
     },
     [SHAPE_TYPES.ELLIPSE]: {
         OUTLINE_MONOCHAR: 'outline-monochar',

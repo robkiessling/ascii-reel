@@ -11,6 +11,8 @@ const ICON_DATA = {
 
     'tools.shapes.lineStroke.straight-adaptive': { type: PRE, content: "  _,-\n-'   " },
     'tools.shapes.lineStroke.straight-monochar': { type: PRE, content: '    AA\n  AA  \nAA    ' },
+    'tools.shapes.lineStroke.elbow-adaptive': { type: PRE, content: "  +--\n  |  \n--+  " },
+    'tools.shapes.lineStroke.elbow-monochar': { type: PRE, content: '  AAA\n  A  \nAAA  ' },
 
     'tools.shapes.rectStroke.outline-ascii-1': { type: PRE, content: "/---\\\n|   |\n\\---/" },
     'tools.shapes.rectStroke.outline-ascii-2': { type: PRE, content: "+---+\n|   |\n+---+" },
