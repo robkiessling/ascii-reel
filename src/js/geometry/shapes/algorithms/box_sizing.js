@@ -198,17 +198,24 @@ function buildPointMapper(oldCellArea, newCellArea, flipRow, flipCol) {
     }
 }
 
-// Proportionally map cells from an oldCellArea to a newCellArea
+/**
+ * Returns a function that can be used to proportionally map cells from an oldCellArea to a newCellArea
+ * @param {CellArea} oldCellArea - Old CellArea
+ * @param {CellArea} newCellArea - New CellArea
+ * @param {boolean} flipRow - Whether rows should be inverted
+ * @param {boolean} flipCol - Whether columns should be inverted
+ * @returns {function({cell?: Cell, rowPct?: number, colPct?: number, allowInversion?: boolean}): Cell} - Mapping
+ *   function. Pass either `cell` OR both `rowPct` and `colPct`.
+ */
 function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
-    // If the oldCellArea is 1 dimensional, we have to choose where to map things for a larger newCellArea.
-    // TODO This could be improved using fractional rows/cols?
-    const MAP_1D = 0.5; // Choosing to map to the center of newCellArea
+    return ({cell: oldCell, rowPct, colPct, allowInversion = true}) => {
+        if (oldCell) ({ rowPct, colPct } = getFractionalPosition(oldCellArea, oldCell));
+        if (rowPct === undefined || colPct === undefined) throw new Error(`must either supply cell or both rowPct and colPct`)
 
-    return oldCell => {
-        let rowPct = (oldCellArea.numRows > 1) ? (oldCell.row - oldCellArea.topLeft.row) / (oldCellArea.numRows - 1) : MAP_1D;
-        let colPct = (oldCellArea.numCols > 1) ? (oldCell.col - oldCellArea.topLeft.col) / (oldCellArea.numCols - 1) : MAP_1D;
-        rowPct = flipRow ? (1 - rowPct) : rowPct;
-        colPct = flipCol ? (1 - colPct) : colPct;
+        if (allowInversion) {
+            rowPct = flipRow ? (1 - rowPct) : rowPct;
+            colPct = flipCol ? (1 - colPct) : colPct;
+        }
 
         let newRow = (newCellArea.numRows > 1) ?
             Math.round(newCellArea.topLeft.row + rowPct * (newCellArea.numRows - 1)) :
@@ -219,4 +226,14 @@ function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
 
         return new Cell(newRow, newCol);
     }
+}
+
+// If the cellArea is 1 dimensional, we have to choose where to map things for a larger newCellArea.
+// TODO This could be improved using fractional rows/cols?
+const MAP_1D_TO = 0.5; // Choosing to map to the center of new area
+
+export function getFractionalPosition(cellArea, cell) {
+    const rowPct = (cellArea.numRows > 1) ? (cell.row - cellArea.topLeft.row) / (cellArea.numRows - 1) : MAP_1D_TO;
+    const colPct = (cellArea.numCols > 1) ? (cell.col - cellArea.topLeft.col) / (cellArea.numCols - 1) : MAP_1D_TO;
+    return { rowPct, colPct }
 }

@@ -2,7 +2,7 @@ import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_OPTIONS, STROKE_STYLE_P
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
-import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
+import {getFractionalPosition, translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import CellCache from "../cell_cache.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import {forEachAdjPair} from "../../utils/arrays.js";
@@ -69,10 +69,12 @@ export default class Line extends Shape {
         const snapshot = this.resizeSnapshot;
 
         const oldArea = CellArea.fromCells(snapshot.path);
-        const { area: newArea, cellMapper } = translateAreaWithBoxResizing(oldArea, oldBox, newBox);
+        const { cellMapper } = translateAreaWithBoxResizing(oldArea, oldBox, newBox);
 
-        this.props.path = snapshot.path.map(cell => cellMapper(cell));
+        this.props.path = snapshot.path.map(cell => cellMapper({cell}));
         this._clearCache();
+
+        return { cellMapper }
     }
 
     _cacheGeometry() {
@@ -136,30 +138,33 @@ export default class Line extends Shape {
         }
     }
 
-    /**
-     *
-     * @param {Set<id: string>} attachTargets - The set of attachment targets that are being updated. If this
-     *   shape has an attachment matching one of these targets, that attachment should be updated.
-     * @param {(cell) => void} updater - Attachment updater callback, determines how the attachment is updated
-     */
-    updateAttachments(attachTargets, updater) {
-        if (this.props.startAttachment && attachTargets.has(this.props.startAttachment.shapeId)) {
-            updater(this.props.path.at(0))
+    updateAttachments(attachTarget, updater) {
+        let updated = false;
+
+        if (this.props.startAttachment && this.props.startAttachment.shapeId === attachTarget.id) {
+            updater(this.props.path.at(0), this.props.startAttachment)
             this._clearCache()
+            updated = true;
         }
-        if (this.props.endAttachment && attachTargets.has(this.props.endAttachment.shapeId)) {
-            updater(this.props.path.at(-1))
+
+        if (this.props.endAttachment && this.props.endAttachment.shapeId === attachTarget.id) {
+            updater(this.props.path.at(-1), this.props.endAttachment)
             this._clearCache()
+            updated = true;
         }
+
+        return updated;
     }
 
     dragCellHandle(handle, position, attachmentHandle) {
         this.props.path[handle.pointIndex].translateTo(position);
 
         if (handle.attachable) {
-            const attachmentData = attachmentHandle ? {
-                shapeId: attachmentHandle.shapeId
-            } : null;
+            let attachmentData = null;
+            if (attachmentHandle) {
+                const { rowPct, colPct } = getFractionalPosition(attachmentHandle.shape.boundingArea, position)
+                attachmentData = { shapeId: attachmentHandle.shapeId, rowPct, colPct }
+            }
 
             if (handle.pointIndex === 0) {
                 this.props.startAttachment = attachmentData;
@@ -167,7 +172,6 @@ export default class Line extends Shape {
                 this.props.endAttachment = attachmentData;
             }
         }
-        // console.log(JSON.stringify(this.props, undefined, 2));
 
         this._clearCache();
     }

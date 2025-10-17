@@ -192,16 +192,33 @@ export default class Shape {
         return this.constructor.deserializeProps(this._resizeSnapshot);
     }
 
+    /**
+     * Resizes the shape by transforming it from an old bounding box to a new one.
+     * This is called when the shape is part of a selection being resized.
+     *
+     * @param {VertexArea} oldBox - The original bounding box before resizing. Note: This may be
+     *   the bounding box of a multi-shape selection, not just this individual shape.
+     * @param {VertexArea} newBox - The new bounding box after resizing. Note: This may be the
+     *   bounding box of a multi-shape selection, not just this individual shape.
+     * @returns {Object} - An object containing helper functions or data from the resize operation
+     */
     resize(oldBox, newBox) {
         throw new Error(`resize must be implemented by subclass`)
+        return {}; // Will never be reached. This is purely so subclass overrides don't generate return value warnings
     }
 
     finishResize() {
         this._resizeSnapshot = undefined;
     }
 
-    updateAttachments() {
-        // default: do nothing (no attachments)
+    /**
+     * Updates this shape's attachment points if they match the attachTarget
+     * @param {Shape} attachTarget - ID of the other shape attached to
+     * @param {(cell: Cell, attachment: Object) => void} updater - Callback to update attached cell
+     * @returns {boolean} - True if an attachment was updated, false otherwise
+     */
+    updateAttachments(attachTarget, updater) {
+        return false;
     }
 
     dragCellHandle(handle, position, attachmentHandle) {

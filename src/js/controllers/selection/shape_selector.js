@@ -7,7 +7,8 @@ import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
 import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
-import {getCurrentCelShapes} from "../../state/index.js";
+import {getCurrentCelShape, getCurrentCelShapes} from "../../state/index.js";
+import Cell from "../../geometry/cell.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -160,20 +161,28 @@ export default class ShapeSelector {
      * @param {object} data - Additional data that the resize handler might need (varies depending on handle.type)
      */
     resize(handle, data = {}) {
-        this._resizeOccurred = true;
-
         if (selectionController.vector.numSelectedShapes() === 0) return;
 
-        // TODO resize should update attachments
+        this._resizeOccurred = true;
 
         switch (handle.type) {
             case HANDLE_TYPES.VERTEX:
             case HANDLE_TYPES.EDGE:
                 const newBounds = resizeBoundingBox(this._oldBounds, handle, data.roundedCell)
-                selectionController.vector.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds), false);
+
+                selectionController.vector.updateSelectedShapes(shape => {
+                    const { cellMapper } = shape.resize(this._oldBounds, newBounds);
+
+                    this._updateAttachments(shape, (cell, attachment) => {
+                        const { rowPct, colPct } = attachment;
+                        cell.translateTo(cellMapper({ rowPct, colPct, allowInversion: false }))
+                    })
+                }, false);
                 break;
             case HANDLE_TYPES.CELL:
-                selectionController.vector.updateSelectedShapes(shape => shape.dragCellHandle(handle, data.cell, data.attachmentHandle), false);
+                selectionController.vector.updateSelectedShapes(shape => {
+                    shape.dragCellHandle(handle, data.cell, data.attachmentHandle)
+                }, false);
                 break;
         }
     }
@@ -189,7 +198,6 @@ export default class ShapeSelector {
         return this._resizeOccurred;
     }
 
-
     // ----------------------------------------- Translation
     // Small wrapper around shape translate functions, mainly to detect if a translation actually occurred.
     // Does not save history; it is up to outside handler to save history upon finish.
@@ -199,20 +207,15 @@ export default class ShapeSelector {
     }
 
     translate(rowDelta, colDelta) {
-        const translatedShapeIds = new Set(selectionController.vector.selectedShapes().map(shape => shape.id))
+        // Note: in rare cases, this method might be called and no shape actually gets updated. E.g. if multiple
+        //       lines are selected, and they are all attached to something, we cannot actually move them.
+        const updated = selectionController.vector.updateSelectedShapes(shape => {
+            const shapeUpdated = shape.translate(rowDelta, colDelta);
+            const attachmentUpdated = this._updateAttachments(shape, cell => cell.translate(rowDelta, colDelta))
+            return shapeUpdated || attachmentUpdated;
+        }, false);
 
-        // Translate any points attached to the moving shapes
-        getCurrentCelShapes().forEach(shape => {
-            shape.updateAttachments(translatedShapeIds, cell => cell.translate(rowDelta, colDelta))
-        })
-
-        // Translate selected shapes
-        const translated = selectionController.vector.updateSelectedShapes(
-            shape => shape.translate(rowDelta, colDelta),
-            false
-        );
-
-        if (translated) this._translateOccurred = true;
+        if (updated) this._translateOccurred = true;
     }
 
     /**
@@ -243,6 +246,19 @@ export default class ShapeSelector {
         const colOffset = cell.col - left;
 
         selectionController.vector.updateSelectedShapes(shape => shape.translate(rowOffset, colOffset), false)
+    }
+
+
+    // ----------------------------------------- Helpers
+
+    _updateAttachments(attachTarget, updater) {
+        let attachmentUpdated = false;
+
+        getCurrentCelShapes().forEach(shape => {
+            if (shape.updateAttachments(attachTarget, updater)) attachmentUpdated = true;
+        })
+
+        return attachmentUpdated;
     }
 
 }

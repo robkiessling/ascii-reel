@@ -78,10 +78,12 @@ export default class Freeform extends Shape {
         const snapshot = this.resizeSnapshot;
 
         const oldArea = CellArea.fromPoints(snapshot.path);
-        const { area: newArea, pointMapper } = translateAreaWithBoxResizing(oldArea, oldBox, newBox);
+        const { pointMapper } = translateAreaWithBoxResizing(oldArea, oldBox, newBox);
 
         this.props.path = snapshot.path.map(point => pointMapper(point));
         this._clearCache();
+
+        return { pointMapper }
     }
 
     _cacheGeometry() {
