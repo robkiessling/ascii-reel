@@ -236,7 +236,7 @@ export default class VectorCel {
         return index === -1 ? [] : this.shapesOrder.slice(index + 1);
     }
 
-    testShapeHitboxes(cell, forShapeIds) {
+    testShapeHitboxes(cell, handleType, forShapeIds) {
         // Find first shape that has a handle at that cell, iterating in reverse order (top shape is checked first)
         for (let i = this.shapesOrder.length - 1; i >= 0; i--) {
             const shapeId = this.shapesOrder[i]
@@ -244,8 +244,8 @@ export default class VectorCel {
 
             if (forShapeIds !== undefined && !forShapeIds.includes(shapeId)) continue;
 
-            const bodyHandle = shape.handles.body.at(0);
-            if (bodyHandle && bodyHandle.matches({ cell })) return bodyHandle;
+            const handle = shape.handles.specific[handleType];
+            if (handle && handle.matches({ cell })) return handle;
         }
 
         return null;

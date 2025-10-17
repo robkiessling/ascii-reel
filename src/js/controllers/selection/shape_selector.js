@@ -7,6 +7,7 @@ import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
 import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
+import {getCurrentCelShapes} from "../../state/index.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -56,7 +57,7 @@ export default class ShapeSelector {
         return new HandleCollection([
             ...(boundingArea ? BoxShape.vertexHandles(null, boundingArea) : []),
             ...(boundingArea ? BoxShape.edgeHandles(null, boundingArea) : []),
-            ...selectionController.vector.selectedShapes().map(shape => shape.handles.body.at(0))
+            ...selectionController.vector.selectedShapes().map(shape => shape.handles.specific[HANDLE_TYPES.BODY])
         ])
     }
 
@@ -152,19 +153,27 @@ export default class ShapeSelector {
         this._oldBounds = this.boundingVertexArea;
         selectionController.vector.updateSelectedShapes(shape => shape.beginResize(), false);
     }
-    resize(handle, cell, roundedCell) {
+
+    /**
+     * Resizes the selected shape(s).
+     * @param {VertexHandle|EdgeHandle|CellHandle} handle - Handle being moved
+     * @param {object} data - Additional data that the resize handler might need (varies depending on handle.type)
+     */
+    resize(handle, data = {}) {
         this._resizeOccurred = true;
 
         if (selectionController.vector.numSelectedShapes() === 0) return;
 
+        // TODO resize should update attachments
+
         switch (handle.type) {
             case HANDLE_TYPES.VERTEX:
             case HANDLE_TYPES.EDGE:
-                const newBounds = resizeBoundingBox(this._oldBounds, handle, roundedCell)
+                const newBounds = resizeBoundingBox(this._oldBounds, handle, data.roundedCell)
                 selectionController.vector.updateSelectedShapes(shape => shape.resize(this._oldBounds, newBounds), false);
                 break;
             case HANDLE_TYPES.CELL:
-                selectionController.vector.updateSelectedShapes(shape => shape.dragCellHandle(handle, cell), false);
+                selectionController.vector.updateSelectedShapes(shape => shape.dragCellHandle(handle, data.cell, data.attachmentHandle), false);
                 break;
         }
     }
@@ -190,9 +199,20 @@ export default class ShapeSelector {
     }
 
     translate(rowDelta, colDelta) {
-        this._translateOccurred = true;
+        const translatedShapeIds = new Set(selectionController.vector.selectedShapes().map(shape => shape.id))
 
-        selectionController.vector.updateSelectedShapes(shape => shape.translate(rowDelta, colDelta), false);
+        // Translate any points attached to the moving shapes
+        getCurrentCelShapes().forEach(shape => {
+            shape.updateAttachments(translatedShapeIds, cell => cell.translate(rowDelta, colDelta))
+        })
+
+        // Translate selected shapes
+        const translated = selectionController.vector.updateSelectedShapes(
+            shape => shape.translate(rowDelta, colDelta),
+            false
+        );
+
+        if (translated) this._translateOccurred = true;
     }
 
     /**

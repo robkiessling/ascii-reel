@@ -161,6 +161,13 @@ export default class CellArea extends PixelRect {
         )
     }
 
+    outerArea(padding = 1) {
+        return new CellArea(
+            this.topLeft.clone().translate(-padding, -padding),
+            this.bottomRight.clone().translate(padding, padding),
+        )
+    }
+
     /**
      * Returns whether the provided cellArea fits entirely within this cellArea.
      * Comparison is inclusive: edges must lie within or on the boundaries.

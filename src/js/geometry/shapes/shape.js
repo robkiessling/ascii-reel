@@ -200,7 +200,11 @@ export default class Shape {
         this._resizeSnapshot = undefined;
     }
 
-    dragCellHandle(handle, position, options) {
+    updateAttachments() {
+        // default: do nothing (no attachments)
+    }
+
+    dragCellHandle(handle, position, attachmentHandle) {
         throw new Error(`dragCellHandle must be implemented by subclass`)
     }
 
@@ -388,6 +392,13 @@ export default class Shape {
     hasContent(matchingColorIndex) {
         // TODO
     }
+
+    /**
+     * Moves the shape by some amount.
+     * @param {number} rowOffset - number of rows to move shape
+     * @param {number} colOffset - number of columns to move shape
+     * @return {boolean} True if translation occurred, false if translation was stopped
+     */
     translate(rowOffset, colOffset) {
         throw new Error("translate must be implemented by subclass");
     }

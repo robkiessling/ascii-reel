@@ -1,6 +1,4 @@
-import {
-    CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_OPTIONS, STROKE_STYLE_PROPS,
-} from "./constants.js";
+import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_OPTIONS, STROKE_STYLE_PROPS,} from "./constants.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
@@ -18,6 +16,8 @@ export default class Line extends Shape {
     static propDefinitions = [
         ...super.propDefinitions,
         { prop: 'path' },
+        { prop: 'startAttachment', default: null },
+        { prop: 'endAttachment', default: null },
         { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.LINE] },
     ];
 
@@ -119,13 +119,13 @@ export default class Line extends Shape {
         }
 
         const handles = new HandleCollection([
-            ...this.props.path.map((cell, i) => new CellHandle(this, cell, i)),
+            ...this.props.path.map((cell, i) => new CellHandle(this, cell, i, i === 0 || i === this.props.path.length - 1)),
 
             // Only including box handles if line has more than 2 points
             ...(this.props.path.length > 2 ? BoxShape.vertexHandles(this, boundingArea) : []),
             ...(this.props.path.length > 2 ? BoxShape.edgeHandles(this, boundingArea) : []),
 
-            new BodyHandle(this, cell => hitbox.has(cell))
+            new BodyHandle(this, cell => hitbox.has(cell), !this.props.startAttachment && !this.props.endAttachment)
         ])
 
         this._cache = {
@@ -136,14 +136,54 @@ export default class Line extends Shape {
         }
     }
 
-    dragCellHandle(handle, position, options) {
+    /**
+     *
+     * @param {Set<id: string>} attachTargets - The set of attachment targets that are being updated. If this
+     *   shape has an attachment matching one of these targets, that attachment should be updated.
+     * @param {(cell) => void} updater - Attachment updater callback, determines how the attachment is updated
+     */
+    updateAttachments(attachTargets, updater) {
+        if (this.props.startAttachment && attachTargets.has(this.props.startAttachment.shapeId)) {
+            updater(this.props.path.at(0))
+            this._clearCache()
+        }
+        if (this.props.endAttachment && attachTargets.has(this.props.endAttachment.shapeId)) {
+            updater(this.props.path.at(-1))
+            this._clearCache()
+        }
+    }
+
+    dragCellHandle(handle, position, attachmentHandle) {
         this.props.path[handle.pointIndex].translateTo(position);
+
+        if (handle.attachable) {
+            const attachmentData = attachmentHandle ? {
+                shapeId: attachmentHandle.shapeId
+            } : null;
+
+            if (handle.pointIndex === 0) {
+                this.props.startAttachment = attachmentData;
+            } else {
+                this.props.endAttachment = attachmentData;
+            }
+        }
+        // console.log(JSON.stringify(this.props, undefined, 2));
+
         this._clearCache();
     }
 
     translate(rowOffset, colOffset) {
-        this.props.path.forEach(cell => cell.translate(rowOffset, colOffset))
-        this._clearCache();
+        let moved = false;
+
+        this.props.path.forEach((cell, i) => {
+            if (i === 0 && this.props.startAttachment) return; // Cannot move attached point
+            if (i === this.props.path.length - 1 && this.props.endAttachment) return; // Cannot move attached point
+            cell.translate(rowOffset, colOffset);
+            moved = true; // `moved` becomes true if at least one cell moved
+        })
+
+        if (moved) this._clearCache();
+        return moved;
     }
 
     get topLeft() {

@@ -8,7 +8,8 @@ export const HANDLE_TYPES = {
     EDGE: 'edge',
     CELL: 'cell',
     BODY: 'body',
-    CARET: 'caret'
+    CARET: 'caret',
+    ATTACHMENT: 'attachment'
 }
 
 /**

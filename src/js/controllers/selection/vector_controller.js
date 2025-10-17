@@ -218,14 +218,24 @@ function updateHandleDrag(canvas, mouseCoords, cell, prevCell) {
     switch (draggedHandle.type) {
         case HANDLE_TYPES.VERTEX:
         case HANDLE_TYPES.EDGE:
-        case HANDLE_TYPES.CELL:
             const roundedCell = canvas.screenToWorld(mouseCoords.x, mouseCoords.y).roundedCell;
             if (prevRoundedCell && prevRoundedCell.equals(roundedCell)) return;
             prevRoundedCell = roundedCell.clone();
-            shapeSelector.resize(draggedHandle, cell, roundedCell)
+            shapeSelector.resize(draggedHandle, { roundedCell });
+            break;
+        case HANDLE_TYPES.CELL:
+            if (prevCell && prevCell.equals(cell)) return;
+            const attachmentHandle = draggedHandle.attachable ?
+                state.testCurrentCelShapeHitboxes(cell, HANDLE_TYPES.ATTACHMENT) : undefined;
+            shapeSelector.resize(draggedHandle, { cell, attachmentHandle });
             break;
         case HANDLE_TYPES.BODY:
             if (prevCell && prevCell.equals(cell)) return;
+
+            // Do not translate if there is only one shape and body handle is not movable. However, if multiple
+            // shapes are selected we do allow the "immovable" shape to move.
+            if (numSelectedShapes() === 1 && !draggedHandle.canMove) return;
+
             shapeSelector.translate(cell.row - prevCell.row, cell.col - prevCell.col)
             break;
         case HANDLE_TYPES.CARET:
@@ -271,7 +281,7 @@ export function getHandle(cell, mouseEvent, canvas) {
 
         // If the caret is already showing or this was a dblclick, check individual shape's caret handle for a match
         if (isEditingText() || mouseEvent.detail > 1) {
-            const caretHandle = shape.handles.caret.at(0);
+            const caretHandle = shape.handles.specific[HANDLE_TYPES.CARET];
             if (caretHandle && caretHandle.matches({mouseEvent, canvas, cell})) return caretHandle;
         }
 
@@ -287,7 +297,7 @@ export function getHandle(cell, mouseEvent, canvas) {
     }
 
     // Check body handles of all shapes (both selected and unselected)
-    return state.testCurrentCelShapeHitboxes(cell);
+    return state.testCurrentCelShapeHitboxes(cell, HANDLE_TYPES.BODY);
 }
 
 
@@ -631,6 +641,7 @@ export function handleArrowKey(direction, shiftKey) {
                 throw new Error(`Invalid direction: ${direction}`);
         }
 
+        // todo use shape_selector.js
         updateSelectedShapes(shape => shape.translate(rowOffset, colOffset), () => saveShapesMoved());
 
         return true; // Consume keyboard event

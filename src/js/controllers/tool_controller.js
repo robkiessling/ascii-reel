@@ -22,7 +22,7 @@ import {
     STROKE_STYLE_OPTIONS,
     SHAPE_TYPES,
     STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP,
-    BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP, WRITE_EMPTY_CHARS_PROP
+    BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP, WRITE_EMPTY_CHARS_PROP, HANDLE_TYPES
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
 import {refreshableTooltips, standardTip, standardTipContentBuilder} from "../components/tooltips.js";
@@ -1025,7 +1025,7 @@ function vectorEraser(primaryCell) {
     const shapeIds = new Set();
 
     hoveredCells(primaryCell).forEach(cell => {
-        const handle = state.testCurrentCelShapeHitboxes(cell);
+        const handle = state.testCurrentCelShapeHitboxes(cell, HANDLE_TYPES.BODY);
         if (handle && handle.shapeId) shapeIds.add(handle.shapeId);
     });
 

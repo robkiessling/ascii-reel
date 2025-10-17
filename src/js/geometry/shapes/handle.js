@@ -27,12 +27,17 @@ export class HandleCollection {
     constructor(handles) {
         this.handles = handles;
 
-        // Store special references to body/caret handles since we sometimes check for them specifically
-        this.body = handles.filter(handle => handle.type === HANDLE_TYPES.BODY);
-        this.caret = handles.filter(handle => handle.type === HANDLE_TYPES.CARET);
+        // Store special references to certain handles since we might check for them specifically. The rest are
+        // considered "standard".
+        this.specific = {};
+        this.standard = [];
 
-        // "standard" handles are all the rest of the handles
-        this.standard = handles.filter(handle => handle.type !== HANDLE_TYPES.BODY && handle.type !== HANDLE_TYPES.CARET);
+        handles.forEach(handle => {
+            if (handle.type === HANDLE_TYPES.BODY) this.specific[HANDLE_TYPES.BODY] = handle;
+            else if (handle.type === HANDLE_TYPES.CARET) this.specific[HANDLE_TYPES.CARET] = handle;
+            else if (handle.type === HANDLE_TYPES.ATTACHMENT) this.specific[HANDLE_TYPES.ATTACHMENT] = handle;
+            else this.standard.push(handle);
+        });
 
         this.showBoundingBox = handles.some(handle => handle.type === HANDLE_TYPES.VERTEX || handle.type === HANDLE_TYPES.EDGE);
     }
@@ -175,15 +180,34 @@ export class EdgeHandle extends Handle {
 }
 
 export class BodyHandle extends Handle {
-    constructor(shape, hitbox) {
+    constructor(shape, hitbox, canMove = true) {
         super();
         this.type = HANDLE_TYPES.BODY
+        this.shape = shape;
+        this.hitbox = hitbox;
+        this.canMove = canMove; // true if body handle can be used to move the shape; false if body handle is just for selection
+    }
+
+    get cursor() {
+        return this.canMove ? 'move' : 'cursor'
+    }
+
+    matches({ cell }) {
+        return this.hitbox(cell);
+    }
+}
+
+
+export class AttachmentHandle extends Handle {
+    constructor(shape, hitbox) {
+        super();
+        this.type = HANDLE_TYPES.ATTACHMENT
         this.shape = shape;
         this.hitbox = hitbox;
     }
 
     get cursor() {
-        return 'move'
+        return 'copy'
     }
 
     matches({ cell }) {
@@ -228,12 +252,13 @@ export class CaretHandle extends Handle {
 }
 
 export class CellHandle extends Handle {
-    constructor(shape, cell, pointIndex) {
+    constructor(shape, cell, pointIndex, attachable) {
         super();
         this.type = HANDLE_TYPES.CELL
         this.shape = shape;
         this.cell = cell;
         this.pointIndex = pointIndex;
+        this.attachable = attachable;
     }
 
     get cursor() {

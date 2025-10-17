@@ -10,7 +10,7 @@ import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
 import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
-import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
+import {BodyHandle, HandleCollection} from "./handle.js";
 import Point from "../point.js";
 import BoxShape from "./box_shape.js";
 import CellCache from "../cell_cache.js";
@@ -126,6 +126,7 @@ export default class Freeform extends Shape {
         const yOffset = rowOffset * Cell.height;
         this.props.path.forEach(point => point.translate(xOffset, yOffset))
         this._clearCache();
+        return true;
     }
 
     get topLeft() {

@@ -22,7 +22,6 @@ const DIRECTIONS = {
 }
 
 export function orthogonalConnector(startCell, endCell, callback) {
-    // TODO current implementation assumes no attachments
     let startDir, endDir;
     if (longerAxis(startCell, endCell) === AXES.VERTICAL) {
         startDir = endCell.row >= startCell.row ? DIRECTIONS.DOWN : DIRECTIONS.UP;
@@ -95,12 +94,18 @@ function straightLine(startCell, startDir, endCell, endDir, callback) {
 }
 
 function singleElbowLine(startCell, startDir, endCell, endDir, callback) {
-    // let bend;
-    // if (longerAxis(startCell, endCell) === AXES.VERTICAL) {
-    //     bend = new Cell()
-    // } else {
-    //
-    // }
+    let bend;
+    if (isVertical(startDir)) {
+        bend = new Cell(endCell.row, startCell.col)
+    } else {
+        bend = new Cell(startCell.row, endCell.col)
+    }
+
+    callback(startCell, charFor(startDir, true))
+    exclusiveLine(startCell, bend, callback);
+    callback(bend, charFor(directionBetween(startCell, bend, endCell), false))
+    exclusiveLine(bend, endCell, callback);
+    callback(endCell, charFor(endDir, true))
 }
 
 function doubleElbowLine(startCell, startDir, endCell, endDir, callback) {
@@ -206,4 +211,11 @@ function oppositeDir(dir) {
 
 function isOpposite(dir1, dir2) {
     return dir1 === oppositeDir(dir2);
+}
+
+function isVertical(dir) {
+    return dir === DIRECTIONS.UP || dir === DIRECTIONS.DOWN;
+}
+function isHorizontal(dir) {
+    return dir === DIRECTIONS.LEFT || dir === DIRECTIONS.RIGHT;
 }
