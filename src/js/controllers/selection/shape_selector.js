@@ -172,7 +172,7 @@ export default class ShapeSelector {
                 selectionController.vector.updateSelectedShapes(shape => {
                     const { cellMapper } = shape.resize(this._oldBounds, newBounds);
 
-                    this._updateAttachments(shape, (cell, attachment) => {
+                    this._updateAttachmentsTo(shape, (cell, attachment) => {
                         const { rowPct, colPct } = attachment;
                         cell.translateTo(cellMapper({ rowPct, colPct, allowInversion: false }))
                     })
@@ -180,7 +180,7 @@ export default class ShapeSelector {
                 break;
             case HANDLE_TYPES.CELL:
                 selectionController.vector.updateSelectedShapes(shape => {
-                    shape.dragCellHandle(handle, data.cell, data.attachmentHandle)
+                    shape.dragCellHandle(handle, data.cell, data.attachTarget)
                 }, false);
                 break;
         }
@@ -210,7 +210,7 @@ export default class ShapeSelector {
         //       lines are selected, and they are all attached to something, we cannot actually move them.
         const updated = selectionController.vector.updateSelectedShapes(shape => {
             const shapeUpdated = shape.translate(rowDelta, colDelta);
-            const attachmentUpdated = this._updateAttachments(shape, cell => cell.translate(rowDelta, colDelta))
+            const attachmentUpdated = this._updateAttachmentsTo(shape, cell => cell.translate(rowDelta, colDelta))
             return shapeUpdated || attachmentUpdated;
         }, false);
 
@@ -250,11 +250,11 @@ export default class ShapeSelector {
 
     // ----------------------------------------- Helpers
 
-    _updateAttachments(attachTarget, updater) {
+    _updateAttachmentsTo(otherShape, updater) {
         let attachmentUpdated = false;
 
         getCurrentCelShapes().forEach(shape => {
-            if (shape.updateAttachments(attachTarget, updater)) attachmentUpdated = true;
+            if (shape.updateAttachmentsTo(otherShape, updater)) attachmentUpdated = true;
         })
 
         return attachmentUpdated;

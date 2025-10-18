@@ -225,8 +225,8 @@ function updateHandleDrag(canvas, mouseCoords, cell, prevCell) {
             break;
         case HANDLE_TYPES.CELL:
             if (prevCell && prevCell.equals(cell)) return;
-            const attachmentHandle = draggedHandle.attachable ? getAttachTarget(cell) : undefined;
-            shapeSelector.resize(draggedHandle, { cell, attachmentHandle });
+            const attachTarget = draggedHandle.canAttachTo ? getAttachTarget(cell) : undefined;
+            shapeSelector.resize(draggedHandle, { cell, attachTarget });
             break;
         case HANDLE_TYPES.BODY:
             if (prevCell && prevCell.equals(cell)) return;

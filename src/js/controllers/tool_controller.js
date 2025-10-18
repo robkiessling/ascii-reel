@@ -1007,7 +1007,7 @@ function finishDrawing() {
 }
 
 function getAttachTarget(cell) {
-    return selectionController.isVector() && drawingContent.attachable ?
+    return selectionController.isVector() && drawingContent.canAttachTo ?
         selectionController.vector.getAttachTarget(cell) :
         undefined;
 }

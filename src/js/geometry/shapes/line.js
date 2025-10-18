@@ -82,7 +82,7 @@ export default class Line extends Shape {
         super.finishDraw();
     }
 
-    get attachable() {
+    get canAttachTo() {
         return true;
     }
 
@@ -166,16 +166,16 @@ export default class Line extends Shape {
         }
     }
 
-    updateAttachments(attachTarget, updater) {
+    updateAttachmentsTo(shape, updater) {
         let updated = false;
 
-        if (this.props.startAttachment && this.props.startAttachment.shapeId === attachTarget.id) {
+        if (this.props.startAttachment && this.props.startAttachment.shapeId === shape.id) {
             updater(this.props.path.at(0), this.props.startAttachment)
             this._clearCache()
             updated = true;
         }
 
-        if (this.props.endAttachment && this.props.endAttachment.shapeId === attachTarget.id) {
+        if (this.props.endAttachment && this.props.endAttachment.shapeId === shape.id) {
             updater(this.props.path.at(-1), this.props.endAttachment)
             this._clearCache()
             updated = true;
@@ -184,38 +184,38 @@ export default class Line extends Shape {
         return updated;
     }
 
-    removeAttachmentsTo(attachTarget) {
-        if (this.props.startAttachment && this.props.startAttachment.shapeId === attachTarget.id) {
+    removeAttachmentsTo(shape) {
+        if (this.props.startAttachment && this.props.startAttachment.shapeId === shape.id) {
             this.props.startAttachment = null;
             this._clearCache()
         }
 
-        if (this.props.endAttachment && this.props.endAttachment.shapeId === attachTarget.id) {
+        if (this.props.endAttachment && this.props.endAttachment.shapeId === shape.id) {
             this.props.endAttachment = null;
             this._clearCache()
         }
     }
 
-    dragCellHandle(handle, position, attachmentHandle) {
+    dragCellHandle(handle, position, attachTarget) {
         this.props.path[handle.pointIndex].translateTo(position);
 
-        if (handle.attachable) {
-            this._setAttachment(handle.pointIndex === 0 ? 'startAttachment' : 'endAttachment', attachmentHandle, position);
+        if (handle.canAttachTo) {
+            this._setAttachment(handle.pointIndex === 0 ? 'startAttachment' : 'endAttachment', attachTarget, position);
         }
 
         this._clearCache();
     }
 
-    _setAttachment(propKey, attachmentHandle, cell) {
+    _setAttachment(propKey, attachTarget, cell) {
         let attachmentData = null;
 
-        if (attachmentHandle) {
-            const { rowPct, colPct } = getFractionalPosition(attachmentHandle.shape.boundingArea, cell)
+        if (attachTarget) {
+            const { rowPct, colPct } = getFractionalPosition(attachTarget.shape.boundingArea, cell)
             attachmentData = {
-                shapeId: attachmentHandle.shapeId,
+                shapeId: attachTarget.shapeId,
                 rowPct,
                 colPct,
-                direction: attachmentHandle.direction
+                direction: attachTarget.direction
             }
         }
 

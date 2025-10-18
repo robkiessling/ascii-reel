@@ -266,13 +266,13 @@ export class CaretHandle extends Handle {
 }
 
 export class CellHandle extends Handle {
-    constructor(shape, cell, pointIndex, attachable) {
+    constructor(shape, cell, pointIndex, canAttachTo) {
         super();
         this.type = HANDLE_TYPES.CELL
         this.shape = shape;
         this.cell = cell;
         this.pointIndex = pointIndex;
-        this.attachable = attachable;
+        this.canAttachTo = canAttachTo;
     }
 
     get cursor() {

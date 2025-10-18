@@ -161,7 +161,7 @@ export default class Shape {
     }
 
     // Whether the shape can attach to things
-    get attachable() {
+    get canAttachTo() {
         return false;
     }
 
@@ -209,24 +209,32 @@ export default class Shape {
     }
 
     /**
-     * Updates this shape's attachment points if they match the attachTarget
-     * @param {Shape} attachTarget - The other shape this shape is (potentially) attached to
+     * If this shape has any attachments to the provided shape, updates them using the provided callback
+     * @param {Shape} shape - The other shape this shape is (potentially) attached to
      * @param {(cell: Cell, attachment: Object) => void} updater - Callback to update attached cell
      * @returns {boolean} - True if an attachment was updated, false otherwise
      */
-    updateAttachments(attachTarget, updater) {
+    updateAttachmentsTo(shape, updater) {
         return false;
     }
 
     /**
      * Removes this shape's attachment points if they match the attachTarget
-     * @param {Shape} attachTarget - The other shape this shape is (potentially) attached to
+     * @param {Shape} shape - The other shape this shape is (potentially) attached to
      */
-    removeAttachmentsTo(attachTarget) {
+    removeAttachmentsTo(shape) {
         // Do nothing
     }
 
-    dragCellHandle(handle, position, attachmentHandle) {
+    /**
+     * Callback when one of this shape's cell handles is being dragged
+     *
+     * @param {CellHandle} handle - the cell handle being dragged
+     * @param {Cell} position - new position of the cell handle
+     * @param {AttachmentHandle} attachTarget - The attachment handle the cell handle has been dragged over, if any
+     * @returns void
+     */
+    dragCellHandle(handle, position, attachTarget) {
         throw new Error(`dragCellHandle must be implemented by subclass`)
     }
 
