@@ -2,7 +2,7 @@ import Shape from "./shape.js";
 import Cell from "../cell.js";
 import {translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
 import CellArea from "../cell_area.js";
-import {CHAR_PROP, EDGE_SIDES, FILL_OPTIONS, FILL_PROP, VERTEX_CORNERS} from "./constants.js";
+import {CHAR_PROP, DIRECTIONS, EDGE_SIDES, FILL_OPTIONS, FILL_PROP, VERTEX_CORNERS} from "./constants.js";
 import {AttachmentHandle, BodyHandle, CaretHandle, EdgeHandle, HandleCollection, VertexHandle} from "./handle.js";
 
 /**
@@ -86,18 +86,43 @@ export default class BoxShape extends Shape {
     }
 
     _buildHandleCollection(boundingArea, bodyHitbox, caretHitbox) {
-        const attachmentArea = boundingArea.outerArea();
-        const attachmentHitbox = cell => {
-            return attachmentArea.includesCell(cell) && !boundingArea.includesCell(cell)
-        }
-
         return new HandleCollection([
             ...BoxShape.vertexHandles(this, boundingArea),
             ...BoxShape.edgeHandles(this, boundingArea),
             ...(bodyHitbox ? [new BodyHandle(this, bodyHitbox)] : []),
             ...(caretHitbox ? [new CaretHandle(this, caretHitbox)] : []),
-            new AttachmentHandle(this, attachmentHitbox)
+            ...this._buildAttachmentHandles(boundingArea)
         ])
+    }
+
+    _buildAttachmentHandles(boundingArea) {
+        const handles = [];
+
+        const topArea = new CellArea(
+            boundingArea.topLeft.clone().translate(-1, 0),
+            boundingArea.topRight.clone().translate(-1, 0)
+        )
+        handles.push(new AttachmentHandle(this, cell => topArea.includesCell(cell), DIRECTIONS.UP))
+
+        const rightArea = new CellArea(
+            boundingArea.topRight.clone().translate(0, 1),
+            boundingArea.bottomRight.clone().translate(0, 1),
+        )
+        handles.push(new AttachmentHandle(this, cell => rightArea.includesCell(cell), DIRECTIONS.RIGHT))
+
+        const bottomArea = new CellArea(
+            boundingArea.bottomLeft.clone().translate(1, 0),
+            boundingArea.bottomRight.clone().translate(1, 0),
+        )
+        handles.push(new AttachmentHandle(this, cell => bottomArea.includesCell(cell), DIRECTIONS.DOWN))
+
+        const leftArea = new CellArea(
+            boundingArea.topLeft.clone().translate(0, -1),
+            boundingArea.bottomLeft.clone().translate(0, -1),
+        )
+        handles.push(new AttachmentHandle(this, cell => leftArea.includesCell(cell), DIRECTIONS.LEFT))
+
+        return handles;
     }
 
 

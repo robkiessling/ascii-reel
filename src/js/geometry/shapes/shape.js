@@ -118,18 +118,9 @@ export default class Shape {
      * @param {Object} options
      */
     handleDrawMousedown(cell, options) {
-        if (!this._initialDraw) {
-            this._initialDraw = {
-                anchor: cell.clone(), // Original mousedown cell (unchanging)
-                hover: cell.clone(), // Represents current cell being hovered over (will rapidly update)
-                path: [cell.clone()], // If multiple mousedowns occur, stores the path they create
-                multiPointDrawing: false // Whether this drawing uses multiple points (true) or just 2 (false)
-            }
-        }
-
-        // Add further mousedown cells to path (if they are different than previous path cell)
-        if (this._initialDraw.multiPointDrawing && !cell.equals(this._initialDraw.path.at(-1))) {
-            this._initialDraw.path.push(cell.clone());
+        this._initialDraw = {
+            anchor: cell.clone(), // Original mousedown cell (unchanging)
+            hover: cell.clone(), // Represents current cell being hovered over (will rapidly update)
         }
 
         this._convertInitialDrawToProps();
@@ -150,9 +141,10 @@ export default class Shape {
      * Called during initial shape drawing on mouseup. Returns a boolean that signals whether the
      * shape is finished (true) or unfinished (false).
      * @param {Cell} cell - Mouseup location
+     * @param {Object} options
      * @returns {boolean} - True if drawing is finished, false if drawing needs to continue
      */
-    handleDrawMouseup(cell) {
+    handleDrawMouseup(cell, options) {
         return true; // Default: immediately finish on mouseup
     }
 
@@ -166,6 +158,11 @@ export default class Shape {
 
     get isPerformingInitialDraw() {
         return !!this._initialDraw;
+    }
+
+    // Whether the shape can attach to things
+    get attachable() {
+        return false;
     }
 
     /**

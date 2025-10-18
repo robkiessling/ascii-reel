@@ -225,8 +225,7 @@ function updateHandleDrag(canvas, mouseCoords, cell, prevCell) {
             break;
         case HANDLE_TYPES.CELL:
             if (prevCell && prevCell.equals(cell)) return;
-            const attachmentHandle = draggedHandle.attachable ?
-                state.testCurrentCelShapeHitboxes(cell, HANDLE_TYPES.ATTACHMENT) : undefined;
+            const attachmentHandle = draggedHandle.attachable ? getAttachTarget(cell) : undefined;
             shapeSelector.resize(draggedHandle, { cell, attachmentHandle });
             break;
         case HANDLE_TYPES.BODY:
@@ -275,31 +274,34 @@ export function getHandle(cell, mouseEvent, canvas) {
     if (draggedHandle) return draggedHandle;
 
     const shapes = selectedShapes();
+    const handleCriteria = { mouseEvent, canvas, cell };
+    const standardHandles = [HANDLE_TYPES.VERTEX, HANDLE_TYPES.EDGE, HANDLE_TYPES.CELL];
 
     if (shapes.length === 1) {
         const shape = shapes[0];
 
         // If the caret is already showing or this was a dblclick, check individual shape's caret handle for a match
         if (isEditingText() || mouseEvent.detail > 1) {
-            const caretHandle = shape.handles.specific[HANDLE_TYPES.CARET];
-            if (caretHandle && caretHandle.matches({mouseEvent, canvas, cell})) return caretHandle;
+            const caretHandle = shape.handles.matches(HANDLE_TYPES.CARET, handleCriteria)
+            if (caretHandle) return caretHandle;
         }
 
         // Check rest of individual shape's standard handles
-        for (const handle of shape.handles.standard) {
-            if (handle.matches({mouseEvent, canvas, cell})) return handle;
-        }
+        const standardHandle = shape.handles.matches(standardHandles, handleCriteria)
+        if (standardHandle) return standardHandle;
     } else {
         // Check shape group's non-body handles
-        for (const handle of shapeSelector.handles.standard) {
-            if (handle.matches({mouseEvent, canvas, cell})) return handle;
-        }
+        const standardHandle = shapeSelector.handles.matches(standardHandles, handleCriteria)
+        if (standardHandle) return standardHandle;
     }
 
     // Check body handles of all shapes (both selected and unselected)
-    return state.testCurrentCelShapeHitboxes(cell, HANDLE_TYPES.BODY);
+    return state.testCurrentCelHandles(cell, HANDLE_TYPES.BODY);
 }
 
+export function getAttachTarget(cell) {
+    return state.testCurrentCelHandles(cell, HANDLE_TYPES.ATTACHMENT);
+}
 
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.

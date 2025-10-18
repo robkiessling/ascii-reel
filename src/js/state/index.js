@@ -32,7 +32,7 @@ export {
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph,
     getCurrentCelShapes, getCurrentCelShape, addCurrentCelShape, updateCurrentCelShape,
     deleteCurrentCelShape, reorderCurrentCelShapes, canReorderCurrentCelShapes,
-    getCurrentCelShapeIdsAbove, testCurrentCelShapeHitboxes, testCurrentCelMarquee,
+    getCurrentCelShapeIdsAbove, testCurrentCelHandles, testCurrentCelMarquee,
     isCellInBounds, layeredGlyphs, translateCel,
     resize, colorSwap, hasCharContent
 } from './timeline/index.js'

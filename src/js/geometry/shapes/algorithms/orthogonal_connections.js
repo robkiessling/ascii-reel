@@ -1,25 +1,7 @@
 import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
+import {AXES, DIRECTIONS} from "../constants.js";
 
-const AXES = {
-    HORIZONTAL: 'horizontal',
-    VERTICAL: 'vertical'
-}
-const DIRECTIONS = {
-    UP: 'up',
-    RIGHT: 'right',
-    DOWN: 'down',
-    LEFT: 'left',
-
-    UP_RIGHT: 'up-right',
-    UP_LEFT: 'up-left',
-    RIGHT_UP: 'right-up',
-    RIGHT_DOWN: 'right-down',
-    DOWN_RIGHT: 'down-right',
-    DOWN_LEFT: 'down-left',
-    LEFT_UP: 'left-up',
-    LEFT_DOWN: 'left-down',
-}
 
 export function orthogonalConnector(startCell, endCell, callback) {
     let startDir, endDir;

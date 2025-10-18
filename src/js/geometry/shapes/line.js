@@ -35,7 +35,30 @@ export default class Line extends Shape {
         return result;
     }
 
-    handleDrawMouseup(cell) {
+
+    handleDrawMousedown(cell, options) {
+        if (!this._initialDraw) {
+            this._initialDraw = {
+                anchor: cell.clone(), // Original mousedown cell (unchanging)
+                hover: cell.clone(), // Represents current cell being hovered over (will rapidly update)
+                path: [cell.clone()], // If multiple mousedowns occur, stores the path they create
+                multiPointDrawing: false // Whether this drawing uses multiple points (true) or just 2 (false)
+            }
+
+            this._setAttachment('startAttachment', options.attachTarget, cell);
+        }
+
+        // Add further mousedown cells to path (if they are different than previous path cell)
+        if (this._initialDraw.multiPointDrawing && !cell.equals(this._initialDraw.path.at(-1))) {
+            this._initialDraw.path.push(cell.clone());
+
+            this._setAttachment('endAttachment', options.attachTarget, cell);
+        }
+
+        this._convertInitialDrawToProps();
+    }
+
+    handleDrawMouseup(cell, options) {
         // If already in a multi-point drawing, return false (shape is not finished)
         if (this._initialDraw.multiPointDrawing) return false;
 
@@ -45,6 +68,7 @@ export default class Line extends Shape {
             this._initialDraw.multiPointDrawing = true;
             return false; // shape is not finished
         } else {
+            this._setAttachment('endAttachment', options.attachTarget, cell);
             return true; // shape is finished
         }
     }
@@ -56,6 +80,10 @@ export default class Line extends Shape {
             this._clearCache();
         }
         super.finishDraw();
+    }
+
+    get attachable() {
+        return true;
     }
 
     _convertInitialDrawToProps() {
@@ -172,20 +200,26 @@ export default class Line extends Shape {
         this.props.path[handle.pointIndex].translateTo(position);
 
         if (handle.attachable) {
-            let attachmentData = null;
-            if (attachmentHandle) {
-                const { rowPct, colPct } = getFractionalPosition(attachmentHandle.shape.boundingArea, position)
-                attachmentData = { shapeId: attachmentHandle.shapeId, rowPct, colPct }
-            }
-
-            if (handle.pointIndex === 0) {
-                this.props.startAttachment = attachmentData;
-            } else {
-                this.props.endAttachment = attachmentData;
-            }
+            this._setAttachment(handle.pointIndex === 0 ? 'startAttachment' : 'endAttachment', attachmentHandle, position);
         }
 
         this._clearCache();
+    }
+
+    _setAttachment(propKey, attachmentHandle, cell) {
+        let attachmentData = null;
+
+        if (attachmentHandle) {
+            const { rowPct, colPct } = getFractionalPosition(attachmentHandle.shape.boundingArea, cell)
+            attachmentData = {
+                shapeId: attachmentHandle.shapeId,
+                rowPct,
+                colPct,
+                direction: attachmentHandle.direction
+            }
+        }
+
+        this.props[propKey] = attachmentData
     }
 
     translate(rowOffset, colOffset) {

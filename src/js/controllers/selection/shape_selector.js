@@ -7,8 +7,7 @@ import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
 import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
-import {getCurrentCelShape, getCurrentCelShapes} from "../../state/index.js";
-import Cell from "../../geometry/cell.js";
+import {getCurrentCelShapes} from "../../state/index.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -58,7 +57,7 @@ export default class ShapeSelector {
         return new HandleCollection([
             ...(boundingArea ? BoxShape.vertexHandles(null, boundingArea) : []),
             ...(boundingArea ? BoxShape.edgeHandles(null, boundingArea) : []),
-            ...selectionController.vector.selectedShapes().map(shape => shape.handles.specific[HANDLE_TYPES.BODY])
+            ...selectionController.vector.selectedShapes().flatMap(shape => shape.handles.handlesByType[HANDLE_TYPES.BODY])
         ])
     }
 

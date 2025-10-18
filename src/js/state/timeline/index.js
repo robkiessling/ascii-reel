@@ -260,8 +260,8 @@ export function canReorderCurrentCelShapes(shapeIds, action) {
 export function getCurrentCelShapeIdsAbove(shapeId) {
     return currentCel().getShapeIdsAbove(shapeId);
 }
-export function testCurrentCelShapeHitboxes(cell, handleType, forShapeIds) {
-    return currentCel().testShapeHitboxes(cell, handleType, forShapeIds);
+export function testCurrentCelHandles(cell, handleType, forShapeIds) {
+    return currentCel().testHandles(cell, handleType, forShapeIds);
 }
 export function testCurrentCelMarquee(cellArea) {
     return currentCel().testMarquee(cellArea)

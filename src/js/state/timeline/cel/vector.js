@@ -242,7 +242,14 @@ export default class VectorCel {
         return index === -1 ? [] : this.shapesOrder.slice(index + 1);
     }
 
-    testShapeHitboxes(cell, handleType, forShapeIds) {
+    /**
+     * Tests all shapes in the Cel from top to bottom for a matching handle.
+     * @param {Cell} cell - The Cell to test
+     * @param {HANDLE_TYPES.BODY|HANDLE_TYPES.ATTACHMENT} handleType - Handle type to check for
+     * @param {string[]} [forShapeIds] - If provided, only specific shapes will be considered
+     * @returns {Handle|null}
+     */
+    testHandles(cell, handleType, forShapeIds) {
         // Find first shape that has a handle at that cell, iterating in reverse order (top shape is checked first)
         for (let i = this.shapesOrder.length - 1; i >= 0; i--) {
             const shapeId = this.shapesOrder[i]
@@ -250,8 +257,8 @@ export default class VectorCel {
 
             if (forShapeIds !== undefined && !forShapeIds.includes(shapeId)) continue;
 
-            const handle = shape.handles.specific[handleType];
-            if (handle && handle.matches({ cell })) return handle;
+            const handle = shape.handles.matches(handleType, { cell });
+            if (handle) return handle;
         }
 
         return null;

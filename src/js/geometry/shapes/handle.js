@@ -26,17 +26,12 @@ class Handle {
 export class HandleCollection {
     constructor(handles) {
         this.handles = handles;
-
-        // Store special references to certain handles since we might check for them specifically. The rest are
-        // considered "standard".
-        this.specific = {};
-        this.standard = [];
+        this.handlesByType = {};
 
         handles.forEach(handle => {
-            if (handle.type === HANDLE_TYPES.BODY) this.specific[HANDLE_TYPES.BODY] = handle;
-            else if (handle.type === HANDLE_TYPES.CARET) this.specific[HANDLE_TYPES.CARET] = handle;
-            else if (handle.type === HANDLE_TYPES.ATTACHMENT) this.specific[HANDLE_TYPES.ATTACHMENT] = handle;
-            else this.standard.push(handle);
+            this.handles.push(handle);
+            this.handlesByType[handle.type] ||= [];
+            this.handlesByType[handle.type].push(handle);
         });
 
         this.showBoundingBox = handles.some(handle => handle.type === HANDLE_TYPES.VERTEX || handle.type === HANDLE_TYPES.EDGE);
@@ -46,6 +41,24 @@ export class HandleCollection {
         return this.handles[Symbol.iterator]();
     }
 
+    /**
+     * Find the first handle matching the given handleType and criteria
+     * @param {string|string[]} handleTypes - Single handleType or array of handleTypes to check
+     * @param criteria - Matching criteria to send to the individual handle's `matches` function
+     * @returns {Handle|null}
+     */
+    matches(handleTypes, criteria) {
+        if (!Array.isArray(handleTypes)) handleTypes = [handleTypes];
+
+        for (const handleType of handleTypes) {
+            const handles = this.handlesByType[handleType] || [];
+            for (const handle of handles) {
+                if (handle.matches(criteria)) return handle;
+            }
+        }
+
+        return null;
+    }
 }
 
 export class VertexHandle extends Handle {
@@ -199,11 +212,12 @@ export class BodyHandle extends Handle {
 
 
 export class AttachmentHandle extends Handle {
-    constructor(shape, hitbox) {
+    constructor(shape, hitbox, direction) {
         super();
         this.type = HANDLE_TYPES.ATTACHMENT
         this.shape = shape;
         this.hitbox = hitbox;
+        this.direction = direction;
     }
 
     get cursor() {

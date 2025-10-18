@@ -192,3 +192,24 @@ export const SHAPE_TEXT_ACTIONS = {
     DELETE_RANGE: 'deleteRange',
     REPLACE: 'replace'
 }
+
+
+export const AXES = {
+    HORIZONTAL: 'horizontal',
+    VERTICAL: 'vertical'
+}
+export const DIRECTIONS = {
+    UP: 'up',
+    RIGHT: 'right',
+    DOWN: 'down',
+    LEFT: 'left',
+
+    UP_RIGHT: 'up-right',
+    UP_LEFT: 'up-left',
+    RIGHT_UP: 'right-up',
+    RIGHT_DOWN: 'right-down',
+    DOWN_RIGHT: 'down-right',
+    DOWN_LEFT: 'down-left',
+    LEFT_UP: 'left-up',
+    LEFT_DOWN: 'left-down',
+}

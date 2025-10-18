@@ -967,7 +967,7 @@ function handleDrawMousedown(shapeType, cell, currentPoint, options = {}) {
         });
     }
 
-    drawingContent.handleDrawMousedown(cell, { point: currentPoint });
+    drawingContent.handleDrawMousedown(cell, { point: currentPoint, attachTarget: getAttachTarget(cell) });
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
@@ -983,7 +983,7 @@ function handleDrawMousemove(cell, currentPoint, options = {}) {
 function handleDrawMouseup(cell, mouseEvent) {
     if (!drawingContent) return;
 
-    if (!drawingContent.handleDrawMouseup(cell)) return;
+    if (!drawingContent.handleDrawMouseup(cell, { attachTarget: getAttachTarget(cell) })) return;
 
     finishDrawing();
 }
@@ -1006,6 +1006,12 @@ function finishDrawing() {
     state.pushHistory();
 }
 
+function getAttachTarget(cell) {
+    return selectionController.isVector() && drawingContent.attachable ?
+        selectionController.vector.getAttachTarget(cell) :
+        undefined;
+}
+
 
 // -------------------------------------------------------------------------------- Eraser
 
@@ -1025,7 +1031,7 @@ function vectorEraser(primaryCell) {
     const shapeIds = new Set();
 
     hoveredCells(primaryCell).forEach(cell => {
-        const handle = state.testCurrentCelShapeHitboxes(cell, HANDLE_TYPES.BODY);
+        const handle = state.testCurrentCelHandles(cell, HANDLE_TYPES.BODY);
         if (handle && handle.shapeId) shapeIds.add(handle.shapeId);
     });
 
