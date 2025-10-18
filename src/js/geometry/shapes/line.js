@@ -156,6 +156,18 @@ export default class Line extends Shape {
         return updated;
     }
 
+    removeAttachmentsTo(attachTarget) {
+        if (this.props.startAttachment && this.props.startAttachment.shapeId === attachTarget.id) {
+            this.props.startAttachment = null;
+            this._clearCache()
+        }
+
+        if (this.props.endAttachment && this.props.endAttachment.shapeId === attachTarget.id) {
+            this.props.endAttachment = null;
+            this._clearCache()
+        }
+    }
+
     dragCellHandle(handle, position, attachmentHandle) {
         this.props.path[handle.pointIndex].translateTo(position);
 

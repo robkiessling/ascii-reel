@@ -213,12 +213,20 @@ export default class Shape {
 
     /**
      * Updates this shape's attachment points if they match the attachTarget
-     * @param {Shape} attachTarget - ID of the other shape attached to
+     * @param {Shape} attachTarget - The other shape this shape is (potentially) attached to
      * @param {(cell: Cell, attachment: Object) => void} updater - Callback to update attached cell
      * @returns {boolean} - True if an attachment was updated, false otherwise
      */
     updateAttachments(attachTarget, updater) {
         return false;
+    }
+
+    /**
+     * Removes this shape's attachment points if they match the attachTarget
+     * @param {Shape} attachTarget - The other shape this shape is (potentially) attached to
+     */
+    removeAttachmentsTo(attachTarget) {
+        // Do nothing
     }
 
     dragCellHandle(handle, position, attachmentHandle) {

@@ -186,6 +186,9 @@ export default class VectorCel {
     }
 
     deleteShape(shapeId) {
+        const deletedShape = this.getShape(shapeId);
+        this.otherShapes(shapeId).forEach(otherShape => otherShape.removeAttachmentsTo(deletedShape))
+
         delete this.shapesById[shapeId];
 
         const index = this.shapesOrder.indexOf(shapeId);
@@ -195,6 +198,9 @@ export default class VectorCel {
     }
     shapes() {
         return this.shapesOrder.map(shapeId => this.shapesById[shapeId]);
+    }
+    otherShapes(shapeId) {
+        return this.shapes().filter(shape => shape.id !== shapeId)
     }
 
     reorderShapes(shapeIds, action) {
