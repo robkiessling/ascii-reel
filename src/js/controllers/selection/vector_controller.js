@@ -114,6 +114,11 @@ export function deleteSelectedShapes() {
     saveDistinctHistory();
 }
 
+export function deleteSelectedShape(shapeId) {
+    state.selection.vector.deleteSelectedShape(shapeId);
+    // Not currently emitting events / saving history. It is up to outside function to handle this.
+}
+
 export function canReorderSelectedShapes(action) { return state.selection.vector.canReorderSelectedShapes(action) }
 
 export function reorderSelectedShapes(action) {
@@ -164,7 +169,8 @@ function setupEventBus() {
         prevCell = cell;
     })
 
-    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ cell, canvas, isDragging, mouseCoords }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEMOVE, ({ mouseEvent, cell, canvas, isDragging, mouseCoords }) => {
+        if (mouseEvent.button !== MOUSE.LEFT) return;
         if (!isDragging) return;
 
         if (draggedHandle) updateHandleDrag(canvas, mouseCoords, cell, prevCell);
@@ -173,7 +179,8 @@ function setupEventBus() {
         prevCell = cell;
     });
 
-    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseCoords, cell }) => {
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, ({ mouseEvent, cell, mouseCoords }) => {
+        if (mouseEvent.button !== MOUSE.LEFT) return;
         if (draggedHandle) finishHandleDrag();
         if (marquee) finishMarquee(mouseCoords);
         pasteCell = cell;

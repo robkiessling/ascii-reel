@@ -2,16 +2,25 @@ import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
 import {AXES, DIRECTIONS} from "../constants.js";
 
+/**
+ * Best writeup I've seen:
+ * https://pubuzhixing.medium.com/drawing-technology-flow-chart-orthogonal-connection-algorithm-fe23215f5ada
+ * https://plait-git-elbow-line-english-tethys.vercel.app/?init=route
+ *
+ * Less useful: https://medium.com/swlh/routing-orthogonal-diagram-connectors-in-javascript-191dc2c5ff70
+ */
 
-export function orthogonalConnector(startCell, endCell, callback) {
-    let startDir, endDir;
+
+
+export function orthogonalConnector(startCell, startDir, endCell, endDir, callback) {
     if (longerAxis(startCell, endCell) === AXES.VERTICAL) {
-        startDir = endCell.row >= startCell.row ? DIRECTIONS.DOWN : DIRECTIONS.UP;
-        endDir = endCell.row >= startCell.row ? DIRECTIONS.UP : DIRECTIONS.DOWN;
+        if (startDir === undefined) startDir = endCell.row >= startCell.row ? DIRECTIONS.DOWN : DIRECTIONS.UP;
+        if (endDir === undefined) endDir = endCell.row >= startCell.row ? DIRECTIONS.UP : DIRECTIONS.DOWN;
     } else {
-        startDir = endCell.col >= startCell.col ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
-        endDir = endCell.col >= startCell.col ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
+        if (startDir === undefined) startDir = endCell.col >= startCell.col ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
+        if (endDir === undefined) endDir = endCell.col >= startCell.col ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
     }
+
     simpleConnector(startCell, startDir, endCell, endDir, callback);
 }
 

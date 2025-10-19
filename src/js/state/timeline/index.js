@@ -241,6 +241,9 @@ export function getCurrentCelShapes() {
 export function getCurrentCelShape(shapeId) {
     return celData.getCelShape(currentCel(), shapeId);
 }
+export function currentCelShapeExists(shapeId) {
+    return celData.celShapeExists(currentCel(), shapeId);
+}
 export function addCurrentCelShape(shape) {
     celData.addCelShape(currentCel(), shape)
 }

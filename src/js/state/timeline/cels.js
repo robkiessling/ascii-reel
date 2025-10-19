@@ -15,6 +15,7 @@ export function colorSwapCel(cel, ...args) { return cel.colorSwap(...args) }
 
 export function getCelShapes(cel) { return cel.shapes(); }
 export function getCelShape(cel, ...args) { return cel.getShape(...args) }
+export function celShapeExists(cel, ...args) { return cel.shapeExists(...args) }
 export function addCelShape(cel, ...args) { return cel.addShape(...args) }
 export function updateCelShape(cel, ...args) { return cel.updateShape(...args) }
 export function deleteCelShape(cel, ...args) { return cel.deleteShape(...args) }

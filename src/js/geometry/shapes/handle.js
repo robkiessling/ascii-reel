@@ -202,7 +202,7 @@ export class BodyHandle extends Handle {
     }
 
     get cursor() {
-        return this.canMove ? 'move' : 'cursor'
+        return this.canMove ? 'move' : 'default'
     }
 
     matches({ cell }) {

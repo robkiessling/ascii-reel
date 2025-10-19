@@ -1,5 +1,5 @@
 import {
-    canReorderCurrentCelShapes,
+    canReorderCurrentCelShapes, currentCelShapeExists,
     deleteCurrentCelShape,
     getCurrentCelShape, getCurrentCelShapes,
     reorderCurrentCelShapes,
@@ -100,18 +100,19 @@ export function updateSelectedShapes(updater) {
     return updated;
 }
 
+// Deletes all selected shapes
 export function deleteSelectedShapes() {
-    // If you delete the shapes first, deselection will error out when it tries to clear text overflow prop.
-    // So we snapshot which shapes are selected, deselect them, and then delete those shapes.
-    const shapeIds = selectedShapeIds();
-    deselectAllShapes();
-    shapeIds.forEach(shapeId => {
-        // TODO HACK - deselectAllShapes has the possibility of deleting a shape if it's an empty text box
-        //             This ensure we don't try to delete an already-deleted object
-        if (!getCurrentCelShapes().map(shape => shape.id).includes(shapeId)) return;
+    selectedShapeIds().forEach(shapeId => deleteSelectedShape(shapeId));
+}
 
-        deleteCurrentCelShape(shapeId)
-    });
+// Special handler: When deleting a shape, if it is selected we have to first deselect it
+export function deleteSelectedShape(shapeId) {
+    deselectShape(shapeId);
+
+    // Deselecting the shape may have already deleted it (e.g. if it's an empty text box)
+    if (!currentCelShapeExists(shapeId)) return;
+
+    deleteCurrentCelShape(shapeId);
 }
 
 export function canReorderSelectedShapes(action) {

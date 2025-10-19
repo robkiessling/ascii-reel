@@ -34,6 +34,7 @@ import Shape from "../geometry/shapes/shape.js";
 import {selectedShapes} from "../state/selection/vector_selection.js";
 import {filterObject, isEmptyObject, transformObject, transformValues} from "../utils/objects.js";
 import {getConstructor} from "../geometry/shapes/registry.js";
+import {isShapeSelected} from "./selection/vector_controller.js";
 
 
 const SUB_TOOL_MENU_TOOLTIP_OFFSET = [0, 15];
@@ -222,7 +223,7 @@ function setupEventBus() {
                 if (state.currentLayerType() === LAYER_TYPES.RASTER) {
                     rasterEraser(cell, currentPoint);
                 } else {
-                    vectorEraser(cell);
+                    vectorEraserStarted(cell);
                 }
                 break;
             case 'paint-brush':
@@ -1026,6 +1027,13 @@ function rasterEraser(cell, currentPoint) {
     });
 }
 
+let erasedShapes;
+
+function vectorEraserStarted(primaryCell) {
+    erasedShapes = false;
+    vectorEraser(primaryCell)
+}
+
 // Vector eraser deletes any shapes touched by the brush
 function vectorEraser(primaryCell) {
     const shapeIds = new Set();
@@ -1035,16 +1043,28 @@ function vectorEraser(primaryCell) {
         if (handle && handle.shapeId) shapeIds.add(handle.shapeId);
     });
 
-    shapeIds.forEach(shapeId => state.deleteCurrentCelShape(shapeId));
+    let needsFrameRefresh = false;
+    let needsSelectionRefresh = false;
+    shapeIds.forEach(shapeId => {
+        if (selectionController.vector.isShapeSelected(shapeId)) {
+            // If the shape is selected, have to go through selection controller's method. Shape might be selected
+            // during eraser tool from right-click function.
+            selectionController.vector.deleteSelectedShape(shapeId);
+            needsSelectionRefresh = true;
+        } else {
+            state.deleteCurrentCelShape(shapeId)
+        }
+        needsFrameRefresh = true;
+        erasedShapes = true;
+    });
 
-    if (shapeIds.size > 0) {
-        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-    }
+    if (needsFrameRefresh) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    if (needsSelectionRefresh) eventBus.emit(EVENTS.SELECTION.CHANGED);
 }
 
 function vectorEraserFinished() {
     eventBus.emit(EVENTS.REFRESH.ALL);
-    state.pushHistory();
+    if (erasedShapes) state.pushHistory();
 }
 
 

@@ -138,11 +138,17 @@ export default class Line extends Shape {
             //     break;
 
             case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR:
-                orthogonalConnector(this.props.path.at(0), this.props.path.at(-1), (cell, char) => setGlyph(cell, this.props[CHAR_PROP]))
-                break;
             case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_ADAPTIVE:
+                const useCharProp = this._strokeStyle === STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR;
+
                 // TODO only using first and last points, maybe better to update path?
-                orthogonalConnector(this.props.path.at(0), this.props.path.at(-1), (cell, char) => setGlyph(cell, char))
+                orthogonalConnector(
+                    this.props.path.at(0),
+                    this.props.startAttachment ? this.props.startAttachment.direction : undefined,
+                    this.props.path.at(-1),
+                    this.props.endAttachment ? this.props.endAttachment.direction : undefined,
+                    (cell, char) => setGlyph(cell, useCharProp ? this.props[CHAR_PROP] : char)
+                )
                 break;
             default:
                 throw new Error(`Invalid stroke: ${this._strokeStyle}`)

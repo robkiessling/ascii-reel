@@ -170,6 +170,20 @@ export default class VectorCel {
     }
 
     /**
+     * Checks whether a shape exists in the cel.
+     *
+     * This is useful when you need to conditionally handle shapes that may have been deleted by another process.
+     * Usually when you call getShape, updateShape, etc. you can skip this check and let the method throw an error
+     * if the shape is missing.
+     *
+     * @param {string} shapeId - The ID of the shape to check
+     * @returns {boolean} True if the shape exists, false otherwise
+     */
+    shapeExists(shapeId) {
+        return !!this.shapesById[shapeId];
+    }
+
+    /**
      * Applies an update to a shape in this cel.
      * @param {string} shapeId - The ID of shape to update
      * @param {(shape: Shape) => boolean|void} updater - Function called with the shape for the given `shapeId`.
