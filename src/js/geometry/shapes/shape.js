@@ -248,11 +248,33 @@ export default class Shape {
     }
 
     /**
+     * Returns the bounding area that fully encloses this shape.
+     *
+     * The bounding area defines the minimal rectangular region that contains the shape's geometry. In the editor,
+     * this is typically visualized as a light blue selection border when the shape is selected.
+     *
+     * In rare cases, a shape's content might spill outside the boundingArea. E.g. if a rect is showing all its
+     * text content (not truncating it), the text might show outside the boundingArea.
+     *
      * @returns {CellArea}
      */
     get boundingArea() {
         if (this._cache.boundingArea === undefined) this._cacheGeometry();
         return this._cache.boundingArea;
+    }
+
+    /**
+     * Returns the buffer area surrounding this shape.
+     *
+     * The buffer area defines an expanded region around the shape, used only when this shape is acting as
+     * an attachment target. When another shape (e.g., a line) attaches to this one, it can route or path
+     * around the buffer area to avoid overlapping with the target's actual geometry.
+     *
+     * @returns {CellArea}
+     */
+    get bufferArea() {
+        if (this._cache.bufferArea === undefined) this._cacheGeometry();
+        return this._cache.bufferArea;
     }
 
     /**
@@ -408,6 +430,27 @@ export default class Shape {
     get _strokeStyle() {
         return this.props[STROKE_STYLE_PROPS[this.type]]
     }
+
+    // -------------------------------------------------------------------------------- Attachment Resolution
+    // TODO I'm not sure if this is the best "design"; this allows shapes to retrieve data about other shapes...
+    // If a shape is attached to another shape, it may need information about that attached shape in order to
+    // render itself correctly. E.g. if a line is attached to a rect, the line may need to know about the
+    // rectangle's boundaries in order to path around the rect correctly. This attachment resolver allows
+    // shapes to query for data from other shapes
+
+    provideAttachmentResolver(resolver) {
+        this._attachmentResolver = resolver;
+    }
+
+    /**
+     * Retrieve information about another shape
+     * @param shapeId
+     * @returns {Shape}
+     */
+    _resolveAttachment(shapeId) {
+        return this._attachmentResolver(shapeId);
+    }
+
 
     // --------------------------------------------------------------------------------
 

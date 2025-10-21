@@ -1,18 +1,10 @@
 import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
 import {AXES, DIRECTIONS} from "../constants.js";
+import {buildRoutingGraph, findPathAStar} from "./a_star.js";
 
-/**
- * Best writeup I've seen:
- * https://pubuzhixing.medium.com/drawing-technology-flow-chart-orthogonal-connection-algorithm-fe23215f5ada
- * https://plait-git-elbow-line-english-tethys.vercel.app/?init=route
- *
- * Less useful: https://medium.com/swlh/routing-orthogonal-diagram-connectors-in-javascript-191dc2c5ff70
- */
-
-
-
-export function orthogonalConnector(startCell, startDir, endCell, endDir, callback) {
+export function orthogonalPath(startArea, startCell, startDir, endArea, endCell, endDir, callback) {
+    // If directions are undefined, infer them based on which axes is longer between them
     if (longerAxis(startCell, endCell) === AXES.VERTICAL) {
         if (startDir === undefined) startDir = endCell.row >= startCell.row ? DIRECTIONS.DOWN : DIRECTIONS.UP;
         if (endDir === undefined) endDir = endCell.row >= startCell.row ? DIRECTIONS.UP : DIRECTIONS.DOWN;
@@ -21,8 +13,131 @@ export function orthogonalConnector(startCell, startDir, endCell, endDir, callba
         if (endDir === undefined) endDir = endCell.col >= startCell.col ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
     }
 
-    simpleConnector(startCell, startDir, endCell, endDir, callback);
+    // console.log(`${startArea}, ${startCell}, ${startDir}\n${endArea}, ${endCell}, ${endDir}`)
+
+    const { startNode, endNode, centerRow, centerCol } = buildRoutingGraph(startArea, startCell, startDir, endArea, endCell, endDir)
+    let path = findPathAStar(startNode, endNode);
+
+    path = centerLineCorrection(path, centerRow, centerCol, [startArea, endArea].filter(Boolean), [startCell, endCell]);
+
+    for (let i = 0; i < path.length; i++) {
+        const cell = path[i];
+
+        if (i === 0) {
+            callback(cell, charForDirection(startDir, true));
+            continue;
+        }
+
+        const prevCell = path[i - 1];
+        exclusiveLine(prevCell, cell, callback);
+
+        if (i === path.length - 1) {
+            callback(cell, charForDirection(endDir, true))
+        } else {
+            const nextCell = path[i + 1];
+            callback(cell, charForDirection(directionBetween(prevCell, cell, nextCell)));
+        }
+    }
 }
+
+
+// ------------------------------------------------------------------- A* Center line correction
+/**
+ * The path returned by the A* algorithm is not always the final path we use. When people hand-draw flow charts,
+ * they often want to follow the "center line" in order to make the path look more symmetrical (where "center line"
+ * is the perpendicular line between the two shapes).
+ *
+ * It is quite hard to code this into the A* algorithm itself (by reducing costs), because we already have coded
+ * in increased costs to reduce turns. Instead, we manually alter the A* path to use the center line, as long as
+ * it does not increase the number of turns.
+ *
+ * The following blog post goes into much more detail (see "Center line correction" section):
+ * https://pubuzhixing.medium.com/drawing-technology-flow-chart-orthogonal-connection-algorithm-fe23215f5ada
+ */
+function centerLineCorrection(path, centerRow, centerCol, blockedAreas, blockedCells) {
+    if (path.length < 3) return path; // trivial path
+
+    const numTurns = countTurns(path)
+
+    // Attempt to correct to center column
+    const centerColPath = findCenterCorrectedPath(path, numTurns, 'col', centerCol, blockedAreas, blockedCells);
+    if (centerColPath) path = centerColPath;
+
+    // Attempt to correct to center row
+    const centerRowPath = findCenterCorrectedPath(path, numTurns, 'row', centerRow, blockedAreas, blockedCells);
+    if (centerRowPath) path = centerRowPath;
+
+    return path;
+}
+
+
+/**
+ * Centerline correction: Correct the shortest path route based on the horizontal/vertical centerline.
+ *
+ * Note: See blogpost linked above for detailed description/examples.
+ */
+function findCenterCorrectedPath(path, numTurns, attr, centerLine, blockedAreas, blockedCells) {
+    path = path.map(cell => cell.clone());
+
+    // Step 1: Find the point at which the path intersects ("hits") the center line, as well as the line segment
+    //         parallel to the center line.
+    let hitIndex, turnIndex, endIndex;
+    let hitDir;
+    for (let i = 1; i < path.length; i++) {
+        const prev = path[i - 1];
+        const current = path[i];
+        const currentDir = directionBetween(prev, current);
+
+        // Go until you hit center line
+        if (hitIndex === undefined && current[attr] === centerLine) {
+            hitIndex = i;
+            hitDir = currentDir;
+        }
+
+        // Then keep going until you turn (parallel line starts after this turn)
+        if (hitIndex !== undefined && turnIndex === undefined && currentDir !== hitDir) {
+            turnIndex = i;
+        }
+
+        // Then keep going until you turn again (this is the end of the parallel line)
+        if (hitIndex !== undefined && turnIndex !== undefined && endIndex === undefined && currentDir === hitDir) {
+            endIndex = i;
+        }
+    }
+
+    // If we didn't reach the end of the parallel line, there is no center path to correct to
+    if (endIndex === undefined) return null;
+
+    // Step 2: Build a rectangle out of the hit point and the parallel line
+    const hit = path[hitIndex];
+    const oldTurn = path[turnIndex];
+    const end = path[endIndex]
+
+    // "new" turning point is the opposite corner of the rectangle from the old turn
+    const newTurn = attr === 'row' ? new Cell(centerLine, end.col) : new Cell(end.row, centerLine)
+    const rect = CellArea.fromCells([oldTurn, newTurn])
+
+    // Step 3: If this rectangle collides with start/end shapes or start/end cells, cannot use it.
+    for (const blockedArea of blockedAreas) {
+        if (blockedArea.overlaps(rect, false)) return null;
+    }
+    for (const blockedCell of blockedCells) {
+        if (hit.equals(blockedCell)) return null;
+        if (end.equals(blockedCell)) return null;
+    }
+
+    // Step 4: Change path to use this alternate rectangle edge.
+    path.splice(hitIndex + 1, endIndex - hitIndex - 1, newTurn)
+
+    // Step 5: Ensure we didn't increase the number of turns
+    const correctedNumTurns = countTurns(path);
+    if (correctedNumTurns > numTurns) return null;
+
+    return path;
+}
+
+
+// --------------------------------------------------------------------------- Helper methods
 
 function longerAxis(startCell, endCell) {
     const rowDelta = endCell.row - startCell.row;
@@ -30,119 +145,36 @@ function longerAxis(startCell, endCell) {
     return Math.abs(rowDelta) >= Math.abs(colDelta) ? AXES.VERTICAL : AXES.HORIZONTAL;
 }
 
-/**
- * A "simple" connection between two points
- * @param startCell
- * @param startDir
- * @param endCell
- * @param endDir
- * @param callback
- */
-function simpleConnector(startCell, startDir, endCell, endDir, callback) {
-    if (startDir === endDir) throw new Error(`Cannot have same start/end direction: ${startDir}`)
-    validateSimpleConnEndpoint(startDir, startCell, endCell);
-    validateSimpleConnEndpoint(endDir, endCell, startCell);
+function countTurns(path) {
+    if (path.length < 3) return 0; // need at least 3 points to turn
+    let turns = 0;
+    let prevDir;
 
-    if (canBeStraightLine(startCell, startDir, endCell, endDir)) {
-        straightLine(startCell, startDir, endCell, endDir, callback)
-    } else if (isOpposite(startDir, endDir)) {
-        doubleElbowLine(startCell, startDir, endCell, endDir, callback)
-    } else {
-        singleElbowLine(startCell, startDir, endCell, endDir, callback)
+    for (let i = 1; i < path.length; i++) {
+        const prev = path[i - 1];
+        const current = path[i];
+        const currentDir = directionBetween(prev, current);
+        if (prevDir && currentDir !== prevDir) turns += 1;
+        prevDir = currentDir;
     }
-}
-
-function validateSimpleConnEndpoint(direction, fromCell, toCell) {
-    if (
-        (direction === DIRECTIONS.UP && fromCell.row < toCell.row) ||
-        (direction === DIRECTIONS.RIGHT && fromCell.col > toCell.col) ||
-        (direction === DIRECTIONS.DOWN && fromCell.row > toCell.row) ||
-        (direction === DIRECTIONS.LEFT && fromCell.col < toCell.col)
-    ) throw new Error(`Cannot move in ${direction} direction from ${fromCell} to ${toCell}`);
-}
-
-function canBeStraightLine(startCell, startDir, endCell, endDir) {
-    if (startDir !== oppositeDir(endDir)) return false;
-
-    switch(startDir) {
-        case DIRECTIONS.UP:
-            return startCell.row >= endCell.row && startCell.col === endCell.col;
-        case DIRECTIONS.RIGHT:
-            return startCell.col <= endCell.col && startCell.row === endCell.row;
-        case DIRECTIONS.DOWN:
-            return startCell.row <= endCell.row && startCell.col === endCell.col;
-        case DIRECTIONS.LEFT:
-            return startCell.col >= endCell.col && startCell.row === endCell.row;
-        default:
-            throw new Error(`Invalid startDir ${startDir}`)
-    }
-}
-
-function straightLine(startCell, startDir, endCell, endDir, callback) {
-    if (!startCell.equals(endCell)) callback(startCell, charFor(startDir, true));
-    exclusiveLine(startCell, endCell, callback);
-    callback(endCell, charFor(endDir, true));
-}
-
-function singleElbowLine(startCell, startDir, endCell, endDir, callback) {
-    let bend;
-    if (isVertical(startDir)) {
-        bend = new Cell(endCell.row, startCell.col)
-    } else {
-        bend = new Cell(startCell.row, endCell.col)
-    }
-
-    callback(startCell, charFor(startDir, true))
-    exclusiveLine(startCell, bend, callback);
-    callback(bend, charFor(directionBetween(startCell, bend, endCell), false))
-    exclusiveLine(bend, endCell, callback);
-    callback(endCell, charFor(endDir, true))
-}
-
-function doubleElbowLine(startCell, startDir, endCell, endDir, callback) {
-    const area = CellArea.fromCells([startCell, endCell]);
-    if (area.numRows <= 2 && area.numCols <= 2) {
-        // Edge case - cannot draw a double elbow line nicely since there is not enough room for two bends
-        // We do not fallback to a singleElbowLine; we need directions to stay as they are. Instead, we just
-        // draw the doubleElbowLine poorly.
-        const bend = new Cell(startCell.row, endCell.col);
-        callback(startCell, charFor(startDir, true))
-        callback(bend, charFor(directionBetween(startCell, bend, endCell), false))
-        callback(endCell, charFor(endDir, true))
-        return;
-    }
-
-    let bend1, bend2;
-    if (longerAxis(startCell, endCell) === AXES.VERTICAL) {
-        const midRow = Math.floor((startCell.row + endCell.row) / 2);
-        bend1 = new Cell(midRow, startCell.col)
-        bend2 = new Cell(midRow, endCell.col)
-    } else {
-        const midCol = Math.floor((startCell.col + endCell.col) / 2);
-        bend1 = new Cell(startCell.row, midCol);
-        bend2 = new Cell(endCell.row, midCol);
-    }
-    callback(startCell, charFor(startDir, true))
-    exclusiveLine(startCell, bend1, callback);
-    callback(bend1, charFor(directionBetween(startCell, bend1, bend2), false))
-    exclusiveLine(bend1, bend2, callback);
-    callback(bend2, charFor(directionBetween(bend1, bend2, endCell), false))
-    exclusiveLine(bend2, endCell, callback);
-    callback(endCell, charFor(endDir, true))
+    return turns;
 }
 
 function exclusiveLine(fromCell, toCell, callback) {
     const direction = directionBetween(fromCell, toCell);
-    fromCell.lineTo(toCell, false).forEach(cell => callback(cell, charFor(direction, false)))
+    fromCell.lineTo(toCell, false).forEach(cell => callback(cell, charForDirection(direction, false)))
 }
 
 function directionBetween(...cells) {
+    if (cells.length < 2) throw new Error('Must have at least 2 cells');
+    if (cells.length > 3) throw new Error('Cannot have more than 3 cells');
+
     const directions = [];
     for (let i = 1; i < cells.length; i++) {
         const fromCell = cells[i - 1];
         const toCell = cells[i];
         if ((fromCell.row !== toCell.row) && (fromCell.col !== toCell.col)) {
-            throw new Error('Cell points must be along a horizontal or vertical line')
+            throw new Error(`Cell points must be along a horizontal or vertical line ${fromCell} -> ${toCell}`)
         } else if (fromCell.row < toCell.row) {
             directions.push(DIRECTIONS.DOWN)
         } else if (fromCell.row > toCell.row) {
@@ -156,12 +188,13 @@ function directionBetween(...cells) {
         }
     }
 
+    if (directions[0] === directions[1]) return directions[0];
+
     return directions.join('-')
 }
 
-
 // Note: arrowhead goes in opposite direction of connection direction
-function charFor(dir, isEndpoint) {
+function charForDirection(dir, isEndpoint) {
     switch (dir) {
         case DIRECTIONS.UP:
             return isEndpoint ? 'v' : '|';
@@ -181,32 +214,23 @@ function charFor(dir, isEndpoint) {
         case DIRECTIONS.LEFT_DOWN:
             return '+';
         default:
-            throw new Error(`Invalid direction: ${dir}`)
+            // return '?'; // for debugging
+
+            // In some cases, the line gets really wrapped up when the two endpoints are near each other;
+            // we just hide these extra wrapped points
+            return '';
     }
 }
 
-function oppositeDir(dir) {
+export function axisForDir(dir) {
     switch (dir) {
         case DIRECTIONS.UP:
-            return DIRECTIONS.DOWN;
-        case DIRECTIONS.RIGHT:
-            return DIRECTIONS.LEFT;
         case DIRECTIONS.DOWN:
-            return DIRECTIONS.UP;
+            return AXES.VERTICAL;
         case DIRECTIONS.LEFT:
-            return DIRECTIONS.RIGHT;
+        case DIRECTIONS.RIGHT:
+            return AXES.HORIZONTAL;
         default:
-            throw new Error(`Cannot get opposite of ${dir}`)
+            throw new Error(`Cannot get axis for ${dir}`)
     }
-}
-
-function isOpposite(dir1, dir2) {
-    return dir1 === oppositeDir(dir2);
-}
-
-function isVertical(dir) {
-    return dir === DIRECTIONS.UP || dir === DIRECTIONS.DOWN;
-}
-function isHorizontal(dir) {
-    return dir === DIRECTIONS.LEFT || dir === DIRECTIONS.RIGHT;
 }

@@ -9,7 +9,9 @@
     "build": "webpack --mode production",
     "postinstall": "patch-package",
     "deploy-github": "npm run build && gh-pages -d dist",
-    "analyze-bundle": "webpack --mode production --env analyze-bundle=true"
+    "analyze-bundle": "webpack --mode production --env analyze-bundle=true",
+    "test": "vitest",
+    "test:ci": "vitest run"
   },
   "repository": {
     "type": "git",
@@ -36,12 +38,14 @@
     "copy-webpack-plugin": "^13.0.0",
     "css-loader": "^7.1.2",
     "gh-pages": "^6.3.0",
+    "happy-dom": "^20.0.7",
     "html-webpack-plugin": "^5.6.3",
     "patch-package": "^8.0.0",
     "postcss-loader": "^8.1.1",
     "sass": "^1.85.1",
     "sass-loader": "^16.0.5",
     "style-loader": "^4.0.0",
+    "vitest": "^3.2.4",
     "webpack": "^5.98.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",

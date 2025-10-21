@@ -9,6 +9,10 @@ export default class CellCache {
         this._cache = new Map();
     }
 
+    get size() {
+        return this._cache.size;
+    }
+
     add(cell) {
         this._cache.set(this._cellKey(cell), cell);
     }

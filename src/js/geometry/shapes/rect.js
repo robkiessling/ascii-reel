@@ -1,6 +1,6 @@
 import {isFunction} from "../../utils/utilities.js";
 import {
-    CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
+    CHAR_PROP, COLOR_PROP, LINE_PATHING_BUFFER, SHAPE_TYPES, STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
     TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_OVERFLOW_PROP, TEXT_PADDING_PROP, TEXT_PROP
 } from "./constants.js";
 import CellArea from "../cell_area.js";
@@ -73,7 +73,7 @@ export default class Rect extends BoxShape {
 
     _cacheGeometry() {
         let origin = this.props.topLeft;
-        let boundingArea = CellArea.fromOriginAndDimensions(origin, this.props.numRows, this.props.numCols);
+        const boundingArea = CellArea.fromOriginAndDimensions(origin, this.props.numRows, this.props.numCols);
         let glyphs = this._initGlyphs(boundingArea, this.props[TEXT_OVERFLOW_PROP]);
 
         this._applyStrokeAndFill(boundingArea, glyphs);
@@ -95,7 +95,9 @@ export default class Rect extends BoxShape {
             return textLayout.includesCell(cell, false)
         })
 
-        this._cache = { boundingArea, origin, glyphs, textLayout, handles }
+        const bufferArea = boundingArea.outerArea(LINE_PATHING_BUFFER);
+
+        this._cache = { boundingArea, origin, glyphs, textLayout, handles, bufferArea }
     }
 
     _applyStrokeAndFill(boundingArea, glyphs) {

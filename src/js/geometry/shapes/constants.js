@@ -213,3 +213,14 @@ export const DIRECTIONS = {
     LEFT_UP: 'left-up',
     LEFT_DOWN: 'left-down',
 }
+
+export const CARDINAL_DIRECTIONS = [
+    DIRECTIONS.UP, DIRECTIONS.RIGHT, DIRECTIONS.DOWN, DIRECTIONS.LEFT
+]
+
+/**
+ * How much buffer room an attached line tries to keep between itself and the attached shape (e.g. when pathing
+ * around the shape). Currently, the value is 3 so we can fit the attachment arrow, dash, and turn: <-+
+ * @type {number}
+ */
+export const LINE_PATHING_BUFFER = 3;

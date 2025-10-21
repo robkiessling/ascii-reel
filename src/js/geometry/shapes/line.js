@@ -9,7 +9,7 @@ import {forEachAdjPair} from "../../utils/arrays.js";
 import BoxShape from "./box_shape.js";
 import {straightAsciiLine} from "./algorithms/traverse_straight.js";
 import {registerShape} from "./registry.js";
-import {orthogonalConnector} from "./algorithms/orthogonal_connections.js";
+import {orthogonalPath} from "./algorithms/orthogonal_connections.js";
 
 
 export default class Line extends Shape {
@@ -106,8 +106,9 @@ export default class Line extends Shape {
     }
 
     _cacheGeometry() {
-        const boundingArea = CellArea.fromCells(this.props.path);
-        const glyphs = this._initGlyphs(boundingArea);
+        let boundingArea = CellArea.fromCells(this.props.path);
+        let origin = boundingArea.topLeft;
+        let glyphs = this._initGlyphs(boundingArea, true);
         const hitbox = new CellCache();
 
         const setGlyph = (absCell, char) => {
@@ -142,9 +143,11 @@ export default class Line extends Shape {
                 const useCharProp = this._strokeStyle === STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR;
 
                 // TODO only using first and last points, maybe better to update path?
-                orthogonalConnector(
+                orthogonalPath(
+                    this.props.startAttachment ? this._resolveAttachment(this.props.startAttachment.shapeId).bufferArea : undefined,
                     this.props.path.at(0),
                     this.props.startAttachment ? this.props.startAttachment.direction : undefined,
+                    this.props.endAttachment ? this._resolveAttachment(this.props.endAttachment.shapeId).bufferArea : undefined,
                     this.props.path.at(-1),
                     this.props.endAttachment ? this.props.endAttachment.direction : undefined,
                     (cell, char) => setGlyph(cell, useCharProp ? this.props[CHAR_PROP] : char)
@@ -153,6 +156,9 @@ export default class Line extends Shape {
             default:
                 throw new Error(`Invalid stroke: ${this._strokeStyle}`)
         }
+
+        // Bounding area / origin may have changed if orthogonal path pushed a boundary
+        ({ boundingArea, origin, glyphs } = this._processAnchoredGrid(glyphs, boundingArea.topLeft))
 
         const handles = new HandleCollection([
             ...this.props.path.map((cell, i) => new CellHandle(this, cell, i, i === 0 || i === this.props.path.length - 1)),
@@ -166,7 +172,7 @@ export default class Line extends Shape {
 
         this._cache = {
             boundingArea,
-            origin: boundingArea.topLeft,
+            origin,
             glyphs,
             handles
         }

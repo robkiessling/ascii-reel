@@ -19,6 +19,8 @@ export default class VectorCel {
         this.layerType = LAYER_TYPES.VECTOR;
         this.shapesById = shapesById || {};
         this.shapesOrder = shapesOrder || [];
+
+        Object.values(this.shapesById).forEach(shape => this._provideAttachmentResolver(shape));
     }
 
     static blank() {
@@ -159,7 +161,12 @@ export default class VectorCel {
     addShape(shape) {
         this.shapesById[shape.id] = shape;
         this.shapesOrder.push(shape.id);
+        this._provideAttachmentResolver(shape);
         this._clearCachedGlyphs();
+    }
+
+    _provideAttachmentResolver(shape) {
+        shape.provideAttachmentResolver(shapeId => this.shapesById[shapeId]);
     }
 
     // ------------------ Vector-specific functions:

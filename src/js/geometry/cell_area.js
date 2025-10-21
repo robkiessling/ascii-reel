@@ -148,9 +148,14 @@ export default class CellArea extends PixelRect {
         }
     }
 
-    includesCell(cell) {
-        return cell.row >= this.topLeft.row && cell.row <= this.bottomRight.row &&
-            cell.col >= this.topLeft.col && cell.col <= this.bottomRight.col;
+    includesCell(cell, inclusiveBounds = true) {
+        if (inclusiveBounds) {
+            return cell.row >= this.topLeft.row && cell.row <= this.bottomRight.row &&
+                cell.col >= this.topLeft.col && cell.col <= this.bottomRight.col;
+        } else {
+            return cell.row > this.topLeft.row && cell.row < this.bottomRight.row &&
+                cell.col > this.topLeft.col && cell.col < this.bottomRight.col;
+        }
     }
 
     innerArea() {
@@ -187,15 +192,25 @@ export default class CellArea extends PixelRect {
      * Overlap is defined as any shared cells, including edge or corner contact.
      *
      * @param {CellArea} cellArea - The other area to test for overlap.
+     * @param {boolean} [inclusiveBounds=true] - Whether boundaries (the outermost rows/cols) overlapping counts
      * @returns {boolean} - True if the two areas share any overlapping space.
      */
-    overlaps(cellArea) {
-        return !(
-            this.bottomRight.row < cellArea.topLeft.row ||
-            this.topLeft.row > cellArea.bottomRight.row ||
-            this.bottomRight.col < cellArea.topLeft.col ||
-            this.topLeft.col > cellArea.bottomRight.col
-        );
+    overlaps(cellArea, inclusiveBounds = true) {
+        if (inclusiveBounds) {
+            return !(
+                this.bottomRight.row < cellArea.topLeft.row ||
+                this.topLeft.row > cellArea.bottomRight.row ||
+                this.bottomRight.col < cellArea.topLeft.col ||
+                this.topLeft.col > cellArea.bottomRight.col
+            );
+        } else {
+            return !(
+                this.bottomRight.row <= cellArea.topLeft.row ||
+                this.topLeft.row >= cellArea.bottomRight.row ||
+                this.bottomRight.col <= cellArea.topLeft.col ||
+                this.topLeft.col >= cellArea.bottomRight.col
+            );
+        }
     }
 
     toString() {

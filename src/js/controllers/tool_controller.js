@@ -966,6 +966,10 @@ function handleDrawMousedown(shapeType, cell, currentPoint, options = {}) {
             ...drawProps,
             ...options
         });
+
+        // todo hack - it'd probably be better to immediately add shape to current cel so we don't have to do this,
+        //             rather than adding at to the cel at the end
+        drawingContent.provideAttachmentResolver(shapeId => state.getCurrentCelShape(shapeId))
     }
 
     drawingContent.handleDrawMousedown(cell, { point: currentPoint, attachTarget: getAttachTarget(cell) });
