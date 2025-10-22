@@ -142,13 +142,13 @@ export default class Line extends Shape {
             case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_ADAPTIVE:
                 const useCharProp = this._strokeStyle === STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR;
 
-                // TODO only using first and last points, maybe better to update path?
+                // TODO since we're only using first and last points, maybe better to set path to these points first?
                 orthogonalPath(
-                    this.props.startAttachment ? this._resolveAttachment(this.props.startAttachment.shapeId).bufferArea : undefined,
                     this.props.path.at(0),
+                    this.props.path.at(-1),
+                    this.props.startAttachment ? this._resolveAttachment(this.props.startAttachment.shapeId).bufferArea : undefined,
                     this.props.startAttachment ? this.props.startAttachment.direction : undefined,
                     this.props.endAttachment ? this._resolveAttachment(this.props.endAttachment.shapeId).bufferArea : undefined,
-                    this.props.path.at(-1),
                     this.props.endAttachment ? this.props.endAttachment.direction : undefined,
                     (cell, char) => setGlyph(cell, useCharProp ? this.props[CHAR_PROP] : char)
                 )

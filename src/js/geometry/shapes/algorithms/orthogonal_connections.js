@@ -3,7 +3,20 @@ import CellArea from "../../cell_area.js";
 import {AXES, DIRECTIONS} from "../constants.js";
 import {buildRoutingGraph, findPathAStar} from "./a_star.js";
 
-export function orthogonalPath(startArea, startCell, startDir, endArea, endCell, endDir, callback) {
+const DEBUG = false;
+
+/**
+ * Builds an orthogonal path between a startCell and an endCell. Each Cell can be associated with an area
+ * (startArea/endArea), and the path will try to avoid pathing through these areas.
+ * @param {Cell} startCell
+ * @param {Cell} endCell
+ * @param {CellArea} [startArea]
+ * @param {string} [startDir]
+ * @param {CellArea} [endArea]
+ * @param {string} [endDir]
+ * @param {(cell: Cell, char: string) => void} callback
+ */
+export function orthogonalPath(startCell, endCell, startArea, startDir, endArea, endDir, callback) {
     // If directions are undefined, infer them based on which axes is longer between them
     if (longerAxis(startCell, endCell) === AXES.VERTICAL) {
         if (startDir === undefined) startDir = endCell.row >= startCell.row ? DIRECTIONS.DOWN : DIRECTIONS.UP;
@@ -13,7 +26,7 @@ export function orthogonalPath(startArea, startCell, startDir, endArea, endCell,
         if (endDir === undefined) endDir = endCell.col >= startCell.col ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
     }
 
-    // console.log(`${startArea}, ${startCell}, ${startDir}\n${endArea}, ${endCell}, ${endDir}`)
+    if (DEBUG) console.log(`${startArea}, ${startCell}, ${startDir}\n${endArea}, ${endCell}, ${endDir}`)
 
     const { startNode, endNode, centerRow, centerCol } = buildRoutingGraph(startArea, startCell, startDir, endArea, endCell, endDir)
     let path = findPathAStar(startNode, endNode);
@@ -79,6 +92,8 @@ function centerLineCorrection(path, centerRow, centerCol, blockedAreas, blockedC
 function findCenterCorrectedPath(path, numTurns, attr, centerLine, blockedAreas, blockedCells) {
     path = path.map(cell => cell.clone());
 
+    if (DEBUG) path.forEach((cell, i) => console.log(`${i}, ${cell}`))
+
     // Step 1: Find the point at which the path intersects ("hits") the center line, as well as the line segment
     //         parallel to the center line.
     let hitIndex, turnIndex, endIndex;
@@ -96,12 +111,12 @@ function findCenterCorrectedPath(path, numTurns, attr, centerLine, blockedAreas,
 
         // Then keep going until you turn (parallel line starts after this turn)
         if (hitIndex !== undefined && turnIndex === undefined && currentDir !== hitDir) {
-            turnIndex = i;
+            turnIndex = i - 1;
         }
 
         // Then keep going until you turn again (this is the end of the parallel line)
         if (hitIndex !== undefined && turnIndex !== undefined && endIndex === undefined && currentDir === hitDir) {
-            endIndex = i;
+            endIndex = i - 1;
         }
     }
 

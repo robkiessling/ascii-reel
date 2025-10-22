@@ -4,6 +4,7 @@ import Cell from "../../cell.js";
 import {DIRECTIONS} from "../constants.js";
 import {create2dArray, forEachAdjPair} from "../../../utils/arrays.js";
 
+// If enabled, will print out node/pathing maps to the console
 const DEBUG = false;
 
 // TODO We should expand this spec to also test final orthogonalPath, so it can test centerLineCorrection results

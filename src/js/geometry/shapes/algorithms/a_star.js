@@ -102,8 +102,7 @@ function reconstructPath(goal) {
 /**
  * Given a starting area/cell and ending area/cell, builds a grid of nodes that can be passed to the A* algorithm.
  *
- * Nodes are selected based on these guidelines:
- * https://pubuzhixing.medium.com/drawing-technology-flow-chart-orthogonal-connection-algorithm-fe23215f5ada
+ * See `buildGrid` for more information on how nodes are selected.
  */
 export function buildRoutingGraph(startArea, startCell, startDir, endArea, endCell, endDir) {
     const nodesByCell = new CellCache();
