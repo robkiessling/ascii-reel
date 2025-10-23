@@ -197,11 +197,10 @@ export default class Shape {
      *   the bounding box of a multi-shape selection, not just this individual shape.
      * @param {VertexArea} newBox - The new bounding box after resizing. Note: This may be the
      *   bounding box of a multi-shape selection, not just this individual shape.
-     * @returns {Object} - An object containing helper functions or data from the resize operation
+     * @returns void
      */
     resize(oldBox, newBox) {
         throw new Error(`resize must be implemented by subclass`)
-        return {}; // Will never be reached. This is purely so subclass overrides don't generate return value warnings
     }
 
     finishResize() {
@@ -209,12 +208,11 @@ export default class Shape {
     }
 
     /**
-     * If this shape has any attachments to the provided shape, updates them using the provided callback
+     * If this shape has any attachments to the provided shape, refreshes those attachment coordinates.
      * @param {Shape} shape - The other shape this shape is (potentially) attached to
-     * @param {(cell: Cell, attachment: Object) => void} updater - Callback to update attached cell
      * @returns {boolean} - True if an attachment was updated, false otherwise
      */
-    updateAttachmentsTo(shape, updater) {
+    resyncAttachmentsTo(shape) {
         return false;
     }
 
@@ -261,6 +259,15 @@ export default class Shape {
     get boundingArea() {
         if (this._cache.boundingArea === undefined) this._cacheGeometry();
         return this._cache.boundingArea;
+    }
+
+    /**
+     * Area to attach attachments to. Attachments will be attached one cell outside of this area, pointing in.
+     * This is currently equivalent to the boundingArea, but we may update this in the future.
+     * @returns {CellArea}
+     */
+    get attachmentArea() {
+        return this.boundingArea;
     }
 
     /**

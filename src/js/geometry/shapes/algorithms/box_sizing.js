@@ -204,22 +204,29 @@ function buildPointMapper(oldCellArea, newCellArea, flipRow, flipCol) {
  * @param {CellArea} newCellArea - New CellArea
  * @param {boolean} flipRow - Whether rows should be inverted
  * @param {boolean} flipCol - Whether columns should be inverted
- * @returns {function({cell?: Cell, rowPct?: number, colPct?: number, allowInversion?: boolean}): Cell} - Mapping
- *   function. Pass either `cell` OR both `rowPct` and `colPct`.
+ * @returns {(oldCell: Cell) => Cell} - Mapping function
  */
 function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
-    return ({cell: oldCell, rowPct, colPct, allowInversion = true}) => {
-        if (oldCell) ({ rowPct, colPct } = getFractionalPosition(oldCellArea, oldCell));
-        if (rowPct === undefined || colPct === undefined) throw new Error(`must either supply cell or both rowPct and colPct`)
+    // If the cellArea is 1 dimensional, we have to choose where to map things for a larger newCellArea.
+    // TODO This could be improved using fractional rows/cols?
+    const MAP_1D_TO = 0.5; // Choosing to map to the center of new area
 
-        if (allowInversion) {
-            rowPct = flipRow ? (1 - rowPct) : rowPct;
-            colPct = flipCol ? (1 - colPct) : colPct;
-        }
+    return oldCell => {
+        let rowPct = (oldCellArea.numRows > 1) ?
+            (oldCell.row - oldCellArea.topLeft.row) / (oldCellArea.numRows - 1) :
+            MAP_1D_TO;
+
+        let colPct = (oldCellArea.numCols > 1) ?
+            (oldCell.col - oldCellArea.topLeft.col) / (oldCellArea.numCols - 1) :
+            MAP_1D_TO;
+
+        rowPct = flipRow ? (1 - rowPct) : rowPct;
+        colPct = flipCol ? (1 - colPct) : colPct;
 
         let newRow = (newCellArea.numRows > 1) ?
             Math.round(newCellArea.topLeft.row + rowPct * (newCellArea.numRows - 1)) :
             newCellArea.topLeft.row;
+
         let newCol = (newCellArea.numCols > 1) ?
             Math.round(newCellArea.topLeft.col + colPct * (newCellArea.numCols - 1)) :
             newCellArea.topLeft.col;
@@ -228,12 +235,87 @@ function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
     }
 }
 
-// If the cellArea is 1 dimensional, we have to choose where to map things for a larger newCellArea.
-// TODO This could be improved using fractional rows/cols?
-const MAP_1D_TO = 0.5; // Choosing to map to the center of new area
 
-export function getFractionalPosition(cellArea, cell) {
-    const rowPct = (cellArea.numRows > 1) ? (cell.row - cellArea.topLeft.row) / (cellArea.numRows - 1) : MAP_1D_TO;
-    const colPct = (cellArea.numCols > 1) ? (cell.col - cellArea.topLeft.col) / (cellArea.numCols - 1) : MAP_1D_TO;
-    return { rowPct, colPct }
+
+
+// How far outside the shape's attachmentArea to attach the endpoint
+const ATTACHMENT_OFFSET = 1;
+
+/**
+ * Finds the closest attachment point for a cell on the outer boundary of a CellArea (exactly 1 cell outside
+ * the area; see ATTACHMENT_OFFSET). Returns the edge and position as a percentage (0-1) along that edge.
+ * Inverse of `resolveAttachmentPoint`.
+ *
+ * @param {CellArea} cellArea - CellArea to attach to
+ * @param {Cell} cell - Cell attaching to area
+ * @returns {{ edge: string, pct: number }} Edge name (from EDGE_SIDES) and position (0-1)
+ */
+export function getClosestAttachmentPoint(cellArea, cell) {
+    const { topLeft, bottomRight } = cellArea;
+
+    // "outer" is the attachment boundary (1 cell outside the cellArea)
+    const outerTop = topLeft.row - ATTACHMENT_OFFSET;
+    const outerBottom = bottomRight.row + ATTACHMENT_OFFSET;
+    const outerLeft = topLeft.col - ATTACHMENT_OFFSET;
+    const outerRight = bottomRight.col + ATTACHMENT_OFFSET;
+
+    // Determine which side is closest
+    const distToTop = Math.abs(cell.row - outerTop);
+    const distToBottom = Math.abs(cell.row - outerBottom);
+    const distToLeft = Math.abs(cell.col - outerLeft);
+    const distToRight = Math.abs(cell.col - outerRight);
+
+    // Determine which edge and calculate percentage along that edge
+    const minDist = Math.min(distToTop, distToBottom, distToLeft, distToRight);
+    let edge, edgeLength, positionOnEdge;
+
+    if (minDist === distToTop || minDist === distToBottom) {
+        edge = minDist === distToTop ? EDGE_SIDES.TOP_EDGE : EDGE_SIDES.BOTTOM_EDGE;
+        edgeLength = bottomRight.col - topLeft.col;
+        positionOnEdge = Math.max(0, Math.min(cell.col - topLeft.col, edgeLength));
+    } else {
+        edge = minDist === distToLeft ? EDGE_SIDES.LEFT_EDGE : EDGE_SIDES.RIGHT_EDGE;
+        edgeLength = bottomRight.row - topLeft.row;
+        positionOnEdge = Math.max(0, Math.min(cell.row - topLeft.row, edgeLength));
+    }
+
+    const pct = edgeLength > 0 ? positionOnEdge / edgeLength : 0.5;
+
+    return { edge, pct };
+}
+
+/**
+ * Resolves an attachment point to actual cell coordinates based on the current CellArea and the attachment's
+ * data (edge, pct). Inverse of `getClosestAttachmentPoint`.
+ *
+ * @param {CellArea} cellArea - The area to resolve the attachment against
+ * @param {{ edge: string, pct: number }} attachment - Edge and percentage (0-1) along that edge
+ * @returns {Cell} Cell coordinates on the outer boundary
+ */
+export function resolveAttachmentPoint(cellArea, attachment) {
+    const { topLeft, bottomRight } = cellArea;
+    const { edge, pct } = attachment;
+
+    let row, col;
+
+    switch (edge) {
+        case EDGE_SIDES.TOP_EDGE:
+            row = topLeft.row - ATTACHMENT_OFFSET;
+            col = topLeft.col + Math.round(pct * (bottomRight.col - topLeft.col));
+            break;
+        case EDGE_SIDES.BOTTOM_EDGE:
+            row = bottomRight.row + ATTACHMENT_OFFSET;
+            col = topLeft.col + Math.round(pct * (bottomRight.col - topLeft.col));
+            break;
+        case EDGE_SIDES.LEFT_EDGE:
+            col = topLeft.col - ATTACHMENT_OFFSET;
+            row = topLeft.row + Math.round(pct * (bottomRight.row - topLeft.row));
+            break;
+        case EDGE_SIDES.RIGHT_EDGE:
+            col = bottomRight.col + ATTACHMENT_OFFSET;
+            row = topLeft.row + Math.round(pct * (bottomRight.row - topLeft.row));
+            break;
+    }
+
+    return new Cell(row, col);
 }

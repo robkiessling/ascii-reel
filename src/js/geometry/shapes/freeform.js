@@ -82,8 +82,6 @@ export default class Freeform extends Shape {
 
         this.props.path = snapshot.path.map(point => pointMapper(point));
         this._clearCache();
-
-        return { pointMapper }
     }
 
     _cacheGeometry() {

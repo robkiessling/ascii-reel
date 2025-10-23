@@ -177,7 +177,7 @@ export const LINKED_PROPS = [
 // Drawing
 
 export const SHAPE_OUTLINE_WIDTH = 2;
-export const SHAPE_BOX_PADDING = 2;
+export const SHAPE_BOX_PADDING = 0;
 export const SHAPE_DASHED_OUTLINE_LENGTH = 5;
 export const HANDLE_CORNER_SIZE = 8;
 export const HANDLE_CORNER_RADIUS = 2;

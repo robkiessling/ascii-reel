@@ -50,8 +50,6 @@ export default class Textbox extends BoxShape {
         this.props.numRows = snapshot.numRows;
         this.props.numCols = newArea.numCols;
         this._clearCache();
-
-        return {};
     }
 
     _convertInitialDrawToProps() {

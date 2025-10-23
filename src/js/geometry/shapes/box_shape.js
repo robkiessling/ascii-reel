@@ -47,14 +47,12 @@ export default class BoxShape extends Shape {
         const snapshot = this.resizeSnapshot;
 
         const oldArea = CellArea.fromOriginAndDimensions(snapshot.topLeft, snapshot.numRows, snapshot.numCols);
-        const { area: newArea, cellMapper } = translateAreaWithBoxResizing(oldArea, oldBox, newBox);
+        const { area: newArea } = translateAreaWithBoxResizing(oldArea, oldBox, newBox);
 
         this.props.topLeft = newArea.topLeft;
         this.props.numRows = newArea.numRows;
         this.props.numCols = newArea.numCols;
         this._clearCache();
-
-        return { cellMapper };
     }
 
     translate(rowOffset, colOffset) {

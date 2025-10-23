@@ -2,7 +2,11 @@ import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_OPTIONS, STROKE_STYLE_P
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
-import {getFractionalPosition, translateAreaWithBoxResizing} from "./algorithms/box_sizing.js";
+import {
+    getClosestAttachmentPoint,
+    resolveAttachmentPoint,
+    translateAreaWithBoxResizing
+} from "./algorithms/box_sizing.js";
 import CellCache from "../cell_cache.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
 import {forEachAdjPair} from "../../utils/arrays.js";
@@ -11,13 +15,15 @@ import {straightAsciiLine} from "./algorithms/traverse_straight.js";
 import {registerShape} from "./registry.js";
 import {orthogonalPath} from "./algorithms/orthogonal_connections.js";
 
+const START_ATTACHMENT = 'startAttachment';
+const END_ATTACHMENT = 'endAttachment';
 
 export default class Line extends Shape {
     static propDefinitions = [
         ...super.propDefinitions,
         { prop: 'path' },
-        { prop: 'startAttachment', default: null },
-        { prop: 'endAttachment', default: null },
+        { prop: START_ATTACHMENT, default: null },
+        { prop: END_ATTACHMENT, default: null },
         { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.LINE] },
     ];
 
@@ -45,14 +51,14 @@ export default class Line extends Shape {
                 multiPointDrawing: false // Whether this drawing uses multiple points (true) or just 2 (false)
             }
 
-            this._setAttachment('startAttachment', options.attachTarget, cell);
+            this._setAttachment(START_ATTACHMENT, options.attachTarget, cell);
         }
 
         // Add further mousedown cells to path (if they are different than previous path cell)
         if (this._initialDraw.multiPointDrawing && !cell.equals(this._initialDraw.path.at(-1))) {
             this._initialDraw.path.push(cell.clone());
 
-            this._setAttachment('endAttachment', options.attachTarget, cell);
+            this._setAttachment(END_ATTACHMENT, options.attachTarget, cell);
         }
 
         this._convertInitialDrawToProps();
@@ -68,7 +74,7 @@ export default class Line extends Shape {
             this._initialDraw.multiPointDrawing = true;
             return false; // shape is not finished
         } else {
-            this._setAttachment('endAttachment', options.attachTarget, cell);
+            this._setAttachment(END_ATTACHMENT, options.attachTarget, cell);
             return true; // shape is finished
         }
     }
@@ -99,10 +105,18 @@ export default class Line extends Shape {
         const oldArea = CellArea.fromCells(snapshot.path);
         const { cellMapper } = translateAreaWithBoxResizing(oldArea, oldBox, newBox);
 
-        this.props.path = snapshot.path.map(cell => cellMapper({cell}));
-        this._clearCache();
+        this.props.path = snapshot.path.map((cell, i) => {
+            // If this point is attached to a shape, resync it and return its updated value
+            if (this.props[this._attachmentKeyForPathIndex(i)]) {
+                this._resyncAttachment(i);
+                return this.props.path.at(i);
+            }
 
-        return { cellMapper }
+            // Otherwise use the cellMapper provided by the bounding box transformation
+            return cellMapper(cell);
+        });
+
+        this._clearCache();
     }
 
     _cacheGeometry() {
@@ -178,17 +192,17 @@ export default class Line extends Shape {
         }
     }
 
-    updateAttachmentsTo(shape, updater) {
+    resyncAttachmentsTo(shape) {
         let updated = false;
 
         if (this.props.startAttachment && this.props.startAttachment.shapeId === shape.id) {
-            updater(this.props.path.at(0), this.props.startAttachment)
+            this._resyncAttachment(START_ATTACHMENT);
             this._clearCache()
             updated = true;
         }
 
         if (this.props.endAttachment && this.props.endAttachment.shapeId === shape.id) {
-            updater(this.props.path.at(-1), this.props.endAttachment)
+            this._resyncAttachment(END_ATTACHMENT);
             this._clearCache()
             updated = true;
         }
@@ -212,7 +226,7 @@ export default class Line extends Shape {
         this.props.path[handle.pointIndex].translateTo(position);
 
         if (handle.canAttachTo) {
-            this._setAttachment(handle.pointIndex === 0 ? 'startAttachment' : 'endAttachment', attachTarget, position);
+            this._setAttachment(this._attachmentKeyForPathIndex(handle.pointIndex), attachTarget, position);
         }
 
         this._clearCache();
@@ -222,11 +236,12 @@ export default class Line extends Shape {
         let attachmentData = null;
 
         if (attachTarget) {
-            const { rowPct, colPct } = getFractionalPosition(attachTarget.shape.boundingArea, cell)
+            const { edge, pct } = getClosestAttachmentPoint(attachTarget.shape.attachmentArea, cell)
+
             attachmentData = {
                 shapeId: attachTarget.shapeId,
-                rowPct,
-                colPct,
+                edge,
+                pct,
                 direction: attachTarget.direction
             }
         }
@@ -234,12 +249,56 @@ export default class Line extends Shape {
         this.props[propKey] = attachmentData
     }
 
+    /**
+     * Refreshes the location of an attached point (if it exists).
+     * @param {number|'startAttachment'|'endAttachment'} attachmentKeyOrPathIndex - Attachment point identifier.
+     *   - If a number, will be interpreted as the path index. Supports `-1` to represent final path index.
+     *   - If an attachmentKey (e.g. 'startAttachment'), will use that attachment point
+     */
+    _resyncAttachment(attachmentKeyOrPathIndex) {
+        let attachmentKey;
+        let pathIndex;
+
+        if (typeof attachmentKeyOrPathIndex === 'number') {
+            attachmentKey = this._attachmentKeyForPathIndex(attachmentKeyOrPathIndex);
+            pathIndex = attachmentKeyOrPathIndex;
+        } else if (typeof attachmentKeyOrPathIndex === 'string') {
+            attachmentKey = attachmentKeyOrPathIndex;
+            pathIndex = this._pathIndexForAttachmentKey(attachmentKeyOrPathIndex);
+        } else {
+            return;
+        }
+
+        const attachment = this.props[attachmentKey];
+        if (!attachment) return;
+
+        const attachmentArea = this._resolveAttachment(attachment.shapeId).attachmentArea;
+        this.props.path.at(pathIndex).translateTo(resolveAttachmentPoint(attachmentArea, attachment));
+    }
+
+    _attachmentKeyForPathIndex(pathIndex) {
+        if (pathIndex === 0) return START_ATTACHMENT;
+        if (pathIndex === -1 || pathIndex === this.props.path.length - 1) return END_ATTACHMENT;
+        return null;
+    }
+
+    _pathIndexForAttachmentKey(attachmentKey) {
+        switch(attachmentKey) {
+            case START_ATTACHMENT:
+                return 0;
+            case END_ATTACHMENT:
+                return -1;
+            default:
+                throw new Error(`Invalid attachmentKey: ${attachmentKey}`)
+        }
+    }
+
     translate(rowOffset, colOffset) {
         let moved = false;
 
         this.props.path.forEach((cell, i) => {
-            if (i === 0 && this.props.startAttachment) return; // Cannot move attached point
-            if (i === this.props.path.length - 1 && this.props.endAttachment) return; // Cannot move attached point
+            if (this.props[this._attachmentKeyForPathIndex(i)]) return; // cannot move attached point
+
             cell.translate(rowOffset, colOffset);
             moved = true; // `moved` becomes true if at least one cell moved
         })

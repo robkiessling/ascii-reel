@@ -170,12 +170,8 @@ export default class ShapeSelector {
                 const newBounds = resizeBoundingBox(this._oldBounds, handle, data.roundedCell)
 
                 selectionController.vector.updateSelectedShapes(shape => {
-                    const { cellMapper } = shape.resize(this._oldBounds, newBounds);
-
-                    this._updateAttachmentsTo(shape, (cell, attachment) => {
-                        const { rowPct, colPct } = attachment;
-                        cell.translateTo(cellMapper({ rowPct, colPct, allowInversion: false }))
-                    })
+                    shape.resize(this._oldBounds, newBounds);
+                    this._resyncAttachmentsTo(shape);
                 }, false);
                 break;
             case HANDLE_TYPES.CELL:
@@ -206,11 +202,12 @@ export default class ShapeSelector {
     }
 
     translate(rowDelta, colDelta) {
-        // Note: in rare cases, this method might be called and no shape actually gets updated. E.g. if multiple
-        //       lines are selected, and they are all attached to something, we cannot actually move them.
+        // Note: We have to check whether a translation actually occurred because in rare cases no shape can be
+        //       translated (e.g. if multiple lines are selected and they are all attached to other shapes, we
+        //       cannot move them). We need to keep track of whether the update happened for undo history.
         const updated = selectionController.vector.updateSelectedShapes(shape => {
             const shapeUpdated = shape.translate(rowDelta, colDelta);
-            const attachmentUpdated = this._updateAttachmentsTo(shape, cell => cell.translate(rowDelta, colDelta))
+            const attachmentUpdated = this._resyncAttachmentsTo(shape);
             return shapeUpdated || attachmentUpdated;
         }, false);
 
@@ -250,14 +247,14 @@ export default class ShapeSelector {
 
     // ----------------------------------------- Helpers
 
-    _updateAttachmentsTo(otherShape, updater) {
-        let attachmentUpdated = false;
+    _resyncAttachmentsTo(otherShape) {
+        let updated = false;
 
         getCurrentCelShapes().forEach(shape => {
-            if (shape.updateAttachmentsTo(otherShape, updater)) attachmentUpdated = true;
+            if (shape.resyncAttachmentsTo(otherShape)) updated = true;
         })
 
-        return attachmentUpdated;
+        return updated;
     }
 
 }
