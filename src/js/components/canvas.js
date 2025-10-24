@@ -310,11 +310,11 @@ export default class Canvas {
         });
     }
 
-    highlightCell(cell) {
+    highlightCellOrArea(cellOrCellArea) {
         this._withTemporaryContext(() => {
             this.context.fillStyle = hoverColor;
             this.context.globalAlpha = HOVER_CELL_OPACITY;
-            this.context.fillRect(...cell.xywh);
+            this.context.fillRect(...cellOrCellArea.xywh);
         });
     }
 

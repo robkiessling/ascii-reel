@@ -1,10 +1,17 @@
-import {CHAR_PROP, COLOR_PROP, SHAPE_TYPES, STROKE_STYLE_OPTIONS, STROKE_STYLE_PROPS,} from "./constants.js";
+import {
+    CHAR_PROP,
+    COLOR_PROP,
+    HANDLE_TYPES,
+    SHAPE_TYPES,
+    STROKE_STYLE_OPTIONS,
+    STROKE_STYLE_PROPS,
+} from "./constants.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";
 import {
-    getClosestAttachmentPoint,
-    resolveAttachmentPoint,
+    getAttachmentEdgePct,
+    getAttachmentEdgeCell,
     translateAreaWithBoxResizing
 } from "./algorithms/box_sizing.js";
 import CellCache from "../cell_cache.js";
@@ -88,10 +95,6 @@ export default class Line extends Shape {
         super.finishDraw();
     }
 
-    get canAttachTo() {
-        return true;
-    }
-
     _convertInitialDrawToProps() {
         // During draw, include the latest hover cell as the final step in the path
         this.props.path = [...this._initialDraw.path, this._initialDraw.hover];
@@ -160,9 +163,9 @@ export default class Line extends Shape {
                 orthogonalPath(
                     this.props.path.at(0),
                     this.props.path.at(-1),
-                    this.props.startAttachment ? this._resolveAttachment(this.props.startAttachment.shapeId).bufferArea : undefined,
+                    this.props.startAttachment ? this._resolveAttachmentShape(this.props.startAttachment.shapeId).bufferArea : undefined,
                     this.props.startAttachment ? this.props.startAttachment.direction : undefined,
-                    this.props.endAttachment ? this._resolveAttachment(this.props.endAttachment.shapeId).bufferArea : undefined,
+                    this.props.endAttachment ? this._resolveAttachmentShape(this.props.endAttachment.shapeId).bufferArea : undefined,
                     this.props.endAttachment ? this.props.endAttachment.direction : undefined,
                     (cell, char) => setGlyph(cell, useCharProp ? this.props[CHAR_PROP] : char)
                 )
@@ -236,12 +239,9 @@ export default class Line extends Shape {
         let attachmentData = null;
 
         if (attachTarget) {
-            const { edge, pct } = getClosestAttachmentPoint(attachTarget.shape.attachmentArea, cell)
-
             attachmentData = {
                 shapeId: attachTarget.shapeId,
-                edge,
-                pct,
+                pct: getAttachmentEdgePct(attachTarget.attachmentArea, cell),
                 direction: attachTarget.direction
             }
         }
@@ -272,8 +272,13 @@ export default class Line extends Shape {
         const attachment = this.props[attachmentKey];
         if (!attachment) return;
 
-        const attachmentArea = this._resolveAttachment(attachment.shapeId).attachmentArea;
-        this.props.path.at(pathIndex).translateTo(resolveAttachmentPoint(attachmentArea, attachment));
+        const attachedToShape = this._resolveAttachmentShape(attachment.shapeId);
+        const attachmentHandle = /** @type {AttachmentHandle} */ attachedToShape.handles.find(
+            HANDLE_TYPES.ATTACHMENT, 
+            { direction: attachment.direction }
+        );
+        const attachmentCell = getAttachmentEdgeCell(attachmentHandle.attachmentArea, attachment.pct);
+        this.props.path.at(pathIndex).translateTo(attachmentCell);
     }
 
     _attachmentKeyForPathIndex(pathIndex) {

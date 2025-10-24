@@ -160,11 +160,6 @@ export default class Shape {
         return !!this._initialDraw;
     }
 
-    // Whether the shape can attach to things
-    get canAttachTo() {
-        return false;
-    }
-
     /**
      * Converts the initial draw state into a shape's standard props.
      * @private
@@ -259,15 +254,6 @@ export default class Shape {
     get boundingArea() {
         if (this._cache.boundingArea === undefined) this._cacheGeometry();
         return this._cache.boundingArea;
-    }
-
-    /**
-     * Area to attach attachments to. Attachments will be attached one cell outside of this area, pointing in.
-     * This is currently equivalent to the boundingArea, but we may update this in the future.
-     * @returns {CellArea}
-     */
-    get attachmentArea() {
-        return this.boundingArea;
     }
 
     /**
@@ -454,7 +440,7 @@ export default class Shape {
      * @param shapeId
      * @returns {Shape}
      */
-    _resolveAttachment(shapeId) {
+    _resolveAttachmentShape(shapeId) {
         return this._attachmentResolver(shapeId);
     }
 

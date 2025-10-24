@@ -522,6 +522,21 @@ export function hoveredCells(primaryCell) {
     }
 }
 
+export function showHoverForTool() {
+    switch(state.getConfig('tool')) {
+        case 'text-editor':
+            // If text-editor is in I-beam mode, not showing hover because clicking on a cell does not necessarily
+            // go to that cell (it gets rounded up/down -- see Point.caretCell)
+            return state.getConfig('caretStyle') !== 'I-beam';
+        case 'pan':
+        case 'move-all':
+            // Not showing hover cell for these tools since they affect entire canvas, not one cell
+            return false;
+        default:
+            return true;
+    }
+}
+
 
 // -------------------------------------------------------------------------------- Shape Properties
 
@@ -972,7 +987,10 @@ function handleDrawMousedown(shapeType, cell, currentPoint, options = {}) {
         drawingContent.provideAttachmentResolver(shapeId => state.getCurrentCelShape(shapeId))
     }
 
-    drawingContent.handleDrawMousedown(cell, { point: currentPoint, attachTarget: getAttachTarget(cell) });
+    drawingContent.handleDrawMousedown(cell, {
+        point: currentPoint,
+        attachTarget: selectionController.vector.getAttachTarget(cell)
+    });
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
@@ -988,7 +1006,9 @@ function handleDrawMousemove(cell, currentPoint, options = {}) {
 function handleDrawMouseup(cell, mouseEvent) {
     if (!drawingContent) return;
 
-    if (!drawingContent.handleDrawMouseup(cell, { attachTarget: getAttachTarget(cell) })) return;
+    if (!drawingContent.handleDrawMouseup(cell, {
+        attachTarget: selectionController.vector.getAttachTarget(cell)
+    })) return;
 
     finishDrawing();
 }
@@ -1009,12 +1029,6 @@ function finishDrawing() {
     drawingContent = null;
     eventBus.emit(EVENTS.REFRESH.ALL);
     state.pushHistory();
-}
-
-function getAttachTarget(cell) {
-    return selectionController.isVector() && drawingContent.canAttachTo ?
-        selectionController.vector.getAttachTarget(cell) :
-        undefined;
 }
 
 

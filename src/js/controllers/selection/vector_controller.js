@@ -17,6 +17,7 @@ import Shape from "../../geometry/shapes/shape.js";
 import {isFunction} from "../../utils/utilities.js";
 import {changeTool} from "../tool_controller.js";
 import Cell from "../../geometry/cell.js";
+import {isVector} from "./index.js";
 
 /**
  * Vector selection controller.
@@ -289,16 +290,16 @@ export function getHandle(cell, mouseEvent, canvas) {
 
         // If the caret is already showing or this was a dblclick, check individual shape's caret handle for a match
         if (isEditingText() || mouseEvent.detail > 1) {
-            const caretHandle = shape.handles.matches(HANDLE_TYPES.CARET, handleCriteria)
+            const caretHandle = shape.handles.find(HANDLE_TYPES.CARET, handleCriteria)
             if (caretHandle) return caretHandle;
         }
 
         // Check rest of individual shape's standard handles
-        const standardHandle = shape.handles.matches(standardHandles, handleCriteria)
+        const standardHandle = shape.handles.find(standardHandles, handleCriteria)
         if (standardHandle) return standardHandle;
     } else {
         // Check shape group's non-body handles
-        const standardHandle = shapeSelector.handles.matches(standardHandles, handleCriteria)
+        const standardHandle = shapeSelector.handles.find(standardHandles, handleCriteria)
         if (standardHandle) return standardHandle;
     }
 
@@ -307,7 +308,19 @@ export function getHandle(cell, mouseEvent, canvas) {
 }
 
 export function getAttachTarget(cell) {
-    return state.testCurrentCelHandles(cell, HANDLE_TYPES.ATTACHMENT);
+    if (!isVector()) return null;
+
+    switch(state.getConfig('tool')) {
+        case 'select':
+            if (draggedHandle && draggedHandle.type === HANDLE_TYPES.CELL && draggedHandle.canAttachTo) {
+                return state.testCurrentCelHandles(cell, HANDLE_TYPES.ATTACHMENT)
+            }
+            return null;
+        case 'draw-line':
+            return state.testCurrentCelHandles(cell, HANDLE_TYPES.ATTACHMENT)
+        default:
+            return null;
+    }
 }
 
 // ------------------------------------------------------------------------------------------------- Marquee

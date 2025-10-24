@@ -13,7 +13,7 @@
 
 import Canvas from "../components/canvas.js";
 import * as selectionController from "./selection/index.js";
-import {drawingContent, hoveredCells} from "./tool_controller.js";
+import {drawingContent, hoveredCells, showHoverForTool} from "./tool_controller.js";
 import * as state from "../state/index.js";
 import {majorGridColor, minorGridColor, PRIMARY_COLOR} from "../config/colors.js";
 import * as tools from "./tool_controller.js";
@@ -22,6 +22,8 @@ import {EMPTY_CHAR} from "../config/chars.js";
 import RectSelection from "../geometry/selection/rect.js";
 import {LAYER_TYPES} from "../state/constants.js";
 import {callAction} from "../io/actions.js";
+import {getAttachTarget} from "./selection/vector_controller.js";
+import {HANDLE_TYPES} from "../geometry/shapes/constants.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -309,28 +311,27 @@ function redrawSelection() {
     refreshCanvasDetails();
 }
 
-function showHoverForTool() {
-    switch(state.getConfig('tool')) {
-        case 'text-editor':
-            // If text-editor is in I-beam mode, not showing hover because clicking on a cell does not necessarily
-            // go to that cell (it gets rounded up/down -- see Point.caretCell)
-            return state.getConfig('caretStyle') !== 'I-beam';
-        case 'pan':
-        case 'move-all':
-            // Not showing hover cell for these tools since they affect entire canvas, not one cell
-            return false;
-        default:
-            return true;
-    }
-}
-
 function redrawHover() {
     hoveredCellCanvas.clear();
 
     if (hoveredCell && !selectionController.raster.isDrawing && !selectionController.raster.isMoving && showHoverForTool()) {
         hoveredCells(hoveredCell).forEach(cell => {
-            if (state.isCellInBounds(cell)) hoveredCellCanvas.highlightCell(cell);
+            if (state.isCellInBounds(cell)) hoveredCellCanvas.highlightCellOrArea(cell);
         })
+    }
+
+    if (hoveredCell) {
+        const attachTarget = getAttachTarget(hoveredCell);
+        if (attachTarget) {
+            // If hovering over an attachment target, get all attachment areas for that target shape and highlight them
+            const attachmentHandles = /** @type {AttachmentHandle[]} */ (
+                attachTarget.shape.handles.where(HANDLE_TYPES.ATTACHMENT)
+            );
+
+            attachmentHandles.forEach(attachmentHandle => {
+                hoveredCellCanvas.highlightCellOrArea(attachmentHandle.attachmentArea);
+            })
+        }
     }
 
     refreshCanvasDetails();

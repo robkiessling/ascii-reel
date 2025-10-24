@@ -1,4 +1,4 @@
-import {EDGE_SIDES, HANDLE_TYPES, VERTEX_CORNERS} from "../constants.js";
+import {DIRECTIONS, EDGE_SIDES, HANDLE_TYPES, VERTEX_CORNERS} from "../constants.js";
 import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
 import VertexArea from "../../vertex_area.js";
@@ -238,84 +238,73 @@ function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
 
 
 
-// How far outside the shape's attachmentArea to attach the endpoint
-const ATTACHMENT_OFFSET = 1;
-
 /**
- * Finds the closest attachment point for a cell on the outer boundary of a CellArea (exactly 1 cell outside
- * the area; see ATTACHMENT_OFFSET). Returns the edge and position as a percentage (0-1) along that edge.
- * Inverse of `resolveAttachmentPoint`.
+ * Calculates the position of a cell along an attachment edge as a percentage (0 to 1).
  *
- * @param {CellArea} cellArea - CellArea to attach to
- * @param {Cell} cell - Cell attaching to area
- * @returns {{ edge: string, pct: number }} Edge name (from EDGE_SIDES) and position (0-1)
+ * Attachment edges are the 1-cell-wide borders around a rectangle where connections can attach.
+ * This function determines where along that edge a specific cell sits.
+ *
+ * For example, if an edge runs horizontally from columns 5-10:
+ * - Cell at column 5 returns 0 (start)
+ * - Cell at column 7.5 returns 0.5 (midpoint)
+ * - Cell at column 10 returns 1 (end)
+ *
+ * @param {CellArea} attachmentEdge - The 1-cell-wide or 1-cell-tall border area where attachment occurs
+ * @param {Cell} cell - The specific cell location along that edge
+ * @returns {number} Percentage along edge from 0 (start) to 1 (end)
  */
-export function getClosestAttachmentPoint(cellArea, cell) {
-    const { topLeft, bottomRight } = cellArea;
+export function getAttachmentEdgePct(attachmentEdge, cell) {
+    if (!attachmentEdge.includesCell(cell)) throw new Error(`attachmentEdge ${attachmentEdge} does not include ${cell}`)
+    if (attachmentEdge.numRows > 1 && attachmentEdge.numCols > 1) throw new Error(`attachmentEdge ${attachmentEdge} has area`)
 
-    // "outer" is the attachment boundary (1 cell outside the cellArea)
-    const outerTop = topLeft.row - ATTACHMENT_OFFSET;
-    const outerBottom = bottomRight.row + ATTACHMENT_OFFSET;
-    const outerLeft = topLeft.col - ATTACHMENT_OFFSET;
-    const outerRight = bottomRight.col + ATTACHMENT_OFFSET;
+    const { topLeft, bottomRight } = attachmentEdge;
 
-    // Determine which side is closest
-    const distToTop = Math.abs(cell.row - outerTop);
-    const distToBottom = Math.abs(cell.row - outerBottom);
-    const distToLeft = Math.abs(cell.col - outerLeft);
-    const distToRight = Math.abs(cell.col - outerRight);
-
-    // Determine which edge and calculate percentage along that edge
-    const minDist = Math.min(distToTop, distToBottom, distToLeft, distToRight);
-    let edge, edgeLength, positionOnEdge;
-
-    if (minDist === distToTop || minDist === distToBottom) {
-        edge = minDist === distToTop ? EDGE_SIDES.TOP_EDGE : EDGE_SIDES.BOTTOM_EDGE;
-        edgeLength = bottomRight.col - topLeft.col;
-        positionOnEdge = Math.max(0, Math.min(cell.col - topLeft.col, edgeLength));
+    if (isHorizontalArea(attachmentEdge)) {
+        const edgeLength = bottomRight.col - topLeft.col;
+        const positionOnEdge = cell.col - topLeft.col;
+        return positionOnEdge / edgeLength;
     } else {
-        edge = minDist === distToLeft ? EDGE_SIDES.LEFT_EDGE : EDGE_SIDES.RIGHT_EDGE;
-        edgeLength = bottomRight.row - topLeft.row;
-        positionOnEdge = Math.max(0, Math.min(cell.row - topLeft.row, edgeLength));
+        const edgeLength = bottomRight.row - topLeft.row;
+        const positionOnEdge = cell.row - topLeft.row;
+        return positionOnEdge / edgeLength;
     }
-
-    const pct = edgeLength > 0 ? positionOnEdge / edgeLength : 0.5;
-
-    return { edge, pct };
 }
 
 /**
- * Resolves an attachment point to actual cell coordinates based on the current CellArea and the attachment's
- * data (edge, pct). Inverse of `getClosestAttachmentPoint`.
+ * Calculates which cell along an attachment edge corresponds to a given position percentage.
  *
- * @param {CellArea} cellArea - The area to resolve the attachment against
- * @param {{ edge: string, pct: number }} attachment - Edge and percentage (0-1) along that edge
- * @returns {Cell} Cell coordinates on the outer boundary
+ * This is the inverse of `getAttachmentEdgePct`. Given a percentage (0 to 1) along an edge,
+ * it returns the cell coordinates at that position.
+ *
+ * For example, if an edge runs horizontally from columns 5-10:
+ * - pct 0 returns cell at column 5 (start)
+ * - pct 0.5 returns cell at column 7.5 (midpoint)
+ * - pct 1 returns cell at column 10 (end)
+ *
+ * @param {CellArea} attachmentEdge - The 1-cell-wide or 1-cell-tall border area where attachment occurs
+ * @param {number} pct - Percentage along edge from 0 (start) to 1 (end)
+ * @returns {Cell} The cell coordinates at that position along the edge
  */
-export function resolveAttachmentPoint(cellArea, attachment) {
-    const { topLeft, bottomRight } = cellArea;
-    const { edge, pct } = attachment;
+export function getAttachmentEdgeCell(attachmentEdge, pct) {
+    if (attachmentEdge.numRows > 1 && attachmentEdge.numCols > 1) throw new Error(`attachmentEdge ${attachmentEdge} has area`)
 
-    let row, col;
+    const { topLeft, bottomRight } = attachmentEdge;
 
-    switch (edge) {
-        case EDGE_SIDES.TOP_EDGE:
-            row = topLeft.row - ATTACHMENT_OFFSET;
-            col = topLeft.col + Math.round(pct * (bottomRight.col - topLeft.col));
-            break;
-        case EDGE_SIDES.BOTTOM_EDGE:
-            row = bottomRight.row + ATTACHMENT_OFFSET;
-            col = topLeft.col + Math.round(pct * (bottomRight.col - topLeft.col));
-            break;
-        case EDGE_SIDES.LEFT_EDGE:
-            col = topLeft.col - ATTACHMENT_OFFSET;
-            row = topLeft.row + Math.round(pct * (bottomRight.row - topLeft.row));
-            break;
-        case EDGE_SIDES.RIGHT_EDGE:
-            col = bottomRight.col + ATTACHMENT_OFFSET;
-            row = topLeft.row + Math.round(pct * (bottomRight.row - topLeft.row));
-            break;
+    if (isHorizontalArea(attachmentEdge)) {
+        return new Cell(
+            topLeft.row,
+            topLeft.col + Math.round(pct * (bottomRight.col - topLeft.col))
+        )
+    } else {
+        return new Cell(
+            topLeft.row + Math.round(pct * (bottomRight.row - topLeft.row)),
+            topLeft.col
+        )
     }
+}
 
-    return new Cell(row, col);
+
+function isHorizontalArea(attachmentEdge) {
+    const { topLeft, bottomRight } = attachmentEdge;
+    return Math.abs(topLeft.col - bottomRight.col) > Math.abs(topLeft.row - bottomRight.row);
 }

@@ -278,7 +278,7 @@ export default class VectorCel {
 
             if (forShapeIds !== undefined && !forShapeIds.includes(shapeId)) continue;
 
-            const handle = shape.handles.matches(handleType, { cell });
+            const handle = shape.handles.find(handleType, { cell });
             if (handle) return handle;
         }
 

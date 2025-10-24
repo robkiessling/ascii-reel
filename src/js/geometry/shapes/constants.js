@@ -224,3 +224,7 @@ export const CARDINAL_DIRECTIONS = [
  * @type {number}
  */
 export const LINE_PATHING_BUFFER = 3;
+
+
+// How far outside the shape's attachmentArea to attach the endpoint
+export const ATTACHMENT_OFFSET = 1;

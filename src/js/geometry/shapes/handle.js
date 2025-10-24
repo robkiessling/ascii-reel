@@ -44,20 +44,41 @@ export class HandleCollection {
     /**
      * Find the first handle matching the given handleType and criteria
      * @param {string|string[]} handleTypes - Single handleType or array of handleTypes to check
-     * @param criteria - Matching criteria to send to the individual handle's `matches` function
+     * @param {object} [criteria] - Matching criteria to send to the individual handle's `matches` function
      * @returns {Handle|null}
      */
-    matches(handleTypes, criteria) {
+    find(handleTypes, criteria) {
         if (!Array.isArray(handleTypes)) handleTypes = [handleTypes];
 
         for (const handleType of handleTypes) {
             const handles = this.handlesByType[handleType] || [];
             for (const handle of handles) {
-                if (handle.matches(criteria)) return handle;
+                if (criteria === undefined || handle.matches(criteria)) return handle;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Finds all matching handles for the given handleType and criteria
+     * @param {string|string[]} handleTypes - Single handleType or array of handleTypes to check
+     * @param {object} [criteria] - Matching criteria to send to the individual handle's `matches` function
+     * @returns {Handle[]}
+     */
+    where(handleTypes, criteria) {
+        if (!Array.isArray(handleTypes)) handleTypes = [handleTypes];
+
+        const result = [];
+
+        for (const handleType of handleTypes) {
+            const handles = this.handlesByType[handleType] || [];
+            for (const handle of handles) {
+                if (criteria === undefined || handle.matches(criteria)) result.push(handle);
+            }
+        }
+
+        return result;
     }
 }
 
@@ -212,11 +233,11 @@ export class BodyHandle extends Handle {
 
 
 export class AttachmentHandle extends Handle {
-    constructor(shape, hitbox, direction) {
+    constructor(shape, attachmentArea, direction) {
         super();
         this.type = HANDLE_TYPES.ATTACHMENT
         this.shape = shape;
-        this.hitbox = hitbox;
+        this.attachmentArea = attachmentArea;
         this.direction = direction;
     }
 
@@ -224,8 +245,14 @@ export class AttachmentHandle extends Handle {
         return 'copy'
     }
 
-    matches({ cell }) {
-        return this.hitbox(cell);
+    matches({ cell, direction }) {
+        // If cell is provided, it has to match
+        if (cell !== undefined && !this.attachmentArea.includesCell(cell)) return false;
+
+        // If direction is provided, it has to match
+        if (direction !== undefined && direction !== this.direction) return false;
+
+        return true;
     }
 }
 
