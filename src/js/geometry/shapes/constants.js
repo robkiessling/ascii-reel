@@ -160,16 +160,6 @@ export const ARROWHEAD_CHARS = {
     },
 }
 
-// export const WAYPOINT_PROP = 'waypoint';
-// export const WAYPOINT_OPTIONS = {
-//     NONE: 'none',
-//     PLUS: 'plus'
-// }
-// export const WAYPOINT_CHARS = {
-//     [WAYPOINT_OPTIONS.NONE]: undefined,
-//     [WAYPOINT_OPTIONS.PLUS]: '+',
-// }
-
 export const CHAR_PROP = 'char';
 export const COLOR_PROP = 'color'; // todo rename COLOR_INDEX_PROP/'colorIndex'?
 export const COLOR_STR_PROP = 'colorString';
@@ -203,7 +193,6 @@ export const DEFAULT_DRAW_PROPS = {
     [FILL_PROP]: FILL_OPTIONS.WHITESPACE,
     [ARROWHEAD_START_PROP]: ARROWHEAD_OPTIONS.PLUS,
     [ARROWHEAD_END_PROP]: ARROWHEAD_OPTIONS.PLUS,
-    // [WAYPOINT_PROP]: WAYPOINT_OPTIONS.PLUS,
     [CHAR_PROP]: 'A',
     [COLOR_STR_PROP]: '', // Will be overridden during `deserialize`
     [TEXT_PROP]: '',

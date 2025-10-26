@@ -36,7 +36,6 @@ export default class Line extends Shape {
         { prop: END_ATTACHMENT, default: null },
         { prop: ARROWHEAD_START_PROP },
         { prop: ARROWHEAD_END_PROP },
-        // { prop: WAYPOINT_PROP },
         { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.LINE] },
     ];
 

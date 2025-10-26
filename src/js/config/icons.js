@@ -86,8 +86,6 @@ const ICON_DATA = {
     'tools.shapes.arrowheadEnd.plus': { type: PRE, content: '--+' },
     'tools.shapes.arrowheadEnd.ascii-1': { type: PRE, content: '-->' },
     'tools.shapes.arrowheadEnd.unicode-1': { type: PRE, content: '--▶' },
-    // 'tools.shapes.waypoint.none': { type: PRE, content: '---' },
-    // 'tools.shapes.waypoint.plus': { type: PRE, content: '-+-' },
 
     'themes.dark-mode': { type: REMIXICON, content: 'ri-moon-line' },
     'themes.light-mode': { type: REMIXICON, content: 'ri-sun-line' },

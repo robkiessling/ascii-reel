@@ -813,7 +813,6 @@ function setupLineMarkerMenus() {
     const $group = $('#shape-line-marker-menu-group');
 
     setupShapeMenu($group, ARROWHEAD_START_PROP, Object.values(ARROWHEAD_OPTIONS))
-    // setupShapeMenu($group, WAYPOINT_PROP, Object.values(WAYPOINT_OPTIONS))
     setupShapeMenu($group, ARROWHEAD_END_PROP, Object.values(ARROWHEAD_OPTIONS))
 }
 

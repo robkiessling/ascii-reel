@@ -230,9 +230,6 @@ export const STRINGS = {
     'tools.shapes.arrowheadEnd.plus.name': 'Plus Sign (+)',
     'tools.shapes.arrowheadEnd.ascii-1.name': 'ASCII Arrow',
     'tools.shapes.arrowheadEnd.unicode-1.name': 'Unicode Arrow',
-    // 'tools.shapes.waypoint.name': 'Waypoint Char',
-    // 'tools.shapes.waypoint.none.name': 'None',
-    // 'tools.shapes.waypoint.plus.name': 'Plus Sign (+)',
 
     'frames.new-frame.name': 'New Frame',
     'frames.new-frame.description': 'Creates a new blank frame.',
