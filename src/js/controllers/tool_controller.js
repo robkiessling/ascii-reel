@@ -818,7 +818,13 @@ function setupTextAlignMenu($menu, prop, options) {
                 tooltip: `tools.shapes.${prop}.${option}`,
             }
         }),
-        visible: () => activeShapeProps()[prop] !== undefined && activeShapeProps()[TEXT_PROP].some(text => text.length > 0),
+        visible: () => {
+            if (activeShapeProps()[prop] === undefined) return false;
+
+            // Show if shape already contains text, or we're actively editing text
+            return activeShapeProps()[TEXT_PROP].some(text => text.length > 0) ||
+                selectionController.vector.isEditingText();
+        },
         getValue: () => firstActiveShapeProp(prop),
         onSelect: newValue => updateActiveShapeProp(prop, newValue),
         tooltipOptions: {

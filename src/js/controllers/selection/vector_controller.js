@@ -2,6 +2,7 @@ import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js";
 import {SELECTION_COLOR} from "../../config/colors.js";
 import {
+    AUTO_TEXT_WIDTH_PROP,
     CARET_HANDLE_SELECTION_MODES, CHAR_PROP, COLOR_PROP,
     HANDLE_CELL_RADIUS, HANDLE_TYPES, SHAPE_BOX_PADDING, SHAPE_DASHED_OUTLINE_LENGTH,
     SHAPE_OUTLINE_WIDTH, SHAPE_TEXT_ACTIONS, SHAPE_TYPES, TEXT_PROP
@@ -323,6 +324,27 @@ export function getAttachTarget(cell) {
     }
 }
 
+export function resyncAttachmentsTo(shapeId) {
+    let updated = false;
+
+    const shape = state.getCurrentCelShape(shapeId);
+    state.getCurrentCelShapes().forEach(otherShape => {
+        if (state.updateCurrentCelShape(otherShape.id, otherShape => otherShape.resyncAttachmentsTo(shape))) {
+            updated = true;
+        }
+    })
+
+    return updated;
+}
+
+// Auto-width textboxes resize when their text changes, which can shift their attachment edges. This ensures any
+// connected lines remain properly attached after a resize.
+function resyncAttachmentsIfTextbox(shapeId) {
+    const shape = state.getCurrentCelShape(shapeId);
+    
+    if (shape.props[AUTO_TEXT_WIDTH_PROP]) resyncAttachmentsTo(shapeId);
+}
+
 // ------------------------------------------------------------------------------------------------- Marquee
 // The "marquee" refers to the rectangular drag area created by the user as they click-and-drag on the canvas.
 
@@ -487,6 +509,8 @@ export function handleEnterKey() {
         state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, text: '\n' }))
         moveCaret('right', false);
 
+        resyncAttachmentsIfTextbox(shapeId);
+
         eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 
         // Store a new history snapshot at the start of the new line. This way the caret jumps from end of line ->
@@ -528,6 +552,8 @@ export function insertText(text) {
     state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.INSERT, { caretIndex: startIndex, text }));
     setTextCaret(startIndex + text.length, { saveHistory: false })
 
+    resyncAttachmentsIfTextbox(shapeId);
+
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     saveTextUpdated()
 }
@@ -558,6 +584,8 @@ export function handleCompositionStart(rollbackPrevChar) {
 
     compositionCaretIndex = startIndex;
     compositionStartText = textLayout.text;
+
+    resyncAttachmentsIfTextbox(shapeId);
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     saveTextUpdated()
@@ -612,6 +640,8 @@ export function handleBackspaceKey(isDelete = false) {
             state.updateCurrentCelShape(shapeId, shape => shape.updateText(SHAPE_TEXT_ACTIONS.DELETE_BACKWARD, { caretIndex: startIndex }));
             moveCaret('left', false);
         }
+
+        resyncAttachmentsIfTextbox(shapeId);
 
         eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
         saveTextUpdated()

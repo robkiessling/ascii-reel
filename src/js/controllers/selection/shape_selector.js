@@ -171,7 +171,7 @@ export default class ShapeSelector {
 
                 selectionController.vector.updateSelectedShapes(shape => {
                     shape.resize(this._oldBounds, newBounds);
-                    this._resyncAttachmentsTo(shape);
+                    selectionController.vector.resyncAttachmentsTo(shape.id);
                 }, false);
                 break;
             case HANDLE_TYPES.CELL:
@@ -207,7 +207,7 @@ export default class ShapeSelector {
         //       cannot move them). We need to keep track of whether the update happened for undo history.
         const updated = selectionController.vector.updateSelectedShapes(shape => {
             const shapeUpdated = shape.translate(rowDelta, colDelta);
-            const attachmentUpdated = this._resyncAttachmentsTo(shape);
+            const attachmentUpdated = selectionController.vector.resyncAttachmentsTo(shape.id);
             return shapeUpdated || attachmentUpdated;
         }, false);
 
@@ -244,17 +244,5 @@ export default class ShapeSelector {
         selectionController.vector.updateSelectedShapes(shape => shape.translate(rowOffset, colOffset), false)
     }
 
-
-    // ----------------------------------------- Helpers
-
-    _resyncAttachmentsTo(otherShape) {
-        let updated = false;
-
-        getCurrentCelShapes().forEach(shape => {
-            if (shape.resyncAttachmentsTo(otherShape)) updated = true;
-        })
-
-        return updated;
-    }
 
 }

@@ -198,6 +198,10 @@ function buildPointMapper(oldCellArea, newCellArea, flipRow, flipCol) {
     }
 }
 
+// If the cellArea is 1 dimensional, we have to choose where to map things as it scales back up
+const MAP_1D_TO = 0.5; // Choosing to map to the center of new area
+
+
 /**
  * Returns a function that can be used to proportionally map cells from an oldCellArea to a newCellArea
  * @param {CellArea} oldCellArea - Old CellArea
@@ -207,10 +211,6 @@ function buildPointMapper(oldCellArea, newCellArea, flipRow, flipCol) {
  * @returns {(oldCell: Cell) => Cell} - Mapping function
  */
 function buildCellMapper(oldCellArea, newCellArea, flipRow, flipCol) {
-    // If the cellArea is 1 dimensional, we have to choose where to map things for a larger newCellArea.
-    // TODO This could be improved using fractional rows/cols?
-    const MAP_1D_TO = 0.5; // Choosing to map to the center of new area
-
     return oldCell => {
         let rowPct = (oldCellArea.numRows > 1) ?
             (oldCell.row - oldCellArea.topLeft.row) / (oldCellArea.numRows - 1) :
@@ -259,15 +259,17 @@ export function getAttachmentEdgePct(attachmentEdge, cell) {
 
     const { topLeft, bottomRight } = attachmentEdge;
 
+    let edgeLength, positionOnEdge;
     if (isHorizontalArea(attachmentEdge)) {
-        const edgeLength = bottomRight.col - topLeft.col;
-        const positionOnEdge = cell.col - topLeft.col;
-        return positionOnEdge / edgeLength;
+        edgeLength = bottomRight.col - topLeft.col;
+        positionOnEdge = cell.col - topLeft.col;
     } else {
-        const edgeLength = bottomRight.row - topLeft.row;
-        const positionOnEdge = cell.row - topLeft.row;
-        return positionOnEdge / edgeLength;
+        edgeLength = bottomRight.row - topLeft.row;
+        positionOnEdge = cell.row - topLeft.row;
     }
+
+    if (edgeLength === 0) return MAP_1D_TO;
+    return positionOnEdge / edgeLength;
 }
 
 /**
