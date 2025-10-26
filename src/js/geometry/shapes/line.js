@@ -27,6 +27,10 @@ import {directionFrom} from "./algorithms/traverse_utils.js";
 
 const START_ATTACHMENT = 'startAttachment';
 const END_ATTACHMENT = 'endAttachment';
+const STROKES_REQUIRING_2_POINTS = new Set([
+    STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_ADAPTIVE,
+    STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR,
+])
 
 export default class Line extends Shape {
     static propDefinitions = [
@@ -53,6 +57,18 @@ export default class Line extends Shape {
         return result;
     }
 
+    updateProp(propKey, newValue) {
+        switch(propKey) {
+            case STROKE_STYLE_PROPS[SHAPE_TYPES.LINE]:
+                // When changing stroke style, if changing to an elbow stroke we require path to only have two points
+                const pathUpdate = STROKES_REQUIRING_2_POINTS.has(newValue) && this.props.path.length ?
+                    super.updateProp('path', [this.props.path.at(0), this.props.path.at(-1)]) : false;
+                const strokeUpdate = super.updateProp(propKey, newValue);
+                return pathUpdate || strokeUpdate;
+            default:
+                return super.updateProp(propKey, newValue);
+        }
+    }
 
     handleDrawMousedown(cell, options) {
         if (!this._initialDraw) {
@@ -171,11 +187,9 @@ export default class Line extends Shape {
                 this._drawStraightLines(true, setGlyph);
                 break;
             case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR:
-                // TODO since we're only using first and last points, maybe better to set path to these points first?
                 this._drawOrthogonalLines(false, setGlyph)
                 break;
             case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_ADAPTIVE:
-                // TODO since we're only using first and last points, maybe better to set path to these points first?
                 this._drawOrthogonalLines(true, setGlyph)
                 break;
             default:
@@ -209,7 +223,7 @@ export default class Line extends Shape {
             if (i === this.props.path.length - 1) {
                 const bAttachment = this.props[this._attachmentKeyForPathIndex(bIndex)];
                 const bDir = bAttachment ? bAttachment.direction : directionFrom(b, a);
-                bChar = ARROWHEAD_CHARS[this.props[ARROWHEAD_START_PROP]][bDir]
+                bChar = ARROWHEAD_CHARS[this.props[ARROWHEAD_END_PROP]][bDir]
             }
             if (bChar !== undefined) setGlyph(b, bChar);
         }
