@@ -1,6 +1,9 @@
 import {
+    ARROWHEAD_CHARS,
+    ARROWHEAD_END_PROP,
+    ARROWHEAD_START_PROP,
     CHAR_PROP,
-    COLOR_PROP,
+    COLOR_PROP, DIRECTIONS,
     HANDLE_TYPES,
     SHAPE_TYPES,
     STROKE_STYLE_OPTIONS,
@@ -16,11 +19,11 @@ import {
 } from "./algorithms/box_sizing.js";
 import CellCache from "../cell_cache.js";
 import {BodyHandle, CellHandle, HandleCollection} from "./handle.js";
-import {forEachAdjPair} from "../../utils/arrays.js";
 import BoxShape from "./box_shape.js";
 import {straightAsciiLine} from "./algorithms/traverse_straight.js";
 import {registerShape} from "./registry.js";
-import {orthogonalPath} from "./algorithms/orthogonal_connections.js";
+import {orthogonalPath} from "./algorithms/traverse_orthogonal.js";
+import {directionFrom} from "./algorithms/traverse_utils.js";
 
 const START_ATTACHMENT = 'startAttachment';
 const END_ATTACHMENT = 'endAttachment';
@@ -31,6 +34,9 @@ export default class Line extends Shape {
         { prop: 'path' },
         { prop: START_ATTACHMENT, default: null },
         { prop: END_ATTACHMENT, default: null },
+        { prop: ARROWHEAD_START_PROP },
+        { prop: ARROWHEAD_END_PROP },
+        // { prop: WAYPOINT_PROP },
         { prop: STROKE_STYLE_PROPS[SHAPE_TYPES.LINE] },
     ];
 
@@ -128,54 +134,10 @@ export default class Line extends Shape {
         let glyphs = this._initGlyphs(boundingArea, true);
         const hitbox = new CellCache();
 
-        const setGlyph = (absCell, char) => {
-            const relativeCell = absCell.relativeTo(boundingArea.topLeft);
-            this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
-            hitbox.add(absCell);
-        }
-
-        switch(this._strokeStyle) {
-            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
-                forEachAdjPair(this.props.path, (a, b) => {
-                    a.lineTo(b).forEach(cell => setGlyph(cell, this.props[CHAR_PROP]))
-                })
-                break;
-            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
-                const cornerChar = '+';
-                setGlyph(this.props.path.at(0), cornerChar)
-                forEachAdjPair(this.props.path, (a, b) => {
-                    straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char))
-                    setGlyph(b, cornerChar)
-                })
-                break;
-            // TODO IS this better? inclusive start/ends
-            // case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
-            //     forEachAdjPair(this.props.path, (a, b, i) => {
-            //         straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char), i === 0, true);
-            //     })
-            //     break;
-
-            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR:
-            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_ADAPTIVE:
-                const useCharProp = this._strokeStyle === STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR;
-
-                // TODO since we're only using first and last points, maybe better to set path to these points first?
-                orthogonalPath(
-                    this.props.path.at(0),
-                    this.props.path.at(-1),
-                    this.props.startAttachment ? this._resolveAttachmentShape(this.props.startAttachment.shapeId).bufferArea : undefined,
-                    this.props.startAttachment ? this.props.startAttachment.direction : undefined,
-                    this.props.endAttachment ? this._resolveAttachmentShape(this.props.endAttachment.shapeId).bufferArea : undefined,
-                    this.props.endAttachment ? this.props.endAttachment.direction : undefined,
-                    (cell, char) => setGlyph(cell, useCharProp ? this.props[CHAR_PROP] : char)
-                )
-                break;
-            default:
-                throw new Error(`Invalid stroke: ${this._strokeStyle}`)
-        }
+        this._drawLines(boundingArea, glyphs, hitbox);
 
         // Bounding area / origin may have changed if orthogonal path pushed a boundary
-        ({ boundingArea, origin, glyphs } = this._processAnchoredGrid(glyphs, boundingArea.topLeft))
+        ({ boundingArea, origin, glyphs } = this._processAnchoredGrid(glyphs, origin))
 
         const handles = new HandleCollection([
             ...this.props.path.map((cell, i) => new CellHandle(this, cell, i, i === 0 || i === this.props.path.length - 1)),
@@ -192,6 +154,114 @@ export default class Line extends Shape {
             origin,
             glyphs,
             handles
+        }
+    }
+
+    _drawLines(boundingArea, glyphs, hitbox) {
+        const setGlyph = (absCell, char) => {
+            const relativeCell = absCell.relativeTo(boundingArea.topLeft);
+            this._setGlyph(glyphs, relativeCell, char, this.props[COLOR_PROP]);
+            hitbox.add(absCell);
+        }
+
+        switch(this._strokeStyle) {
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_MONOCHAR:
+                this._drawStraightLines(false, setGlyph);
+                break;
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].STRAIGHT_ADAPTIVE:
+                this._drawStraightLines(true, setGlyph);
+                break;
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR:
+                // TODO since we're only using first and last points, maybe better to set path to these points first?
+                this._drawOrthogonalLines(false, setGlyph)
+                break;
+            case STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_ADAPTIVE:
+                // TODO since we're only using first and last points, maybe better to set path to these points first?
+                this._drawOrthogonalLines(true, setGlyph)
+                break;
+            default:
+                throw new Error(`Invalid stroke: ${this._strokeStyle}`)
+        }
+    }
+
+    _drawStraightLines(isAdaptive, setGlyph) {
+        for (let i = 1; i < this.props.path.length; i++) {
+            const aIndex = i - 1;
+            const bIndex = i;
+            const a = this.props.path[aIndex];
+            const b = this.props.path[bIndex];
+
+            if (isAdaptive) {
+                straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char))
+            } else {
+                a.lineTo(b).forEach(cell => setGlyph(cell, this.props[CHAR_PROP]))
+            }
+
+            // TODO adaptive could use calculated chars instead of just '+'
+            let aChar = isAdaptive ? '+' : undefined;
+            if (i === 1) {
+                const aAttachment = this.props[this._attachmentKeyForPathIndex(aIndex)];
+                const aDir = aAttachment ? aAttachment.direction : directionFrom(a, b);
+                aChar = ARROWHEAD_CHARS[this.props[ARROWHEAD_START_PROP]][aDir]
+            }
+            if (aChar !== undefined) setGlyph(a, aChar);
+
+            let bChar = isAdaptive ? '+' : undefined;
+            if (i === this.props.path.length - 1) {
+                const bAttachment = this.props[this._attachmentKeyForPathIndex(bIndex)];
+                const bDir = bAttachment ? bAttachment.direction : directionFrom(b, a);
+                bChar = ARROWHEAD_CHARS[this.props[ARROWHEAD_START_PROP]][bDir]
+            }
+            if (bChar !== undefined) setGlyph(b, bChar);
+        }
+    }
+
+    _drawOrthogonalLines(isAdaptive, setGlyph) {
+        orthogonalPath(
+            this.props.path.at(0),
+            this.props.path.at(-1),
+            this.props.startAttachment ? this._resolveAttachmentShape(this.props.startAttachment.shapeId).bufferArea : undefined,
+            this.props.endAttachment ? this._resolveAttachmentShape(this.props.endAttachment.shapeId).bufferArea : undefined,
+            this.props.startAttachment ? this.props.startAttachment.direction : undefined,
+            this.props.endAttachment ? this.props.endAttachment.direction : undefined,
+            (cell, direction, type) => setGlyph(cell, this._orthogonalChar(direction, type))
+        )
+    }
+
+    _orthogonalChar(direction, type) {
+        if (type === 'start') {
+            const startChar = ARROWHEAD_CHARS[this.props[ARROWHEAD_START_PROP]][direction];
+            if (startChar) return startChar;
+        }
+        if (type === 'end') {
+            const endChar = ARROWHEAD_CHARS[this.props[ARROWHEAD_END_PROP]][direction];
+            if (endChar) return endChar;
+        }
+
+        if (this._strokeStyle === STROKE_STYLE_OPTIONS[SHAPE_TYPES.LINE].ELBOW_MONOCHAR) return this.props[CHAR_PROP];
+
+        switch (direction) {
+            case DIRECTIONS.UP:
+            case DIRECTIONS.DOWN:
+                return '|';
+            case DIRECTIONS.RIGHT:
+            case DIRECTIONS.LEFT:
+                return '-';
+            case DIRECTIONS.UP_RIGHT:
+            case DIRECTIONS.UP_LEFT:
+            case DIRECTIONS.RIGHT_UP:
+            case DIRECTIONS.RIGHT_DOWN:
+            case DIRECTIONS.DOWN_RIGHT:
+            case DIRECTIONS.DOWN_LEFT:
+            case DIRECTIONS.LEFT_UP:
+            case DIRECTIONS.LEFT_DOWN:
+                return '+';
+            default:
+                // return '?'; // for debugging
+
+                // In some cases, the line gets really wrapped up when the two endpoints are near each other;
+                // we just hide these extra wrapped points
+                return '';
         }
     }
 

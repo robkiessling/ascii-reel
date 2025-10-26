@@ -23,7 +23,7 @@ export default class Ellipse extends BoxShape {
         const fillChar = this._fillChar;
         const color = this.props[COLOR_PROP];
 
-        this._setupEllipseRecord();
+        this._setupEllipsePlot();
         if (boundingArea.numRows < 3 || boundingArea.numCols < 3) {
             // Normal ellipse algorithm looks strange without at least 3 rows/cols (it will be mostly empty space), so
             // we just draw a rect outline
@@ -32,7 +32,7 @@ export default class Ellipse extends BoxShape {
             this._plotSymmetric(boundingArea);
             // this._plotFuzzy(boundingArea, 1);
         }
-        const { outlineCells, fillCells, outlineHitbox, fillHitbox } = this._processEllipseRecord()
+        const { outlineCells, fillCells, outlineHitbox, fillHitbox } = this._processEllipsePlot()
         outlineCells.forEach(cell => this._setGlyph(glyphs, cell, strokeChar, color))
         fillCells.forEach(cell => this._setGlyph(glyphs, cell, fillChar, color))
 
@@ -214,7 +214,7 @@ export default class Ellipse extends BoxShape {
     }
 
     // We mark the ellipse outline & fill areas separately so we can tell if a cell is on the outline or inner area
-    _setupEllipseRecord() {
+    _setupEllipsePlot() {
         this._ellipse = {}
         this._ellipse.outline = new Set();
         this._ellipse.fill = new Set();
@@ -225,7 +225,7 @@ export default class Ellipse extends BoxShape {
     _markFill(row, col) {
         this._ellipse.fill.add(`${row},${col}`);
     }
-    _processEllipseRecord() {
+    _processEllipsePlot() {
         // If there is a point in fill that is also in outline, remove it (outline has priority)
         this._ellipse.fill = new Set([...this._ellipse.fill].filter(x => !this._ellipse.outline.has(x)));
 

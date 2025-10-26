@@ -138,6 +138,7 @@
     }
 
     .group-actions {
+    //.group-actions, .group-actions .icon-dropdown { // todo is this needed if we support non-dropdown shape props?
       display: flex;
       flex-direction: row;
       gap: 0.25rem;

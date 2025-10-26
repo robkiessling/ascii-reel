@@ -3,6 +3,31 @@
 import {transformObject, transformValues} from "../../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
 
+
+export const AXES = {
+    HORIZONTAL: 'horizontal',
+    VERTICAL: 'vertical'
+}
+export const DIRECTIONS = {
+    UP: 'up',
+    RIGHT: 'right',
+    DOWN: 'down',
+    LEFT: 'left',
+
+    UP_RIGHT: 'up-right',
+    UP_LEFT: 'up-left',
+    RIGHT_UP: 'right-up',
+    RIGHT_DOWN: 'right-down',
+    DOWN_RIGHT: 'down-right',
+    DOWN_LEFT: 'down-left',
+    LEFT_UP: 'left-up',
+    LEFT_DOWN: 'left-down',
+}
+
+export const CARDINAL_DIRECTIONS = [
+    DIRECTIONS.UP, DIRECTIONS.RIGHT, DIRECTIONS.DOWN, DIRECTIONS.LEFT
+]
+
 export const HANDLE_TYPES = {
     VERTEX: 'vertex',
     EDGE: 'edge',
@@ -112,13 +137,38 @@ export const FILL_OPTIONS = {
     MONOCHAR: 'monochar',
 }
 
-export const ARROWHEAD_PROP = 'arrowhead';
+export const ARROWHEAD_START_PROP = 'arrowheadStart';
+export const ARROWHEAD_END_PROP = 'arrowheadEnd';
 export const ARROWHEAD_OPTIONS = {
     NONE: 'none',
-    START: 'start',
-    END: 'end',
-    START_AND_END: 'startAndEnd'
+    PLUS: 'plus',
+    ASCII_1: 'ascii-1',
+    UNICODE_1: 'unicode-1'
 }
+
+// Note: arrowhead goes in opposite direction of connection
+export const ARROWHEAD_CHARS = {
+    [ARROWHEAD_OPTIONS.NONE]: {},
+    [ARROWHEAD_OPTIONS.PLUS]: {
+        [DIRECTIONS.UP]: '+', [DIRECTIONS.RIGHT]: '+', [DIRECTIONS.DOWN]: '+', [DIRECTIONS.LEFT]: '+',
+    },
+    [ARROWHEAD_OPTIONS.ASCII_1]: {
+        [DIRECTIONS.UP]: 'v', [DIRECTIONS.RIGHT]: '<', [DIRECTIONS.DOWN]: '^', [DIRECTIONS.LEFT]: '>',
+    },
+    [ARROWHEAD_OPTIONS.UNICODE_1]: {
+        [DIRECTIONS.UP]: '▼', [DIRECTIONS.RIGHT]: '◀', [DIRECTIONS.DOWN]: '▲', [DIRECTIONS.LEFT]: '▶',
+    },
+}
+
+// export const WAYPOINT_PROP = 'waypoint';
+// export const WAYPOINT_OPTIONS = {
+//     NONE: 'none',
+//     PLUS: 'plus'
+// }
+// export const WAYPOINT_CHARS = {
+//     [WAYPOINT_OPTIONS.NONE]: undefined,
+//     [WAYPOINT_OPTIONS.PLUS]: '+',
+// }
 
 export const CHAR_PROP = 'char';
 export const COLOR_PROP = 'color'; // todo rename COLOR_INDEX_PROP/'colorIndex'?
@@ -151,6 +201,9 @@ export const DEFAULT_DRAW_PROPS = {
     ...transformObject(STROKE_STYLE_OPTIONS, (shapeType, options) => [STROKE_STYLE_PROPS[shapeType], Object.values(options)[0]]),
     [BRUSH_PROP]: 'square-1',
     [FILL_PROP]: FILL_OPTIONS.WHITESPACE,
+    [ARROWHEAD_START_PROP]: ARROWHEAD_OPTIONS.PLUS,
+    [ARROWHEAD_END_PROP]: ARROWHEAD_OPTIONS.PLUS,
+    // [WAYPOINT_PROP]: WAYPOINT_OPTIONS.PLUS,
     [CHAR_PROP]: 'A',
     [COLOR_STR_PROP]: '', // Will be overridden during `deserialize`
     [TEXT_PROP]: '',
@@ -193,30 +246,6 @@ export const SHAPE_TEXT_ACTIONS = {
     REPLACE: 'replace'
 }
 
-
-export const AXES = {
-    HORIZONTAL: 'horizontal',
-    VERTICAL: 'vertical'
-}
-export const DIRECTIONS = {
-    UP: 'up',
-    RIGHT: 'right',
-    DOWN: 'down',
-    LEFT: 'left',
-
-    UP_RIGHT: 'up-right',
-    UP_LEFT: 'up-left',
-    RIGHT_UP: 'right-up',
-    RIGHT_DOWN: 'right-down',
-    DOWN_RIGHT: 'down-right',
-    DOWN_LEFT: 'down-left',
-    LEFT_UP: 'left-up',
-    LEFT_DOWN: 'left-down',
-}
-
-export const CARDINAL_DIRECTIONS = [
-    DIRECTIONS.UP, DIRECTIONS.RIGHT, DIRECTIONS.DOWN, DIRECTIONS.LEFT
-]
 
 /**
  * How much buffer room an attached line tries to keep between itself and the attached shape (e.g. when pathing

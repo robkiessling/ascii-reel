@@ -1,7 +1,8 @@
 import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
-import {AXES, DIRECTIONS} from "../constants.js";
+import {DIRECTIONS} from "../constants.js";
 import {buildRoutingGraph, findPathAStar} from "./a_star.js";
+import {directionFrom} from "./traverse_utils.js";
 
 const DEBUG = false;
 
@@ -11,20 +12,14 @@ const DEBUG = false;
  * @param {Cell} startCell
  * @param {Cell} endCell
  * @param {CellArea} [startArea]
- * @param {string} [startDir]
  * @param {CellArea} [endArea]
+ * @param {string} [startDir]
  * @param {string} [endDir]
- * @param {(cell: Cell, char: string) => void} callback
+ * @param {(cell: Cell, direction: string, type: 'start'|'end'|'middle') => void} callback
  */
-export function orthogonalPath(startCell, endCell, startArea, startDir, endArea, endDir, callback) {
-    // If directions are undefined, infer them based on which axes is longer between them
-    if (longerAxis(startCell, endCell) === AXES.VERTICAL) {
-        if (startDir === undefined) startDir = endCell.row >= startCell.row ? DIRECTIONS.DOWN : DIRECTIONS.UP;
-        if (endDir === undefined) endDir = endCell.row >= startCell.row ? DIRECTIONS.UP : DIRECTIONS.DOWN;
-    } else {
-        if (startDir === undefined) startDir = endCell.col >= startCell.col ? DIRECTIONS.RIGHT : DIRECTIONS.LEFT;
-        if (endDir === undefined) endDir = endCell.col >= startCell.col ? DIRECTIONS.LEFT : DIRECTIONS.RIGHT;
-    }
+export function orthogonalPath(startCell, endCell, startArea, endArea, startDir, endDir, callback) {
+    if (startDir === undefined) startDir = directionFrom(startCell, endCell);
+    if (endDir === undefined) endDir = directionFrom(endCell, startCell);
 
     if (DEBUG) console.log(`${startArea}, ${startCell}, ${startDir}\n${endArea}, ${endCell}, ${endDir}`)
 
@@ -33,22 +28,27 @@ export function orthogonalPath(startCell, endCell, startArea, startDir, endArea,
 
     path = centerLineCorrection(path, centerRow, centerCol, [startArea, endArea].filter(Boolean), [startCell, endCell]);
 
+    // Iterate through each line segment (where a line segment is the line between two adjacent path points)
     for (let i = 0; i < path.length; i++) {
         const cell = path[i];
 
+        // If we're on the first line segment, draw its start char and then move to next segment
         if (i === 0) {
-            callback(cell, charForDirection(startDir, true));
+            callback(cell, startDir, 'start');
             continue;
         }
 
+        // Draw straight line from prevCell to current cell (without endpoints)
         const prevCell = path[i - 1];
-        exclusiveLine(prevCell, cell, callback);
+        const direction = directionBetween(prevCell, cell);
+        prevCell.lineTo(cell, false).forEach(cell => callback(cell, direction, 'xxx'))
 
+        // Draw line segment's end char
         if (i === path.length - 1) {
-            callback(cell, charForDirection(endDir, true))
+            callback(cell, endDir, 'end')
         } else {
             const nextCell = path[i + 1];
-            callback(cell, charForDirection(directionBetween(prevCell, cell, nextCell)));
+            callback(cell, directionBetween(prevCell, cell, nextCell), 'middle')
         }
     }
 }
@@ -112,6 +112,7 @@ function findCenterCorrectedPath(path, numTurns, attr, centerLine, blockedAreas,
         // Then keep going until you turn (parallel line starts after this turn)
         if (hitIndex !== undefined && turnIndex === undefined && currentDir !== hitDir) {
             turnIndex = i - 1;
+            if (hitIndex === turnIndex) return null; // Turn is already on center line
         }
 
         // Then keep going until you turn again (this is the end of the parallel line)
@@ -154,12 +155,6 @@ function findCenterCorrectedPath(path, numTurns, attr, centerLine, blockedAreas,
 
 // --------------------------------------------------------------------------- Helper methods
 
-function longerAxis(startCell, endCell) {
-    const rowDelta = endCell.row - startCell.row;
-    const colDelta = endCell.col - startCell.col;
-    return Math.abs(rowDelta) >= Math.abs(colDelta) ? AXES.VERTICAL : AXES.HORIZONTAL;
-}
-
 function countTurns(path) {
     if (path.length < 3) return 0; // need at least 3 points to turn
     let turns = 0;
@@ -175,11 +170,12 @@ function countTurns(path) {
     return turns;
 }
 
-function exclusiveLine(fromCell, toCell, callback) {
-    const direction = directionBetween(fromCell, toCell);
-    fromCell.lineTo(toCell, false).forEach(cell => callback(cell, charForDirection(direction, false)))
-}
-
+/**
+ * Returns direction between 2 or 3 orthogonal cells. If 3 cells are provided, direction will be a two-step direction
+ * such as DOWN_RIGHT. Will throw an error if the path between two sequential cells is not vertical or horizontal.
+ * @param {...Cell} cells - Individual Cell arguments
+ * @returns {string}
+ */
 function directionBetween(...cells) {
     if (cells.length < 2) throw new Error('Must have at least 2 cells');
     if (cells.length > 3) throw new Error('Cannot have more than 3 cells');
@@ -206,46 +202,4 @@ function directionBetween(...cells) {
     if (directions[0] === directions[1]) return directions[0];
 
     return directions.join('-')
-}
-
-// Note: arrowhead goes in opposite direction of connection direction
-function charForDirection(dir, isEndpoint) {
-    switch (dir) {
-        case DIRECTIONS.UP:
-            return isEndpoint ? 'v' : '|';
-        case DIRECTIONS.RIGHT:
-            return isEndpoint ? '<' : '-';
-        case DIRECTIONS.DOWN:
-            return isEndpoint ? '^' : '|';
-        case DIRECTIONS.LEFT:
-            return isEndpoint ? '>' : '-';
-        case DIRECTIONS.UP_RIGHT:
-        case DIRECTIONS.UP_LEFT:
-        case DIRECTIONS.RIGHT_UP:
-        case DIRECTIONS.RIGHT_DOWN:
-        case DIRECTIONS.DOWN_RIGHT:
-        case DIRECTIONS.DOWN_LEFT:
-        case DIRECTIONS.LEFT_UP:
-        case DIRECTIONS.LEFT_DOWN:
-            return '+';
-        default:
-            // return '?'; // for debugging
-
-            // In some cases, the line gets really wrapped up when the two endpoints are near each other;
-            // we just hide these extra wrapped points
-            return '';
-    }
-}
-
-export function axisForDir(dir) {
-    switch (dir) {
-        case DIRECTIONS.UP:
-        case DIRECTIONS.DOWN:
-            return AXES.VERTICAL;
-        case DIRECTIONS.LEFT:
-        case DIRECTIONS.RIGHT:
-            return AXES.HORIZONTAL;
-        default:
-            throw new Error(`Cannot get axis for ${dir}`)
-    }
 }

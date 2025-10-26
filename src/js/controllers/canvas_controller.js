@@ -139,6 +139,10 @@ function setupEventBus() {
         hoveredCell = null;
         redrawHover();
     })
+
+    // On mouseup, shape attachment might occur. We want to refresh the hover state after the attachment is finished
+    // (so we use priority -1 to go last).
+    eventBus.on(EVENTS.CANVAS.MOUSEUP, () => redrawHover(), -1);
 }
 
 function redrawAll() {

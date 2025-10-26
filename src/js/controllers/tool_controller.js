@@ -9,7 +9,7 @@ import * as state from '../state/index.js';
 import * as selectionController from "./selection/index.js";
 import * as actions from "../io/actions.js";
 import {setupActionTooltips, shouldModifyAction} from "../io/actions.js";
-import {modifierAbbr, modifierWord} from "../utils/os.js";
+import {modifierAbbr} from "../utils/os.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import CharPicker from "../components/char_picker.js";
 import {getIconHTML} from "../config/icons.js";
@@ -22,7 +22,8 @@ import {
     STROKE_STYLE_OPTIONS,
     SHAPE_TYPES,
     STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP,
-    BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP, WRITE_EMPTY_CHARS_PROP, HANDLE_TYPES
+    BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP, WRITE_EMPTY_CHARS_PROP, HANDLE_TYPES, ARROWHEAD_START_PROP,
+    ARROWHEAD_END_PROP, ARROWHEAD_OPTIONS
 } from "../geometry/shapes/constants.js";
 import ColorPicker from "../components/color_picker.js";
 import {refreshableTooltips, standardTip, standardTipContentBuilder} from "../components/tooltips.js";
@@ -32,9 +33,8 @@ import {LAYER_TYPES} from "../state/constants.js";
 import {diamondBrushCells, squareBrushCells} from "../geometry/shapes/algorithms/brush.js";
 import Shape from "../geometry/shapes/shape.js";
 import {selectedShapes} from "../state/selection/vector_selection.js";
-import {filterObject, isEmptyObject, transformObject, transformValues} from "../utils/objects.js";
+import {filterObject, isEmptyObject, transformValues} from "../utils/objects.js";
 import {getConstructor} from "../geometry/shapes/registry.js";
-import {isShapeSelected} from "./selection/vector_controller.js";
 
 
 const SUB_TOOL_MENU_TOOLTIP_OFFSET = [0, 15];
@@ -42,11 +42,10 @@ const SUB_TOOL_MENU_TOOLTIP_OFFSET = [0, 15];
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $standardTools, $selectionTools, selectionTooltips, $canvasContainer, subMenus;
+let $standardTools, $canvasContainer;
 
 export function init() {
     $canvasContainer = $('#canvas-container');
-    subMenus = [];
 
     setupEventBus();
     setupStandardTools();
@@ -59,7 +58,6 @@ function refresh() {
     refreshCharPicker();
     refreshColorPicker();
     refreshStandardTools();
-    subMenus.forEach(subMenu => subMenu.refresh());
     refreshShapeProperties();
 }
 
@@ -84,8 +82,8 @@ export function handleEscapeKey() {
     }
 
     // Close any submenus if they are open
-    if (Object.values(shapeSubMenus).some(menu => menu.isOpen)) {
-        Object.values(shapeSubMenus).forEach(menu => menu.toggleDropdown(false))
+    if (Object.values(shapeMenus).some(menu => menu.isOpen)) {
+        Object.values(shapeMenus).forEach(menu => menu.toggleDropdown(false))
         return true;
     }
 
@@ -541,7 +539,7 @@ export function showHoverForTool() {
 // -------------------------------------------------------------------------------- Shape Properties
 
 let $shapeProperties, shapeTooltips = [];
-const shapeSubMenus = {};
+const shapeMenus = {};
 
 // Most menus are based on shape props and are keyed off the prop. There is no 'prop' for order, so we give it its own key.
 const ORDER_MENU = '__ORDER__';
@@ -550,23 +548,16 @@ function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
     // Stroke dropdowns for each shape type
-    const $strokeActions = $('#shape-stroke-menu-group').find('.group-actions')
+    const $strokeGroup = $('#shape-stroke-menu-group');
     Object.values(SHAPE_TYPES).forEach(shapeType => {
         if (!STROKE_STYLE_PROPS[shapeType]) return; // Shape has no stroke prop
-
-        setupStrokeMenu($('<div>', {
-            class: 'flex-row',
-            style: `gap:0.25rem;`
-        }).appendTo($strokeActions), shapeType)
+        setupStrokeMenu($strokeGroup, shapeType)
     });
 
     setupBrushMenu();
-
     setupFillMenu();
-
-    setupTextAlignMenu($('#shape-text-align-h'), TEXT_ALIGN_H_PROP, Object.values(TEXT_ALIGN_H_OPTS));
-    setupTextAlignMenu($('#shape-text-align-v'), TEXT_ALIGN_V_PROP, Object.values(TEXT_ALIGN_V_OPTS));
-
+    setupLineMarkerMenus();
+    setupTextAlignMenus();
     setupOrderMenu();
 
     actions.registerAction('tools.shapes.delete', {
@@ -735,6 +726,7 @@ function firstActiveShapeProp(propKey) {
     const props = activeShapeProps();
     return props[propKey] === undefined ? undefined : props[propKey][0];
 }
+
 function updateActiveShapeProp(propKey, propValue, propagate = true) {
     let refreshTools = state.getConfig('drawProps')[propKey] !== propValue; // refresh tools if drawing property changes
 
@@ -750,65 +742,10 @@ function updateActiveShapeProp(propKey, propValue, propagate = true) {
     if (propagate && refreshTools) refresh();
 }
 
-function setupStrokeMenu($menu, shapeType) {
-    const strokeProp = STROKE_STYLE_PROPS[shapeType];
+function setupShapeMenu($group, prop, options, overrides = {}) {
+    const $menu = $('<div>').appendTo($group.find('.group-actions'))
 
-    const styleMenu = new IconMenu($menu, {
-        dropdown: true,
-        dropdownBtnTooltip: `tools.shapes.${strokeProp}`,
-        items: Object.values(STROKE_STYLE_OPTIONS[shapeType]).map(stroke => {
-            return {
-                value: stroke,
-                icon: `tools.shapes.${strokeProp}.${stroke}`,
-                tooltip: `tools.shapes.${strokeProp}.${stroke}`,
-            }
-        }),
-        visible: () => activeShapeTypes().includes(shapeType),
-        getValue: () => firstActiveShapeProp(strokeProp),
-        onSelect: newValue => updateActiveShapeProp(strokeProp, newValue),
-        tooltipOptions: {
-            placement: 'right'
-        }
-    })
-
-    shapeSubMenus[strokeProp] = styleMenu;
-}
-
-function setupBrushMenu() {
-    const $menu = $('<div>').appendTo($('#shape-brush-menu-group').find('.group-actions'));
-
-    const menu = new IconMenu($menu, {
-        dropdown: true,
-        dropdownBtnTooltip: `tools.shapes.${BRUSH_PROP}`,
-        items: Object.keys(BRUSHES).map(option => {
-            return {
-                value: option,
-                icon: `tools.brush.${option}`,
-                tooltip: `tools.brush.${option}`,
-
-                // Currently there is no need to disable individual items because linked prop causes entire menu to be hidden
-                // disabled: () => isBrushDisabled(option, activeShapeProps())
-            }
-        }),
-        visible: () => {
-            const shapeProps = activeShapeProps();
-            if (shapeProps[BRUSH_PROP] === undefined) return false;
-
-            // Only visible if more than one option is enabled
-            return Object.keys(BRUSHES).filter(brush => !isBrushDisabled(brush, shapeProps)).length > 1;
-        },
-        getValue: () => firstActiveShapeProp(BRUSH_PROP),
-        onSelect: newValue => updateActiveShapeProp(BRUSH_PROP, newValue),
-        tooltipOptions: {
-            placement: 'right'
-        }
-    })
-
-    shapeSubMenus[BRUSH_PROP] = menu;
-}
-
-function setupTextAlignMenu($menu, prop, options) {
-    const menu = new IconMenu($menu, {
+    shapeMenus[prop] = new IconMenu($menu, {
         dropdown: true,
         dropdownBtnTooltip: `tools.shapes.${prop}`,
         items: options.map(option => {
@@ -818,45 +755,66 @@ function setupTextAlignMenu($menu, prop, options) {
                 tooltip: `tools.shapes.${prop}.${option}`,
             }
         }),
-        visible: () => {
-            if (activeShapeProps()[prop] === undefined) return false;
-
-            // Show if shape already contains text, or we're actively editing text
-            return activeShapeProps()[TEXT_PROP].some(text => text.length > 0) ||
-                selectionController.vector.isEditingText();
-        },
+        visible: () => activeShapeProps()[prop] !== undefined,
         getValue: () => firstActiveShapeProp(prop),
         onSelect: newValue => updateActiveShapeProp(prop, newValue),
         tooltipOptions: {
             placement: 'right'
+        },
+        ...overrides
+    });
+}
+
+function setupStrokeMenu($group, shapeType) {
+    setupShapeMenu(
+        $group,
+        STROKE_STYLE_PROPS[shapeType],
+        Object.values(STROKE_STYLE_OPTIONS[shapeType]),
+        {
+            visible: () => activeShapeTypes().includes(shapeType),
+        }
+    )
+}
+
+function setupBrushMenu() {
+    setupShapeMenu($('#shape-brush-menu-group'), BRUSH_PROP, Object.keys(BRUSHES), {
+        visible: () => {
+            const shapeProps = activeShapeProps();
+            if (shapeProps[BRUSH_PROP] === undefined) return false;
+
+            // Only visible if more than one option is enabled
+            return Object.keys(BRUSHES).filter(brush => !isBrushDisabled(brush, shapeProps)).length > 1;
         }
     })
+}
 
-    shapeSubMenus[prop] = menu;
+function setupTextAlignMenus() {
+    [
+        { prop: TEXT_ALIGN_H_PROP, options: Object.values(TEXT_ALIGN_H_OPTS) },
+        { prop: TEXT_ALIGN_V_PROP, options: Object.values(TEXT_ALIGN_V_OPTS) },
+    ].forEach(({ prop, options }) => {
+        setupShapeMenu($('#shape-text-align-group'), prop, options, {
+            visible: () => {
+                if (activeShapeProps()[prop] === undefined) return false;
+
+                // Show if shape already contains text, or we're actively editing text
+                return activeShapeProps()[TEXT_PROP].some(text => text.length > 0) ||
+                    selectionController.vector.isEditingText();
+            },
+        })
+    })
 }
 
 function setupFillMenu() {
-    const $menu = $('<div>').appendTo($('#shape-fill-menu-group').find('.group-actions'));
+    setupShapeMenu($('#shape-fill-menu-group'), FILL_PROP, Object.values(FILL_OPTIONS))
+}
 
-    const menu = new IconMenu($menu, {
-        dropdown: true,
-        dropdownBtnTooltip: `tools.shapes.${FILL_PROP}`,
-        items: Object.values(FILL_OPTIONS).map(option => {
-            return {
-                value: option,
-                icon: `tools.shapes.${FILL_PROP}.${option}`,
-                tooltip: `tools.shapes.${FILL_PROP}.${option}`,
-            }
-        }),
-        visible: () => activeShapeProps()[FILL_PROP] !== undefined,
-        getValue: () => firstActiveShapeProp(FILL_PROP),
-        onSelect: newValue => updateActiveShapeProp(FILL_PROP, newValue),
-        tooltipOptions: {
-            placement: 'right'
-        }
-    })
+function setupLineMarkerMenus() {
+    const $group = $('#shape-line-marker-menu-group');
 
-    shapeSubMenus[FILL_PROP] = menu;
+    setupShapeMenu($group, ARROWHEAD_START_PROP, Object.values(ARROWHEAD_OPTIONS))
+    // setupShapeMenu($group, WAYPOINT_PROP, Object.values(WAYPOINT_OPTIONS))
+    setupShapeMenu($group, ARROWHEAD_END_PROP, Object.values(ARROWHEAD_OPTIONS))
 }
 
 function setupOrderMenu() {
@@ -869,7 +827,7 @@ function setupOrderMenu() {
         })
     })
 
-    const menu = new IconMenu($menu, {
+    shapeMenus[ORDER_MENU] = new IconMenu($menu, {
         dropdown: true,
         dropdownBtnIcon: 'tools.shapes.order',
         dropdownBtnTooltip: 'tools.shapes.order',
@@ -888,9 +846,7 @@ function setupOrderMenu() {
         tooltipOptions: {
             placement: 'right'
         }
-    })
-
-    shapeSubMenus[ORDER_MENU] = menu;
+    });
 }
 
 function refreshShapeProperties() {
@@ -899,17 +855,20 @@ function refreshShapeProperties() {
 
     if (isVisible) {
         // Toggle menu visibility
-        Object.values(shapeSubMenus).forEach(menu => menu.refresh());
+        Object.values(shapeMenus).forEach(menu => menu.refresh());
 
         // Toggle menu group visibility (the containers around groups of menus)
         $shapeProperties.find('#shape-stroke-menu-group').toggle(
-            Object.values(STROKE_STYLE_PROPS).some(prop => shapeSubMenus[prop].isVisible())
+            Object.values(STROKE_STYLE_PROPS).some(prop => shapeMenus[prop].isVisible())
         )
-        $shapeProperties.find('#shape-brush-menu-group').toggle(shapeSubMenus[BRUSH_PROP].isVisible())
-        $shapeProperties.find('#shape-text-align').toggle(
-            shapeSubMenus[TEXT_ALIGN_H_PROP].isVisible() || shapeSubMenus[TEXT_ALIGN_V_PROP].isVisible()
+        $shapeProperties.find('#shape-brush-menu-group').toggle(shapeMenus[BRUSH_PROP].isVisible())
+        $shapeProperties.find('#shape-text-align-group').toggle(
+            shapeMenus[TEXT_ALIGN_H_PROP].isVisible() || shapeMenus[TEXT_ALIGN_V_PROP].isVisible()
         )
-        $shapeProperties.find('#shape-fill-menu-group').toggle(shapeSubMenus[FILL_PROP].isVisible())
+        $shapeProperties.find('#shape-fill-menu-group').toggle(shapeMenus[FILL_PROP].isVisible())
+        $shapeProperties.find('#shape-line-marker-menu-group').toggle(
+            shapeMenus[ARROWHEAD_START_PROP].isVisible() || shapeMenus[ARROWHEAD_END_PROP].isVisible()
+        )
         $shapeProperties.find('#shape-color-menu-group').toggle(showColorPicker())
         $shapeProperties.find('#shape-char-menu-group').toggle(showCharPicker())
         $shapeProperties.find('#move-menu-group').toggle(selectionController.raster.hasSelection())

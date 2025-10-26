@@ -8,10 +8,10 @@ const DEBUG = false;
  * @param {Cell} fromCell - Starting cell of the line
  * @param {Cell} toCell - Ending cell of the line
  * @param {(cell: Cell, char: string) => void} callback - Callback called for each char in the generated ascii line.
- * @param {boolean} [inclusiveStart=false] - Whether to include fromCell in the final line
- * @param {boolean} [inclusiveEnd=false] - Whether to include toCell in the final line
+ * @param {boolean} [inclusiveStart=true] - Whether to include fromCell in the final line
+ * @param {boolean} [inclusiveEnd=true] - Whether to include toCell in the final line
  */
-export function straightAsciiLine(fromCell, toCell, callback, inclusiveStart = false, inclusiveEnd = false) {
+export function straightAsciiLine(fromCell, toCell, callback, inclusiveStart = true, inclusiveEnd = true) {
     interpolate(fromCell, toCell, inclusiveStart, inclusiveEnd).forEach(traversedCell => {
         if (DEBUG) { console.log(`  interpolated: ${traversedCell}`); }
 
