@@ -61,7 +61,7 @@ export default class Line extends Shape {
         switch(propKey) {
             case STROKE_STYLE_PROPS[SHAPE_TYPES.LINE]:
                 // When changing stroke style, if changing to an elbow stroke we require path to only have two points
-                const pathUpdate = STROKES_REQUIRING_2_POINTS.has(newValue) && this.props.path.length ?
+                const pathUpdate = STROKES_REQUIRING_2_POINTS.has(newValue) && this.props.path ?
                     super.updateProp('path', [this.props.path.at(0), this.props.path.at(-1)]) : false;
                 const strokeUpdate = super.updateProp(propKey, newValue);
                 return pathUpdate || strokeUpdate;
@@ -90,6 +90,12 @@ export default class Line extends Shape {
         }
 
         this._convertInitialDrawToProps();
+    }
+
+    handleDrawMousemove(cell, options) {
+        this._setAttachment(END_ATTACHMENT, options.attachTarget, cell);
+
+        super.handleDrawMousemove(cell, options);
     }
 
     handleDrawMouseup(cell, options) {
@@ -306,6 +312,22 @@ export default class Line extends Shape {
             this.props.endAttachment = null;
             this._clearCache()
         }
+    }
+
+    remapAttachments(idMap) {
+        [START_ATTACHMENT, END_ATTACHMENT].forEach(attachmentKey => {
+            if (!this.props[attachmentKey]) return;
+
+            const currentId = this.props[attachmentKey].shapeId;
+            if (idMap.has(currentId)) {
+                this.props[attachmentKey].shapeId = idMap.get(currentId);
+            } else {
+                this.props[attachmentKey] = null;
+            }
+            this._resyncAttachment(attachmentKey);
+
+            this._clearCache();
+        });
     }
 
     dragCellHandle(handle, position, attachTarget) {

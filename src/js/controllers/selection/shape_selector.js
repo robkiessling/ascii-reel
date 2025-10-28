@@ -241,7 +241,11 @@ export default class ShapeSelector {
         const rowOffset = cell.row - top;
         const colOffset = cell.col - left;
 
-        selectionController.vector.updateSelectedShapes(shape => shape.translate(rowOffset, colOffset), false)
+        selectionController.vector.updateSelectedShapes(shape => {
+            shape.translate(rowOffset, colOffset);
+            selectionController.vector.resyncAttachmentsTo(shape.id);
+            return false; // Not triggering any refreshes; depending on outside function to do so
+        }, false)
     }
 
 

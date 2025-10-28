@@ -958,11 +958,14 @@ function handleDrawMousedown(shapeType, cell, currentPoint, options = {}) {
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }
 
-function handleDrawMousemove(cell, currentPoint, options = {}) {
+function handleDrawMousemove(cell, currentPoint) {
     if (!drawingContent) return;
     if (!cell) return;
 
-    drawingContent.handleDrawMousemove(cell, { point: currentPoint, ...options });
+    drawingContent.handleDrawMousemove(cell, {
+        point: currentPoint,
+        attachTarget: selectionController.vector.getAttachTarget(cell)
+    });
 
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
 }

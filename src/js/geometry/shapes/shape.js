@@ -220,6 +220,15 @@ export default class Shape {
     }
 
     /**
+     * Remaps this shape's attachment points according to the id map. If an attachment point is not found
+     * in the map, it should be deleted.
+     * @param {Map} idMap
+     */
+    remapAttachments(idMap) {
+        // Do nothing
+    }
+
+    /**
      * Callback when one of this shape's cell handles is being dragged
      *
      * @param {CellHandle} handle - the cell handle being dragged

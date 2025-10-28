@@ -444,20 +444,27 @@ export function createTextboxWithText(text, cell = nextPasteLocation()) {
  *
  * Each shape is deserialized, added to the current cel, and selected. After insertion, all imported shapes are
  * translated to the current paste location.
- *
- * @param {Array<Object>} serializedShapes - An array of shape data to deserialize and insert.
  */
-export function importShapes(serializedShapes) {
-    const importedShapes = serializedShapes.map(serializedShape => {
-        const shape = Shape.deserialize(serializedShape);
-        state.addCurrentCelShape(shape);
+export function pasteShapes(copiedShapeData) {
+    const idMap = new Map();
+
+    const copiedShapes = copiedShapeData.map(data => {
+        const oldId = data.id;
+        data.id = undefined;
+
+        const shape = Shape.deserialize(data)
+        idMap.set(oldId, shape.id);
+
+        state.addCurrentCelShape(shape)
+
         return shape;
     })
 
-    setSelectedShapeIds(importedShapes.map(shape => shape.id));
-
+    copiedShapes.forEach(shape => shape.remapAttachments(idMap));
+    setSelectedShapeIds(copiedShapes.map(shape => shape.id));
     shapeSelector.translateTo(nextPasteLocation());
 
+    eventBus.emit(EVENTS.SELECTION.CHANGED);
     eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
     saveDistinctHistory()
 }
@@ -476,6 +483,13 @@ function nextPasteLocation() {
     pasteCell.translate(1, 1);
 
     return location;
+}
+
+export function copySelectedShapes() {
+    // Set paste location equal to the copied shape's topLeft point, nudged a little
+    pasteCell = shapeSelector.boundingArea.topLeft.clone().translate(1, 1);
+
+    return selectedShapes().map(shape => shape.serialize());
 }
 
 // ------------------------------------------------------------------------------------------------- Keyboard

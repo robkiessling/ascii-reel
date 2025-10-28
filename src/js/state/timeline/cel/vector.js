@@ -191,7 +191,9 @@ export default class VectorCel {
     }
 
     /**
-     * Applies an update to a shape in this cel.
+     * Applies an update to a shape in this cel. It is important to use this method when updating a shape
+     * (as opposed to just calling a method on the shape directly) to avoid stale cache data (at the cel level).
+     *
      * @param {string} shapeId - The ID of shape to update
      * @param {(shape: Shape) => boolean|void} updater - Function called with the shape for the given `shapeId`.
      *   Should return `true` if the shape's state was modified, or `false` if no changes were made.

@@ -7,7 +7,6 @@ import * as state from "../state/index.js";
 import * as actions from "./actions.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import {LAYER_TYPES} from "../state/constants.js";
-import Cell from "../geometry/cell.js";
 
 let copiedSelection = {};
 
@@ -109,7 +108,7 @@ function copy() {
                 }
             } else {
                 const glyphs = selectionController.vector.selectedShapesGlyphs();
-                const shapes = selectionController.vector.selectedShapes();
+                const shapes = selectionController.vector.copySelectedShapes();
 
                 copiedSelection = {
                     text: convertGlyphsToText(glyphs),
@@ -146,7 +145,7 @@ function paste(limitToSelection) {
                 if (selectionController.vector.isEditingText()) {
                     selectionController.vector.insertText(latestText);
                 } else if (copiedSelection.shapes) {
-                    selectionController.vector.importShapes(copiedSelection.shapes.map(shape => shape.duplicate()));
+                    selectionController.vector.pasteShapes(copiedSelection.shapes);
                 } else {
                     selectionController.vector.createTextboxWithText(latestText)
                 }
