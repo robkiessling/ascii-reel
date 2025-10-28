@@ -1009,7 +1009,7 @@ function finishDrawing() {
 
     drawingContent.finishDraw();
 
-    if (drawingContent.shouldDeleteOnDrawFinished()) {
+    if (drawingContent.shouldDeleteAfterDraw()) {
         drawingContent = null;
         eventBus.emit(EVENTS.REFRESH.ALL);
         return;

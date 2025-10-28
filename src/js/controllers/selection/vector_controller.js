@@ -337,12 +337,12 @@ export function resyncAttachmentsTo(shapeId) {
     return updated;
 }
 
-// Auto-width textboxes resize when their text changes, which can shift their attachment edges. This ensures any
+// Textboxes resize when their text changes, which can shift their attachment edges. This ensures any
 // connected lines remain properly attached after a resize.
 function resyncAttachmentsIfTextbox(shapeId) {
     const shape = state.getCurrentCelShape(shapeId);
     
-    if (shape.props[AUTO_TEXT_WIDTH_PROP]) resyncAttachmentsTo(shapeId);
+    if (shape.type === SHAPE_TYPES.TEXTBOX) resyncAttachmentsTo(shapeId);
 }
 
 // ------------------------------------------------------------------------------------------------- Marquee

@@ -102,18 +102,18 @@ function copy() {
             break;
         case LAYER_TYPES.VECTOR:
             if (selectionController.vector.isEditingText()) {
+                const text = selectionController.vector.getTextSelection().text;
                 copiedSelection = {
-                    text: selectionController.vector.getTextSelection().text,
-                    glyphs: null, // Don't calculate glyphs yet; we can calculate them if/when we end up pasting
+                    text: text,
+                    glyphs: convertTextToGlyphs(text),
                 }
             } else {
                 const glyphs = selectionController.vector.selectedShapesGlyphs();
-                const shapes = selectionController.vector.copySelectedShapes();
 
                 copiedSelection = {
                     text: convertGlyphsToText(glyphs),
                     glyphs,
-                    shapes
+                    shapes: selectionController.vector.copySelectedShapes()
                 }
             }
             break;
@@ -132,19 +132,19 @@ function copy() {
  */
 function paste(limitToSelection) {
     readClipboard(latestText => {
-        // If external clipboard has changed, convert new clipboard text to glyphs. Otherwise, use stored glyphs.
-        const latestGlyphs = latestText !== copiedSelection.text || !copiedSelection.glyphs ?
-            convertTextToGlyphs(latestText) :
-            copiedSelection.glyphs;
+        const externalClipboardChanged = latestText !== copiedSelection.text;
 
         switch (state.currentLayerType()) {
             case LAYER_TYPES.RASTER:
-                selectionController.raster.insertGlyphs(latestGlyphs, limitToSelection);
+                selectionController.raster.insertGlyphs(
+                    externalClipboardChanged ? convertTextToGlyphs(latestText) : copiedSelection.glyphs,
+                    limitToSelection
+                );
                 break;
             case LAYER_TYPES.VECTOR:
                 if (selectionController.vector.isEditingText()) {
                     selectionController.vector.insertText(latestText);
-                } else if (copiedSelection.shapes) {
+                } else if (copiedSelection.shapes && !externalClipboardChanged) {
                     selectionController.vector.pasteShapes(copiedSelection.shapes);
                 } else {
                     selectionController.vector.createTextboxWithText(latestText)

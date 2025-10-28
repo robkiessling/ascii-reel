@@ -243,7 +243,7 @@ function redrawCharCanvas() {
     }
 
     // Special case for textbox initial draw - need to show selection boundaries otherwise it is invisible
-    if (drawingContent && drawingContent.showSelectionOnInitialDraw()) {
+    if (drawingContent && drawingContent.shouldShowBoundariesDuringDraw()) {
         // TODO - Drawing on charCanvas makes the boundaries wrong opacity
         selectionController.vector.drawShapeBoundingBox(charCanvas, drawingContent);
     }

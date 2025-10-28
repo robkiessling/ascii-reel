@@ -216,7 +216,7 @@ export function stopEditingText() {
     toggleTextOverflow(false)
 
     selectedShapeIds().forEach(shapeId => {
-        if (getCurrentCelShape(shapeId).shouldDeleteOnTextFinished()) {
+        if (getCurrentCelShape(shapeId).shouldDeleteAfterTextEdit()) {
             shapeIdsSet().delete(shapeId);
             deleteCurrentCelShape(shapeId);
         }

@@ -464,16 +464,16 @@ export default class Shape {
         return false;
     }
 
-    shouldDeleteOnDrawFinished() {
+    shouldDeleteAfterDraw() {
         return false;
     }
 
     // If returns true, shape will be deleted when text editing is finished
-    shouldDeleteOnTextFinished() {
+    shouldDeleteAfterTextEdit() {
         return false;
     }
 
-    showSelectionOnInitialDraw() {
+    shouldShowBoundariesDuringDraw() {
         return false;
     }
 

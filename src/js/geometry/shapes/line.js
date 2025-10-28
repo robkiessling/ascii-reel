@@ -142,7 +142,7 @@ export default class Line extends Shape {
         return true;
     }
 
-    shouldDeleteOnDrawFinished() {
+    shouldDeleteAfterDraw() {
         return this.props.path.length < 2;
     }
 
