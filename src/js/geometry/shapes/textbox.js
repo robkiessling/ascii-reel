@@ -21,7 +21,7 @@ export default class Textbox extends BoxShape {
         { prop: AUTO_TEXT_WIDTH_PROP, default: true },
     ];
 
-    deleteOnTextFinished() {
+    shouldDeleteOnTextFinished() {
         // When finished editing text, if there is no text the textbox will be deleted
         return isEmptyOrWhitespace(this.props[TEXT_PROP] || "")
     }

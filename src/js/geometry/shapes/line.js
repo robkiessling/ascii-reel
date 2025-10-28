@@ -82,14 +82,23 @@ export default class Line extends Shape {
             this._setAttachment(START_ATTACHMENT, options.attachTarget, cell);
         }
 
+        // In rare cases, drawing may finish upon mousedown (e.g. if drawing an elbow line and 2nd point is drawn)
+        let drawingFinished = false;
+
         // Add further mousedown cells to path (if they are different than previous path cell)
         if (this._initialDraw.multiPointDrawing && !cell.equals(this._initialDraw.path.at(-1))) {
             this._initialDraw.path.push(cell.clone());
 
             this._setAttachment(END_ATTACHMENT, options.attachTarget, cell);
+
+            if (STROKES_REQUIRING_2_POINTS.has(this.props[STROKE_STYLE_PROPS[SHAPE_TYPES.LINE]])) {
+                drawingFinished = true;
+            }
         }
 
         this._convertInitialDrawToProps();
+
+        return drawingFinished;
     }
 
     handleDrawMousemove(cell, options) {
@@ -127,6 +136,14 @@ export default class Line extends Shape {
         this.props.path = [...this._initialDraw.path, this._initialDraw.hover];
 
         this._clearCache();
+    }
+
+    shouldFinishDrawOnKeypress() {
+        return true;
+    }
+
+    shouldDeleteOnDrawFinished() {
+        return this.props.path.length < 2;
     }
 
     resize(oldBox, newBox) {

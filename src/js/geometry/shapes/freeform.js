@@ -47,6 +47,8 @@ export default class Freeform extends Shape {
         }
 
         this._convertInitialDrawToProps();
+
+        return false;
     }
 
     /**

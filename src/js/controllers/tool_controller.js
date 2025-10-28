@@ -71,6 +71,19 @@ export function changeTool(newTool, saveHistoryOnSelectionClear = true) {
 }
 
 /**
+ * Handles the enter key being pressed.
+ * @returns {boolean} - Whether the keyboard event is considered consumed or not
+ */
+export function handleEnterKey() {
+    if (drawingContent && drawingContent.shouldFinishDrawOnKeypress()) {
+        finishDrawing();
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Handles the escape key being pressed.
  * @returns {boolean} - Whether the keyboard event is considered consumed or not
  */
@@ -95,6 +108,12 @@ export function handleEscapeKey() {
         // the event through. This is because raster selections are tied to quick-swap mode, and letting the event
         // propagate allows the selection to be cleared as well.
         return !selectionController.raster.hasSelection();
+    }
+
+    // Some drawing shapes (e.g. multipoint lines) may be terminated with esc key
+    if (drawingContent && drawingContent.shouldFinishDrawOnKeypress()) {
+        finishDrawing();
+        return true;
     }
 
     return false;
@@ -951,11 +970,16 @@ function handleDrawMousedown(shapeType, cell, currentPoint, options = {}) {
         drawingContent.provideAttachmentResolver(shapeId => state.getCurrentCelShape(shapeId))
     }
 
-    drawingContent.handleDrawMousedown(cell, {
+    const drawingFinished = drawingContent.handleDrawMousedown(cell, {
         point: currentPoint,
         attachTarget: selectionController.vector.getAttachTarget(cell)
     });
-    eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+
+    if (drawingFinished) {
+        finishDrawing()
+    } else {
+        eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
+    }
 }
 
 function handleDrawMousemove(cell, currentPoint) {
@@ -984,10 +1008,17 @@ function finishDrawing() {
     if (!drawingContent) return;
 
     drawingContent.finishDraw();
+
+    if (drawingContent.shouldDeleteOnDrawFinished()) {
+        drawingContent = null;
+        eventBus.emit(EVENTS.REFRESH.ALL);
+        return;
+    }
+
     state.addCurrentCelShape(drawingContent);
 
     // If the drawn shape would be deleted (e.g. empty Textbox), immediately start editing its text
-    if (drawingContent.deleteOnTextFinished()) {
+    if (drawingContent.type === SHAPE_TYPES.TEXTBOX) {
         changeTool('select', false);
         selectionController.vector.setSelectedShapeIds([drawingContent.id])
         selectionController.vector.setTextCaret(0, { saveHistory: false });

@@ -116,6 +116,7 @@ export default class Shape {
      * will have this called multiple times.
      * @param {Cell} cell - Location of mousedown
      * @param {Object} options
+     * @returns {boolean} - True if drawing is finished, false if drawing needs to continue
      */
     handleDrawMousedown(cell, options) {
         this._initialDraw = {
@@ -124,6 +125,8 @@ export default class Shape {
         }
 
         this._convertInitialDrawToProps();
+
+        return false;
     }
 
     /**
@@ -456,10 +459,20 @@ export default class Shape {
 
     // --------------------------------------------------------------------------------
 
-    // If returns true, shape will be deleted when text editing is finished
-    deleteOnTextFinished() {
+    // Whether the shape should finish drawing upon enter/esc key
+    shouldFinishDrawOnKeypress() {
         return false;
     }
+
+    shouldDeleteOnDrawFinished() {
+        return false;
+    }
+
+    // If returns true, shape will be deleted when text editing is finished
+    shouldDeleteOnTextFinished() {
+        return false;
+    }
+
     showSelectionOnInitialDraw() {
         return false;
     }

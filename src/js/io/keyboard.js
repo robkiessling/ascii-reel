@@ -102,6 +102,7 @@ function handleTabKey(e) {
 }
 
 function handleEnterKey(key, e) {
+    if (tools.handleEnterKey()) return;
     if (selectionController.raster.handleEnterKey(e.shiftKey)) return;
     if (selectionController.vector.handleEnterKey(e.shiftKey)) return;
 
