@@ -44,7 +44,7 @@ let actionIdToShortcut = {
     'view.toggle-whitespace': { key: 'p', modifiers: [cmdKey, 'shiftKey'] },
     'view.zoom-in': { displayKey: '+', key: '=', modifiers: [cmdKey] },
     'view.zoom-out': { displayKey: '-', key: '-', modifiers: [cmdKey] },
-    'view.zoom-fit': { key: '0', modifiers: [cmdKey] },
+    'view.zoom-default': { key: '0', modifiers: [cmdKey] },
 
     'tools.standard.text-editor': { key: 't' },
     'tools.standard.draw-freeform': { key: 'f' },

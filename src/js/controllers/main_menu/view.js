@@ -20,8 +20,8 @@ export function init() {
         callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 0.5 }),
         enabled: () => canZoomOut(),
     });
-    actions.registerAction('view.zoom-fit', {
-        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_TO_FIT),
+    actions.registerAction('view.zoom-default', {
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_TO_DEFAULT),
     });
 }
 

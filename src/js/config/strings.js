@@ -32,7 +32,7 @@ export const STRINGS = {
     'view.hide-whitespace.name': 'Hide Whitespace',
     'view.zoom-in.name': 'Zoom In',
     'view.zoom-out.name': 'Zoom Out',
-    'view.zoom-fit.name': 'Zoom Fit',
+    'view.zoom-default.name': 'Reset Zoom',
 
     'settings.open-project-settings-dialog.name': 'Project Settings',
     'settings.open-font-dialog.name': 'Font Settings',

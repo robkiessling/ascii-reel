@@ -31,16 +31,9 @@ const USE_CHECKERBOARD = true;
 
 const ZOOM_DEFAULT = 2; // What to set zoom to during initial load
 
-// Static threshold value limiting how far you can zoom in
-const ZOOM_IN_THRESHOLD_VALUE = 30;
-const ZOOM_OUT_THRESHOLD_VALUE = 1; // only applicable if USE_STATIC_ZOOM_OUT_THRESHOLD:true
-
-// Threshold value limiting how far you can zoom out (actual value depends on length of largest axis)
-// E.g. ratio of 1.25 means show 125% more than the largest axis
-const ZOOM_OUT_THRESHOLD_RATIO = 1.5; // only applicable if USE_STATIC_ZOOM_OUT_THRESHOLD:false
-
-// Controls whether the zoom-out threshold is a static value or relative to the project's dimensions
-const USE_STATIC_ZOOM_OUT_THRESHOLD = true;
+const MAX_ZOOM_LEVEL = 30; // How far in you can zoom
+const MIN_ZOOM_LEVEL = 1; // How far out you can zoom
+const MIN_ZOOM_RELATIVE_TO_FIT = 1.5; // How far out you can zoom, relative to drawable area
 
 // Base zoom multiplier per scroll step (e.g., 1.1 = 10% zoom change per unit)
 const ZOOM_SCROLL_FACTOR = 1.3;
@@ -89,12 +82,12 @@ export default class Canvas {
 
         if (resetZoom || !this.initialized) {
             this._resetCamera();
-            this._buildZoomPanBoundaries(true);
-            // Don't need to apply zoom/pan boundaries; assume a camera that has been reset is within bounds
+            this._buildZoomPanBoundaries();
+            this.zoomDefault(true);
         }
         else {
             this._applyCamera(); // Apply camera with new canvas dimensions
-            this._buildZoomPanBoundaries(false);
+            this._buildZoomPanBoundaries();
             this._applyZoomBoundaries();
             this._applyPanBoundaries();
         }
@@ -653,40 +646,68 @@ export default class Canvas {
 
     // -------------------------------------------------------------- Zoom/Pan related methods
 
-    /**
-     * Calculates the zoom/pan boundaries.
-     * @param {boolean} zoomOutToMax - If true, canvas will be zoomed all the way out. If false, canvas's current zoom
-     *   will be maintained. This option is to increase performance: we have to zoom all the way out anyway to calculate
-     *   the boundaries, so if that is the desired zoom state we have an option to leave it zoomed out.
-     */
-    _buildZoomPanBoundaries(zoomOutToMax) {
-        this._zoomOutThreshold = USE_STATIC_ZOOM_OUT_THRESHOLD ? ZOOM_OUT_THRESHOLD_VALUE :
-            this._zoomLevelForFit() / ZOOM_OUT_THRESHOLD_RATIO;
-        this._zoomInThreshold = ZOOM_IN_THRESHOLD_VALUE;
+    _buildZoomPanBoundaries() {
+        // ---------------- Zoom Boundaries
+        // Minimum zoom level (how far you can zoom out) is the larger (i.e. more zoomed in) of:
+        // 1. MIN_ZOOM_LEVEL - Absolute floor to keep content readable
+        // 2. Fit-to-view area - This is a value that fits the whole drawable area, plus a small margin. This is needed
+        //    for small canvases, to prevent zooming out so far that the drawable area becomes a tiny speck
+        this._minZoomLevel = Math.max(MIN_ZOOM_LEVEL, this._zoomLevelForFit() / MIN_ZOOM_RELATIVE_TO_FIT);
 
-        const calcPanBoundaries = () => {
-            this.zoomOutToMax();
+        // Maximum zoom level (how far you can zoom in):
+        this._maxZoomLevel = MAX_ZOOM_LEVEL;
 
-            // Similar to currentViewRect(), but adding a little padding so you can pan away from the canvas content.
-            // This ensures context menu at top of canvas never blocks anything.
-            const topLeft = this.screenToWorld(-PAN_BOUNDARY_PADDING, -PAN_BOUNDARY_PADDING);
-            const bottomRight = this.screenToWorld(this.outerWidth + PAN_BOUNDARY_PADDING, this.outerHeight + PAN_BOUNDARY_PADDING);
+        // ---------------- Pan Boundaries
+        this._withTemporaryCamera(() => {
+            // Use fit-to-view zoom level, but clamp to minimum zoom for small canvases
+            const zoomLevel = Math.min(this._zoomLevelForFit(), this._minZoomLevel);
+
+            // Only add padding if we're using the natural fit level (not the clamped minimum).
+            // When clamped, the canvas is already small enough that extra padding isn't needed.
+            const padding = this._zoomLevelForFit() < this._minZoomLevel ? PAN_BOUNDARY_PADDING : 0;
+
+            // Calculate pan boundaries: set camera to fit level, then capture the world coordinates
+            // at screen edges (with optional padding to allow panning slightly past canvas edges)
+            this.zoomAndCenterOnCanvas(zoomLevel, false);
+            const topLeft = this.screenToWorld(-padding, -padding);
+            const bottomRight = this.screenToWorld(this.outerWidth + padding, this.outerHeight + padding);
             this._panBoundaries = new PixelRect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
-        }
-
-        // We need to calculate the zoom boundaries by zooming out all the way and snapshotting the view rect.
-        // If param zoomOutToMax is false, we don't want the zoom changes to persist so we do it in a temporary context.
-        if (zoomOutToMax) {
-            calcPanBoundaries();
-        }
-        else {
-            this._withTemporaryCamera(() => calcPanBoundaries());
-        }
+        });
     }
 
-    // Zooms to a particular zoom level centered around the midpoint of the canvas
-    zoomTo(level) {
-        // Reset scale
+    /**
+     * Zooms out just far enough so that the entire canvas is visible. If the canvas dimensions do not result in a
+     * perfect square, the smaller dimension will have visible margins. Does not adhere to zoom boundaries.
+     */
+    zoomToFit() {
+        this.zoomAndCenterOnCanvas(this._zoomLevelForFit(), false);
+    }
+
+    /**
+     * Zooms to the default zoom level
+     * @param {boolean} [snapToCenter=false] If true, will align camera to center of canvas
+     */
+    zoomDefault(snapToCenter = false) {
+        snapToCenter ? this.zoomAndCenterOnCanvas(ZOOM_DEFAULT) : this.zoomToLevel(ZOOM_DEFAULT);
+    }
+
+    canZoomIn() {
+        return roundForComparison(this._camera.zoom) < roundForComparison(this._maxZoomLevel)
+    }
+
+    canZoomOut() {
+        return roundForComparison(this._camera.zoom) > roundForComparison(this._minZoomLevel)
+    }
+
+    /**
+     * Sets the zoom to the given level, and aligns camera to center of canvas.
+     * @param level
+     * @param {boolean} [checkBoundaries=true]
+     */
+    zoomAndCenterOnCanvas(level, checkBoundaries = true) {
+        if (checkBoundaries && level < this._minZoomLevel) level = this._minZoomLevel;
+        if (checkBoundaries && level > this._maxZoomLevel) level = this._maxZoomLevel;
+
         this._resetCamera();
 
         // Center around absolute midpoint of drawableArea
@@ -703,28 +724,16 @@ export default class Canvas {
         this._applyCamera();
     }
 
-    // Zooms out just far enough so that the entire canvas is visible. If the canvas dimensions do not result in a
-    // perfect square the smaller dimension will have visible margins.
-    zoomToFit() {
-        this.zoomTo(this._zoomLevelForFit());
+    /**
+     * Zooms the camera to a particular level focused at a particular target
+     * @param {number} level - Level to set zoom to
+     * @param {{x: number, y: number}} [target] - Point to center camera around. If undefined, camera will remain
+     *   centered around its current viewpoint.
+     */
+    zoomToLevel(level, target) {
+        this.zoomDelta(level / this._camera.zoom, target)
     }
-
-    zoomToDefault() {
-        this.zoomTo(ZOOM_DEFAULT);
-    }
-
-    // Zooms out as far as possible. Both dimensions will have visible margins (assuming ZOOM_OUT_THRESHOLD_RATIO > 1)
-    zoomOutToMax() {
-        this.zoomTo(this._zoomOutThreshold);
-    }
-
-    canZoomIn() {
-        return roundForComparison(this._camera.zoom) < roundForComparison(this._zoomInThreshold)
-    }
-    canZoomOut() {
-        return roundForComparison(this._camera.zoom) > roundForComparison(this._zoomOutThreshold)
-    }
-
+    
     /**
      * Zooms the canvas in or out focused at a particular target
      * @param {number} delta - Controls the magnitude of the zoom. A value > 1 will zoom in, a value < 1 will zoom out.
@@ -734,8 +743,8 @@ export default class Canvas {
     zoomDelta(delta, target) {
         let newZoom = this._camera.zoom * delta;
 
-        if (newZoom < this._zoomOutThreshold) { newZoom = this._zoomOutThreshold; delta = newZoom / this._camera.zoom; }
-        if (newZoom > this._zoomInThreshold) { newZoom = this._zoomInThreshold; delta = newZoom / this._camera.zoom; }
+        if (newZoom < this._minZoomLevel) { newZoom = this._minZoomLevel; delta = newZoom / this._camera.zoom; }
+        if (newZoom > this._maxZoomLevel) { newZoom = this._maxZoomLevel; delta = newZoom / this._camera.zoom; }
         if (roundForComparison(newZoom) === roundForComparison(this._camera.zoom)) return;
 
         // If no target use canvas center

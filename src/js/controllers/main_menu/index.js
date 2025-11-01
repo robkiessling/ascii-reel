@@ -51,7 +51,7 @@ const LEFT_MENU_BAR = [
             SPACER,
             'view.zoom-in',
             'view.zoom-out',
-            'view.zoom-fit',
+            'view.zoom-default',
         ]
     },
     {

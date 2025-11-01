@@ -122,7 +122,7 @@ function setupEventBus() {
         iterateCanvases(canvas => canvas.zoomToFit())
     }, 1)
     eventBus.on(EVENTS.CANVAS.ZOOM_TO_DEFAULT, () => {
-        iterateCanvases(canvas => canvas.zoomToDefault())
+        iterateCanvases(canvas => canvas.zoomDefault())
     }, 1)
     eventBus.on(EVENTS.CANVAS.PAN_TO_TARGET, ({target}) => {
         iterateCanvases(canvas => canvas.panToTarget(target))
