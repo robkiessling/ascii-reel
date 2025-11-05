@@ -230,45 +230,19 @@ export function getCurrentCelGlyph(row, col) {
     return [celGlyphs.chars[row][col], celGlyphs.colors[row][col]];
 }
 
-// If the char or color parameter is undefined, that parameter will not be overridden
-export function setCurrentCelGlyph(row, col, char, color) {
-    celData.setCelGlyph(currentCel(), row, col, char, color);
-}
-
-export function getCurrentCelShapes() {
-    return celData.getCelShapes(currentCel());
-}
-export function getCurrentCelShape(shapeId) {
-    return celData.getCelShape(currentCel(), shapeId);
-}
-export function currentCelShapeExists(shapeId) {
-    return celData.celShapeExists(currentCel(), shapeId);
-}
-export function addCurrentCelShape(shape) {
-    celData.addCelShape(currentCel(), shape)
-}
-export function updateCurrentCelShape(shapeId, updater) {
-    return celData.updateCelShape(currentCel(), shapeId, updater);
-}
-export function deleteCurrentCelShape(shapeId) {
-    celData.deleteCelShape(currentCel(), shapeId);
-}
-export function reorderCurrentCelShapes(shapeIds, action) {
-    celData.reorderCelShapes(currentCel(), shapeIds, action)
-}
-export function canReorderCurrentCelShapes(shapeIds, action) {
-    return celData.canReorderCelShapes(currentCel(), shapeIds, action);
-}
-
-export function getCurrentCelShapeIdsAbove(shapeId) {
-    return currentCel().getShapeIdsAbove(shapeId);
-}
-export function testCurrentCelHandles(cell, handleType, forShapeIds) {
-    return currentCel().testHandles(cell, handleType, forShapeIds);
-}
-export function testCurrentCelMarquee(cellArea) {
-    return currentCel().testMarquee(cellArea)
-}
+export function setCurrentCelGlyph(...args) { return celData.setCelGlyph(currentCel(), ...args) }
+export function getCurrentCelShapes() { return celData.getCelShapes(currentCel()) }
+export function getCurrentCelShape(...args) { return celData.getCelShape(currentCel(), ...args) }
+export function currentCelShapeExists(...args) { return celData.celShapeExists(currentCel(), ...args) }
+export function addCurrentCelShape(...args) { return celData.addCelShape(currentCel(), ...args) }
+export function updateCurrentCelShape(...args) { return celData.updateCelShape(currentCel(), ...args) }
+export function deleteCurrentCelShape(...args) { return celData.deleteCelShape(currentCel(), ...args) }
+export function outOfBoundsCurrentCelShapes() { return celData.outOfBoundsCelShapes(currentCel()) }
+export function reorderCurrentCelShapes(...args) { return celData.reorderCelShapes(currentCel(), ...args) }
+export function canReorderCurrentCelShapes(...args) { return celData.canReorderCelShapes(currentCel(), ...args) }
+export function getCurrentCelShapeIdsAbove(...args) { return currentCel().getShapeIdsAbove(...args) }
+export function testCurrentCelHandles(...args) { return currentCel().testHandles(...args) }
+export function testCurrentCelMarquee(...args) { return currentCel().testMarquee(...args) }
 
 /**
  * Aggregates multiple layers into a final result. Chars on lower layers will be blocked if higher layers also have

@@ -153,8 +153,8 @@ export default class RasterCel {
 
         for (let r = 0; r < newDimensions[0]; r++) {
             for (let c = 0; c < newDimensions[1]; c++) {
-                if (resizedChars[r] === undefined) { resizedChars[r] = []; }
-                if (resizedColors[r] === undefined) { resizedColors[r] = []; }
+                if (resizedChars[r] === undefined) resizedChars[r] = [];
+                if (resizedColors[r] === undefined) resizedColors[r] = [];
 
                 let oldRow = r + rowOffset;
                 let oldCol = c + colOffset;

@@ -33,7 +33,7 @@ const ZOOM_DEFAULT = 2; // What to set zoom to during initial load
 
 const MAX_ZOOM_LEVEL = 30; // How far in you can zoom
 const MIN_ZOOM_LEVEL = 1; // How far out you can zoom
-const MIN_ZOOM_RELATIVE_TO_FIT = 1.5; // How far out you can zoom, relative to drawable area
+const MIN_ZOOM_RELATIVE_TO_FIT = 1.75; // How far out you can zoom, relative to drawable area
 
 // Base zoom multiplier per scroll step (e.g., 1.1 = 10% zoom change per unit)
 const ZOOM_SCROLL_FACTOR = 1.3;

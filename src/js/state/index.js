@@ -31,10 +31,10 @@ export {
     iterateCelsForCurrentLayer, iterateCels,
     getCurrentCelGlyph, setCurrentCelGlyph, setCelGlyph,
     getCurrentCelShapes, getCurrentCelShape, currentCelShapeExists, addCurrentCelShape, updateCurrentCelShape,
-    deleteCurrentCelShape, reorderCurrentCelShapes, canReorderCurrentCelShapes,
+    deleteCurrentCelShape, outOfBoundsCurrentCelShapes, reorderCurrentCelShapes, canReorderCurrentCelShapes,
     getCurrentCelShapeIdsAbove, testCurrentCelHandles, testCurrentCelMarquee,
     isCellInBounds, layeredGlyphs, translateCel,
-    resize, colorSwap, hasCharContent
+    colorSwap, hasCharContent
 } from './timeline/index.js'
 export {
     sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy,
@@ -435,6 +435,10 @@ export function deleteLayer(index) {
     changeLayerIndex(newIndex);
 }
 
+export function resize(...args) {
+    selection.clearSelection(); // Clearing selection in case shapes get removed due to being out-of-bounds
+    timeline.resize(...args);
+}
 
 
 

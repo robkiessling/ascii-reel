@@ -116,9 +116,38 @@ export function deleteSelectedShapes() {
     saveDistinctHistory();
 }
 
-export function deleteSelectedShape(shapeId) {
-    state.selection.vector.deleteSelectedShape(shapeId);
-    // Not currently emitting events / saving history. It is up to outside function to handle this.
+/**
+ * Deletes a vector shape.
+ * @param shapeId
+ * @returns {boolean} - True if shape was selected, false if shape was not selected
+ */
+export function deleteShape(shapeId) {
+    if (isShapeSelected(shapeId)) {
+        // If the shape is selected, have to go through selection state handler
+        state.selection.vector.deleteSelectedShape(shapeId)
+        return true;
+    } else {
+        state.deleteCurrentCelShape(shapeId)
+        return false;
+    }
+}
+
+/**
+ * Deletes out-of-bounds shapes for the current cel
+ */
+export function deleteOutOfBoundsShapes() {
+    const outOfBoundsShapes = state.outOfBoundsCurrentCelShapes();
+
+    let needsFrameRefresh = false;
+    let needsSelectionRefresh = false;
+
+    outOfBoundsShapes.forEach(shape => {
+        if (deleteShape(shape.id)) needsSelectionRefresh = true;
+        needsFrameRefresh = true;
+    })
+
+    if (needsSelectionRefresh) eventBus.emit(EVENTS.SELECTION.CHANGED)
+    if (needsFrameRefresh) eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME)
 }
 
 export function canReorderSelectedShapes(action) { return state.selection.vector.canReorderSelectedShapes(action) }

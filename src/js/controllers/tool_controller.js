@@ -1062,14 +1062,7 @@ function vectorEraser(primaryCell) {
     let needsFrameRefresh = false;
     let needsSelectionRefresh = false;
     shapeIds.forEach(shapeId => {
-        if (selectionController.vector.isShapeSelected(shapeId)) {
-            // If the shape is selected, have to go through selection controller's method. Shape might be selected
-            // during eraser tool from right-click function.
-            selectionController.vector.deleteSelectedShape(shapeId);
-            needsSelectionRefresh = true;
-        } else {
-            state.deleteCurrentCelShape(shapeId)
-        }
+        if (selectionController.vector.deleteShape(shapeId)) needsSelectionRefresh = true;
         needsFrameRefresh = true;
         erasedShapes = true;
     });

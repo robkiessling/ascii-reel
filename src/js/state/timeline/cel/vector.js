@@ -5,6 +5,7 @@ import {transformValues} from "../../../utils/objects.js";
 import {COLOR_PROP, HANDLE_TYPES, REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
 import {LAYER_TYPES} from "../../constants.js";
 import Shape from "../../../geometry/shapes/shape.js";
+import CellArea from "../../../geometry/cell_area.js";
 
 /**
  * Vector Cel
@@ -128,7 +129,10 @@ export default class VectorCel {
     }
 
     resize(newDimensions, rowOffset, colOffset) {
-        // todo delete any shapes out of the picture?
+        this.shapes().forEach(shape => shape.translate(-rowOffset, -colOffset))
+
+        this.outOfBoundsShapes().forEach(shape => this.deleteShape(shape.id));
+
         this._clearCachedGlyphs();
     }
 
@@ -219,9 +223,16 @@ export default class VectorCel {
 
         this._clearCachedGlyphs();
     }
+
+    outOfBoundsShapes() {
+        const bounds = CellArea.drawableArea();
+        return this.shapes().filter(shape => !shape.overlaps(bounds));
+    }
+
     shapes() {
         return this.shapesOrder.map(shapeId => this.shapesById[shapeId]);
     }
+
     otherShapes(shapeId) {
         return this.shapes().filter(shape => shape.id !== shapeId)
     }

@@ -7,7 +7,6 @@ import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
 import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
-import {getCurrentCelShapes} from "../../state/index.js";
 
 /**
  * Intermediate between vector selection feature and its state.
@@ -190,6 +189,8 @@ export default class ShapeSelector {
 
         selectionController.vector.updateSelectedShapes(shape => shape.finishResize(), false);
 
+        if (this._resizeOccurred) selectionController.vector.deleteOutOfBoundsShapes();
+
         return this._resizeOccurred;
     }
 
@@ -218,6 +219,8 @@ export default class ShapeSelector {
      * @returns {boolean} - True if a shape(s) were translated.
      */
     finishTranslate() {
+        if (this._translateOccurred) selectionController.vector.deleteOutOfBoundsShapes();
+
         return this._translateOccurred;
     }
 
