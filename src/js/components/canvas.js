@@ -135,6 +135,7 @@ export default class Canvas {
      * @param {{chars: string[][], colors: number[][]}} glyphs - Content to draw
      * @param {Object} options - Draw options
      * @param {number} [options.opacity] - Opacity level to draw the content at
+     * @param {Cell} [options.origin] - Where to start drawing the chars from. Default: (0, 0)
      * @param {(row: number, col: number) => boolean} [options.mask] - Masking function. If provided, will be called
      *   for every drawn cell. If the function returns false, the cell will not be drawn.
      * @param {boolean} [options.showWhitespace] - If true, WHITESPACE_CHARs will be depicted as VISIBLE_WHITESPACE_CHARs
@@ -187,13 +188,16 @@ export default class Canvas {
 
             if (run) runs.push(run);
         }
+
+        const origin = options.origin ? options.origin : new Cell(0, 0);
+
         runs.forEach(run => {
             this.context.fillStyle = run.colorIndex === VISIBLE_WHITESPACE_COLOR_INDEX ?
                 VISIBLE_WHITESPACE_COLOR :
                 colorStr(run.colorIndex)
 
             // For y value, increase row by 0.5 so it is centered in cell
-            this.context.fillText(run.text, Cell.x(run.col), Cell.y(run.row + 0.5));
+            this.context.fillText(run.text, Cell.x(origin.col + run.col), Cell.y(origin.row + run.row + 0.5));
         });
 
         if (needsRestore) this.context.restore();

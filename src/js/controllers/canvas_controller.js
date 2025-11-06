@@ -24,6 +24,7 @@ import {LAYER_TYPES} from "../state/constants.js";
 import {callAction} from "../io/actions.js";
 import {getAttachTarget} from "./selection/vector_controller.js";
 import {HANDLE_TYPES} from "../geometry/shapes/constants.js";
+import CellArea from "../geometry/cell_area.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -186,14 +187,18 @@ export function hideCanvasMessage() {
 }
 
 /**
- * Draws the char-canvas which includes the background, multiple layers of chars, the onion, and the grid
+ * Draws the char-canvas which includes the background, multiple layers of chars, the onion, and the grid.
  */
 function redrawCharCanvas() {
+    // Only the glyphs for the current viewport (which may be a tiny subset of the entire drawing) are rendered
+    const viewport = CellArea.fromPixelRect(getCurrentViewRect());
+
     const layeredGlyphsOptions = {
         offset: {
             amount: tools.moveAllOffset,
             modifiers: tools.moveAllModifiers
-        }
+        },
+        viewport: viewport
     }
 
     // Build glyphs for current layer
@@ -228,6 +233,7 @@ function redrawCharCanvas() {
     // 2. If there are any layers below current layer, draw them at lower opacity
     charCanvas.drawGlyphs(belowGlyphs, {
         showWhitespace: state.getConfig('showWhitespace'),
+        origin: viewport.topLeft,
         opacity: NON_CURRENT_LAYER_OPACITY,
         mask: (row, col) => {
             // Don't include chars that will be covered by canvases above
@@ -250,6 +256,7 @@ function redrawCharCanvas() {
 
     // 3. Draw current layer at normal opacity
     charCanvas.drawGlyphs(currentGlyphs, {
+        origin: viewport.topLeft,
         showWhitespace: state.getConfig('showWhitespace'),
 
         // The following is commented out because I think it looks better if we DO draw current-layer chars, even if
@@ -261,6 +268,7 @@ function redrawCharCanvas() {
 
     // 4. If there are any layers above current layer, draw them at lower opacity
     charCanvas.drawGlyphs(aboveGlyphs, {
+        origin: viewport.topLeft,
         showWhitespace: state.getConfig('showWhitespace'),
         opacity: NON_CURRENT_LAYER_OPACITY
     });
@@ -270,8 +278,10 @@ function redrawCharCanvas() {
         // TODO Add an option in case user wants onion to apply to all layers?
         const onionGlyphs = state.layeredGlyphs(state.previousFrame(), {
             layers: [state.currentLayer()].filter(layer => layer.visible),
+            viewport: viewport
         })
         charCanvas.drawGlyphs(onionGlyphs, {
+            origin: viewport.topLeft,
             opacity: ONION_OPACITY
         });
     }

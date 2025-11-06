@@ -28,6 +28,10 @@ export default class Cell extends PixelRect {
         return fontHeight;
     }
 
+    static fromXYWH(x, y) {
+        return new Cell(Math.floor(y / fontHeight), Math.floor(x / fontWidth));
+    }
+
     // Convert to/from its object representation (so we can store it in json state)
     static deserialize(data) {
         if (!data || data.row === undefined || data.col === undefined) return null;
@@ -67,6 +71,16 @@ export default class Cell extends PixelRect {
     translateTo(cell) {
         this.row = cell.row;
         this.col = cell.col;
+        return this;
+    }
+
+    add(cell) {
+        return this.translate(cell.row, cell.col);
+    }
+
+    invert() {
+        this.row = -this.row;
+        this.col = -this.col;
         return this;
     }
 

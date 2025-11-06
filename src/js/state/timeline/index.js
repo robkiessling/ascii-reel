@@ -8,11 +8,10 @@
 import * as frameData from './frames.js';
 import * as layerData from './layers.js';
 import * as celData from './cels.js';
-import {ArrayRange, create2dArray, mergeGlyphs, translateGlyphs} from "../../utils/arrays.js";
-import {numCols, numRows} from "../config.js";
+import {ArrayRange, create2dArray, mergeGlyphs} from "../../utils/arrays.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {LAYER_TYPES} from "../constants.js";
-import Cell from "../../geometry/cell.js";
+import CellArea from "../../geometry/cell_area.js";
 
 export function deserialize(data = {}, options = {}) {
     layerData.deserialize(data.layerData, options);
@@ -254,7 +253,11 @@ export function testCurrentCelMarquee(...args) { return currentCel().testMarquee
  * @param {{row: number, col: number}} [options.offset] - Object containing information about how much to offset all the content
  * @param {Object} [options.movableContent] - If provided, the content will be drawn on top of the current layer
  * @param {Object} [options.drawingContent] - If provided, the content will be drawn on top of the current layer
- * @param {boolean} [options.convertEmptyStrToSpace] - If true, EMPTY_CHAR will be converted to WHITESPACE_CHAR
+ * @param {boolean} [options.convertEmptyStrToSpace=false] - If true, EMPTY_CHAR will be converted to WHITESPACE_CHAR
+ * @param {CellArea} [options.viewport] - If provided, limits glyph calculation to the specified CellArea instead of
+ *   the full drawable area. This improves performance when rendering only part of the drawing, since less merging of
+ *   2D arrays is required. Default: the full drawable area.
+ *   Note: When using a viewport, you must render the resulting 2D arrays offset by the viewport's origin.
  * @returns {{chars: string[][], colors: number[][]}|null} - Aggregated 2d arrays of chars and color indexes. Will be
  *   null if the layers option is provided and there are no valid layers.
  */
@@ -262,8 +265,16 @@ export function layeredGlyphs(frame, options = {}) {
     const layerIds = options.layers ? new Set(options.layers.map(layer => layer.id)) : null;
     if (layerIds && layerIds.size === 0) return null; // Short circuit
 
-    const chars = create2dArray(numRows(), numCols(), EMPTY_CHAR);
-    const colors = create2dArray(numRows(), numCols(), 0);
+    const viewport = options.viewport ? options.viewport : CellArea.drawableArea();
+
+    const chars = create2dArray(viewport.numRows, viewport.numCols, EMPTY_CHAR);
+    const colors = create2dArray(viewport.numRows, viewport.numCols, 0);
+
+    // When a viewport is active, we need to offset glyphs from cels, drawingContent, etc. in the opposite direction
+    // of the viewport. Those glyphs are positioned in absolute coordinates (relative to the full drawing's origin at
+    // 0,0), but the merged result starts at the viewport's top-left corner. Inverting the viewport offset realigns the
+    // global glyphs into the local viewport space.
+    const viewportOffset = viewport.topLeft.clone().invert();
 
     let l, layer, isCurrentLayer, r, c;
     const isCurrentFrame = frame.id === frameData.currentFrame().id;
@@ -281,14 +292,14 @@ export function layeredGlyphs(frame, options = {}) {
             case LAYER_TYPES.RASTER:
                 // For raster layers, we calculate cel glyphs without an offset, then merge them into result using offset
                 const rasterGlyphs = celData.getCelGlyphs(celData.cel(layer, frame));
-                mergeGlyphs({ chars, colors }, rasterGlyphs, new Cell(offset.row, offset.col));
+                mergeGlyphs({ chars, colors }, rasterGlyphs, viewportOffset.clone().add(offset));
                 break;
             case LAYER_TYPES.VECTOR:
                 // For vector layers, the cel glyphs must be calculated using the offset (cannot add it in post like
                 // raster layers). This is required because vector shapes can go beyond borders, so when we offset
                 // them (e.g. during a move) we need that outside content to appear in the canvas.
                 const vectorGlyphs = celData.getCelGlyphs(celData.cel(layer, frame), offset);
-                mergeGlyphs({ chars, colors }, vectorGlyphs, new Cell(0, 0));
+                mergeGlyphs({ chars, colors }, vectorGlyphs, viewportOffset.clone());
                 break;
             default:
                 throw new Error(`Invalid layer type: ${layer.type}`)
@@ -296,13 +307,13 @@ export function layeredGlyphs(frame, options = {}) {
 
         // If there is movableContent, show it on top of the rest of the layer
         if (options.movableContent && options.movableContent.glyphs && isCurrentLayer && isCurrentFrame) {
-            mergeGlyphs({ chars, colors }, options.movableContent.glyphs, options.movableContent.origin)
+            mergeGlyphs({ chars, colors }, options.movableContent.glyphs, viewportOffset.clone().add(options.movableContent.origin))
         }
 
         // If there is drawingContent (e.g. drawing a line out of chars), show it on top of the rest of the layer
         if (options.drawingContent && isCurrentLayer && isCurrentFrame) {
             const { glyphs: drawGlyphs, origin: drawOrigin } = options.drawingContent.rasterize();
-            mergeGlyphs({ chars, colors }, drawGlyphs, drawOrigin, options.drawingContent.writeEmptyChars);
+            mergeGlyphs({ chars, colors }, drawGlyphs, viewportOffset.clone().add(drawOrigin), options.drawingContent.writeEmptyChars);
         }
 
         if (options.convertEmptyStrToSpace) {

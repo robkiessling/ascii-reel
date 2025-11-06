@@ -94,22 +94,36 @@ export function translateGlyphs(glyphs, cell, callback) {
 }
 
 /**
- * Merges two glyphs objects. Incoming newGlyphs will be merged as if it was located at the given origin.
+ * Merges two glyphs objects. Incoming newGlyphs will be merged into baseGlyphs as if they were located at the
+ * given origin.
  * @param {{chars: string[][], colors: number[][]}} baseGlyphs - The content to merge newGlyphs into
  * @param {{chars: string[][], colors: number[][]}} newGlyphs - The content to merge into baseGlyphs
  * @param {Cell} origin - Position to merge newGlyphs in at
  * @param {boolean} [writeEmptyChars=false] - All empty/undefined chars will be skipped unless this is true
  */
 export function mergeGlyphs(baseGlyphs, newGlyphs, origin, writeEmptyChars = false) {
-    translateGlyphs(newGlyphs, origin, (r, c, char, color) => {
-        if (!isIn2dArrayBounds(baseGlyphs.chars, r, c)) return;
-        if (!writeEmptyChars && (char === undefined || char === EMPTY_CHAR)) return;
+    // Previously, this used `translateGlyphs(newGlyphs, origin, ...)` to copy all newGlyphs into the baseGlyphs arrays.
+    // That approach was inefficient when newGlyphs was large and baseGlyphs covered only a small area (e.g., during
+    // zoomed-in rendering). The new implementation computes the overlapping region between the two arrays and only
+    // updates those intersecting cells.
+    const overlapRowStart = Math.max(0, origin.row);
+    const overlapRowEnd = Math.min(baseGlyphs.chars.length, origin.row + newGlyphs.chars.length);
 
-        if (char !== undefined) baseGlyphs.chars[r][c] = char;
-        if (color !== undefined) baseGlyphs.colors[r][c] = color;
-    });
+    for (let r = overlapRowStart; r < overlapRowEnd; r++) {
+        const newGlyphsRow = r - origin.row;
+        const overlapColStart = Math.max(0, origin.col);
+        const overlapColEnd = Math.min(baseGlyphs.chars[r].length, origin.col + newGlyphs.chars[newGlyphsRow].length);
+
+        for (let c = overlapColStart; c < overlapColEnd; c++) {
+            const newGlyphsCol = c - origin.col;
+            const char = newGlyphs.chars[newGlyphsRow][newGlyphsCol];
+            const color = newGlyphs.colors[newGlyphsRow][newGlyphsCol];
+            if (!writeEmptyChars && (char === undefined || char === EMPTY_CHAR)) continue;
+            if (char !== undefined) baseGlyphs.chars[r][c] = char;
+            if (color !== undefined) baseGlyphs.colors[r][c] = color;
+        }
+    }
 }
-
 
 /**
  * Checks if two arrays are shallowly equal (same elements in the same order).

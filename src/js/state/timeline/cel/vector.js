@@ -79,6 +79,9 @@ export default class VectorCel {
     /**
      * Returns the rendered character and color grids for this cel.
      *
+     * Caches the glyph results; subsequent calls to `glyphs` will use the cached results if the `offset` stays
+     * the same.
+     *
      * @param {{row: number, col: number}} [offset] - Optional offset to apply to the rendered position.
      * @returns {{chars: string[][], colors: number[][]}}
      */
