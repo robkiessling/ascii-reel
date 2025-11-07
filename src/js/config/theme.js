@@ -7,6 +7,8 @@ export const THEMES = {
     OS: 'themes.os',
 }
 
+const DEFAULT_THEME = THEMES.DARK_MODE;
+
 export let selectedTheme; // The theme choice selected by user (light/dark/OS)
 export let computedTheme; // The resulting theme based on their selection and OS (will either be light or dark)
 let prefersDarkMode;
@@ -14,7 +16,7 @@ let prefersDarkMode;
 export function recalculateTheme() {
     selectedTheme = readGlobalSetting('theme');
     if (!selectedTheme || !Object.values(THEMES).includes(selectedTheme)) {
-        selectedTheme = THEMES.OS; // Default to OS theme
+        selectedTheme = DEFAULT_THEME;
     }
 
     computedTheme = selectedTheme;
