@@ -6,6 +6,27 @@ const ICOMOON = 'icomoon'
 const CUSTOM = 'custom'
 
 const ICON_DATA = {
+    'tools.standard.select': { type: REMIXICON, content: 'ri-cursor-line' },
+    'tools.standard.text-editor': { type: REMIXICON, content: 'ri-input-field' },
+    'tools.standard.pan': { type: REMIXICON, content: 'ri-hand' },
+    'tools.standard.move-all': { type: REMIXICON, content: 'ri-drag-move-2-fill' },
+    'tools.standard.selection-rect': { type: ICOMOON, content: 'icon-rect-dashed' },
+    'tools.standard.selection-lasso': { type: ICOMOON, content: 'icon-lasso-dashed' },
+    'tools.standard.selection-line': { type: ICOMOON, content: 'icon-line-dashed' },
+    'tools.standard.selection-wand': { type: REMIXICON, content: 'ri-magic-line' },
+    'tools.standard.draw-rect': { type: ICOMOON, content: 'icon-rect-solid' },
+    'tools.standard.draw-line': { type: ICOMOON, content: 'icon-line-solid' },
+    'tools.standard.draw-ellipse': { type: REMIXICON, content: 'ri-circle-line' },
+    'tools.standard.draw-freeform': { type: REMIXICON, content: 'ri-sketching' },
+    'tools.standard.draw-textbox': { type: REMIXICON, content: 'ri-t-box-line' },
+    'tools.standard.eraser': { type: REMIXICON, content: 'ri-eraser-line' },
+    'tools.standard.fill-char': {
+        type: CUSTOM,
+        content: '<span class="ri ri-fw ri-paint-fill ri-paint-fill-no-droplet"></span><span class="picked-char">A</span>'
+    },
+    'tools.standard.paint-brush': { type: REMIXICON, content: 'ri-brush-line' },
+    'tools.standard.color-swap': { type: REMIXICON, content: 'ri-palette-line' },
+
     'tools.shapes.freeformStroke.irregular-adaptive': { type: PRE, content: "  /'.\n| | |\n'./  " },
     'tools.shapes.freeformStroke.irregular-monochar': { type: PRE, content: "  AAA\nA A A\nAAA  " },
 

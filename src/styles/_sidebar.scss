@@ -4,14 +4,16 @@
 // 'unicode' sections, each taking up 1/3 of the remaining height.
 #side-content {
   min-width: $right-col-width;
-  margin: $tiny-spacing $main-spacing $tiny-spacing $main-spacing;
+  padding: 0 $main-spacing;
+  background: var(--color-sidebar-bg);
+  border-left: 1px solid var(--color-sidebar-border);
 
   display: flex;
   flex-direction: column;
 
   .side-content-section {
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--color-background-border);
+    border-bottom: 1px solid var(--color-sidebar-border);
 
     &.minimized {
       padding-bottom: 0;
@@ -81,7 +83,7 @@
       flex-direction: column;
     }
     .simplebar-track.simplebar-vertical {
-      background-color: var(--color-background-border);
+      background-color: var(--color-sidebar-bg);
     }
 
     &.as-rows {
@@ -93,7 +95,7 @@
 
     .empty-list {
       font-style: italic;
-      color: var(--color-font-muted);
+      color: var(--color-text-muted);
       font-size: 0.875rem;
     }
   }
@@ -136,7 +138,7 @@
     width: $preview-size;
 
     background: var(--color-canvas-bg);
-    outline: 1px solid var(--color-background-border);
+    outline: 1px solid var(--color-sidebar-border);
   }
 
   #preview-controls {
@@ -148,7 +150,6 @@
 
     display: flex;
     align-items: center;
-    background: var(--color-background);
 
     #preview-fps-value {
       font-size: 0.875rem;
@@ -173,19 +174,15 @@
     max-width: $right-col-width - $scrollbar-width;
     padding: 2px 2px 2px 6px;
 
-    background: var(--color-surface);
+    background: var(--color-layer-bg);
     border: 2px solid transparent;
     box-sizing: border-box;
 
     font-size: 0.875rem;
     cursor: pointer;
 
-    &:not(:last-child) {
-      border-bottom: 2px solid var(--color-background);
-    }
-
     &.selected {
-      border-color: var(--color-primary);
+      background: var(--color-layer-selected);
     }
 
     &.layer-template {
@@ -193,9 +190,8 @@
     }
 
     &.placeholder {
-      background: var(--color-surface);
       border: $frame-border-size dashed var(--color-primary);
-      height: 1.5rem;
+      height: 2rem;
     }
 
     .layer-type {
@@ -232,7 +228,7 @@
       margin-right: $palette-icon-spacing;
       margin-bottom: $palette-icon-spacing;
       cursor: pointer;
-      border: 1px solid var(--color-well-bg);
+      border: 1px solid var(--color-sidebar-border);
 
       &:hover {
         border: 1px solid var(--color-primary);
@@ -263,8 +259,8 @@
           left: 2px;
 
           border-width: $palette-triangle-size - 3.5px;
-          border-left-color: var(--color-surface);
-          border-top-color: var(--color-surface);
+          border-left-color: var(--color-sidebar-bg);
+          border-top-color: var(--color-sidebar-bg);
         }
       }
     }
@@ -282,12 +278,12 @@
       justify-content: center;
       cursor: pointer;
 
-      background: var(--color-surface);
+      background: var(--color-unicode-bg);
 
-      border: 1px solid var(--color-background);
+      border: 1px solid var(--color-sidebar-bg);
 
       &:active {
-        border: 1px solid var(--color-background);
+        border: 1px solid var(--color-sidebar-bg);
       }
 
       &:hover {
@@ -319,8 +315,8 @@
           left: 2px;
 
           border-width: $unicode-triangle-size - 3.5px;
-          border-left-color: var(--color-surface);
-          border-top-color: var(--color-surface);
+          border-left-color: var(--color-sidebar-bg);
+          border-top-color: var(--color-sidebar-bg);
         }
       }
     }

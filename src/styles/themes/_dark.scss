@@ -1,0 +1,74 @@
+/*
+ https://www.radix-ui.com/colors/custom using the following:
+ - Accent: #7755FF (chosen from https://dev.to/finnhvman/which-colors-look-good-on-black-and-white-2pe6)
+ - Gray: #8B8D98 (default)
+ - Background: #111111 (default)
+ I also removed the alpha/preset colors since they're not needed
+ */
+[data-theme='dark'] {
+  --violet-1: #100f1e;
+  --violet-2: #161429;
+  --violet-3: #241c52;
+  --violet-4: #301d74;
+  --violet-5: #3a2684;
+  --violet-6: #443293;
+  --violet-7: #513eaa;
+  --violet-8: #614acb;
+  --violet-9: #75f;
+  --violet-10: #6a55d6;
+  --violet-11: #aea8ff;
+  --violet-12: #dedeff;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    [data-theme='dark'] {
+      --violet-1: oklch(17.8% 0.0311 285.5);
+      --violet-2: oklch(20.7% 0.041 285.5);
+      --violet-3: oklch(27.1% 0.0945 285.5);
+      --violet-4: oklch(31.7% 0.1391 285.5);
+      --violet-5: oklch(35.6% 0.149 285.5);
+      --violet-6: oklch(39.7% 0.1528 285.5);
+      --violet-7: oklch(44.7% 0.1646 285.5);
+      --violet-8: oklch(50.9% 0.1901 285.5);
+      --violet-9: oklch(58.5% 0.2384 285.5);
+      --violet-10: oklch(54.1% 0.1901 285.5);
+      --violet-11: oklch(77.6% 0.1834 285.5);
+      --violet-12: oklch(91.4% 0.059 285.5);
+    }
+  }
+}
+
+[data-theme='dark'] {
+  --gray-1: #111113;
+  --gray-2: #19191b;
+  --gray-3: #222325;
+  --gray-4: #292a2e;
+  --gray-5: #303136;
+  --gray-6: #393a40;
+  --gray-7: #46484f;
+  --gray-8: #5f606a;
+  --gray-9: #6c6e79;
+  --gray-10: #797b86;
+  --gray-11: #b2b3bd;
+  --gray-12: #eeeef0;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    [data-theme='dark'] {
+      --gray-1: oklch(17.8% 0.0042 277.7);
+      --gray-2: oklch(21.5% 0.004 277.7);
+      --gray-3: oklch(25.5% 0.0055 277.7);
+      --gray-4: oklch(28.4% 0.0075 277.7);
+      --gray-5: oklch(31.4% 0.0089 277.7);
+      --gray-6: oklch(35% 0.01 277.7);
+      --gray-7: oklch(40.2% 0.0121 277.7);
+      --gray-8: oklch(49.2% 0.0157 277.7);
+      --gray-9: oklch(54% 0.0167 277.7);
+      --gray-10: oklch(58.6% 0.0165 277.7);
+      --gray-11: oklch(77% 0.0138 277.7);
+      --gray-12: oklch(94.9% 0.0026 277.7);
+    }
+  }
+}

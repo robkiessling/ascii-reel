@@ -398,7 +398,11 @@ export function changeFrameIndex(newIndex) {
 
 export function changeLayerIndex(newIndex) {
     if (timeline.layerIndex() !== newIndex) {
-        if (!timeline.currentLayer() || timeline.currentLayerType() !== timeline.layerAt(newIndex).type) {
+        if (
+            !timeline.currentLayer() ||
+            timeline.currentLayerType() === LAYER_TYPES.VECTOR ||
+            timeline.layerAt(newIndex).type === LAYER_TYPES.VECTOR
+        ) {
             selection.clearSelection();
         }
 

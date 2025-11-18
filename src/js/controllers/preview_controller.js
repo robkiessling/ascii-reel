@@ -212,8 +212,8 @@ function openPopup() {
 
     popup.document.head.innerHTML = `
        <style>
-            body { margin: 0; background: ${getDynamicColor('--color-background')}; }
-            #canvas { background: ${getDynamicColor('--color-background')}; }
+            body { margin: 0; background: ${getDynamicColor('--color-canvas-bg')}; }
+            #canvas { background: ${getDynamicColor('--color-canvas-bg')}; }
         </style>
     `;
     popup.document.body.innerHTML = '<canvas id="canvas">';

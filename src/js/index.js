@@ -31,8 +31,9 @@ import {debounce, defer} from "./utils/utilities.js";
 import {eventBus, EVENTS} from './events/events.js'
 import {calculateFontRatio} from "./config/font.js";
 import {recalculateCanvasColors} from "./config/colors.js";
-import {applyThemeToDocument, recalculateTheme} from "./config/theme.js";
-import "./geometry/shapes/index.js"; // Importing all shape files because they register themselves
+import {applyThemeToDocument, matchBgToTheme, recalculateTheme} from "./config/theme.js";
+import "./geometry/shapes/index.js";
+import {showFullScreenLoader} from "./utils/overlays.js"; // Importing all shape files because they register themselves
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
 initClipboard();
@@ -104,6 +105,7 @@ function setupEventBus() {
 
     eventBus.on(EVENTS.THEME.CHANGED, () => {
         recalculateTheme();
+        matchBgToTheme(); // todo only do this if background set to 'match theme'
         applyThemeToDocument();
         recalculateCanvasColors();
         eventBus.emit(EVENTS.REFRESH.ALL);

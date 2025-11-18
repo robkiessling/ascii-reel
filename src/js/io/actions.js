@@ -46,21 +46,29 @@ let actionIdToShortcut = {
     'view.zoom-out': { displayKey: '-', key: '-', modifiers: [cmdKey] },
     'view.zoom-default': { key: '0', modifiers: [cmdKey] },
 
+    'tools.standard.select': { key: 's' },
     'tools.standard.text-editor': { key: 't' },
     'tools.standard.draw-freeform': { key: 'f' },
     'tools.standard.eraser': { key: 'e' },
-    'tools.standard.draw-line': { key: 'l' },
+    // 'tools.standard.draw-line': { key: 'l' },
     'tools.standard.draw-rect': { key: 'r' },
     'tools.standard.draw-ellipse': { key: 'o' },
     // 'tools.standard.draw-textbox': { key: 't' }, // todo same key
     'tools.standard.fill-char': { key: 'p' },
-    'tools.standard.selection-lasso': { key: 's' },
+    // 'tools.standard.selection-lasso': { key: 's' },
     'tools.standard.selection-wand': { key: 'w' },
     'tools.standard.pan': { key: 'h' },
     'tools.standard.move-all': { key: 'm' },
     'tools.standard.paint-brush': { key: 'b' },
     'tools.shapes.charPicker': { key: 'c' },
     'tools.shapes.quickSwapChar': { key: 'q' },
+
+    'themes.select-light-mode': { key: 'l' },
+    'themes.select-dark-mode': { key: 'k' },
+    'settings.open-background-dialog': { key: 'j' },
+    // 'file.new': { key: 'n' },
+    // 'settings.open-project-settings-dialog': { key: 'n' },
+    // 'file.export-as': { key: 'n' },
 };
 
 let shortcutToActionId = {};
@@ -174,14 +182,14 @@ export function callActionByShortcut(shortcut, callbackData) {
  * - if the action has a shortcut, that shortcut will be shown next to the title.
  * - if the action has any modifiers, those modifier keys / descriptions will be shown at the bottom of the tooltip.
  * @param {string | Element[]} $elements - jQuery elements to attach tooltip(s) to
- * @param {string | function(element):string} getActionId - Can be an action-id string, or a function that returns an
+ * @param {string | function(JQuery):string} getActionId - Can be an action-id string, or a function that returns an
  *   action-id. All tooltip content will be derived based on this action-id.
  * @param overrides - Standard tippy options
  * @returns {{tooltips: import('tippy.js').Instance[], refreshContent: function}}
  */
 export function setupActionTooltips($elements, getActionId, overrides = {}) {
     const contentBuilder = element => {
-        const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
+        const actionId = isFunction(getActionId) ? getActionId($(element)) : getActionId;
         const actionInfo = getActionInfo(actionId);
         if (!actionInfo) return '';
         if (!actionInfo.name && !actionInfo.description) return '';
@@ -231,18 +239,18 @@ export function setupActionButtons($container, tooltipOptions = {}) {
     attachClickHandlers($container);
 
     const $buttons = $container.find('[data-action]');
-    const getActionId = (button) => $(button).data('action')
 
-    const { tooltips, refreshContent: refreshTooltips } = setupActionTooltips($buttons, getActionId, tooltipOptions)
+    const { tooltips, refreshContent: refreshTooltips } = setupActionTooltips($buttons, $button => $button.data('action'), tooltipOptions)
 
     return {
         tooltips: tooltips,
         refreshContent: () => {
             // Refresh any button icons if the action has an `icon` attribute
             $buttons.each((index, button) => {
-                const actionId = getActionId(button);
+                const $button = $(button);
+                const actionId = $button.data('action');
                 const actionInfo = getActionInfo(actionId);
-                const $button = $(button)
+
                 $button.toggleClass('hidden', !actionInfo.visible)
                 if (actionInfo.icon) $button.empty().append(`<span class="ri ri-fw ${actionInfo.icon}"></span>`);
             })

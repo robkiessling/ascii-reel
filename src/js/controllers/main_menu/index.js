@@ -84,22 +84,22 @@ let $fileName, $activeFileIcon;
 
 export function init() {
     // Build menu html before initializing various menus
-    leftMenu = new HorizontalMenu($('#left-menu'), LEFT_MENU_BAR, {
-        onOpen: () => rightMenu.close()
-    });
-    rightMenu = new HorizontalMenu($('#right-menu'), RIGHT_MENU_BAR, {
-        onOpen: () => leftMenu.close(),
-        rightAligned: true
-    });
+    // leftMenu = new HorizontalMenu($('#left-menu'), LEFT_MENU_BAR, {
+    //     onOpen: () => rightMenu.close()
+    // });
+    // rightMenu = new HorizontalMenu($('#right-menu'), RIGHT_MENU_BAR, {
+    //     onOpen: () => leftMenu.close(),
+    //     rightAligned: true
+    // });
 
-    initFile();
+    // initFile();
     initTheme();
-    initTools();
-    initView();
+    // initTools();
+    // initView();
 
-    setupFileName();
-    setupActiveFileIcon();
-    setupEventBus();
+    // setupFileName();
+    // setupActiveFileIcon();
+    // setupEventBus();
 }
 
 function refresh() {

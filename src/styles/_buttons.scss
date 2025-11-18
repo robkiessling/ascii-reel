@@ -3,7 +3,7 @@
 button, .button {
   background: none;
   border: none;
-  color: var(--color-font);
+  color: var(--color-text);
 
   width: $button-size;
   height: $button-size;
@@ -14,11 +14,11 @@ button, .button {
   cursor: pointer;
 
   &:hover {
-    background: var(--color-surface);
+    background: var(--color-button-transparent-hover);
   }
 
   &:disabled, &.disabled {
-    color: var(--color-font-heavy-muted);
+    color: var(--color-text-disabled);
     background: none;
     cursor: default;
   }
@@ -46,5 +46,5 @@ button, .button {
 
 .link {
   text-decoration: none;
-  color: var(--color-button-confirm-bg);
+  color: var(--color-text-link);
 }

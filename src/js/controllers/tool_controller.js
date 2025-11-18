@@ -35,6 +35,7 @@ import Shape from "../geometry/shapes/shape.js";
 import {selectedShapes} from "../state/selection/vector_selection.js";
 import {filterObject, isEmptyObject, transformValues} from "../utils/objects.js";
 import {getConstructor} from "../geometry/shapes/registry.js";
+import {MULTICOLOR_TOOLS, RASTER_TOOLS} from "../state/index.js";
 
 
 const SUB_TOOL_MENU_TOOLTIP_OFFSET = [0, 15];
@@ -48,16 +49,16 @@ export function init() {
     $canvasContainer = $('#canvas-container');
 
     setupEventBus();
-    setupStandardTools();
+    setupTools();
     setupColorPicker();
     setupCharPicker();
     setupShapeProperties();
 }
 
 function refresh() {
+    refreshTools();
     refreshCharPicker();
     refreshColorPicker();
-    refreshStandardTools();
     refreshShapeProperties();
 }
 
@@ -383,26 +384,50 @@ function toolForMouseButton(mouseButton) {
 
 // -------------------------------------------------------------------------------- Standard Tools
 
-function setupStandardTools() {
-    $standardTools = $('#standard-tools');
+let $tools, toolsMenu;
 
-    $standardTools.find('.standard-tool').each((i, element) => {
-        const $element = $(element);
-        const tool = $element.data('tool');
+const TOOLS = [
+    { value: 'select', group: 'Mouse' },
+    { value: 'text-editor', group: 'Mouse' },
+    { value: 'pan', group: 'Mouse' },
+    { value: 'move-all', group: 'Mouse' },
+
+    { value: 'selection-rect', group: 'Selection' },
+    { value: 'selection-lasso', group: 'Selection' },
+    { value: 'selection-line', group: 'Selection' },
+    { value: 'selection-wand', group: 'Selection' },
+
+    { value: 'draw-rect', group: 'Draw Shape' },
+    { value: 'draw-line', group: 'Draw Shape' },
+    { value: 'draw-ellipse', group: 'Draw Shape' },
+
+    { value: 'draw-freeform', },
+    { value: 'draw-textbox', },
+    { value: 'eraser', },
+    { value: 'fill-char', },
+
+    { value: 'paint-brush', group: 'Color' },
+    { value: 'color-swap', group: 'Color' },
+]
+
+function setupTools() {
+    $tools = $('#tools');
+
+    TOOLS.forEach(tool => {
         const actionData = {
-            callback: () => changeTool(tool),
+            callback: () => changeTool(tool.value),
             enabled: () => {
-                if (state.MULTICOLOR_TOOLS.has(tool) && !state.isMultiColored()) return false;
+                if (state.MULTICOLOR_TOOLS.has(tool.value) && !state.isMultiColored()) return false;
                 if (state.layers()) {
-                    if (state.RASTER_TOOLS.has(tool) && state.currentLayerType() !== LAYER_TYPES.RASTER) return false;
-                    if (state.VECTOR_TOOLS.has(tool) && state.currentLayerType() !== LAYER_TYPES.VECTOR) return false;
+                    if (state.RASTER_TOOLS.has(tool.value) && state.currentLayerType() !== LAYER_TYPES.RASTER) return false;
+                    if (state.VECTOR_TOOLS.has(tool.value) && state.currentLayerType() !== LAYER_TYPES.VECTOR) return false;
                 }
                 return true;
             },
         }
 
         // Some tools have custom shortcuts
-        switch (tool) {
+        switch (tool.value) {
             case 'pan':
                 actionData.shortcutAbbr = 'H, Middle Click'
                 break;
@@ -411,67 +436,32 @@ function setupStandardTools() {
                 break;
         }
 
-        actions.registerAction(actionIdForStandardTool(tool), actionData);
+        actions.registerAction(`tools.standard.${tool.value}`, actionData);
     });
 
-    $standardTools.off('click', '.standard-tool').on('click', '.standard-tool', evt => {
-        const $element = $(evt.currentTarget);
-        actions.callAction(actionIdForStandardTool($element.data('tool')));
-    });
-
-    const $leftTools = $standardTools.find('.standard-tool-column:first-child:not(:last-child) .standard-tool');
-    const $centerTools = $standardTools.find('.standard-tool-column:first-child:last-child .standard-tool');
-    const $rightTools = $standardTools.find('.standard-tool-column:last-child:not(:first-child) .standard-tool');
-    setupActionTooltips($leftTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: tooltipOffset('left')
-    });
-    setupActionTooltips($centerTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: tooltipOffset('center')
-    });
-    setupActionTooltips($rightTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: tooltipOffset('right')
+    toolsMenu = new IconMenu($tools, {
+        dropdown: false,
+        items: TOOLS.map(tool => {
+            return {
+                value: tool.value,
+                icon: `tools.standard.${tool.value}`,
+                tooltip: `tools.standard.${tool.value}`,
+                visible: () => actions.isActionEnabled(`tools.standard.${tool.value}`),
+                disabled: () => !actions.isActionEnabled(`tools.standard.${tool.value}`),
+                group: tool.group
+            }
+        }),
+        getValue: () => state.getConfig('tool'),
+        onSelect: newValue => actions.callAction(`tools.standard.${newValue}`),
+        tooltipOptions: {
+            placement: 'bottom'
+        },
+        actionTooltips: true
     });
 }
 
-function refreshStandardTools() {
-    $standardTools.find('.color-tool, .raster-tool, .vector-tool').toggleClass('hidden', false);
-    if (state.currentLayerType() !== LAYER_TYPES.RASTER) $standardTools.find('.raster-tool').toggleClass('hidden', true);
-    if (state.currentLayerType() !== LAYER_TYPES.VECTOR) $standardTools.find('.vector-tool').toggleClass('hidden', true);
-    if (!state.isMultiColored()) $standardTools.find('.color-tool').toggleClass('hidden', true);
-
-    // The following can be used if we want to disable raster/vector tools (instead of showing/hiding them above)
-    // $standardTools.find('.standard-tool').each((i, element) => {
-    //     const $tool = $(element);
-    //     const tool = $tool.data('tool');
-    //     $tool.toggleClass('disabled', !actions.isActionEnabled(actionIdForStandardTool(tool)))
-    // })
-
-    $standardTools.find('.standard-tool').removeClass('selected');
-    $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
-}
-
-
-function actionIdForStandardTool(tool) {
-    return `tools.standard.${tool}`;
-}
-
-const TIP_X_OFFSET = 15; // Move the tip a bit to the right so it's over the canvas
-const STANDARD_TOOL_SIZE = 42; // matches $standard-tool-size
-const MARGIN_SIZE = 1;
-
-function tooltipOffset(column) {
-    switch (column) {
-        case 'left':
-            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE + MARGIN_SIZE];
-        case 'center':
-            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE / 2 + MARGIN_SIZE];
-        case 'center-corner-button':
-            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE / 2 + MARGIN_SIZE - 6];
-        case 'right':
-            return [0, TIP_X_OFFSET];
-        default:
-            console.warn(`Invalid tooltipOffset column: ${column}`)
-    }
+function refreshTools() {
+    toolsMenu.refresh();
 }
 
 // -------------------------------------------------------------------------------- Raster Selection Tools
@@ -622,7 +612,7 @@ function setupShapeProperties() {
 
     shapeTooltips.concat(setupActionTooltips(
         $standardActionButtons,
-        element => $(element).data('action'),
+        $element => $element.data('action'),
         {
             placement: 'bottom',
             offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
@@ -765,7 +755,7 @@ function setupShapeMenu($group, prop, options, overrides = {}) {
     const $menu = $('<div>').appendTo($group.find('.group-actions'))
 
     shapeMenus[prop] = new IconMenu($menu, {
-        dropdown: true,
+        dropdown: false,
         dropdownBtnTooltip: `tools.shapes.${prop}`,
         items: options.map(option => {
             return {
@@ -908,10 +898,10 @@ function refreshShapeProperties() {
         let firstVisible = true;
         $shapeProperties.find('.property-group').each((i, group) => {
             const $group = $(group);
-            $group.removeClass('border-left');
+            $group.removeClass('subsequent-child');
 
             if ($group.is(':visible')) {
-                if (!firstVisible) $group.addClass('border-left');
+                if (!firstVisible) $group.addClass('subsequent-child');
                 firstVisible = false;
             }
         });
@@ -1155,7 +1145,7 @@ function setupCharPicker() {
 
     shapeTooltips.concat(setupActionTooltips(
         $quickSwap,
-        element => $(element).data('action'),
+        $element => $element.data('action'),
         {
             placement: 'bottom',
             offset: [0, 56]
