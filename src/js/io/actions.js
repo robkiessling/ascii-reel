@@ -15,8 +15,8 @@ let actions;
 let cmdKey = isMacOS() ? 'metaKey' : 'ctrlKey';
 let actionIdToShortcut = {
     'file.open': { key: 'o', modifiers: [cmdKey] },
-    'file.export-as': { key: 'e', modifiers: [cmdKey, 'shiftKey'] },
-    'file.export-active': { key: 'e', modifiers: [cmdKey] },
+    'file.export-as': { key: 'e', modifiers: [cmdKey] },
+    'file.export-active': { key: 'e', modifiers: [cmdKey, 'shiftKey'] },
 
     // Note: file.save is not shown in toolbar anywhere, it actually ends up calling either file.saveTo or file.saveAs
     'file.save': { key: 's', modifiers: [cmdKey] },
@@ -65,10 +65,6 @@ let actionIdToShortcut = {
 
     'themes.select-light-mode': { key: 'l' },
     'themes.select-dark-mode': { key: 'k' },
-    'settings.open-background-dialog': { key: 'j' },
-    // 'file.new': { key: 'n' },
-    // 'settings.open-project-settings-dialog': { key: 'n' },
-    // 'file.export-as': { key: 'n' },
 };
 
 let shortcutToActionId = {};
@@ -134,6 +130,7 @@ export function getActionInfo(id) {
     if (isFunction(info.enabled)) { info.enabled = info.enabled(); }
     if (isFunction(info.visible)) { info.visible = info.visible(); }
     if (isFunction(info.icon)) { info.icon = info.icon(); }
+    if (isFunction(info.shortcutAbbr)) { info.shortcutAbbr = info.shortcutAbbr(); }
 
     if (info.shortcutAbbr === undefined && actionIdToShortcut[id]) {
         info.shortcutAbbr = shortcutAbbr(actionIdToShortcut[id]);

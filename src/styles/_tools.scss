@@ -7,37 +7,27 @@
   background: var(--color-sidebar-bg);
 }
 
-.icon-menu-option, .icon-dropdown-option {
-  position: relative;
-
-  &[data-value="fill-char"] {
-    > .picked-char {
-      position: absolute;
-      bottom: 1px;
-      right: 4px;
-      font-size: 0.875rem;
-      font-family: $font-monospace;
-    }
-  }
-}
-
-#context-tools-left {
+#context-tools-top-left {
   position: absolute;
   left: $canvas-padding;
   top: $canvas-padding;
   z-index: 2;
+
+  // I'm not sure if there's a better way to do this. But I need file-name to be behind #context-tools-top-center
+  // most of the time, EXCEPT if it's hovered. I have to manipulate z-index of #context containers.
+  &:has(#file-name:hover) { z-index: 4; }
 
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-#context-tools-top {
+#context-tools-top-center {
   position: absolute;
   top: $canvas-padding;
   left: calc(50%);
   transform: translate(-50%, 0);
-  z-index: 2;
+  z-index: 3;
 
   display: flex;
   flex-direction: column;
@@ -95,7 +85,7 @@
   }
 }
 
-.sub-tool-menu {
+.island-panel {
   box-shadow: var(--color-island-shadow);
   background: var(--color-island-bg);
 
@@ -106,38 +96,6 @@
   border-radius: 0.5rem;
 
   border: 1px solid var(--color-island-border);
-
-  .sub-tool, .action-button, .char-well, .color-well,
-  .icon-menu-option, .icon-dropdown-button, .icon-dropdown-option {
-    width: $sub-tool-size;
-    height: $sub-tool-size;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.25rem;
-    overflow: hidden;
-    cursor: pointer;
-
-    border-radius: 0.5rem;
-
-    &.solid {
-      background: var(--color-island-button);
-    }
-
-    &:hover:not(.disabled):not(.active) {
-      background: var(--color-island-hover);
-    }
-
-    &.disabled {
-      color: var(--color-text-disabled);
-      cursor: default;
-    }
-
-    &.active {
-      background: var(--color-primary);
-      color: var(--color-text-white);
-    }
-  }
 
   // Color picker popup actually becomes a child element of color-well, so cannot use overflow:hidden like other buttons
   .color-well {
@@ -157,72 +115,11 @@
     pointer-events: none;
     opacity: 0.5;
 
-    .sub-tool, .icon-menu-option {
+    .icon-menu-option {
       color: var(--color-text-disabled) !important;
 
       &.active {
         background: inherit;
-      }
-    }
-  }
-}
-
-.pre-icon {
-  display: inline-block;
-  white-space: pre;
-  font-family: $font-monospace;
-  font-size: 0.55rem;
-  line-height: 8px;
-}
-.char-icon {
-
-}
-
-
-
-.icon-dropdown {
-  position: relative;
-
-  &.show-dropdown {
-    > ul {
-      display: block;
-    }
-  }
-  &.hovered {
-    background-color: var(--color-island-hover);
-    cursor: pointer;
-  }
-
-  > ul {
-    display: none;
-    position: absolute;
-    top: 34px;
-    left: 0;
-
-    border-radius: $header-padding;
-    border: 1px solid var(--color-island-border);
-    overflow: hidden;
-
-    background-color: var(--color-island-bg);
-    list-style: none;
-    padding: 0;
-
-    z-index: 3;
-    box-shadow: var(--color-island-shadow);
-    cursor: default;
-
-    > li {
-      &.icon-dropdown-option {
-        border-radius: 0;
-      }
-
-      &.active {
-        background: var(--color-primary);
-      }
-
-      &:hover {
-        background-color: var(--color-island-hover);
-        cursor: pointer;
       }
     }
   }

@@ -6,6 +6,18 @@ const ICOMOON = 'icomoon'
 const CUSTOM = 'custom'
 
 const ICON_DATA = {
+    'mainMenu.open': { type: REMIXICON, content: 'ri-menu-line' },
+    'file.new': { type: REMIXICON, content: 'ri-file-line' },
+    'file.open': { type: REMIXICON, content: 'ri-folder-2-line' },
+    'file.save-as': { type: REMIXICON, content: 'ri-download-2-line' },
+    'file.save-active': { type: REMIXICON, content: 'ri-save-3-line' },
+    'file.export-as': { type: REMIXICON, content: 'ri-export-line' },
+    'file.export-active': { type: REMIXICON, content: 'ri-export-line' },
+    'settings.open-project-settings-dialog': { type: REMIXICON, content: 'ri-settings-5-line' },
+    'settings.open-font-dialog': { type: REMIXICON, content: 'ri-font-sans-serif' },
+    'settings.open-background-dialog': { type: REMIXICON, content: 'ri-landscape-line' },
+    'settings.open-resize-dialog': { type: REMIXICON, content: 'ri-aspect-ratio-line' },
+
     'tools.standard.select': { type: REMIXICON, content: 'ri-cursor-line' },
     'tools.standard.text-editor': { type: REMIXICON, content: 'ri-input-field' },
     'tools.standard.pan': { type: REMIXICON, content: 'ri-hand' },

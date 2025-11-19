@@ -47,8 +47,8 @@ $quick-swap-border: linear-gradient(
 .char-picker-container.animated-border {
   .char-well {
     $border-size: 3px;
-    height: calc($sub-tool-size - $border-size * 2);
-    width: calc($sub-tool-size - $border-size * 2);
+    height: calc($island-button-size - $border-size * 2);
+    width: calc($island-button-size - $border-size * 2);
     border: $border-size solid #0000;
     background: linear-gradient(to bottom, var(--color-island-button), var(--color-island-button)) padding-box, $quick-swap-border border-box;
     animation: 4s char-picker-rotate linear infinite;

@@ -145,15 +145,22 @@ function setupSave() {
             });
     });
 
-    actions.registerAction('file.save-as', () => saveAs());
+    actions.registerAction('file.save-as', {
+        callback: () => saveAs(),
+
+        // Showing cmd-S shortcut in menu if no active file, but note that cmd-S really goes to file.save
+        shortcutAbbr: () => fileSystem.hasActiveFile() ? '' : `${modifierAbbr('metaKey')}S`
+    });
 
     actions.registerAction('file.save-active', {
         enabled: () => fileSystem.hasActiveFile(),
         callback: () => saveActive(),
-        shortcutAbbr: `${modifierAbbr('metaKey')}S` // Show shortcut here, but cmd-S really goes to file.save
+
+        // Showing cmd-S shortcut in menu if there is an active file, but note that cmd-S really goes to file.save
+        shortcutAbbr: () => fileSystem.hasActiveFile() ? `${modifierAbbr('metaKey')}S` : ''
     })
 
-    // The following action is NOT shown in the toolbar anywhere, but it is what cmd-S links to. That way
+    // The following action is NOT shown in the toolbar anywhere, but it is what cmd-S really links to. That way
     // cmd-S always goes to one of our saves (saveAs/saveActive) instead of default browser save.
     actions.registerAction('file.save', () => fileSystem.hasActiveFile() ? saveActive() : saveAs());
 }

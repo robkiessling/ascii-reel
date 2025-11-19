@@ -1,10 +1,9 @@
 import * as actions from "../../io/actions.js";
-import {getName, setConfig} from "../../state/index.js";
+import {getName, isAnimationProject, setConfig} from "../../state/index.js";
 import {toggleStandard} from "../../io/keyboard.js";
 import {confirmDialog} from "../../utils/dialogs.js";
 import * as fileSystem from "../../storage/file_system.js";
 import {STRINGS} from "../../config/strings.js";
-import {hasActiveFile} from "../../storage/file_system.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 
 import {init as initFile} from "./file.js";
@@ -12,102 +11,65 @@ import {init as initTheme} from "./theme.js";
 import {init as initTools} from "./tools.js";
 import {init as initView} from "./view.js";
 import {standardTip} from "../../components/tooltips.js";
+import IconMenu from "../../components/icon_menu.js";
+import {getActionInfo} from "../../io/actions.js";
+import {hasActiveFile} from "../../storage/file_system.js";
 
-const SPACER = 'spacer';
-const LEFT_MENU_BAR = [
-    {
-        name: "File",
-        actions: [
-            'file.new',
-            'file.open',
-            SPACER,
-            'file.save-as',
-            'file.save-active',
-            SPACER,
-            'file.export-as',
-            'file.export-active',
-        ]
-    },
-    {
-        name: "Edit",
-        actions: [
-            'state.undo',
-            'state.redo',
-            SPACER,
-            'clipboard.cut',
-            'clipboard.copy',
-            'clipboard.paste',
-            'clipboard.paste-in-selection',
-            SPACER,
-            'selection.select-all'
-        ]
-    },
-    {
-        name: "View",
-        actions: [
-            'view.toggle-grid',
-            'view.grid-settings',
-            'view.toggle-whitespace',
-            SPACER,
-            'view.zoom-in',
-            'view.zoom-out',
-            'view.zoom-default',
-        ]
-    },
-    {
-        name: "Tools",
-        actions: [
-            'settings.open-project-settings-dialog',
-            'settings.open-font-dialog',
-            'settings.open-background-dialog',
-            'settings.open-resize-dialog',
-            SPACER,
-            'preferences',
-            'keyboard-shortcuts'
-        ]
-    }
-]
-
-const RIGHT_MENU_BAR = [
-    {
-        nameClass: 'current-theme',
-        actions: [
-            'themes.select-os',
-            'themes.select-light-mode',
-            'themes.select-dark-mode'
-        ]
-    }
-]
-
-let leftMenu, rightMenu
 let $fileName, $activeFileIcon;
 
+const MAIN_MENU = [
+    'file.new',
+    'file.open',
+    'file.save-active',
+    'file.save-as',
+    'file.export-as',
+    'file.export-active',
+    'settings.open-project-settings-dialog',
+    'settings.open-font-dialog',
+    'settings.open-background-dialog',
+    'settings.open-resize-dialog',
+]
+
+let mainMenu;
+
 export function init() {
-    // Build menu html before initializing various menus
-    // leftMenu = new HorizontalMenu($('#left-menu'), LEFT_MENU_BAR, {
-    //     onOpen: () => rightMenu.close()
-    // });
-    // rightMenu = new HorizontalMenu($('#right-menu'), RIGHT_MENU_BAR, {
-    //     onOpen: () => leftMenu.close(),
-    //     rightAligned: true
-    // });
-
-    // initFile();
+    initFile();
     initTheme();
-    // initTools();
-    // initView();
+    initTools();
+    initView();
 
-    // setupFileName();
-    // setupActiveFileIcon();
-    // setupEventBus();
+    setupFileName();
+    setupActiveFileIcon();
+    setupEventBus();
+
+    mainMenu = new IconMenu($('#main-menu-button'), {
+        dropdown: true,
+        dropdownBtnIcon: 'mainMenu.open',
+        dropdownStyle: () => {
+            return {
+                left: isAnimationProject() ? -42 : 0
+            }
+        },
+        items: MAIN_MENU.map(item => {
+            return {
+                value: item,
+                icon: item,
+                visible: () => actions.isActionEnabled(item),
+                disabled: () => !actions.isActionEnabled(item),
+                label: STRINGS[`${item}.name`],
+                shortcut: () => getActionInfo(item).shortcutAbbr
+            }
+        }),
+        onSelect: newValue => actions.callAction(newValue),
+    })
 }
 
 function refresh() {
-    leftMenu.rebuildActions();
-    rightMenu.rebuildActions();
+    mainMenu.refresh();
 
     $fileName.html(getName(false));
-    $activeFileIcon.toggle(hasActiveFile())
+    // $activeFileIcon.toggle(hasActiveFile())
+    $activeFileIcon.toggle(true)
 }
 
 function setupActiveFileIcon() {
@@ -178,138 +140,4 @@ function setupFileName() {
             }, 'Save as new file')
         }
     })
-}
-
-
-class HorizontalMenu {
-    static idSequence = 0;
-
-    constructor($menu, barData, options = {}) {
-        this.id = ++HorizontalMenu.idSequence;
-
-        this.$menu = $menu;
-        this.options = options;
-
-        this._init(barData);
-    }
-
-    close() {
-        this.isOpen = false;
-        this.$currentLi = null;
-        this._refresh();
-    }
-
-    rebuildActions() {
-        if (!this.isOpen) return;
-
-        this.$menu.find('.action-item').each((index, item) => {
-            const $item = $(item);
-            const action = actions.getActionInfo($item.data('action'));
-
-            if (action) {
-                let html = '';
-                if (action.icon) {
-                    html += `<span><span class="ri ri-fw ${action.icon}"></span> ${action.name}</span>`;
-                }
-                else {
-                    html += `<span>${action.name}</span>`;
-                }
-                if (action.shortcutAbbr) {
-                    html += `<span class="shortcut">${action.shortcutAbbr}</span>`;
-                }
-                $item.html(html);
-                $item.off('click').on('click', () => action.callback());
-                $item.toggleClass('disabled', !action.enabled);
-                $item.toggleClass('hidden', !action.visible);
-            }
-            else {
-                $item.empty();
-                $item.off('click');
-            }
-        });
-    }
-
-    _init(barData) {
-        this._buildHTML(barData);
-
-        this.isOpen = false;
-        this.$currentLi = null;
-
-        this.$menu.toggleClass('right-aligned', !!this.options.rightAligned);
-
-        this.$menu.children('li').off('click').on('click', evt => {
-            evt.stopPropagation();
-            this.$currentLi = $(evt.currentTarget);
-            this.isOpen = !this.isOpen;
-
-            if (this.isOpen) {
-                // Always rebuild actions when menu is opened
-                this.rebuildActions();
-
-                if (this.options.onOpen) this.options.onOpen();
-            }
-
-            this._refresh();
-        });
-
-        this.$menu.children('li').off('mouseenter').on('mouseenter', evt => {
-            this.$currentLi = $(evt.currentTarget);
-            this._refresh();
-        });
-
-        this.$menu.children('li').off('mouseleave').on('mouseleave', evt => {
-            if (!this.isOpen) this.$currentLi = null;
-            this._refresh();
-        });
-
-        this._refresh();
-    }
-
-    _buildHTML(barData) {
-        barData.forEach(menuData => {
-            const $li = $('<li>').appendTo(this.$menu);
-
-            $('<span>', {
-                class: menuData.nameClass,
-                html: menuData.name
-            }).appendTo($li);
-
-            const $ul = $('<ul>').appendTo($li);
-            menuData.actions.forEach(action => {
-                $('<li>', {
-                    class: action === SPACER ? 'break' : 'action-item',
-                    'data-action': action
-                }).appendTo($ul);
-            })
-        })
-    }
-
-    _refresh() {
-        this.$menu.find('li').removeClass('hovered visible');
-        this._toggleDocumentListener(false);
-
-        if (this.$currentLi) {
-            this.$currentLi.addClass('hovered');
-
-            if (this.isOpen) {
-                this._toggleDocumentListener(true);
-                this.$currentLi.addClass('visible');
-            }
-        }
-    }
-
-    _toggleDocumentListener(enable) {
-        const namespace = `menu-${this.id}`
-
-        if (enable) {
-            $(document).on(`click.${namespace}`, () => {
-                this.isOpen = false;
-                this.$currentLi = null;
-                this._refresh();
-            });
-        }
-        else {
-            $(document).off(`click.${namespace}`);
-        }
-    }
 }

@@ -13,7 +13,7 @@ export const STRINGS = {
     'file.cannot-rename-active-file.description': 'This file exists on your computer and cannot be renamed from the browser. ' +
         'To rename it, save a copy with a new name and manually delete the original file.',
     'file.active-file-info.name': 'Linked to Disk File',
-    'file.active-file-info.description': 'This page can write to a local file on your computer. Saving will directly update that file — no need to re-download.',
+    'file.active-file-info.description': 'This page can write to a local file on your computer. Saving will directly update that file; there is no need to re-download.',
 
     'clipboard.cut.name': 'Cut',
     'clipboard.copy.name': 'Copy',
@@ -37,7 +37,7 @@ export const STRINGS = {
     'settings.open-project-settings-dialog.name': 'Project Settings',
     'settings.open-font-dialog.name': 'Font Settings',
     'settings.open-resize-dialog.name': 'Resize Canvas',
-    'settings.open-background-dialog.name': 'Color / Background Settings',
+    'settings.open-background-dialog.name': 'Colors / Background',
 
     'settings.change-background.invert-white.warning': "Your canvas contains white text, which won't be visible against a white background.",
     'settings.change-background.invert-white.checkbox': "Convert all white text to black",

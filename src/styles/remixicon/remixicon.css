@@ -8,7 +8,7 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1759525594922") format("woff2");
+    src: url("remixicon/remixicon.woff2?t=1763521679851") format("woff2");
     font-display: swap;
 }
 
@@ -114,3 +114,10 @@
 .ri-input-field:before { content: "\f47a"; }
 .ri-crosshair-2-line:before { content: "\f3b3"; }
 .ri-flashlight-line:before { content: "\ed3d"; }
+.ri-download-2-line:before { content: "\ec54"; }
+.ri-folder-2-line:before { content: "\ed52"; }
+.ri-export-line:before { content: "\f437"; }
+.ri-file-line:before { content: "\eceb"; }
+.ri-aspect-ratio-line:before { content: "\ea80"; }
+.ri-font-sans-serif:before { content: "\f392"; }
+.ri-landscape-line:before { content: "\ee7d"; }

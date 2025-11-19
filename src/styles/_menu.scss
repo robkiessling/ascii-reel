@@ -1,0 +1,176 @@
+@use 'variables' as *;
+
+#file-name {
+  font-size: 1rem;
+  letter-spacing: 1px;
+
+  padding: 0 0.25rem;
+  margin: 0 0.25rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+
+  height: $island-button-size;
+  line-height: $island-button-size;
+
+  // Make sure long file names do not overlap with file menu
+  //max-width: calc(100vw - 750px); // 750 is determined from the width of the file menu (~350px) multiplied by 2 + some padding
+  max-width: 12rem;
+  min-width: 5rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  &:hover, &:focus {
+    border: 1px dashed var(--color-primary);
+    cursor: text;
+    background: var(--color-canvas-bg);
+    max-width: initial;
+  }
+}
+
+#active-file-icon {
+  cursor: pointer;
+  &:hover {
+    background: var(--color-canvas-bg);
+  }
+}
+
+.canvas-button-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.canvas-button {
+  width: $island-button-size;
+  height: $island-button-size;
+
+  background: var(--color-sidebar-button);
+  border-radius: 0.5rem;
+}
+
+.pre-icon {
+  display: inline-block;
+  white-space: pre;
+  font-family: $font-monospace;
+  font-size: 0.55rem;
+  line-height: 8px;
+}
+
+.char-icon {
+
+}
+
+.icon-dropdown {
+  position: relative;
+
+  &.show-dropdown {
+    > ul {
+      display: block;
+    }
+  }
+  &.hovered {
+    background-color: var(--color-island-hover);
+    cursor: pointer;
+  }
+
+  > ul {
+    display: none;
+    position: absolute;
+    top: 34px;
+    left: 0;
+
+    border-radius: $header-padding;
+    border: 1px solid var(--color-island-border);
+    overflow: hidden;
+
+    background-color: var(--color-island-bg);
+    list-style: none;
+    padding: 0.5rem;
+
+    z-index: 3;
+    box-shadow: var(--color-island-shadow);
+    cursor: default;
+
+    > li {
+      //&.icon-dropdown-option {
+      //  border-radius: 0;
+      //}
+
+      &.active {
+        background: var(--color-primary);
+      }
+
+      &:hover {
+        background-color: var(--color-island-hover);
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+.icon-menu-option, .icon-dropdown-button, .icon-dropdown-option, .action-button, .color-well, .char-well {
+  width: $island-button-size;
+  height: $island-button-size;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.25rem;
+  overflow: hidden;
+  cursor: pointer;
+
+  border-radius: 0.5rem;
+
+  &.solid {
+    background: var(--color-island-button);
+  }
+
+  &:hover:not(.disabled):not(.active) {
+    background: var(--color-island-hover);
+  }
+
+  &.disabled {
+    color: var(--color-text-disabled);
+    cursor: default;
+  }
+
+  &.active {
+    background: var(--color-primary);
+    color: var(--color-text-white);
+  }
+}
+
+.icon-dropdown-option.has-label {
+  width: 17rem;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.5rem;
+  user-select: none;
+
+  .label {
+    font-family: $font-sans-serif;
+    font-size: 1rem;
+    flex: 1;
+  }
+
+  .shortcut {
+    font-family: $font-sans-serif;
+    font-size: 1rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.icon-menu-option, .icon-dropdown-option {
+  position: relative;
+
+  &[data-value="fill-char"] {
+    > .picked-char {
+      position: absolute;
+      bottom: 1px;
+      right: 4px;
+      font-size: 0.875rem;
+      font-family: $font-monospace;
+    }
+  }
+}
