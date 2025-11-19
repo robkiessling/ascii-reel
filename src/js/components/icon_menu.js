@@ -11,7 +11,7 @@ const DEFAULT_OPTIONS = {
     closeDropdownOnSelect: true,
     actionTooltips: false,
     transparentBtns: true,
-    dropdownStyle: {}
+    dropdownStyle: undefined
 }
 
 /**

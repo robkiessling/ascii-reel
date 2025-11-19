@@ -9,13 +9,14 @@ import {eventBus, EVENTS} from "../../events/events.js";
 import {init as initFile} from "./file.js";
 import {init as initTheme} from "./theme.js";
 import {init as initTools} from "./tools.js";
-import {init as initView} from "./view.js";
+import {init as initView, refresh as refreshView} from "./view.js";
+import {init as initEdit, refresh as refreshEdit} from "./edit.js";
 import {standardTip} from "../../components/tooltips.js";
 import IconMenu from "../../components/icon_menu.js";
 import {getActionInfo} from "../../io/actions.js";
 import {hasActiveFile} from "../../storage/file_system.js";
 
-let $fileName, $activeFileIcon;
+let mainMenu, $fileName, $activeFileIcon;
 
 const MAIN_MENU = [
     'file.new',
@@ -30,10 +31,9 @@ const MAIN_MENU = [
     'settings.open-resize-dialog',
 ]
 
-let mainMenu;
-
 export function init() {
     initFile();
+    initEdit();
     initTheme();
     initTools();
     initView();
@@ -45,11 +45,14 @@ export function init() {
     mainMenu = new IconMenu($('#main-menu-button'), {
         dropdown: true,
         dropdownBtnIcon: 'mainMenu.open',
-        dropdownStyle: () => {
-            return {
-                left: isAnimationProject() ? -42 : 0
-            }
-        },
+
+        // This used to handle having a button to the left of main-menu, it is not needed anymore
+        // dropdownStyle: () => {
+        //     return {
+        //         left: isAnimationProject() ? -42 : 0
+        //     }
+        // },
+
         items: MAIN_MENU.map(item => {
             return {
                 value: item,
@@ -68,8 +71,10 @@ function refresh() {
     mainMenu.refresh();
 
     $fileName.html(getName(false));
-    // $activeFileIcon.toggle(hasActiveFile())
-    $activeFileIcon.toggle(true)
+    $activeFileIcon.toggle(hasActiveFile())
+
+    refreshView();
+    refreshEdit();
 }
 
 function setupActiveFileIcon() {

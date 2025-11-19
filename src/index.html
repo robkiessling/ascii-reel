@@ -18,13 +18,12 @@
     <div id="main-content">
         <div id="frames-and-canvas" class="frames-on-left">
             <div id="tools-and-canvas">
-                <div id="context-tools-top-center">
+                <div id="context-tools-top-center" class="context-tools">
                     <div id="tools" class="island-panel"></div>
                 </div>
 
-                <div id="context-tools-top-left">
-                    <div class="canvas-button-container">
-                        <div class="canvas-button" id="frames-menu-button"></div>
+                <div id="context-tools-top-left" class="context-tools">
+                    <div class="flex-row gap-md">
                         <div class="canvas-button" id="main-menu-button"></div>
                         <div class="flex-row align-center">
                             <span id="active-file-icon" class="ri ri-fw ri-hard-drive-3-line" style="display: none;"></span>
@@ -113,6 +112,30 @@
                     </div>
                 </div>
 
+                <div id="context-tools-bottom-left" class="context-tools">
+                    <div class="flex-row gap-md">
+                        <div class="canvas-button-group view-buttons">
+                            <div class="canvas-button" data-action="view.zoom-out"></div>
+                            <div class="canvas-button has-text" data-action="view.zoom-default"></div>
+                            <div class="canvas-button" data-action="view.zoom-in"></div>
+                        </div>
+
+                        <div class="canvas-button-group edit-buttons">
+                            <div class="canvas-button" data-action="state.undo"></div>
+                            <div class="canvas-button" data-action="state.redo"></div>
+                        </div>
+
+                        <div class="canvas-button-group view-buttons">
+                            <div class="canvas-button" data-action="view.toggle-grid"></div>
+                            <div class="canvas-button" data-action="view.toggle-whitespace"></div>
+                        </div>
+
+                        <div class="canvas-button-group frame-buttons">
+                            <div class="canvas-button" data-action="frames.toggle-component"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="canvas-message" style="display: none;"></div>
                 <div id="canvas-container">
                     <canvas id="char-canvas" class="absolute-center full"></canvas>
@@ -128,15 +151,9 @@
                 <div class="tools">
                     <div>
                         <span class="section-header no-select">Frames</span>
-                        <button data-action="frames.new-frame">
-                            <span class="ri ri-fw ri-add-circle-line"></span>
-                        </button>
-                        <button data-action="frames.duplicate-frame">
-                            <span class="ri ri-fw ri-file-copy-2-line"></span>
-                        </button>
-                        <button data-action="frames.delete-frame">
-                            <span class="ri ri-fw ri-delete-bin-line"></span>
-                        </button>
+                        <button data-action="frames.new-frame"></button>
+                        <button data-action="frames.duplicate-frame"></button>
+                        <button data-action="frames.delete-frame"></button>
                         <button data-action="frames.reverse-frames"></button>
                         <span class="spacer"></span>
                         <button data-action="frames.toggle-onion"></button>
@@ -145,7 +162,6 @@
                     <div>
                         <button data-action="frames.align-left"></button>
                         <button data-action="frames.align-bottom"></button>
-                        <button class="show-when-minimized" data-action="frames.toggle-component"></button>
                     </div>
                 </div>
                 <div class="list minimizable"></div>
@@ -166,9 +182,7 @@
                         </button>
                     </div>
                     <div>
-                        <button data-action="preview.open-popup">
-                            <span class="ri ri-fw ri-external-link-line"></span>
-                        </button>
+                        <button data-action="preview.open-popup"></button>
                     </div>
                 </div>
                 <div id="preview-canvas-container" class="minimizable">
@@ -179,9 +193,7 @@
                         <div id="preview-fps-value"></div>
                         <div id="preview-fps-slider"></div>
                     </div>
-                    <button data-action="preview.toggle-play">
-                        <span class="ri ri-fw ri-play-circle-line"></span>
-                    </button>
+                    <button data-action="preview.toggle-play"></button>
                 </div>
             </div>
 
@@ -194,18 +206,10 @@
                         </button>
                     </div>
                     <div>
-                        <button data-action="layers.add-layer">
-                            <span class="ri ri-fw ri-add-circle-line"></span>
-                        </button>
-                        <button data-action="layers.edit-layer">
-                            <span class="ri ri-fw ri-pencil-line"></span>
-                        </button>
-                        <button data-action="layers.delete-layer">
-                            <span class="ri ri-fw ri-delete-bin-line"></span>
-                        </button>
-                        <button class="toggle-visibility-lock" data-action="layers.toggle-visibility-lock">
-                            <span class="ri ri-fw"></span>
-                        </button>
+                        <button data-action="layers.add-layer"></button>
+                        <button data-action="layers.edit-layer"></button>
+                        <button data-action="layers.delete-layer"></button>
+                        <button data-action="layers.toggle-visibility-lock"></button>
                     </div>
                 </div>
                 <div class="layer-template layer">
@@ -227,15 +231,9 @@
                         </button>
                     </div>
                     <div>
-                        <button data-action="palette.sort-colors">
-                            <span class="ri ri-fw ri-sort-desc"></span>
-                        </button>
-                        <button data-action="palette.delete-unused-colors">
-                            <span class="ri ri-fw ri-delete-bin-line"></span>
-                        </button>
-                        <button data-action="palette.open-settings">
-                            <span class="ri ri-fw ri-settings-5-line"></span>
-                        </button>
+                        <button data-action="palette.sort-colors"></button>
+                        <button data-action="palette.delete-unused-colors"></button>
+                        <button data-action="palette.open-settings"></button>
                     </div>
                 </div>
                 <div class="list as-rows minimizable"></div>
@@ -250,12 +248,8 @@
                         </button>
                     </div>
                     <div>
-                        <button data-action="unicode.information">
-                            <span class="ri ri-fw ri-information-line"></span>
-                        </button>
-                        <button data-action="unicode.open-settings">
-                            <span class="ri ri-fw ri-settings-5-line"></span>
-                        </button>
+                        <button data-action="unicode.information"></button>
+                        <button data-action="unicode.open-settings"></button>
                     </div>
                 </div>
                 <div class="list as-rows no-select minimizable"></div>

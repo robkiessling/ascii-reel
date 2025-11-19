@@ -36,6 +36,9 @@
 .align-center { align-items: center; }
 .justify-center { justify-content: center; }
 .flex-1 { flex: 1 }
+.gap-sm { gap: 0.25rem; }
+.gap-md { gap: 0.5rem; }
+.gap-lg { gap: 1rem; }
 
 .invisible {
   visibility: hidden; // Will still take up space, but be invisible

@@ -2,42 +2,61 @@ import * as state from "../../state/index.js";
 import * as actions from "../../io/actions.js";
 import {STRINGS} from "../../config/strings.js";
 import {createDialog} from "../../utils/dialogs.js";
-import {canZoomIn, canZoomOut} from "../canvas_controller.js";
+import {canZoomIn, canZoomOut, getCurrentZoomPct} from "../canvas_controller.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 
 const GRID_SPACING_LIMITS = [1, 1000];
+
+let actionButtons;
 
 export function init() {
     setupGridToggle();
     setupGridDialog();
     setupWhitespaceToggle();
+    setupEventBus();
 
     actions.registerAction('view.zoom-in', {
-        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 2 }),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 1.2 }),
         enabled: () => canZoomIn(),
     });
     actions.registerAction('view.zoom-out', {
-        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 0.5 }),
+        callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_DELTA, { delta: 0.8 }),
         enabled: () => canZoomOut(),
     });
     actions.registerAction('view.zoom-default', {
         callback: () => eventBus.emit(EVENTS.CANVAS.ZOOM_TO_DEFAULT),
+        icon: () => getCurrentZoomPct(),
     });
+
+    actionButtons = actions.setupActionButtons($('#context-tools-bottom-left .view-buttons'), {
+        placement: 'top'
+    })
 }
 
+export function refresh() {
+    actionButtons.refreshContent();
+}
+
+function setupEventBus() {
+    eventBus.on(
+        [EVENTS.CANVAS.ZOOM_DELTA, EVENTS.CANVAS.ZOOM_TO_FIT, EVENTS.CANVAS.ZOOM_TO_DEFAULT],
+        () => refresh()
+    )
+}
 
 
 let $gridDialog, minorGridSettings, majorGridSettings;
 
 function setupGridToggle() {
     actions.registerAction('view.toggle-grid', {
-        name: () => state.getConfig('grid').show ? STRINGS['view.hide-grid.name'] : STRINGS['view.show-grid.name'],
+        name: () => state.getConfig('grid')?.show ? STRINGS['view.hide-grid.name'] : STRINGS['view.show-grid.name'],
         callback: () => {
             let grid = $.extend({}, state.getConfig('grid'));
             grid.show = !grid.show;
             state.setConfig('grid', grid);
             eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-        }
+        },
+        active: () => state.getConfig('grid')?.show
     });
 }
 
@@ -142,6 +161,7 @@ function setupWhitespaceToggle() {
         callback: () => {
             state.setConfig('showWhitespace', !state.getConfig('showWhitespace'));
             eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
-        }
+        },
+        active: () => state.getConfig('showWhitespace')
     });
 }

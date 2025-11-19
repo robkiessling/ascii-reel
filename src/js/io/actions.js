@@ -6,6 +6,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {isObject} from "../utils/objects.js";
 import {refreshableTooltips} from "../components/tooltips.js";
+import {getIconClass, getIconHTML} from "../config/icons.js";
 
 let actions;
 
@@ -92,6 +93,8 @@ export function init() {
  *   action will be greyed out and un-clickable.
  * @param {boolean|function:boolean} [data.visible=true] - Whether the action is visible in the UI. If an action is
  *   not visible it can still be called via shortcut -- if that is not desired make sure enabled is also false.
+ * @param {boolean|function:boolean} [data.active=false] - Whether the action is currently 'active'; if the action
+ *   has a button that button will be highlighted
  * @param {string|function:string} [data.shortcutAbbr] - Hardcoded shortcut abbreviation (not common; most abbr will
  *   come from preferences)
  * @param {string|function:string} [data.icon] - Class name of an icon (e.g. remixicon class). If the action is shown in
@@ -112,6 +115,8 @@ export function registerAction(id, data) {
     if (data.description === undefined) { data.description = STRINGS[`${id}.description`]; }
     if (data.enabled === undefined) { data.enabled = true; }
     if (data.visible === undefined) { data.visible = true; }
+    if (data.active === undefined) { data.active = false; }
+    if (data.icon === undefined) { data.icon = getIconHTML(id, false) }
 
     if (actions[id] !== undefined) { console.warn(`Re-registering action: ${id}`); }
     actions[id] = data;
@@ -129,6 +134,7 @@ export function getActionInfo(id) {
     if (isFunction(info.description)) { info.description = info.description(); }
     if (isFunction(info.enabled)) { info.enabled = info.enabled(); }
     if (isFunction(info.visible)) { info.visible = info.visible(); }
+    if (isFunction(info.active)) { info.active = info.active(); }
     if (isFunction(info.icon)) { info.icon = info.icon(); }
     if (isFunction(info.shortcutAbbr)) { info.shortcutAbbr = info.shortcutAbbr(); }
 
@@ -249,7 +255,9 @@ export function setupActionButtons($container, tooltipOptions = {}) {
                 const actionInfo = getActionInfo(actionId);
 
                 $button.toggleClass('hidden', !actionInfo.visible)
-                if (actionInfo.icon) $button.empty().append(`<span class="ri ri-fw ${actionInfo.icon}"></span>`);
+                $button.toggleClass('active', !!actionInfo.active)
+                $button.toggleClass('disabled', !actionInfo.enabled)
+                if (actionInfo.icon) $button.html(actionInfo.icon)
             })
 
             refreshTooltips();

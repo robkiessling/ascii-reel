@@ -28,9 +28,7 @@ function setupActionButtons() {
             hideAllTooltips({ duration: 0 }); // Instantly hide tooltips to avoid flash in top-left corner
             eventBus.emit(EVENTS.RESIZE.ALL);
         },
-        icon: () => {
-            return `ri ri-fw ri-sidebar-unfold-line ${minimizer.isMinimized ? 'rotate180 active' : ''}`
-        }
+        active: () => minimizer.isMinimized
     });
 
     actionButtonsWhileOpen = actions.setupActionButtons($('#sidebar-details'), {

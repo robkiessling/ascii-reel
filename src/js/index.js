@@ -16,7 +16,6 @@ import { init as initUnicode } from "./controllers/unicode_controller.js";
 import { init as initCanvas, resize as resizeCanvas } from './controllers/canvas_controller.js';
 import { init as initSelection, clear as performClearSelection } from './controllers/selection/index.js'
 import {
-    init as initState,
     isValid as isStateValid,
     loadFromStorage,
     markClean,
@@ -44,7 +43,6 @@ initActions();
 initPalette();
 initUnicode();
 initPreview();
-initState();
 initCanvas();
 initFrames();
 initLayers();
@@ -89,7 +87,7 @@ function setupEventBus() {
     })
     
     // History state-change listener:
-    eventBus.on(EVENTS.HISTORY.CHANGED, ({ requiresResize, recalculateFont, recalculateColors }) => {
+    eventBus.on(EVENTS.HISTORY.RESTORED, ({ requiresResize, recalculateFont, recalculateColors }) => {
         if (recalculateFont) calculateFontRatio(fontFamily())
         if (recalculateColors) recalculateCanvasColors()
 

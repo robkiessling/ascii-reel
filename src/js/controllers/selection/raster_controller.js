@@ -623,7 +623,7 @@ function setupEventBus() {
 
     // If we're in the middle of moving content and the user presses undo, it can be jarring. So we always finish the
     // current move and then undo it.
-    eventBus.on(EVENTS.HISTORY.BEFORE_CHANGE, () => {
+    eventBus.on(EVENTS.HISTORY.BEFORE_RESTORE, () => {
         // if (movableContent()) finishMovingContent()
     })
 

@@ -26,6 +26,10 @@ button, .button {
   .ri {
     font-size: 1.25rem;
   }
+
+  &.active {
+    color: var(--color-primary);
+  }
 }
 
 // Class that can be applied to a <a> to make it look like a button

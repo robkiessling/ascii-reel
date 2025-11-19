@@ -45,15 +45,12 @@ export {
     sortedChars, importChars, setUnicodeSetting, getUnicodeSetting
 } from './unicode.js'
 export {
+    canUndo, undo, canRedo, redo,
     pushHistory, endHistoryModification, isDirty, markClean
 } from './history.js'
 
 export * as selection from './selection/index.js'
 // todo export the other slices like this ^ instead of writing every single method
-
-export function init() {
-    history.setupActions();
-}
 
 export function loadNewState(projectType, dimensions, colorMode, background) {
     let primaryColor, paletteState;

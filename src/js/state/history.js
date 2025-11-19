@@ -8,7 +8,7 @@ const DEBUG = false;
 // -------------------------------------------------------------------------------- History (undo / redo)
 // Implementing undo/redo using the memento pattern https://en.wikipedia.org/wiki/Memento_pattern
 
-let history; // History stack (of state snapshots)
+let history = []; // History stack (of state snapshots)
 let historyIndex; // Current index in history stack
 
 const MAX_HISTORY = 30; // Max number of states to remember in the history. Increasing this value will use more memory.
@@ -16,18 +16,6 @@ const MAX_HISTORY = 30; // Max number of states to remember in the history. Incr
 export function reset() {
     history = [];
     historyIndex = undefined;
-}
-
-export function setupActions() {
-    actions.registerAction('state.undo', {
-        callback: () => undo(),
-        enabled: () => canUndo(),
-    });
-
-    actions.registerAction('state.redo', {
-        callback: () => redo(),
-        enabled: () => canRedo(),
-    });
 }
 
 /**
@@ -68,10 +56,12 @@ export function pushHistory(options = {}) {
         history.shift();
         historyIndex -= 1;
     }
+
+    eventBus.emit(EVENTS.HISTORY.RECORDED);
 }
 
 function loadStateFromHistory(newIndex, oldIndex) {
-    eventBus.emit(EVENTS.HISTORY.BEFORE_CHANGE);
+    eventBus.emit(EVENTS.HISTORY.BEFORE_RESTORE);
 
     const newState = history[newIndex];
     const oldState = history[oldIndex];
@@ -86,14 +76,14 @@ function loadStateFromHistory(newIndex, oldIndex) {
             .map(key => [key, true])
     );
 
-    eventBus.emit(EVENTS.HISTORY.CHANGED, trueOptions);
+    eventBus.emit(EVENTS.HISTORY.RESTORED, trueOptions);
 }
 
-function canUndo() {
+export function canUndo() {
     return historyIndex > 0;
 }
 
-function undo() {
+export function undo() {
     if (canUndo()) {
         endHistoryModification();
         log(`undo: ${historyIndex} -> ${historyIndex - 1}`)
@@ -102,11 +92,11 @@ function undo() {
     }
 }
 
-function canRedo() {
+export function canRedo() {
     return historyIndex < history.length - 1;
 }
 
-function redo() {
+export function redo() {
     if (canRedo()) {
         log(`redo: ${historyIndex} -> ${historyIndex + 1}`)
         loadStateFromHistory(historyIndex + 1, historyIndex);

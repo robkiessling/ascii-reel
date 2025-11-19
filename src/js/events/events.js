@@ -126,8 +126,9 @@ export const EVENTS = {
         SAVED: 'file:saved'
     },
     HISTORY: {
-        BEFORE_CHANGE: 'history:before-change',
-        CHANGED: 'history:changed'
+        RECORDED: 'history:recorded',
+        BEFORE_RESTORE: 'history:before-restore',
+        RESTORED: 'history:restored',
     },
     THEME: {
         CHANGED: 'theme:changed',

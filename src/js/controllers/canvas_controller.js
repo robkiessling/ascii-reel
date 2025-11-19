@@ -48,11 +48,11 @@ export function init() {
                 mouseEvent: evt, canvas: selectionCanvas, cell, currentPoint, mouseDownButton, mouseCoords
             })
         },
-        onMouseMove: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords}) => {
+        onMouseMove: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords, isOverCanvas}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEMOVE, {
                 mouseEvent: evt, canvas: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords
             })
-            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
+            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell, isOverCanvas })
         },
         onMouseUp: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEUP, {
@@ -63,8 +63,8 @@ export function init() {
         onDblClick: ({evt, cell}) => {
             eventBus.emit(EVENTS.CANVAS.DBLCLICK, { mouseEvent: evt, cell: cell, canvas: selectionCanvas })
         },
-        onMouseEnter: ({cell}) => {
-            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
+        onMouseEnter: ({cell, isOverCanvas}) => {
+            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell, isOverCanvas })
         },
         onMouseLeave: () => {
             eventBus.emit(EVENTS.CANVAS.HOVER_END)
@@ -132,8 +132,8 @@ function setupEventBus() {
         iterateCanvases(canvas => canvas.panBy(...delta, ignoreZoom))
     }, 1)
 
-    eventBus.on(EVENTS.CANVAS.HOVERED, ({cell}) => {
-        hoveredCell = cell;
+    eventBus.on(EVENTS.CANVAS.HOVERED, ({cell, isOverCanvas}) => {
+        hoveredCell = isOverCanvas ? cell : null;
         redrawHover();
     })
     eventBus.on(EVENTS.CANVAS.HOVER_END, () => {
@@ -161,14 +161,17 @@ function iterateCanvases(callback) {
 }
 
 export function canZoomIn() {
-    return selectionCanvas.canZoomIn();
+    return selectionCanvas?.canZoomIn();
 }
 export function canZoomOut() {
-    return selectionCanvas.canZoomOut();
+    return selectionCanvas?.canZoomOut();
+}
+export function getCurrentZoomPct() {
+    return selectionCanvas?.getZoomPct();
 }
 
 export function getCurrentViewRect() {
-    return selectionCanvas.currentViewRect()
+    return selectionCanvas?.currentViewRect()
 }
 
 export function resize(resetZoom) {
@@ -328,7 +331,12 @@ function redrawSelection() {
 function redrawHover() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell && !selectionController.raster.isDrawing && !selectionController.raster.isMoving && showHoverForTool()) {
+    if (
+        hoveredCell &&
+        !selectionController.raster.isDrawing &&
+        !selectionController.raster.isMoving &&
+        showHoverForTool()
+    ) {
         hoveredCells(hoveredCell).forEach(cell => {
             if (state.isCellInBounds(cell)) hoveredCellCanvas.highlightCellOrArea(cell);
         })

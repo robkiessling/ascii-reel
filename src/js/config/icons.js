@@ -18,6 +18,44 @@ const ICON_DATA = {
     'settings.open-background-dialog': { type: REMIXICON, content: 'ri-landscape-line' },
     'settings.open-resize-dialog': { type: REMIXICON, content: 'ri-aspect-ratio-line' },
 
+    'view.zoom-out': { type: REMIXICON, content: 'ri-zoom-out-line' },
+    'view.zoom-in': { type: REMIXICON, content: 'ri-zoom-in-line' },
+    'view.toggle-grid': { type: REMIXICON, content: 'ri-grid-line' },
+    'view.toggle-whitespace': { type: REMIXICON, content: 'ri-space' },
+
+    'state.undo': { type: REMIXICON, content: 'ri-arrow-go-back-line', style: "font-size: 0.875rem;" },
+    'state.redo': { type: REMIXICON, content: 'ri-arrow-go-forward-line', style: "font-size: 0.875rem;" },
+
+    'frames.new-frame': { type: REMIXICON, content: 'ri-add-circle-line' },
+    'frames.duplicate-frame': { type: REMIXICON, content: 'ri-file-copy-2-line' },
+    'frames.delete-frame': { type: REMIXICON, content: 'ri-delete-bin-line' },
+    'frames.reverse-frames.left-aligned': { type: REMIXICON, content: 'ri-arrow-up-down-line' },
+    'frames.reverse-frames.bottom-aligned': { type: REMIXICON, content: 'ri-arrow-left-right-line' },
+    'frames.toggle-onion': { type: REMIXICON, content: 'ri-stack-line' },
+    'frames.toggle-ticks': { type: REMIXICON, content: 'ri-timer-line' },
+    'frames.toggle-component': { type: REMIXICON, content: 'ri-slideshow-view' },
+    'frames.align-left': { type: REMIXICON, content: 'ri-layout-left-line' },
+    'frames.align-bottom': { type: REMIXICON, content: 'ri-layout-bottom-line' },
+
+    'layers.add-layer': { type: REMIXICON, content: 'ri-add-circle-line' },
+    'layers.edit-layer': { type: REMIXICON, content: 'ri-pencil-line' },
+    'layers.delete-layer': { type: REMIXICON, content: 'ri-delete-bin-line' },
+    'layers.toggle-visibility-lock.lock': { type: REMIXICON, content: 'ri-lock-line' },
+    'layers.toggle-visibility-lock.unlock': { type: REMIXICON, content: 'ri-lock-unlock-line' },
+
+    'preview.play': { type: REMIXICON, content: 'ri-play-circle-line' },
+    'preview.pause': { type: REMIXICON, content: 'ri-pause-circle-line' },
+    'preview.open-popup': { type: REMIXICON, content: 'ri-external-link-line' },
+
+    'palette.sort-colors': { type: REMIXICON, content: 'ri-sort-desc' },
+    'palette.delete-unused-colors': { type: REMIXICON, content: 'ri-delete-bin-line' },
+    'palette.open-settings': { type: REMIXICON, content: 'ri-settings-5-line' },
+
+    'unicode.information': { type: REMIXICON, content: 'ri-information-line' },
+    'unicode.open-settings': { type: REMIXICON, content: 'ri-settings-5-line' },
+
+    'sidebar.toggle-component': { type: REMIXICON, content: 'ri-sidebar-unfold-line' },
+
     'tools.standard.select': { type: REMIXICON, content: 'ri-cursor-line' },
     'tools.standard.text-editor': { type: REMIXICON, content: 'ri-input-field' },
     'tools.standard.pan': { type: REMIXICON, content: 'ri-hand' },
@@ -137,9 +175,9 @@ export function getIconClass(key) {
     }
 }
 
-export function getIconHTML(key) {
+export function getIconHTML(key, debugQuestionMark = true) {
     const iconData = ICON_DATA[key];
-    if (!iconData) return `<span>?</span>`;
+    if (!iconData) return debugQuestionMark ? `<span>?</span>` : undefined;
 
     const style = iconData.style ? iconData.style : ''
 
