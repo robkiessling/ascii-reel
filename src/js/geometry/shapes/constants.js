@@ -63,10 +63,10 @@ export const EDGE_SIDES = {
 }
 
 export const REORDER_ACTIONS = {
-    BRING_TO_FRONT: "bringToFront",
-    BRING_FORWARD: "bringForward",
-    SEND_BACKWARD: "sendBackward",
     SEND_TO_BACK: "sendToBack",
+    SEND_BACKWARD: "sendBackward",
+    BRING_FORWARD: "bringForward",
+    BRING_TO_FRONT: "bringToFront",
 }
 
 

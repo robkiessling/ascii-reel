@@ -23,8 +23,8 @@
 
 #context-tools-left {
   position: absolute;
-  left: $main-spacing;
-  top: $main-spacing;
+  left: $canvas-padding;
+  top: $canvas-padding;
   z-index: 2;
 
   display: flex;
@@ -34,7 +34,7 @@
 
 #context-tools-top {
   position: absolute;
-  top: $main-spacing;
+  top: $canvas-padding;
   left: calc(50%);
   transform: translate(-50%, 0);
   z-index: 2;
@@ -45,11 +45,11 @@
   align-items: center;
 }
 
-// TODO Rename - this is more than just shape properties, it deals with raster selections too
 #shape-properties {
   flex-direction: column;
-  padding: 0.3rem 0.75rem 0.5rem 0.75rem;
+  padding: 0.25rem 0.75rem 0.5rem 0.75rem;
   gap: 0;
+  width: 14.5rem; // Enough to fit 5 buttons per row
 
   .property-group {
     display: flex;
@@ -86,19 +86,17 @@
     }
 
     .group-actions {
-      gap: 0.25rem;
-
-      > div {
-        display: flex;
-        flex-direction: row;
-      }
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
 
   }
 }
 
 .sub-tool-menu {
-  box-shadow: 0 0.5rem 1rem 0 rgba(0,0,0,0.4);
+  box-shadow: var(--color-island-shadow);
   background: var(--color-island-bg);
 
   display: flex;
@@ -116,11 +114,15 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     overflow: hidden;
     cursor: pointer;
 
     border-radius: 0.5rem;
+
+    &.solid {
+      background: var(--color-island-button);
+    }
 
     &:hover:not(.disabled):not(.active) {
       background: var(--color-island-hover);
@@ -169,8 +171,8 @@
   display: inline-block;
   white-space: pre;
   font-family: $font-monospace;
-  font-size: 0.65rem;
-  line-height: 10px;
+  font-size: 0.55rem;
+  line-height: 8px;
 }
 .char-icon {
 
@@ -206,7 +208,7 @@
     padding: 0;
 
     z-index: 3;
-    box-shadow: 0 0.5rem 1rem 0 rgba(0,0,0,0.3);
+    box-shadow: var(--color-island-shadow);
     cursor: default;
 
     > li {

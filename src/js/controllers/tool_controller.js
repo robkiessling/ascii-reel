@@ -96,8 +96,8 @@ export function handleEscapeKey() {
     }
 
     // Close any submenus if they are open
-    if (Object.values(shapeMenus).some(menu => menu.isOpen)) {
-        Object.values(shapeMenus).forEach(menu => menu.toggleDropdown(false))
+    if (Object.values(shapeProperties).some(property => property.menu.isOpen)) {
+        Object.values(shapeProperties).forEach(property => property.menu.toggleDropdown(false))
         return true;
     }
 
@@ -392,11 +392,6 @@ const TOOLS = [
     { value: 'pan', group: 'Mouse' },
     { value: 'move-all', group: 'Mouse' },
 
-    { value: 'selection-rect', group: 'Selection' },
-    { value: 'selection-lasso', group: 'Selection' },
-    { value: 'selection-line', group: 'Selection' },
-    { value: 'selection-wand', group: 'Selection' },
-
     { value: 'draw-rect', group: 'Draw Shape' },
     { value: 'draw-line', group: 'Draw Shape' },
     { value: 'draw-ellipse', group: 'Draw Shape' },
@@ -405,6 +400,11 @@ const TOOLS = [
     { value: 'draw-textbox', },
     { value: 'eraser', },
     { value: 'fill-char', },
+
+    { value: 'selection-rect', group: 'Selection' },
+    { value: 'selection-lasso', group: 'Selection' },
+    { value: 'selection-line', group: 'Selection' },
+    { value: 'selection-wand', group: 'Selection' },
 
     { value: 'paint-brush', group: 'Color' },
     { value: 'color-swap', group: 'Color' },
@@ -548,7 +548,7 @@ export function showHoverForTool() {
 // -------------------------------------------------------------------------------- Shape Properties
 
 let $shapeProperties, shapeTooltips = [];
-const shapeMenus = {};
+const shapeProperties = {};
 
 // Most menus are based on shape props and are keyed off the prop. There is no 'prop' for order, so we give it its own key.
 const ORDER_MENU = '__ORDER__';
@@ -556,11 +556,9 @@ const ORDER_MENU = '__ORDER__';
 function setupShapeProperties() {
     $shapeProperties = $('#shape-properties')
 
-    // Stroke dropdowns for each shape type
-    const $strokeGroup = $('#shape-stroke-menu-group');
     Object.values(SHAPE_TYPES).forEach(shapeType => {
         if (!STROKE_STYLE_PROPS[shapeType]) return; // Shape has no stroke prop
-        setupStrokeMenu($strokeGroup, shapeType)
+        setupStrokeMenu(shapeType)
     });
 
     setupBrushMenu();
@@ -752,29 +750,33 @@ function updateActiveShapeProp(propKey, propValue, propagate = true) {
 }
 
 function setupShapeMenu($group, prop, options, overrides = {}) {
-    const $menu = $('<div>').appendTo($group.find('.group-actions'))
-
-    shapeMenus[prop] = new IconMenu($menu, {
-        dropdown: false,
-        dropdownBtnTooltip: `tools.shapes.${prop}`,
-        items: options.map(option => {
-            return {
-                value: option,
-                icon: `tools.shapes.${prop}.${option}`,
-                tooltip: `tools.shapes.${prop}.${option}`,
-            }
-        }),
-        visible: () => activeShapeProps()[prop] !== undefined,
-        getValue: () => firstActiveShapeProp(prop),
-        onSelect: newValue => updateActiveShapeProp(prop, newValue),
-        tooltipOptions: {
-            placement: 'right'
-        },
-        ...overrides
-    });
+    shapeProperties[prop] = {
+        $group: $group,
+        menu: new IconMenu($group.find('.group-actions'), {
+            dropdown: false,
+            dropdownBtnTooltip: `tools.shapes.${prop}`,
+            items: options.map(option => {
+                return {
+                    value: option,
+                    icon: `tools.shapes.${prop}.${option}`,
+                    tooltip: `tools.shapes.${prop}.${option}`,
+                }
+            }),
+            visible: () => activeShapeProps()[prop] !== undefined,
+            getValue: () => firstActiveShapeProp(prop),
+            onSelect: newValue => updateActiveShapeProp(prop, newValue),
+            transparentBtns: false,
+            tooltipOptions: {
+                placement: 'bottom'
+            },
+            ...overrides
+        })
+    }
 }
 
-function setupStrokeMenu($group, shapeType) {
+function setupStrokeMenu(shapeType) {
+    const $group = $(`#shape-${shapeType}-stroke-menu-group`)
+
     setupShapeMenu(
         $group,
         STROKE_STYLE_PROPS[shapeType],
@@ -799,10 +801,10 @@ function setupBrushMenu() {
 
 function setupTextAlignMenus() {
     [
-        { prop: TEXT_ALIGN_H_PROP, options: Object.values(TEXT_ALIGN_H_OPTS) },
-        { prop: TEXT_ALIGN_V_PROP, options: Object.values(TEXT_ALIGN_V_OPTS) },
-    ].forEach(({ prop, options }) => {
-        setupShapeMenu($('#shape-text-align-group'), prop, options, {
+        { $group: $('#shape-text-align-h-group'), prop: TEXT_ALIGN_H_PROP, options: Object.values(TEXT_ALIGN_H_OPTS) },
+        { $group: $('#shape-text-align-v-group'), prop: TEXT_ALIGN_V_PROP, options: Object.values(TEXT_ALIGN_V_OPTS) },
+    ].forEach(({ $group, prop, options }) => {
+        setupShapeMenu($group, prop, options, {
             visible: () => {
                 if (activeShapeProps()[prop] === undefined) return false;
 
@@ -819,15 +821,11 @@ function setupFillMenu() {
 }
 
 function setupLineMarkerMenus() {
-    const $group = $('#shape-line-marker-menu-group');
-
-    setupShapeMenu($group, ARROWHEAD_START_PROP, Object.values(ARROWHEAD_OPTIONS))
-    setupShapeMenu($group, ARROWHEAD_END_PROP, Object.values(ARROWHEAD_OPTIONS))
+    setupShapeMenu($('#shape-line-arrowhead-start-menu-group'), ARROWHEAD_START_PROP, Object.values(ARROWHEAD_OPTIONS))
+    setupShapeMenu($('#shape-line-arrowhead-end-menu-group'), ARROWHEAD_END_PROP, Object.values(ARROWHEAD_OPTIONS))
 }
 
 function setupOrderMenu() {
-    const $menu = $('#shape-order');
-
     Object.values(REORDER_ACTIONS).forEach(action => {
         actions.registerAction(`tools.shapes.${action}`, {
             callback: () => selectionController.vector.reorderSelectedShapes(action),
@@ -835,26 +833,31 @@ function setupOrderMenu() {
         })
     })
 
-    shapeMenus[ORDER_MENU] = new IconMenu($menu, {
-        dropdown: true,
-        dropdownBtnIcon: 'tools.shapes.order',
-        dropdownBtnTooltip: 'tools.shapes.order',
-        closeDropdownOnSelect: false,
-        items: Object.values(REORDER_ACTIONS).map(action => {
-            const actionId = `tools.shapes.${action}`;
-            return {
-                value: action,
-                icon: actionId,
-                tooltip: actionId,
-                disabled: () => !actions.isActionEnabled(actionId)
+    const $group = $('#shape-order-group');
+
+    shapeProperties[ORDER_MENU] = {
+        $group: $group,
+        menu: new IconMenu($group.find('.group-actions'), {
+            dropdownBtnIcon: 'tools.shapes.order',
+            dropdownBtnTooltip: 'tools.shapes.order',
+            closeDropdownOnSelect: false,
+            items: Object.values(REORDER_ACTIONS).map(action => {
+                const actionId = `tools.shapes.${action}`;
+                return {
+                    value: action,
+                    icon: actionId,
+                    tooltip: actionId,
+                    disabled: () => !actions.isActionEnabled(actionId)
+                }
+            }),
+            visible: () => selectionController.vector.hasSelectedShapes(),
+            onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
+            transparentBtns: false,
+            tooltipOptions: {
+                placement: 'bottom'
             }
-        }),
-        visible: () => selectionController.vector.hasSelectedShapes(),
-        onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
-        tooltipOptions: {
-            placement: 'right'
-        }
-    });
+        })
+    }
 }
 
 function refreshShapeProperties() {
@@ -862,30 +865,19 @@ function refreshShapeProperties() {
     $shapeProperties.toggle(isVisible);
 
     if (isVisible) {
-        // Toggle menu visibility
-        Object.values(shapeMenus).forEach(menu => menu.refresh());
+        Object.values(shapeProperties).forEach(properties => {
+            properties.menu.refresh()
+            properties.$group.toggle(properties.menu.isVisible())
+        });
 
-        // Toggle menu group visibility (the containers around groups of menus)
-        $shapeProperties.find('#shape-stroke-menu-group').toggle(
-            Object.values(STROKE_STYLE_PROPS).some(prop => shapeMenus[prop].isVisible())
-        )
-        $shapeProperties.find('#shape-brush-menu-group').toggle(shapeMenus[BRUSH_PROP].isVisible())
-        $shapeProperties.find('#shape-text-align-group').toggle(
-            shapeMenus[TEXT_ALIGN_H_PROP].isVisible() || shapeMenus[TEXT_ALIGN_V_PROP].isVisible()
-        )
-        $shapeProperties.find('#shape-fill-menu-group').toggle(shapeMenus[FILL_PROP].isVisible())
-        $shapeProperties.find('#shape-line-marker-menu-group').toggle(
-            shapeMenus[ARROWHEAD_START_PROP].isVisible() || shapeMenus[ARROWHEAD_END_PROP].isVisible()
-        )
         $shapeProperties.find('#shape-color-menu-group').toggle(showColorPicker())
         $shapeProperties.find('#shape-char-menu-group').toggle(showCharPicker())
-        $shapeProperties.find('#move-menu-group').toggle(selectionController.raster.hasSelection())
 
         $shapeProperties.find('#shape-actions').toggle(
             selectionController.vector.hasSelectedShapes() || selectionController.raster.hasSelection()
         )
 
-        // Refresh action buttons
+        // Refresh custom action buttons (not part of a menu)
         $shapeProperties.find('.action-button').each((i, element) => {
             const $element = $(element);
             const actionId = $element.data('action');
@@ -894,7 +886,7 @@ function refreshShapeProperties() {
             $element.toggle(actions.isActionVisible(actionId));
         });
 
-        // Add vertical borders between groups. Have to do this in JS (not CSS) due to children visibility toggles
+        // Add separation between groups. Have to do this in JS (not CSS) due to children visibility toggles
         let firstVisible = true;
         $shapeProperties.find('.property-group').each((i, group) => {
             const $group = $(group);

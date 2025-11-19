@@ -24,35 +24,44 @@
 
                 <div id="context-tools-left">
                     <div id="shape-properties" class="sub-tool-menu" style="display: none;">
-                        <div class="property-group" id="move-menu-group">
-                            <div class="group-title">Move</div>
-                            <div class="group-actions">
-                                <div class="action-button" data-action="tools.selection.move"></div>
-                            </div>
+                        <div class="property-group" id="shape-freeform-stroke-menu-group">
+                            <div class="group-title">Freeform Stroke</div>
+                            <div class="group-actions"></div>
                         </div>
-
-                        <div class="property-group" id="shape-stroke-menu-group">
-                            <div class="group-title">Stroke</div>
-                            <div class="group-actions flex-col"></div>
+                        <div class="property-group" id="shape-rect-stroke-menu-group">
+                            <div class="group-title">Rectangle Stroke</div>
+                            <div class="group-actions"></div>
                         </div>
-                        <div class="property-group" id="shape-line-marker-menu-group">
-                            <div class="group-title">Arrowheads</div>
-                            <div class="group-actions flex-row"></div>
+                        <div class="property-group" id="shape-line-stroke-menu-group">
+                            <div class="group-title">Line Stroke</div>
+                            <div class="group-actions"></div>
+                        </div>
+                        <div class="property-group" id="shape-ellipse-stroke-menu-group">
+                            <div class="group-title">Ellipse Stroke</div>
+                            <div class="group-actions"></div>
+                        </div>
+                        <div class="property-group" id="shape-line-arrowhead-start-menu-group">
+                            <div class="group-title">Start Arrowhead</div>
+                            <div class="group-actions"></div>
+                        </div>
+                        <div class="property-group" id="shape-line-arrowhead-end-menu-group">
+                            <div class="group-title">End Arrowhead</div>
+                            <div class="group-actions"></div>
                         </div>
                         <div class="property-group" id="shape-brush-menu-group">
                             <div class="group-title">Brush</div>
-                            <div class="group-actions flex-row"></div>
+                            <div class="group-actions"></div>
                         </div>
                         <div class="property-group" id="shape-fill-menu-group">
                             <div class="group-title">Fill</div>
-                            <div class="group-actions flex-row"></div>
+                            <div class="group-actions"></div>
                         </div>
                         <div class="property-group" data-static="true" id="shape-char-menu-group">
                             <div class="group-title">
                                 <span>Char</span>
                                 <div class="action-button" data-action="tools.shapes.quickSwapChar"></div>
                             </div>
-                            <div class="group-actions flex-row">
+                            <div class="group-actions">
                                 <div class="char-picker-container" id="shape-char">
                                     <div class="char-well"></div>
                                 </div>
@@ -60,28 +69,33 @@
                         </div>
                         <div class="property-group" data-static="true" id="shape-color-menu-group">
                             <div class="group-title">Color</div>
-                            <div class="group-actions flex-row">
+                            <div class="group-actions">
                                 <div id="shape-color" class="color-picker"></div>
                             </div>
                         </div>
-                        <div class="property-group" id="shape-text-align-group">
+                        <div class="property-group" id="shape-text-align-h-group">
                             <div class="group-title">Text Align</div>
-                            <div class="group-actions flex-row"></div>
+                            <div class="group-actions"></div>
+                        </div>
+                        <div class="property-group" id="shape-text-align-v-group">
+                            <div class="group-actions"></div>
+                        </div>
+                        <div class="property-group" id="shape-order-group">
+                            <div class="group-title">Order</div>
+                            <div class="group-actions"></div>
                         </div>
                         <div class="property-group" id="shape-actions">
                             <div class="group-title">Actions</div>
-                            <div class="group-actions flex-row">
-                                <div id="shape-order"></div>
-                                <div class="action-button" data-action="tools.shapes.editText"></div>
-                                <div class="action-button" data-action="tools.shapes.delete"></div>
-
-                                <div class="action-button" data-action="tools.selection.flip-v"></div>
-                                <div class="action-button" data-action="tools.selection.flip-h"></div>
-                                <div class="action-button" data-action="tools.selection.clone"></div>
-                                <div class="action-button" data-action="tools.selection.convert-to-whitespace"></div>
-                                <div class="action-button" data-action="tools.selection.convert-to-empty"></div>
-                                <div class="action-button" data-action="tools.selection.resize"></div>
-<!--                                <div class="action-button" data-action="tools.selection.close"></div>-->
+                            <div class="group-actions">
+                                <div class="action-button solid" data-action="tools.shapes.editText"></div>
+                                <div class="action-button solid" data-action="tools.shapes.delete"></div>
+                                <div class="action-button solid" data-action="tools.selection.move"></div>
+                                <div class="action-button solid" data-action="tools.selection.flip-v"></div>
+                                <div class="action-button solid" data-action="tools.selection.flip-h"></div>
+                                <div class="action-button solid" data-action="tools.selection.clone"></div>
+                                <div class="action-button solid" data-action="tools.selection.convert-to-whitespace"></div>
+                                <div class="action-button solid" data-action="tools.selection.convert-to-empty"></div>
+                                <div class="action-button solid" data-action="tools.selection.resize"></div>
                             </div>
                         </div>
                     </div>

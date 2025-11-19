@@ -7,6 +7,7 @@
   --color-warning: #f48225;
   --color-error: #f42525;
   --color-selection: #1E90FF;
+  --color-white: #fff;
 
   --color-text: var(--gray-12);
   --color-text-header: var(--gray-12);
@@ -18,6 +19,7 @@
   --color-canvas-bg: var(--gray-1);
 
   --color-sidebar-bg: var(--gray-1);
+  --color-sidebar-button: var(--gray-3);
   --color-sidebar-border: var(--gray-4);
   --color-sidebar-hover: var(--gray-4);
   --color-frame-border: var(--gray-9);
@@ -28,22 +30,24 @@
   --color-scrollbar: var(--gray-8);
   --color-scrollbar-hover: var(--gray-10);
 
+  /* island is currently same color scheme as sidebar, but we may differentiate later */
   --color-island-bg: var(--color-sidebar-bg);
+  --color-island-button: var(--color-sidebar-button);
   --color-island-border: var(--color-sidebar-border);
   --color-island-hover: var(--color-sidebar-hover);
-  --color-island-shadow: 0 0.5rem 1rem 0 rgba(0,0,0,0.3);
+  --color-island-shadow: 0 0.25rem 1rem 0rem rgba(0, 0, 0, 0.08);
+  //--color-island-shadow: 0px 0px .9310142993927002px 0px #0000002b,0px 0px 3.1270833015441895px 0px #00000014,0px 7px 14px 0px #0000000d;
 
   --color-dialog-bg: var(--gray-3);
   --color-dialog-border: var(--gray-5);
   --color-dialog-hover: var(--gray-5);
   --color-overlay: color-mix(in srgb, var(--gray-1) 50%, transparent);
 
-  --color-button-transparent-hover: var(--color-sidebar-hover);
   --color-button-call-out: var(--violet-9);
   --color-button-call-out-text: var(--color-text-white);
   --color-button-call-out-hover: var(--violet-10);
 
-  --color-tooltip-bg: var(--gray-1);
+  --color-tooltip-bg: var(--color-white);
   --color-tooltip-title: var(--violet-9);
 
   --color-resize-options: var(--gray-8);
@@ -58,6 +62,7 @@
   --color-text-muted: var(--gray-11);
 
   --color-sidebar-bg: var(--gray-3);
+  --color-sidebar-button: var(--gray-5);
   --color-sidebar-border: var(--gray-6);
   --color-sidebar-hover: var(--gray-6);
   --color-frame-border: var(--gray-7);

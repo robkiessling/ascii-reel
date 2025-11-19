@@ -9,7 +9,8 @@ const DEFAULT_OPTIONS = {
     disabled: () => false,
     onRefresh: (/* iconMenu */) => {},
     closeDropdownOnSelect: true,
-    actionTooltips: false
+    actionTooltips: false,
+    transparentBtns: true
 }
 
 /**
@@ -57,6 +58,8 @@ export default class IconMenu {
      *   tooltips. It does not currently affect dropdownBtnTooltip.
      * @param {boolean} [options.actionTooltips] - (Only applicable if items:tooltips is used) Whether to instantiate
      *   standard tooltips or action tooltips. It does not currently affect dropdownBtnTooltip.
+     * @param {boolean} [options.transparentBtns=true] - (Only applicable if dropdown:false) Whether button options
+     *   should have transparent background or not
      */
     constructor($container, options = {}) {
         this.id = ++IconMenu.idSequence;
@@ -99,7 +102,7 @@ export default class IconMenu {
     _initBar() {
         this.options.items.forEach(item => {
             $('<div>', {
-                class: 'icon-menu-option',
+                class: `icon-menu-option ${this.options.transparentBtns ? '' : 'solid'}`,
                 'data-value': item.value,
                 'data-tooltip': item.tooltip,
                 html: getIconHTML(item.icon)
