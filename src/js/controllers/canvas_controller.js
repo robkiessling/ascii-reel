@@ -15,7 +15,7 @@ import Canvas from "../components/canvas.js";
 import * as selectionController from "./selection/index.js";
 import {drawingContent, hoveredCells, showHoverForTool} from "./tool_controller.js";
 import * as state from "../state/index.js";
-import {majorGridColor, minorGridColor, PRIMARY_COLOR} from "../config/colors.js";
+import {majorGridColor, minorGridColor} from "../config/colors.js";
 import * as tools from "./tool_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";

@@ -54,7 +54,7 @@ const ICON_DATA = {
     'unicode.information': { type: REMIXICON, content: 'ri-information-line' },
     'unicode.open-settings': { type: REMIXICON, content: 'ri-settings-5-line' },
 
-    'sidebar.toggle-component': { type: REMIXICON, content: 'ri-sidebar-unfold-line' },
+    'sidebar.toggle-component': { type: REMIXICON, content: 'ri-sidebar-fold-line' },
 
     'tools.standard.select': { type: REMIXICON, content: 'ri-cursor-line' },
     'tools.standard.text-editor': { type: REMIXICON, content: 'ri-input-field' },

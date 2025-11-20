@@ -31,6 +31,11 @@
   z-index: 3;
 }
 
+#context-tools-top-right {
+  right: $canvas-padding;
+  top: $canvas-padding;
+}
+
 #context-tools-bottom-left {
   left: $canvas-padding;
   bottom: $canvas-padding;

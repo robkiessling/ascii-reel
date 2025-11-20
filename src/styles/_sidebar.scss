@@ -100,12 +100,6 @@
     }
   }
 
-
-  // Showing/hiding the entire sidebar:
-  #maximize-side-content {
-    display: none;
-  }
-
   &.minimized {
     min-width: auto;
     margin-right: $tiny-spacing;
@@ -115,10 +109,6 @@
 
     > div {
       display: none;
-    }
-    > #maximize-side-content {
-      display: flex;
-      margin-bottom: 0;
     }
   }
 
@@ -327,6 +317,7 @@
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  height: $island-button-size;
 
   margin-top: auto; // forces details to always be at bottom of page, even if all other sections are minimized
 }

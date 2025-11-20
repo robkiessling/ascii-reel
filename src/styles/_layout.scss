@@ -53,14 +53,3 @@ html, body {
     display: none !important;
   }
 }
-
-.stack {
-  position: relative;
-  //height: auto;
-
-  > div {
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
-}

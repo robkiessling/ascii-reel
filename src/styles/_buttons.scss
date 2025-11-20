@@ -28,7 +28,7 @@ button, .button {
   }
 
   &.active {
-    color: var(--color-primary);
+    background: var(--color-island-active);
   }
 }
 

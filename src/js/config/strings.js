@@ -245,10 +245,8 @@ export const STRINGS = {
     'frames.toggle-ticks.description': 'Displays tick controls to customize how long each frame appears.\n\n' +
         'Tick counts are shown in the bottom-right corner of each frame and can be edited by clicking them. ' +
         'When multiple frames are selected, the change is applied to all.',
-    'frames.show-component.name': 'Maximize Frames View',
-    'frames.show-component.description': 'Shows the frames component.',
-    'frames.hide-component.name': 'Minimize Frames View',
-    'frames.hide-component.description': 'Hides the frames component.',
+    'frames.toggle-component.name': 'Frames Panel',
+    'frames.toggle-component.description': 'Show or hide the frames panel for managing animation frames.',
     'frames.align-left.name': 'Align Frames: Left',
     'frames.align-left.description': 'Positions the frames on the left side of the screen.',
     'frames.align-bottom.name': 'Align Frames: Bottom',
@@ -311,9 +309,7 @@ export const STRINGS = {
 
     'warnings.current-layer-not-visible': 'The current layer is not visible!',
 
-    'sidebar.show-component.name': 'Maximize Sidebar',
-    'sidebar.show-component.description': 'Shows the sidebar content.',
-    'sidebar.hide-component.name': 'Minimize Sidebar',
-    'sidebar.hide-component.description': 'Hides the sidebar content.',
+    'sidebar.toggle-component.name': 'Sidebar',
+    'sidebar.toggle-component.description': 'Show or hide the sidebar, which includes Preview, Layers, Palette, and Unicode tools.',
 
 }

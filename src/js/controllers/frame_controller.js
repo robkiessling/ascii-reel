@@ -267,14 +267,13 @@ function setupActions() {
     });
 
     actions.registerAction('frames.toggle-component', {
-        name: () => STRINGS[minimizer.isMinimized ? 'frames.show-component.name' : 'frames.hide-component.name'],
-        description: () => STRINGS[minimizer.isMinimized ? 'frames.show-component.description' : 'frames.hide-component.description'],
         callback: () => {
             minimizer.toggle();
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
-        active: () => !minimizer.isMinimized
+        active: () => !minimizer.isMinimized,
+        shortcutAbbr: `' (Apostrophe)`
     });
 
     toggleComponentButton = setupActionButtons($('#context-tools-bottom-left .frame-buttons'), {

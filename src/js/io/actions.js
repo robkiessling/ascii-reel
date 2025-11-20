@@ -40,6 +40,7 @@ let actionIdToShortcut = {
     'frames.toggle-onion': { key: 'o', modifiers: [cmdKey, 'shiftKey'] },
     'frames.previous-frame': { key: ',' },
     'frames.next-frame': { key: '.' },
+    'frames.toggle-component': { key: '\'' },
 
     'view.toggle-grid': { key: 'g', modifiers: [cmdKey, 'shiftKey'] },
     'view.toggle-whitespace': { key: 'p', modifiers: [cmdKey, 'shiftKey'] },
@@ -63,6 +64,8 @@ let actionIdToShortcut = {
     'tools.standard.paint-brush': { key: 'b' },
     'tools.shapes.charPicker': { key: 'c' },
     'tools.shapes.quickSwapChar': { key: 'q' },
+
+    'sidebar.toggle-component': { key: ']' },
 
     'themes.select-light-mode': { key: 'l' },
     'themes.select-dark-mode': { key: 'k' },
