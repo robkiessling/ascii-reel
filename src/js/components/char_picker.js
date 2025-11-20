@@ -188,7 +188,7 @@ export default class CharPicker {
                 position = { my: "left top", at: `left bottom+${this.options.popupOffset}`, of: this.$well }
                 break;
             case 'right':
-                position = { my: "left bottom", at: `right+${this.options.popupOffset} bottom`, of: this.$well }
+                position = { my: "left top", at: `right+${this.options.popupOffset} top`, of: this.$well }
                 break;
             default:
                 console.warn(`Invalid char_picker popupDirection: ${this.options.popupDirection}`)

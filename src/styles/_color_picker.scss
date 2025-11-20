@@ -100,30 +100,6 @@
   }
 }
 
-// The default way popup:'right' works is: the popup opens to the right and then DOWN. I've changed this
-// so that the popup opens to the right and then UP.
-.picker_wrapper.popup.popup_right {
-  top: auto;
-  bottom: 0;
-  left: 160%;
-
-  .picker_arrow {
-    top: auto;
-    bottom: 0;
-
-    &::before, &::after {
-      top: auto;
-      bottom: 0;
-    }
-
-    &::before {
-      //transform: scaleY(-1)
-      transform: skew(135deg);
-      transform-origin: 0 0;
-    }
-  }
-}
-
 [data-theme="light"], [data-theme="dark"] {
   .picker_wrapper.popup {
     background: var(--color-island-bg);
@@ -132,12 +108,23 @@
 
     .picker_arrow::before {
       border: 1px solid var(--color-island-border);
-      bottom: -1px;
-      left: -1px;
+      box-shadow: var(--color-island-shadow);
+    }
+
+    .picker_arrow::after {
+      border-top: 1px solid var(--color-island-border);
     }
 
     .picker_arrow::before, .picker_arrow::after {
       background: var(--color-island-bg);
+    }
+
+    // Default arrow seems to be off by 1 pixel, this corrects it
+    &.popup_left .picker_arrow, &.popup_right .picker_arrow {
+      top: -1px;
+    }
+    &.popup_top .picker_arrow, &.popup_bottom .picker_arrow {
+      left: -1px;
     }
   }
 }

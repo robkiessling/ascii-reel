@@ -35,10 +35,6 @@ import Shape from "../geometry/shapes/shape.js";
 import {selectedShapes} from "../state/selection/vector_selection.js";
 import {filterObject, isEmptyObject, transformValues} from "../utils/objects.js";
 import {getConstructor} from "../geometry/shapes/registry.js";
-import {MULTICOLOR_TOOLS, RASTER_TOOLS} from "../state/index.js";
-
-
-const SUB_TOOL_MENU_TOOLTIP_OFFSET = [0, 15];
 
 
 // -------------------------------------------------------------------------------- Main External API
@@ -611,10 +607,7 @@ function setupShapeProperties() {
     shapeTooltips.concat(setupActionTooltips(
         $standardActionButtons,
         $element => $element.data('action'),
-        {
-            placement: 'bottom',
-            offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-        }
+        shapeMenuTooltipOptions($shapeProperties.find('#shape-actions').find('.group-actions'))
     ).tooltips);
 }
 
@@ -750,9 +743,11 @@ function updateActiveShapeProp(propKey, propValue, propagate = true) {
 }
 
 function setupShapeMenu($group, prop, options, overrides = {}) {
+    const $actions = $group.find('.group-actions');
+
     shapeProperties[prop] = {
         $group: $group,
-        menu: new IconMenu($group.find('.group-actions'), {
+        menu: new IconMenu($actions, {
             dropdown: false,
             dropdownBtnTooltip: `tools.shapes.${prop}`,
             items: options.map(option => {
@@ -766,11 +761,26 @@ function setupShapeMenu($group, prop, options, overrides = {}) {
             getValue: () => firstActiveShapeProp(prop),
             onSelect: newValue => updateActiveShapeProp(prop, newValue),
             transparentBtns: false,
-            tooltipOptions: {
-                placement: 'bottom'
-            },
+            tooltipOptions: shapeMenuTooltipOptions($actions),
             ...overrides
         })
+    }
+}
+
+function shapeMenuTooltipOptions($container, placement = 'outside') {
+    switch (placement) {
+        case 'outside':
+            // Offsets the tooltips to be outside the shape properties island with consistent placement
+            return {
+                placement: 'right',
+                getReferenceClientRect: () => $container.get(0).getBoundingClientRect(),
+                offset: [0, 20]
+            }
+        default:
+            return {
+                placement: placement,
+                offset: [0, 15]
+            }
     }
 }
 
@@ -834,10 +844,11 @@ function setupOrderMenu() {
     })
 
     const $group = $('#shape-order-group');
+    const $actions = $group.find('.group-actions');
 
     shapeProperties[ORDER_MENU] = {
         $group: $group,
-        menu: new IconMenu($group.find('.group-actions'), {
+        menu: new IconMenu($actions, {
             dropdownBtnIcon: 'tools.shapes.order',
             dropdownBtnTooltip: 'tools.shapes.order',
             closeDropdownOnSelect: false,
@@ -853,9 +864,7 @@ function setupOrderMenu() {
             visible: () => selectionController.vector.hasSelectedShapes(),
             onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
             transparentBtns: false,
-            tooltipOptions: {
-                placement: 'bottom'
-            }
+            tooltipOptions: shapeMenuTooltipOptions($actions)
         })
     }
 }
@@ -1119,16 +1128,13 @@ function setupCharPicker() {
     shapeCharPicker = new CharPicker($shapeChar, {
         // onLoad: newValue => setPrimaryChar(newValue),
         onChange: newValue => applyPrimaryChar(newValue),
-        popupDirection: 'bottom',
+        popupDirection: 'right',
         popupOffset: 22,
         tooltip: () => {
             return setupActionTooltips(
                 $shapeChar,
                 'tools.shapes.charPicker',
-                {
-                    placement: 'bottom',
-                    offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-                }
+                shapeMenuTooltipOptions($shapeChar.closest('.group-actions'))
             ).tooltips[0];
         }
     })
@@ -1138,10 +1144,7 @@ function setupCharPicker() {
     shapeTooltips.concat(setupActionTooltips(
         $quickSwap,
         $element => $element.data('action'),
-        {
-            placement: 'bottom',
-            offset: [0, 56]
-        }
+        shapeMenuTooltipOptions($quickSwap.closest('.group-title'))
     ).tooltips);
 
     // Override quick-swap action button: we do not want to call the actual action. The actual action always just
@@ -1229,7 +1232,7 @@ function setupColorPicker() {
     const $shapeColor = $('#shape-color');
     shapeColorPicker = new ColorPicker($shapeColor, {
         pickerOptions: {
-            popup: 'bottom'
+            popup: 'right'
         },
         tooltip: () => {
             return refreshableTooltips(
@@ -1241,10 +1244,7 @@ function setupColorPicker() {
                     }
                     return 'tools.shapes.colorPicker';
                 }),
-                {
-                    placement: 'bottom',
-                    offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-                }
+                shapeMenuTooltipOptions($shapeColor.closest('.group-actions'))
             )
         },
         onDone: color => applyColor(color),

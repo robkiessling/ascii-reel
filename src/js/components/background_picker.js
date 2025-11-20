@@ -80,6 +80,9 @@ export default class BackgroundPicker {
 
         this.colorPicker = new ColorPicker(this.$container.find('.color-picker'), {
             initialValue: DEFAULT_COLORED_BACKGROUND,
+            pickerOptions: {
+                popup: 'top'
+            },
             onOpen: () => {
                 this.$types.filter(`[value="${CUSTOM}"]`).prop('checked', true);
                 this._onChange();

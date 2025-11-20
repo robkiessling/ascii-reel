@@ -312,7 +312,7 @@ function redrawSelection() {
         caretCanvas.startCaretAnimation(selectionController.raster.caretCell(), state.getConfig('caretStyle'), () => state.getDrawingColor());
     }
 
-    selectionController.vector.drawShapeSelection(selectionCanvas);
+    selectionController.vector.drawShapeSelection(selectionBorderCanvas);
 
     const vectorTextAreas = selectionController.vector.selectedTextAreas();
     if (vectorTextAreas) {

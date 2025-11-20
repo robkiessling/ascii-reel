@@ -9,7 +9,11 @@
 
   #selection-canvas {
     // Set opacity on overall canvas (not using globalAlpha) due to overlapping polygons
-    opacity: 0.3;
+    opacity: 0.4;
+  }
+
+  #selection-border-canvas {
+    opacity: 0.9;
   }
 }
 

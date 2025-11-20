@@ -45,7 +45,13 @@
   flex-direction: column;
   padding: 0.25rem 0.75rem 0.5rem 0.75rem;
   gap: 0;
-  width: 14.5rem; // Enough to fit 5 buttons per row
+
+  /* Option 1: properties is a static width */
+  //width: 14.5rem; // Enough to fit 5 buttons per row
+
+  /* Option 2: properties only takes up as much width as it needs */
+  align-self: flex-start;
+  max-width: 14.5rem; // Enough to fit 5 buttons per row
 
   .property-group {
     display: flex;
@@ -107,9 +113,21 @@
   .color-well {
     overflow: inherit;
   }
+
+  // Designed for popup:bottom
+  //.color-picker {
+  //  .picker_wrapper {
+  //    top: 60px;
+  //  }
+  //  &.split-mode .picker_wrapper {
+  //    left: -30px;
+  //  }
+  //}
+
+  // Designed for popup:right
   .color-picker {
     .picker_wrapper {
-      top: 60px;
+      left: 60px;
     }
     &.split-mode .picker_wrapper {
       left: -30px;

@@ -1,6 +1,7 @@
 @use 'variables' as *;
 
-$char-picker-size: 25rem;
+$char-picker-height: 20rem;
+$char-picker-width: 25rem;
 $char-picker-border-color: #000;
 $char-picker-char-width: 12px;
 $char-picker-char-height: $char-picker-char-width * calc(5 / 3);
@@ -62,8 +63,8 @@ $quick-swap-border: linear-gradient(
 
 .char-picker-popup {
   position: absolute;
-  width: $char-picker-size;
-  height: $char-picker-size;
+  width: $char-picker-width;
+  height: $char-picker-height;
   z-index: 4;
   background: var(--color-island-bg);
   border: 1px solid var(--color-island-border);
@@ -150,7 +151,7 @@ $quick-swap-border: linear-gradient(
   &::before {
     content: "";
     position: absolute;
-    bottom: 6px;
+    top: 6px;
     left: -$char-picker-arrow-border-size;
     width: 0;
     height: 0;
@@ -163,13 +164,13 @@ $quick-swap-border: linear-gradient(
   &::after {
     content: "";
     position: absolute;
-    bottom: 8px;
+    top: 8px;
     left: -$char-picker-arrow-size;
     width: 0;
     height: 0;
     border-top: $char-picker-arrow-size solid transparent;
     border-bottom: $char-picker-arrow-size solid transparent;
-    border-right: $char-picker-arrow-size solid var(--color-tooltip-bg);
+    border-right: $char-picker-arrow-size solid var(--color-island-bg);
   }
 }
 
@@ -197,7 +198,7 @@ $quick-swap-border: linear-gradient(
     height: 0;
     border-left: $char-picker-arrow-size solid transparent;
     border-right: $char-picker-arrow-size solid transparent;
-    border-bottom: $char-picker-arrow-size solid var(--color-tooltip-bg);
+    border-bottom: $char-picker-arrow-size solid var(--color-island-bg);
   }
 }
 
