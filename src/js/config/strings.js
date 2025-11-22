@@ -68,6 +68,8 @@ export const STRINGS = {
         'Click once to start a multi-point line. Double click to finish drawing the multi-point line.',
     'tools.standard.draw-ellipse.name': 'Draw Ellipse',
     'tools.standard.draw-ellipse.description': 'Click and drag to draw an ellipse.',
+    'tools.standard.draw-diamond.name': 'Draw Diamond',
+    'tools.standard.draw-diamond.description': 'Click and drag to draw a diamond.',
     'tools.standard.draw-textbox.name': 'Create Textbox',
     'tools.standard.draw-textbox.description': 'Click and drag to create a textbox with a fixed width. ' +
         'Click once to create a textbox that expands as you type.',
@@ -176,6 +178,10 @@ export const STRINGS = {
     'tools.shapes.ellipseStroke.name': 'Ellipse Stroke',
     'tools.shapes.ellipseStroke.outline-monochar.name': 'Ellipse Outline',
     'tools.shapes.ellipseStroke.outline-monochar.description': 'Draws an ellipse outline by repeating a single character.',
+
+    'tools.shapes.diamondStroke.name': 'Diamond Stroke',
+    'tools.shapes.diamondStroke.outline-monochar.name': 'Diamond Outline',
+    'tools.shapes.diamondStroke.outline-monochar.description': 'Draws a diamond outline by repeating a single character.',
 
     'tools.shapes.fill.name': 'Fill Style',
     'tools.shapes.fill.description': "Controls how the shape's background is rendered.",

@@ -68,9 +68,23 @@ export default class Cell extends PixelRect {
         return this;
     }
 
-    translateTo(cell) {
-        this.row = cell.row;
-        this.col = cell.col;
+    /**
+     * Translate this cell to a new location. Location can be a Cell or a row/col pair. When giving a row/col pair,
+     * either argument can be undefined to indicate no change.
+     *
+     * @param {Cell|number|undefined} cellOrRow - A Cell instance, or the target row
+     * @param {number|undefined} [col] - Target column
+     * @returns {Cell}
+     */
+    translateTo(cellOrRow, col) {
+        if (cellOrRow instanceof Cell) {
+            this.row = cellOrRow.row;
+            this.col = cellOrRow.col;
+        } else {
+            if (cellOrRow !== undefined) this.row = cellOrRow;
+            if (col !== undefined) this.col = col;
+        }
+
         return this;
     }
 
@@ -93,6 +107,7 @@ export default class Cell extends PixelRect {
 
     // Returns an array of Cells from this Cell's position to a target Cell's position
     // Using Bresenham line approximation https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+    // TODO probably cleaner to pass in a callback rather than returning the new array
     lineTo(cell, inclusive = true) {
         const cells = bresenham(this.col, this.row, cell.col, cell.row).map(coord => {
             return new Cell(coord.y, coord.x);

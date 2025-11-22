@@ -450,4 +450,4 @@ export default class Line extends Shape {
 
 }
 
-registerShape(SHAPE_TYPES.LINE, Line);
+registerShape(SHAPE_TYPES.LINE, Line); // Note: File also has to be manually imported in index.js

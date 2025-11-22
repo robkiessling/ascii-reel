@@ -251,4 +251,4 @@ export default class Ellipse extends BoxShape {
 
 }
 
-registerShape(SHAPE_TYPES.ELLIPSE, Ellipse);
+registerShape(SHAPE_TYPES.ELLIPSE, Ellipse); // Note: File also has to be manually imported in index.js

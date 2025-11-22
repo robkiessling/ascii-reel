@@ -149,4 +149,4 @@ export default class Freeform extends Shape {
 }
 
 
-registerShape(SHAPE_TYPES.FREEFORM, Freeform);
+registerShape(SHAPE_TYPES.FREEFORM, Freeform); // Note: File also has to be manually imported in index.js

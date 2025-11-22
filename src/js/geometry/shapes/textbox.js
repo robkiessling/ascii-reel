@@ -201,4 +201,4 @@ export default class Textbox extends BoxShape {
 
 }
 
-registerShape(SHAPE_TYPES.TEXTBOX, Textbox);
+registerShape(SHAPE_TYPES.TEXTBOX, Textbox); // Note: File also has to be manually imported in index.js

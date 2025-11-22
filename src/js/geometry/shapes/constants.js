@@ -75,6 +75,7 @@ export const SHAPE_TYPES = {
     RECT: 'rect',
     LINE: 'line',
     ELLIPSE: 'ellipse',
+    DIAMOND: 'diamond',
     TEXTBOX: 'textbox'
 }
 
@@ -84,6 +85,7 @@ export const STROKE_STYLE_PROPS = {
     [SHAPE_TYPES.RECT]: 'rectStroke',
     [SHAPE_TYPES.LINE]: 'lineStroke',
     [SHAPE_TYPES.ELLIPSE]: 'ellipseStroke',
+    [SHAPE_TYPES.DIAMOND]: 'diamondStroke',
 }
 
 export const STROKE_STYLE_OPTIONS = {
@@ -105,6 +107,9 @@ export const STROKE_STYLE_OPTIONS = {
         ELBOW_MONOCHAR: 'elbow-monochar',
     },
     [SHAPE_TYPES.ELLIPSE]: {
+        OUTLINE_MONOCHAR: 'outline-monochar',
+    },
+    [SHAPE_TYPES.DIAMOND]: {
         OUTLINE_MONOCHAR: 'outline-monochar',
     }
 }

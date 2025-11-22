@@ -230,6 +230,9 @@ function setupEventBus() {
             case 'draw-ellipse':
                 handleDrawMousedown(SHAPE_TYPES.ELLIPSE, cell, currentPoint);
                 break;
+            case 'draw-diamond':
+                handleDrawMousedown(SHAPE_TYPES.DIAMOND, cell, currentPoint);
+                break;
             case 'draw-textbox':
                 handleDrawMousedown(SHAPE_TYPES.TEXTBOX, cell, currentPoint);
                 break;
@@ -281,6 +284,7 @@ function setupEventBus() {
         switch(tool) {
             case 'draw-rect':
             case 'draw-ellipse':
+            case 'draw-diamond':
             case 'draw-textbox':
             case 'paint-brush':
                 if (isDragging && isNewCell) handleDrawMousemove(cell, currentPoint);
@@ -328,6 +332,7 @@ function setupEventBus() {
             case 'draw-rect':
             case 'draw-line':
             case 'draw-ellipse':
+            case 'draw-diamond':
             case 'draw-textbox':
             case 'paint-brush':
                 handleDrawMouseup(cell, mouseEvent);
@@ -391,6 +396,7 @@ const TOOLS = [
     { value: 'draw-rect', group: 'Draw Shape' },
     { value: 'draw-line', group: 'Draw Shape' },
     { value: 'draw-ellipse', group: 'Draw Shape' },
+    { value: 'draw-diamond', group: 'Draw Shape' },
 
     { value: 'draw-freeform', },
     { value: 'draw-textbox', },
@@ -429,6 +435,9 @@ function setupTools() {
                 break;
             case 'eraser':
                 actionData.shortcutAbbr = 'E, Right Click'
+                break;
+            case 'draw-textbox':
+                actionData.shortcutAbbr = 'Double Click'
                 break;
         }
 
@@ -629,6 +638,7 @@ function activeShapeTypes() {
             case 'draw-freeform': return [SHAPE_TYPES.FREEFORM];
             case 'draw-line': return [SHAPE_TYPES.LINE];
             case 'draw-ellipse': return [SHAPE_TYPES.ELLIPSE];
+            case 'draw-diamond': return [SHAPE_TYPES.DIAMOND];
             case 'draw-textbox': return [SHAPE_TYPES.TEXTBOX];
             default: return [];
         }
@@ -662,6 +672,7 @@ function activeShapeProps() {
             case 'draw-freeform':
             case 'draw-line':
             case 'draw-ellipse':
+            case 'draw-diamond':
             case 'draw-textbox':
                 allowedProps = new Set(getConstructor(activeShapeTypes()[0]).allowedProps);
                 // TODO [color prop issue]
@@ -1317,6 +1328,7 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvas) {
         case 'draw-rect':
         case 'draw-line':
         case 'draw-ellipse':
+        case 'draw-diamond':
         case 'draw-textbox':
         case 'fill-char':
         case 'eraser':

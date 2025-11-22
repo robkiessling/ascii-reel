@@ -67,6 +67,7 @@ const ICON_DATA = {
     'tools.standard.draw-rect': { type: ICOMOON, content: 'icon-rect-solid' },
     'tools.standard.draw-line': { type: ICOMOON, content: 'icon-line-solid' },
     'tools.standard.draw-ellipse': { type: REMIXICON, content: 'ri-circle-line' },
+    'tools.standard.draw-diamond': { type: REMIXICON, content: 'ri-poker-diamonds-line' },
     'tools.standard.draw-freeform': { type: REMIXICON, content: 'ri-sketching' },
     'tools.standard.draw-textbox': { type: REMIXICON, content: 'ri-t-box-line' },
     'tools.standard.eraser': { type: REMIXICON, content: 'ri-eraser-line' },
@@ -92,6 +93,8 @@ const ICON_DATA = {
     'tools.shapes.rectStroke.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
 
     'tools.shapes.ellipseStroke.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
+
+    'tools.shapes.diamondStroke.outline-monochar': { type: PRE, content: "  A  \n A A \n  A  " },
 
     // 'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-delete-back-2-line' },
     'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-forbid-line' },
