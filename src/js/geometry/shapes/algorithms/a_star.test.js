@@ -273,7 +273,7 @@ function printRoutedPath(startArea, startCell, endArea, endCell, nodesByCell, pa
     const { grid, totalArea } = setupPrintableGrid(startArea, startCell, endArea, endCell)
     nodesByCell.values().forEach(node => grid[node.cell.row][node.cell.col] = node.debugChar)
     forEachAdjPair(path, (a, b) => {
-        a.lineTo(b).forEach(cell => grid[cell.row][cell.col] = '@')
+        a.lineTo(b, cell => grid[cell.row][cell.col] = '@')
     })
 
     console.log(`Path (@):`)

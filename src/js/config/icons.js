@@ -94,6 +94,7 @@ const ICON_DATA = {
 
     'tools.shapes.ellipseStroke.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
 
+    'tools.shapes.diamondStroke.outline-ascii-1': { type: PRE, content: " .+. \n+   +\n '+' " },
     'tools.shapes.diamondStroke.outline-monochar': { type: PRE, content: "  A  \n A A \n  A  " },
 
     // 'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-delete-back-2-line' },

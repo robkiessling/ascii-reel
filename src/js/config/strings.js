@@ -180,7 +180,9 @@ export const STRINGS = {
     'tools.shapes.ellipseStroke.outline-monochar.description': 'Draws an ellipse outline by repeating a single character.',
 
     'tools.shapes.diamondStroke.name': 'Diamond Stroke',
-    'tools.shapes.diamondStroke.outline-monochar.name': 'Diamond Outline',
+    'tools.shapes.diamondStroke.outline-ascii-1.name': 'ASCII Outline',
+    'tools.shapes.diamondStroke.outline-ascii-1.description': 'Draws a diamond outline using best-fit ASCII characters.',
+    'tools.shapes.diamondStroke.outline-monochar.name': 'Single-Character Outline',
     'tools.shapes.diamondStroke.outline-monochar.description': 'Draws a diamond outline by repeating a single character.',
 
     'tools.shapes.fill.name': 'Fill Style',

@@ -63,7 +63,8 @@ function interpolate(fromCell, toCell, inclusiveStart, inclusiveEnd) {
             ' ... ', `groupBy:${groupBy}`, `ltr:${leftToRight}`, `ttb:${topToBottom}`);
     }
 
-    const interpolatedCells = fromCell.lineTo(toCell, true); // Bresenham line approximation
+    const interpolatedCells = [];
+    fromCell.lineTo(toCell, cell => interpolatedCells.push(cell));
     let indexWithinLine = 0;
     const result = [];
 

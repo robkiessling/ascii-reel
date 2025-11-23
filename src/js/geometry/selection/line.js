@@ -9,14 +9,12 @@ export default class LineSelection extends SelectionShape {
     static type = SELECTION_SHAPE_TYPES.LINE;
 
     iterateCells(callback) {
-        this.start.lineTo(this.end).forEach(cell => callback(cell.row, cell.col));
+        this.start.lineTo(this.end, cell => callback(cell.row, cell.col))
     }
 
     draw(context) {
-        this.start.lineTo(this.end).forEach(cell => {
-            if (isCellInBounds(cell)) {
-                context.fillRect(...cell.xywh);
-            }
-        });
+        this.start.lineTo(this.end, cell => {
+            if (isCellInBounds(cell)) context.fillRect(...cell.xywh);
+        })
     }
 }

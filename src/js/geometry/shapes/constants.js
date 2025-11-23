@@ -94,6 +94,7 @@ export const STROKE_STYLE_OPTIONS = {
         IRREGULAR_MONOCHAR: 'irregular-monochar',
     },
     [SHAPE_TYPES.RECT]: {
+        // todo these don't need word "outline"
         OUTLINE_ASCII_1: 'outline-ascii-1',
         OUTLINE_ASCII_2: 'outline-ascii-2',
         OUTLINE_UNICODE_1: 'outline-unicode-1',
@@ -110,6 +111,7 @@ export const STROKE_STYLE_OPTIONS = {
         OUTLINE_MONOCHAR: 'outline-monochar',
     },
     [SHAPE_TYPES.DIAMOND]: {
+        OUTLINE_ASCII_1: 'outline-ascii-1',
         OUTLINE_MONOCHAR: 'outline-monochar',
     }
 }
