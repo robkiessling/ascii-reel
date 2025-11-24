@@ -1,7 +1,7 @@
 import {
     AXES,
     CHAR_PROP,
-    COLOR_PROP,
+    COLOR_PROP, LINE_PATHING_BUFFER,
     SHAPE_TYPES, STROKE_STYLE_OPTIONS,
     STROKE_STYLE_PROPS
 } from "./constants.js";
@@ -45,12 +45,15 @@ export default class Diamond extends BoxShape {
             return strokeHitbox.has(cell) || fillHitbox.has(cell);
         })
 
+        const bufferArea = boundingArea.outerArea(LINE_PATHING_BUFFER);
+
         this._cache = {
             boundingArea,
             origin: this.props.topLeft,
             glyphs,
             // textLayout
             handles,
+            bufferArea
         }
     }
 

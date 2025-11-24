@@ -1,7 +1,7 @@
 import BoxShape from "./box_shape.js";
 import {
     AUTO_TEXT_WIDTH_PROP,
-    COLOR_PROP, FILL_OPTIONS, FILL_PROP, SHAPE_TYPES, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
+    COLOR_PROP, FILL_OPTIONS, FILL_PROP, LINE_PATHING_BUFFER, SHAPE_TYPES, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
     TEXT_ALIGN_V_PROP, TEXT_PADDING_PROP, TEXT_PROP
 } from "./constants.js";
 import TextLayout from "./text_layout.js";
@@ -99,12 +99,15 @@ export default class Textbox extends BoxShape {
             return textLayout.includesCell(cell, false)
         })
 
+        const bufferArea = boundingArea.outerArea(LINE_PATHING_BUFFER);
+
         this._cache = {
             boundingArea,
             origin,
             glyphs,
             textLayout,
-            handles
+            handles,
+            bufferArea
         }
     }
 

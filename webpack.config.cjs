@@ -76,7 +76,12 @@ module.exports = (env, argv) => {
 
             // I don't really like live reloading; prefer to reload myself
             hot: false,
-            liveReload: false
+            liveReload: false,
+
+            // Uncomment if you need to debug something without the giant error overlay popup
+            // client: {
+            //     overlay: false
+            // }
         },
         resolve: {
             extensions: ['.js']

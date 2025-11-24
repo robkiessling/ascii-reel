@@ -394,9 +394,9 @@ const TOOLS = [
     { value: 'move-all', group: 'Mouse' },
 
     { value: 'draw-rect', group: 'Draw Shape' },
-    { value: 'draw-line', group: 'Draw Shape' },
-    { value: 'draw-ellipse', group: 'Draw Shape' },
     { value: 'draw-diamond', group: 'Draw Shape' },
+    { value: 'draw-ellipse', group: 'Draw Shape' },
+    { value: 'draw-line', group: 'Draw Shape' },
 
     { value: 'draw-freeform', },
     { value: 'draw-textbox', },
