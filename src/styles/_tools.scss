@@ -43,24 +43,39 @@
 
 #shape-properties {
   flex-direction: column;
-  padding: 0.25rem 0.75rem 0.5rem 0.75rem;
+  padding: 0 0.75rem;
   gap: 0;
 
-  /* Option 1: properties is a static width */
-  //width: 14.5rem; // Enough to fit 5 buttons per row
+  max-height: calc(100vh - 12rem);
+  overflow-y: auto;
+  overflow-x: hidden;
 
-  /* Option 2: properties only takes up as much width as it needs */
-  align-self: flex-start;
-  max-width: 14.5rem; // Enough to fit 5 buttons per row
+  // Panel only take up as much width as they need
+  width: max-content;
+  .simplebar-content {
+    width: max-content;
+  }
+
+  &:has(.simplebar-track.simplebar-vertical[style*="visibility: visible"]) {
+    padding-right: 1.25rem;
+  }
 
   .property-group {
     display: flex;
     flex-direction: column;
 
-    // Cannot use something like `&:not(:first-child)` because that doesn't account for hidden children.
-    // Have to use javascript to add this class at runtime
+    max-width: 14.5rem; // Max width fits about 5 action buttons
+
+    // Cannot use :first-child, :not(:first-child), etc. because that doesn't account for hidden children.
+    // Have to use javascript to add these classes at runtime
+    &.first-child {
+      margin-top: 0.25rem;
+    }
     &.subsequent-child {
       margin-top: 0.75rem;
+    }
+    &.last-child {
+      margin-bottom: 0.5rem;
     }
 
     .group-title {

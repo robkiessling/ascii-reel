@@ -35,6 +35,7 @@ import Shape from "../geometry/shapes/shape.js";
 import {selectedShapes} from "../state/selection/vector_selection.js";
 import {filterObject, isEmptyObject, transformValues} from "../utils/objects.js";
 import {getConstructor} from "../geometry/shapes/registry.js";
+import SimpleBar from "simplebar";
 
 
 // -------------------------------------------------------------------------------- Main External API
@@ -552,14 +553,18 @@ export function showHoverForTool() {
 
 // -------------------------------------------------------------------------------- Shape Properties
 
-let $shapeProperties, shapeTooltips = [];
+let $shapeProperties, shapeTooltips = [], shapePropScrollbar;
 const shapeProperties = {};
 
 // Most menus are based on shape props and are keyed off the prop. There is no 'prop' for order, so we give it its own key.
 const ORDER_MENU = '__ORDER__';
 
 function setupShapeProperties() {
-    $shapeProperties = $('#shape-properties')
+    $shapeProperties = $('#shape-properties');
+    shapePropScrollbar = new SimpleBar($shapeProperties.get(0), {
+        autoHide: false,
+        // forceVisible: true
+    });
 
     Object.values(SHAPE_TYPES).forEach(shapeType => {
         if (!STROKE_STYLE_PROPS[shapeType]) return; // Shape has no stroke prop
@@ -906,17 +911,24 @@ function refreshShapeProperties() {
             $element.toggle(actions.isActionVisible(actionId));
         });
 
-        // Add separation between groups. Have to do this in JS (not CSS) due to children visibility toggles
-        let firstVisible = true;
+        // CSS needs to do different things depending on if a group is the first, subsequent, or last group.
+        // Cannot use :first-child, :not(:first-child), etc. because that doesn't account for hidden children.
+        let $firstVisible, $lastVisible;
         $shapeProperties.find('.property-group').each((i, group) => {
             const $group = $(group);
-            $group.removeClass('subsequent-child');
+            $group.removeClass('first-child subsequent-child last-child');
 
             if ($group.is(':visible')) {
-                if (!firstVisible) $group.addClass('subsequent-child');
-                firstVisible = false;
+                if ($firstVisible) {
+                    $group.addClass('subsequent-child')
+                } else {
+                    $firstVisible = $group;
+                }
+                $lastVisible = $group;
             }
         });
+        if ($firstVisible) $firstVisible.addClass('first-child')
+        if ($lastVisible) $lastVisible.addClass('last-child')
     } else {
         shapeTooltips.forEach(tooltip => tooltip.hide())
         // todo hide tooltips for other stuff like shape char picker

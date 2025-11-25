@@ -40,7 +40,7 @@ let actionIdToShortcut = {
     'frames.toggle-onion': { key: 'o', modifiers: [cmdKey, 'shiftKey'] },
     'frames.previous-frame': { key: ',' },
     'frames.next-frame': { key: '.' },
-    'frames.toggle-component': { key: '\'' },
+    'frames.toggle-component': { key: "'" },
 
     'view.toggle-grid': { key: 'g', modifiers: [cmdKey, 'shiftKey'] },
     'view.toggle-whitespace': { key: 'p', modifiers: [cmdKey, 'shiftKey'] },

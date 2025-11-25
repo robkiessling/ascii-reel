@@ -273,6 +273,8 @@ function setupActions() {
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
         active: () => !minimizer.isMinimized,
+        enabled: () => state.isAnimationProject(),
+        visible: () => state.isAnimationProject(),
         shortcutAbbr: `' (Apostrophe)`
     });
 
