@@ -1,6 +1,6 @@
 import {
     CHAR_PROP,
-    COLOR_PROP,
+    COLOR_PROP, LINE_PATHING_BUFFER,
     SHAPE_TYPES,
     STROKE_STYLE_PROPS
 } from "./constants.js";
@@ -45,6 +45,7 @@ export default class Ellipse extends BoxShape {
             return !hasEmptyBackground && fillHitbox(cell);
         })
 
+        const bufferArea = boundingArea.outerArea(LINE_PATHING_BUFFER);
 
         this._cache = {
             boundingArea,
@@ -52,6 +53,7 @@ export default class Ellipse extends BoxShape {
             glyphs,
             // textLayout
             handles,
+            bufferArea
         }
     }
 
@@ -251,4 +253,4 @@ export default class Ellipse extends BoxShape {
 
 }
 
-registerShape(SHAPE_TYPES.ELLIPSE, Ellipse);
+registerShape(SHAPE_TYPES.ELLIPSE, Ellipse); // Note: File also has to be manually imported in index.js

@@ -1,5 +1,7 @@
 import {readGlobalSetting} from "../storage/local_storage.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {BLACK, setConfig, validateColorMode, WHITE} from "../state/index.js";
+
 
 export const THEMES = {
     DARK_MODE: 'themes.dark-mode',
@@ -22,6 +24,21 @@ export function recalculateTheme() {
     computedTheme = selectedTheme;
     if (selectedTheme === THEMES.OS) {
         computedTheme = prefersDarkMode ? THEMES.DARK_MODE : THEMES.LIGHT_MODE;
+    }
+}
+
+export function matchBgToTheme() {
+    switch(computedTheme) {
+        case THEMES.DARK_MODE:
+            setConfig('background', BLACK)
+            validateColorMode()
+            break;
+        case THEMES.LIGHT_MODE:
+            setConfig('background', WHITE)
+            validateColorMode()
+            break;
+        default:
+            console.warn(`Invalid computedTheme: ${computedTheme}`);
     }
 }
 

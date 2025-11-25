@@ -68,9 +68,23 @@ export default class Cell extends PixelRect {
         return this;
     }
 
-    translateTo(cell) {
-        this.row = cell.row;
-        this.col = cell.col;
+    /**
+     * Translate this cell to a new location. Location can be a Cell or a row/col pair. When giving a row/col pair,
+     * either argument can be undefined to indicate no change.
+     *
+     * @param {Cell|number|undefined} cellOrRow - A Cell instance, or the target row
+     * @param {number|undefined} [col] - Target column
+     * @returns {Cell}
+     */
+    translateTo(cellOrRow, col) {
+        if (cellOrRow instanceof Cell) {
+            this.row = cellOrRow.row;
+            this.col = cellOrRow.col;
+        } else {
+            if (cellOrRow !== undefined) this.row = cellOrRow;
+            if (col !== undefined) this.col = col;
+        }
+
         return this;
     }
 
@@ -93,20 +107,12 @@ export default class Cell extends PixelRect {
 
     // Returns an array of Cells from this Cell's position to a target Cell's position
     // Using Bresenham line approximation https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-    lineTo(cell, inclusive = true) {
-        const cells = bresenham(this.col, this.row, cell.col, cell.row).map(coord => {
-            return new Cell(coord.y, coord.x);
-        });
-
-        if (inclusive) {
-            return cells;
-        }
-        else {
-            // Remove endpoints. Note: If line is only 1 or 2 Cells long, an empty array will be returned
-            cells.shift();
-            cells.pop();
-            return cells;
-        }
+    lineTo(cell, callback, { inclusiveStart = true, inclusiveEnd = true } = {}) {
+        bresenham(this.col, this.row, cell.col, cell.row).forEach((coord, i, arr) => {
+            if (i === 0 && !inclusiveStart) return;
+            if (i === arr.length - 1 && !inclusiveEnd) return;
+            callback(new Cell(coord.y, coord.x))
+        })
     }
 
     // Returns a new Cell that represents the relative distance of this cell from another cell

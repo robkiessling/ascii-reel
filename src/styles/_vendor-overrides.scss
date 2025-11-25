@@ -7,7 +7,7 @@
 .tippy-box {
   border: 1px solid #000;
   background: var(--color-tooltip-bg);
-  color: var(--color-font);
+  color: var(--color-text);
 
   .tippy-arrow {
     color: var(--color-tooltip-bg)
@@ -15,12 +15,12 @@
 
   .title {
     font-weight: bold;
-    color: var(--color-font-title);
+    color: var(--color-tooltip-title);
   }
 
   .shortcut {
     margin-left: 1rem;
-    color: var(--color-font-muted);
+    color: var(--color-text-muted);
 
     &:empty {
       margin-left: 0;
@@ -38,7 +38,7 @@
 
     .modifier-key {
       font-size: 0.55rem;
-      border: 1px solid var(--color-font);
+      border: 1px solid var(--color-text);
       padding: 2px 6px;
       margin-right: 6px;
       border-radius: 4px;
@@ -90,13 +90,11 @@
 // ---------------------------------------------------------------------- simplebar (custom scrollbar)
 
 .simplebar-scrollbar::before {
-  background-color: var(--color-contrast);
-  opacity: 0.75;
+  background-color: var(--color-scrollbar);
 }
 
 .simplebar-scrollbar.simplebar-hover::before, .simplebar-dragging .simplebar-scrollbar::before {
-  background-color: var(--color-contrast);
-  opacity: 0.9;
+  background-color: var(--color-scrollbar-hover);
 }
 
 // ---------------------------------------------------------------------- jQuery UI
@@ -105,11 +103,11 @@
   .ui-slider-handle {
     width: 0.8em;
     height: 0.8em;
-    background: var(--color-primary);
-    border-color: var(--color-surface);
+    background: var(--color-button-call-out);
+    border-color: transparent;
 
     &.ui-state-active {
-      background: color-mix(in srgb, var(--color-primary) 80%, black 20%)
+      background: var(--color-button-call-out-hover);
     }
   }
 
@@ -134,11 +132,11 @@
   background: var(--color-dialog-bg);
 
   &.ui-widget-content {
-    border: 2px solid var(--color-background-border);
+    border: 1px solid var(--color-dialog-border);
     padding: 1.5rem 2.5rem;
 
     a {
-      color: var(--color-button-confirm-bg);
+      color: var(--color-text-link);
       text-decoration: underline;
       cursor: pointer;
     }
@@ -146,20 +144,20 @@
 
   .ui-widget-header {
     background: none;
-    color: var(--color-font);
+    color: var(--color-text);
     margin-bottom: 0.5rem;
     font-size: 1.25rem;
     padding: 0.5rem 0;
 
     border: none;
-    border-bottom: 1px solid var(--color-surface-hover);
+    border-bottom: 1px solid var(--color-dialog-border);
 
     .ui-dialog-titlebar-close.hidden {
       display: none;
     }
   }
   .ui-dialog-content {
-    color: var(--color-font);
+    color: var(--color-text);
     padding: 0.5rem 0;
   }
   .ui-dialog-buttonpane {
@@ -177,40 +175,40 @@
 }
 
 .ui-widget-overlay {
-  background: var(--color-dialog-overlay-bg);
-  opacity: 0.75;
+  background: var(--color-overlay);
+  opacity: 1;
 }
 
 .ui-button {
-  background: var(--color-button-bg);
-  color: var(--color-button-font);
-  border-color: var(--color-button-font);
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-text);
 
   &:focus {
-    background: var(--color-button-bg);
-    border-color: var(--color-button-font);
-    color: var(--color-button-font);
+    background: transparent;
+    color: var(--color-text);
+    border-color: var(--color-button-call-out);
   }
 
   &:hover {
-    background: var(--color-button-bg-hover);
-    border-color: var(--color-button-font);
-    color: var(--color-button-font);
+    background: var(--color-island-hover);
+    color: var(--color-text);
+    border-color: var(--color-text);
   }
 
   &.call-out {
-    color: var(--color-button-confirm-font);
-    background: var(--color-button-confirm-bg);
-    border: 1px solid var(--color-button-confirm-bg);
+    color: var(--color-button-call-out-text);
+    background: var(--color-button-call-out);
+    border: 1px solid var(--color-button-call-out);
 
     &:hover {
-      background: color-mix(in srgb, var(--color-button-confirm-bg) 90%, black);
-      border: 1px solid var(--color-button-confirm-bg);
+      background: var(--color-button-call-out-hover);
+      border: 1px solid var(--color-button-call-out);
     }
   }
 
   &.warning {
-    color: var(--color-button-confirm-font);
+    color: var(--color-text-white);
     background: var(--color-warning);
 
     &:hover {
@@ -219,7 +217,7 @@
   }
 
   &.error {
-    color: var(--color-button-confirm-font);
+    color: var(--color-text-white);
     background: var(--color-error);
 
     &:hover {

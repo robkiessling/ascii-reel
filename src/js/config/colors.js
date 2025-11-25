@@ -9,6 +9,7 @@ const rootStyles = getComputedStyle(document.documentElement);
 // The following colors are static; they do not change based on dark/light mode
 export const PRIMARY_COLOR = rootStyles.getPropertyValue('--color-primary');
 export const SELECTION_COLOR = rootStyles.getPropertyValue('--color-selection');
+export const SELECTION_SUBTLE_COLOR = `color-mix(in srgb, ${SELECTION_COLOR.trim()} 75%, transparent)`;
 
 // The following function can be used to get the current color value (based on dark/light mode)
 export function getDynamicColor(cssProperty) {

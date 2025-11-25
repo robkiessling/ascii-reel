@@ -8,7 +8,7 @@
 
 @font-face {
     font-family: "remixicon";
-    src: url("remixicon/remixicon.woff2?t=1759525594922") format("woff2");
+    src: url("remixicon/remixicon.woff2?t=1763751314600") format("woff2");
     font-display: swap;
 }
 
@@ -114,3 +114,17 @@
 .ri-input-field:before { content: "\f47a"; }
 .ri-crosshair-2-line:before { content: "\f3b3"; }
 .ri-flashlight-line:before { content: "\ed3d"; }
+.ri-download-2-line:before { content: "\ec54"; }
+.ri-folder-2-line:before { content: "\ed52"; }
+.ri-export-line:before { content: "\f437"; }
+.ri-file-line:before { content: "\eceb"; }
+.ri-aspect-ratio-line:before { content: "\ea80"; }
+.ri-font-sans-serif:before { content: "\f392"; }
+.ri-landscape-line:before { content: "\ee7d"; }
+.ri-slideshow-view:before { content: "\f45f"; }
+.ri-carousel-view:before { content: "\f42c"; }
+.ri-zoom-in-line:before { content: "\f2db"; }
+.ri-zoom-out-line:before { content: "\f2dd"; }
+.ri-arrow-go-back-line:before { content: "\ea58"; }
+.ri-arrow-go-forward-line:before { content: "\ea5a"; }
+.ri-poker-diamonds-line:before { content: "\f5c6"; }

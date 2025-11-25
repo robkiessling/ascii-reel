@@ -45,15 +45,12 @@ export {
     sortedChars, importChars, setUnicodeSetting, getUnicodeSetting
 } from './unicode.js'
 export {
+    canUndo, undo, canRedo, redo,
     pushHistory, endHistoryModification, isDirty, markClean
 } from './history.js'
 
 export * as selection from './selection/index.js'
 // todo export the other slices like this ^ instead of writing every single method
-
-export function init() {
-    history.setupActions();
-}
 
 export function loadNewState(projectType, dimensions, colorMode, background) {
     let primaryColor, paletteState;
@@ -398,7 +395,11 @@ export function changeFrameIndex(newIndex) {
 
 export function changeLayerIndex(newIndex) {
     if (timeline.layerIndex() !== newIndex) {
-        if (!timeline.currentLayer() || timeline.currentLayerType() !== timeline.layerAt(newIndex).type) {
+        if (
+            !timeline.currentLayer() ||
+            timeline.currentLayerType() === LAYER_TYPES.VECTOR ||
+            timeline.layerAt(newIndex).type === LAYER_TYPES.VECTOR
+        ) {
             selection.clearSelection();
         }
 

@@ -12,6 +12,7 @@ import {STRINGS} from "../config/strings.js";
 import {getDynamicColor} from "../config/colors.js";
 import Minimizer from "../components/minimizer.js";
 import {MOUSE} from "../io/mouse.js";
+import {getIconHTML} from "../config/icons.js";
 
 const MAX_FPS = 30;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
@@ -139,7 +140,7 @@ function setupActions() {
     actions.registerAction('preview.toggle-play', {
         name: () => state.getConfig('playPreview') ? STRINGS['preview.pause.name'] : STRINGS['preview.play.name'],
         description: () => state.getConfig('playPreview') ? STRINGS['preview.pause.description'] : STRINGS['preview.play.description'],
-        icon: () => state.getConfig('playPreview') ? 'ri-pause-circle-line' : 'ri-play-circle-line',
+        icon: () => state.getConfig('playPreview') ? getIconHTML('preview.pause') : getIconHTML('preview.play'),
         enabled: () => state.isAnimationProject(),
         callback: () => {
             state.setConfig('playPreview', !state.getConfig('playPreview'));
@@ -212,8 +213,8 @@ function openPopup() {
 
     popup.document.head.innerHTML = `
        <style>
-            body { margin: 0; background: ${getDynamicColor('--color-background')}; }
-            #canvas { background: ${getDynamicColor('--color-background')}; }
+            body { margin: 0; background: ${getDynamicColor('--color-canvas-bg')}; }
+            #canvas { background: ${getDynamicColor('--color-canvas-bg')}; }
         </style>
     `;
     popup.document.body.innerHTML = '<canvas id="canvas">';

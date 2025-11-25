@@ -35,9 +35,7 @@ import Shape from "../geometry/shapes/shape.js";
 import {selectedShapes} from "../state/selection/vector_selection.js";
 import {filterObject, isEmptyObject, transformValues} from "../utils/objects.js";
 import {getConstructor} from "../geometry/shapes/registry.js";
-
-
-const SUB_TOOL_MENU_TOOLTIP_OFFSET = [0, 15];
+import SimpleBar from "simplebar";
 
 
 // -------------------------------------------------------------------------------- Main External API
@@ -48,16 +46,16 @@ export function init() {
     $canvasContainer = $('#canvas-container');
 
     setupEventBus();
-    setupStandardTools();
+    setupTools();
     setupColorPicker();
     setupCharPicker();
     setupShapeProperties();
 }
 
 function refresh() {
+    refreshTools();
     refreshCharPicker();
     refreshColorPicker();
-    refreshStandardTools();
     refreshShapeProperties();
 }
 
@@ -95,8 +93,8 @@ export function handleEscapeKey() {
     }
 
     // Close any submenus if they are open
-    if (Object.values(shapeMenus).some(menu => menu.isOpen)) {
-        Object.values(shapeMenus).forEach(menu => menu.toggleDropdown(false))
+    if (Object.values(shapeProperties).some(property => property.menu.isOpen)) {
+        Object.values(shapeProperties).forEach(property => property.menu.toggleDropdown(false))
         return true;
     }
 
@@ -233,6 +231,9 @@ function setupEventBus() {
             case 'draw-ellipse':
                 handleDrawMousedown(SHAPE_TYPES.ELLIPSE, cell, currentPoint);
                 break;
+            case 'draw-diamond':
+                handleDrawMousedown(SHAPE_TYPES.DIAMOND, cell, currentPoint);
+                break;
             case 'draw-textbox':
                 handleDrawMousedown(SHAPE_TYPES.TEXTBOX, cell, currentPoint);
                 break;
@@ -284,6 +285,7 @@ function setupEventBus() {
         switch(tool) {
             case 'draw-rect':
             case 'draw-ellipse':
+            case 'draw-diamond':
             case 'draw-textbox':
             case 'paint-brush':
                 if (isDragging && isNewCell) handleDrawMousemove(cell, currentPoint);
@@ -331,6 +333,7 @@ function setupEventBus() {
             case 'draw-rect':
             case 'draw-line':
             case 'draw-ellipse':
+            case 'draw-diamond':
             case 'draw-textbox':
             case 'paint-brush':
                 handleDrawMouseup(cell, mouseEvent);
@@ -383,95 +386,88 @@ function toolForMouseButton(mouseButton) {
 
 // -------------------------------------------------------------------------------- Standard Tools
 
-function setupStandardTools() {
-    $standardTools = $('#standard-tools');
+let $tools, toolsMenu;
 
-    $standardTools.find('.standard-tool').each((i, element) => {
-        const $element = $(element);
-        const tool = $element.data('tool');
+const TOOLS = [
+    { value: 'select', group: 'Mouse' },
+    { value: 'text-editor', group: 'Mouse' },
+    { value: 'pan', group: 'Mouse' },
+    { value: 'move-all', group: 'Mouse' },
+
+    { value: 'draw-rect', group: 'Draw Shape' },
+    { value: 'draw-diamond', group: 'Draw Shape' },
+    { value: 'draw-ellipse', group: 'Draw Shape' },
+    { value: 'draw-line', group: 'Draw Shape' },
+
+    { value: 'draw-freeform', },
+    { value: 'draw-textbox', },
+    { value: 'eraser', },
+    { value: 'fill-char', },
+
+    { value: 'selection-rect', group: 'Selection' },
+    { value: 'selection-lasso', group: 'Selection' },
+    { value: 'selection-line', group: 'Selection' },
+    { value: 'selection-wand', group: 'Selection' },
+
+    { value: 'paint-brush', group: 'Color' },
+    { value: 'color-swap', group: 'Color' },
+]
+
+function setupTools() {
+    $tools = $('#tools');
+
+    TOOLS.forEach(tool => {
         const actionData = {
-            callback: () => changeTool(tool),
+            callback: () => changeTool(tool.value),
             enabled: () => {
-                if (state.MULTICOLOR_TOOLS.has(tool) && !state.isMultiColored()) return false;
+                if (state.MULTICOLOR_TOOLS.has(tool.value) && !state.isMultiColored()) return false;
                 if (state.layers()) {
-                    if (state.RASTER_TOOLS.has(tool) && state.currentLayerType() !== LAYER_TYPES.RASTER) return false;
-                    if (state.VECTOR_TOOLS.has(tool) && state.currentLayerType() !== LAYER_TYPES.VECTOR) return false;
+                    if (state.RASTER_TOOLS.has(tool.value) && state.currentLayerType() !== LAYER_TYPES.RASTER) return false;
+                    if (state.VECTOR_TOOLS.has(tool.value) && state.currentLayerType() !== LAYER_TYPES.VECTOR) return false;
                 }
                 return true;
             },
         }
 
         // Some tools have custom shortcuts
-        switch (tool) {
+        switch (tool.value) {
             case 'pan':
                 actionData.shortcutAbbr = 'H, Middle Click'
                 break;
             case 'eraser':
                 actionData.shortcutAbbr = 'E, Right Click'
                 break;
+            case 'draw-textbox':
+                actionData.shortcutAbbr = 'Double Click'
+                break;
         }
 
-        actions.registerAction(actionIdForStandardTool(tool), actionData);
+        actions.registerAction(`tools.standard.${tool.value}`, actionData);
     });
 
-    $standardTools.off('click', '.standard-tool').on('click', '.standard-tool', evt => {
-        const $element = $(evt.currentTarget);
-        actions.callAction(actionIdForStandardTool($element.data('tool')));
-    });
-
-    const $leftTools = $standardTools.find('.standard-tool-column:first-child:not(:last-child) .standard-tool');
-    const $centerTools = $standardTools.find('.standard-tool-column:first-child:last-child .standard-tool');
-    const $rightTools = $standardTools.find('.standard-tool-column:last-child:not(:first-child) .standard-tool');
-    setupActionTooltips($leftTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: tooltipOffset('left')
-    });
-    setupActionTooltips($centerTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: tooltipOffset('center')
-    });
-    setupActionTooltips($rightTools, element => actionIdForStandardTool($(element).data('tool')), {
-        offset: tooltipOffset('right')
+    toolsMenu = new IconMenu($tools, {
+        dropdown: false,
+        items: TOOLS.map(tool => {
+            return {
+                value: tool.value,
+                icon: `tools.standard.${tool.value}`,
+                tooltip: `tools.standard.${tool.value}`,
+                visible: () => actions.isActionEnabled(`tools.standard.${tool.value}`),
+                disabled: () => !actions.isActionEnabled(`tools.standard.${tool.value}`),
+                group: tool.group
+            }
+        }),
+        getValue: () => state.getConfig('tool'),
+        onSelect: newValue => actions.callAction(`tools.standard.${newValue}`),
+        tooltipOptions: {
+            placement: 'bottom'
+        },
+        actionTooltips: true
     });
 }
 
-function refreshStandardTools() {
-    $standardTools.find('.color-tool, .raster-tool, .vector-tool').toggleClass('hidden', false);
-    if (state.currentLayerType() !== LAYER_TYPES.RASTER) $standardTools.find('.raster-tool').toggleClass('hidden', true);
-    if (state.currentLayerType() !== LAYER_TYPES.VECTOR) $standardTools.find('.vector-tool').toggleClass('hidden', true);
-    if (!state.isMultiColored()) $standardTools.find('.color-tool').toggleClass('hidden', true);
-
-    // The following can be used if we want to disable raster/vector tools (instead of showing/hiding them above)
-    // $standardTools.find('.standard-tool').each((i, element) => {
-    //     const $tool = $(element);
-    //     const tool = $tool.data('tool');
-    //     $tool.toggleClass('disabled', !actions.isActionEnabled(actionIdForStandardTool(tool)))
-    // })
-
-    $standardTools.find('.standard-tool').removeClass('selected');
-    $standardTools.find(`.standard-tool[data-tool='${state.getConfig('tool')}']`).addClass('selected');
-}
-
-
-function actionIdForStandardTool(tool) {
-    return `tools.standard.${tool}`;
-}
-
-const TIP_X_OFFSET = 15; // Move the tip a bit to the right so it's over the canvas
-const STANDARD_TOOL_SIZE = 42; // matches $standard-tool-size
-const MARGIN_SIZE = 1;
-
-function tooltipOffset(column) {
-    switch (column) {
-        case 'left':
-            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE + MARGIN_SIZE];
-        case 'center':
-            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE / 2 + MARGIN_SIZE];
-        case 'center-corner-button':
-            return [0, TIP_X_OFFSET + STANDARD_TOOL_SIZE / 2 + MARGIN_SIZE - 6];
-        case 'right':
-            return [0, TIP_X_OFFSET];
-        default:
-            console.warn(`Invalid tooltipOffset column: ${column}`)
-    }
+function refreshTools() {
+    toolsMenu.refresh();
 }
 
 // -------------------------------------------------------------------------------- Raster Selection Tools
@@ -557,20 +553,22 @@ export function showHoverForTool() {
 
 // -------------------------------------------------------------------------------- Shape Properties
 
-let $shapeProperties, shapeTooltips = [];
-const shapeMenus = {};
+let $shapeProperties, shapeTooltips = [], shapePropScrollbar;
+const shapeProperties = {};
 
 // Most menus are based on shape props and are keyed off the prop. There is no 'prop' for order, so we give it its own key.
 const ORDER_MENU = '__ORDER__';
 
 function setupShapeProperties() {
-    $shapeProperties = $('#shape-properties')
+    $shapeProperties = $('#shape-properties');
+    shapePropScrollbar = new SimpleBar($shapeProperties.get(0), {
+        autoHide: false,
+        // forceVisible: true
+    });
 
-    // Stroke dropdowns for each shape type
-    const $strokeGroup = $('#shape-stroke-menu-group');
     Object.values(SHAPE_TYPES).forEach(shapeType => {
         if (!STROKE_STYLE_PROPS[shapeType]) return; // Shape has no stroke prop
-        setupStrokeMenu($strokeGroup, shapeType)
+        setupStrokeMenu(shapeType)
     });
 
     setupBrushMenu();
@@ -622,11 +620,8 @@ function setupShapeProperties() {
 
     shapeTooltips.concat(setupActionTooltips(
         $standardActionButtons,
-        element => $(element).data('action'),
-        {
-            placement: 'bottom',
-            offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-        }
+        $element => $element.data('action'),
+        shapeMenuTooltipOptions($shapeProperties.find('#shape-actions').find('.group-actions'))
     ).tooltips);
 }
 
@@ -648,6 +643,7 @@ function activeShapeTypes() {
             case 'draw-freeform': return [SHAPE_TYPES.FREEFORM];
             case 'draw-line': return [SHAPE_TYPES.LINE];
             case 'draw-ellipse': return [SHAPE_TYPES.ELLIPSE];
+            case 'draw-diamond': return [SHAPE_TYPES.DIAMOND];
             case 'draw-textbox': return [SHAPE_TYPES.TEXTBOX];
             default: return [];
         }
@@ -681,6 +677,7 @@ function activeShapeProps() {
             case 'draw-freeform':
             case 'draw-line':
             case 'draw-ellipse':
+            case 'draw-diamond':
             case 'draw-textbox':
                 allowedProps = new Set(getConstructor(activeShapeTypes()[0]).allowedProps);
                 // TODO [color prop issue]
@@ -762,29 +759,50 @@ function updateActiveShapeProp(propKey, propValue, propagate = true) {
 }
 
 function setupShapeMenu($group, prop, options, overrides = {}) {
-    const $menu = $('<div>').appendTo($group.find('.group-actions'))
+    const $actions = $group.find('.group-actions');
 
-    shapeMenus[prop] = new IconMenu($menu, {
-        dropdown: true,
-        dropdownBtnTooltip: `tools.shapes.${prop}`,
-        items: options.map(option => {
-            return {
-                value: option,
-                icon: `tools.shapes.${prop}.${option}`,
-                tooltip: `tools.shapes.${prop}.${option}`,
-            }
-        }),
-        visible: () => activeShapeProps()[prop] !== undefined,
-        getValue: () => firstActiveShapeProp(prop),
-        onSelect: newValue => updateActiveShapeProp(prop, newValue),
-        tooltipOptions: {
-            placement: 'right'
-        },
-        ...overrides
-    });
+    shapeProperties[prop] = {
+        $group: $group,
+        menu: new IconMenu($actions, {
+            dropdown: false,
+            dropdownBtnTooltip: `tools.shapes.${prop}`,
+            items: options.map(option => {
+                return {
+                    value: option,
+                    icon: `tools.shapes.${prop}.${option}`,
+                    tooltip: `tools.shapes.${prop}.${option}`,
+                }
+            }),
+            visible: () => activeShapeProps()[prop] !== undefined,
+            getValue: () => firstActiveShapeProp(prop),
+            onSelect: newValue => updateActiveShapeProp(prop, newValue),
+            transparentBtns: false,
+            tooltipOptions: shapeMenuTooltipOptions($actions),
+            ...overrides
+        })
+    }
 }
 
-function setupStrokeMenu($group, shapeType) {
+function shapeMenuTooltipOptions($container, placement = 'outside') {
+    switch (placement) {
+        case 'outside':
+            // Offsets the tooltips to be outside the shape properties island with consistent placement
+            return {
+                placement: 'right',
+                getReferenceClientRect: () => $container.get(0).getBoundingClientRect(),
+                offset: [0, 20]
+            }
+        default:
+            return {
+                placement: placement,
+                offset: [0, 15]
+            }
+    }
+}
+
+function setupStrokeMenu(shapeType) {
+    const $group = $(`#shape-${shapeType}-stroke-menu-group`)
+
     setupShapeMenu(
         $group,
         STROKE_STYLE_PROPS[shapeType],
@@ -809,10 +827,10 @@ function setupBrushMenu() {
 
 function setupTextAlignMenus() {
     [
-        { prop: TEXT_ALIGN_H_PROP, options: Object.values(TEXT_ALIGN_H_OPTS) },
-        { prop: TEXT_ALIGN_V_PROP, options: Object.values(TEXT_ALIGN_V_OPTS) },
-    ].forEach(({ prop, options }) => {
-        setupShapeMenu($('#shape-text-align-group'), prop, options, {
+        { $group: $('#shape-text-align-h-group'), prop: TEXT_ALIGN_H_PROP, options: Object.values(TEXT_ALIGN_H_OPTS) },
+        { $group: $('#shape-text-align-v-group'), prop: TEXT_ALIGN_V_PROP, options: Object.values(TEXT_ALIGN_V_OPTS) },
+    ].forEach(({ $group, prop, options }) => {
+        setupShapeMenu($group, prop, options, {
             visible: () => {
                 if (activeShapeProps()[prop] === undefined) return false;
 
@@ -829,15 +847,11 @@ function setupFillMenu() {
 }
 
 function setupLineMarkerMenus() {
-    const $group = $('#shape-line-marker-menu-group');
-
-    setupShapeMenu($group, ARROWHEAD_START_PROP, Object.values(ARROWHEAD_OPTIONS))
-    setupShapeMenu($group, ARROWHEAD_END_PROP, Object.values(ARROWHEAD_OPTIONS))
+    setupShapeMenu($('#shape-line-arrowhead-start-menu-group'), ARROWHEAD_START_PROP, Object.values(ARROWHEAD_OPTIONS))
+    setupShapeMenu($('#shape-line-arrowhead-end-menu-group'), ARROWHEAD_END_PROP, Object.values(ARROWHEAD_OPTIONS))
 }
 
 function setupOrderMenu() {
-    const $menu = $('#shape-order');
-
     Object.values(REORDER_ACTIONS).forEach(action => {
         actions.registerAction(`tools.shapes.${action}`, {
             callback: () => selectionController.vector.reorderSelectedShapes(action),
@@ -845,26 +859,30 @@ function setupOrderMenu() {
         })
     })
 
-    shapeMenus[ORDER_MENU] = new IconMenu($menu, {
-        dropdown: true,
-        dropdownBtnIcon: 'tools.shapes.order',
-        dropdownBtnTooltip: 'tools.shapes.order',
-        closeDropdownOnSelect: false,
-        items: Object.values(REORDER_ACTIONS).map(action => {
-            const actionId = `tools.shapes.${action}`;
-            return {
-                value: action,
-                icon: actionId,
-                tooltip: actionId,
-                disabled: () => !actions.isActionEnabled(actionId)
-            }
-        }),
-        visible: () => selectionController.vector.hasSelectedShapes(),
-        onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
-        tooltipOptions: {
-            placement: 'right'
-        }
-    });
+    const $group = $('#shape-order-group');
+    const $actions = $group.find('.group-actions');
+
+    shapeProperties[ORDER_MENU] = {
+        $group: $group,
+        menu: new IconMenu($actions, {
+            dropdownBtnIcon: 'tools.shapes.order',
+            dropdownBtnTooltip: 'tools.shapes.order',
+            closeDropdownOnSelect: false,
+            items: Object.values(REORDER_ACTIONS).map(action => {
+                const actionId = `tools.shapes.${action}`;
+                return {
+                    value: action,
+                    icon: actionId,
+                    tooltip: actionId,
+                    disabled: () => !actions.isActionEnabled(actionId)
+                }
+            }),
+            visible: () => selectionController.vector.hasSelectedShapes(),
+            onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
+            transparentBtns: false,
+            tooltipOptions: shapeMenuTooltipOptions($actions)
+        })
+    }
 }
 
 function refreshShapeProperties() {
@@ -872,30 +890,19 @@ function refreshShapeProperties() {
     $shapeProperties.toggle(isVisible);
 
     if (isVisible) {
-        // Toggle menu visibility
-        Object.values(shapeMenus).forEach(menu => menu.refresh());
+        Object.values(shapeProperties).forEach(properties => {
+            properties.menu.refresh()
+            properties.$group.toggle(properties.menu.isVisible())
+        });
 
-        // Toggle menu group visibility (the containers around groups of menus)
-        $shapeProperties.find('#shape-stroke-menu-group').toggle(
-            Object.values(STROKE_STYLE_PROPS).some(prop => shapeMenus[prop].isVisible())
-        )
-        $shapeProperties.find('#shape-brush-menu-group').toggle(shapeMenus[BRUSH_PROP].isVisible())
-        $shapeProperties.find('#shape-text-align-group').toggle(
-            shapeMenus[TEXT_ALIGN_H_PROP].isVisible() || shapeMenus[TEXT_ALIGN_V_PROP].isVisible()
-        )
-        $shapeProperties.find('#shape-fill-menu-group').toggle(shapeMenus[FILL_PROP].isVisible())
-        $shapeProperties.find('#shape-line-marker-menu-group').toggle(
-            shapeMenus[ARROWHEAD_START_PROP].isVisible() || shapeMenus[ARROWHEAD_END_PROP].isVisible()
-        )
         $shapeProperties.find('#shape-color-menu-group').toggle(showColorPicker())
         $shapeProperties.find('#shape-char-menu-group').toggle(showCharPicker())
-        $shapeProperties.find('#move-menu-group').toggle(selectionController.raster.hasSelection())
 
         $shapeProperties.find('#shape-actions').toggle(
             selectionController.vector.hasSelectedShapes() || selectionController.raster.hasSelection()
         )
 
-        // Refresh action buttons
+        // Refresh custom action buttons (not part of a menu)
         $shapeProperties.find('.action-button').each((i, element) => {
             const $element = $(element);
             const actionId = $element.data('action');
@@ -904,17 +911,24 @@ function refreshShapeProperties() {
             $element.toggle(actions.isActionVisible(actionId));
         });
 
-        // Add vertical borders between groups. Have to do this in JS (not CSS) due to children visibility toggles
-        let firstVisible = true;
+        // CSS needs to do different things depending on if a group is the first, subsequent, or last group.
+        // Cannot use :first-child, :not(:first-child), etc. because that doesn't account for hidden children.
+        let $firstVisible, $lastVisible;
         $shapeProperties.find('.property-group').each((i, group) => {
             const $group = $(group);
-            $group.removeClass('border-left');
+            $group.removeClass('first-child subsequent-child last-child');
 
             if ($group.is(':visible')) {
-                if (!firstVisible) $group.addClass('border-left');
-                firstVisible = false;
+                if ($firstVisible) {
+                    $group.addClass('subsequent-child')
+                } else {
+                    $firstVisible = $group;
+                }
+                $lastVisible = $group;
             }
         });
+        if ($firstVisible) $firstVisible.addClass('first-child')
+        if ($lastVisible) $lastVisible.addClass('last-child')
     } else {
         shapeTooltips.forEach(tooltip => tooltip.hide())
         // todo hide tooltips for other stuff like shape char picker
@@ -1137,16 +1151,13 @@ function setupCharPicker() {
     shapeCharPicker = new CharPicker($shapeChar, {
         // onLoad: newValue => setPrimaryChar(newValue),
         onChange: newValue => applyPrimaryChar(newValue),
-        popupDirection: 'bottom',
+        popupDirection: 'right',
         popupOffset: 22,
         tooltip: () => {
             return setupActionTooltips(
                 $shapeChar,
                 'tools.shapes.charPicker',
-                {
-                    placement: 'bottom',
-                    offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-                }
+                shapeMenuTooltipOptions($shapeChar.closest('.group-actions'))
             ).tooltips[0];
         }
     })
@@ -1155,11 +1166,8 @@ function setupCharPicker() {
 
     shapeTooltips.concat(setupActionTooltips(
         $quickSwap,
-        element => $(element).data('action'),
-        {
-            placement: 'bottom',
-            offset: [0, 56]
-        }
+        $element => $element.data('action'),
+        shapeMenuTooltipOptions($quickSwap.closest('.group-title'))
     ).tooltips);
 
     // Override quick-swap action button: we do not want to call the actual action. The actual action always just
@@ -1247,7 +1255,7 @@ function setupColorPicker() {
     const $shapeColor = $('#shape-color');
     shapeColorPicker = new ColorPicker($shapeColor, {
         pickerOptions: {
-            popup: 'bottom'
+            popup: 'right'
         },
         tooltip: () => {
             return refreshableTooltips(
@@ -1259,10 +1267,7 @@ function setupColorPicker() {
                     }
                     return 'tools.shapes.colorPicker';
                 }),
-                {
-                    placement: 'bottom',
-                    offset: SUB_TOOL_MENU_TOOLTIP_OFFSET
-                }
+                shapeMenuTooltipOptions($shapeColor.closest('.group-actions'))
             )
         },
         onDone: color => applyColor(color),
@@ -1335,6 +1340,7 @@ function cursorStyle(tool, isDragging, mouseEvent, cell, canvas) {
         case 'draw-rect':
         case 'draw-line':
         case 'draw-ellipse':
+        case 'draw-diamond':
         case 'draw-textbox':
         case 'fill-char':
         case 'eraser':

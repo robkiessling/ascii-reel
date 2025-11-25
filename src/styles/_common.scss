@@ -36,6 +36,9 @@
 .align-center { align-items: center; }
 .justify-center { justify-content: center; }
 .flex-1 { flex: 1 }
+.gap-sm { gap: 0.25rem; }
+.gap-md { gap: 0.5rem; }
+.gap-lg { gap: 1rem; }
 
 .invisible {
   visibility: hidden; // Will still take up space, but be invisible
@@ -61,7 +64,7 @@
 }
 
 .info-popup {
-  border: 1px solid var(--color-contrast);
+  border: 1px solid var(--color-dialog-border);
   border-radius: 4px;
   padding: 1rem;
 }
@@ -98,16 +101,11 @@
 }
 
 .section-header {
-  color: var(--color-font-header);
+  color: var(--color-text-header);
 
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 0.875rem;
-}
-
-hr {
-  border-color: var(--color-surface-hover) !important;
-  margin: 0.75rem 0;
 }
 
 // Hide annoying outline when keyboard is used (if you don't have a mouse, you're gunna have a bad time anyway)

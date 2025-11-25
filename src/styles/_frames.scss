@@ -1,8 +1,9 @@
 @use 'variables' as *;
 
 #frame-controller {
+  background: var(--color-sidebar-bg);
+
   display: flex;
-  margin: $main-spacing;
   // Note: More flex settings get set below, depending on frames-on-left vs. frames-on-bottom
 
   .tools {
@@ -42,7 +43,7 @@
       justify-content: center;
       align-items: center;
       background: var(--color-frame-border);
-      color: var(--color-font-white);
+      color: var(--color-text-white);
     }
     .frame-index {
       width: 25px;
@@ -66,15 +67,14 @@
     }
 
     &.selected {
-      border-color: var(--color-primary);
+      border-color: var(--color-frame-selected);
       .frame-index, .frame-ticks {
-        background: var(--color-primary);
+        background: var(--color-frame-selected);
       }
     }
 
     &.placeholder {
-      background: var(--color-surface);
-      border: $frame-border-size dashed var(--color-primary);
+      border: $frame-border-size dashed var(--color-frame-selected);
     }
 
     &.range-selection-sibling {
@@ -85,21 +85,15 @@
 
 .frames-on-left #frame-controller {
   flex-direction: row;
-  margin-left: $tiny-spacing;
-  margin-bottom: $tiny-spacing;
 
-  // Only showing the border when minimized; when maximized the scrollbar track is a good enough border
-  &.minimized {
-    border-right: 1px solid var(--color-surface);
-  }
+  border-right: 1px solid var(--color-sidebar-border);
 
   .tools {
     flex-direction: column;
-    margin-right: 2px;
+    margin: $main-spacing $half-spacing;
 
     .section-header {
       writing-mode: vertical-rl;
-      //transform: rotate(180deg);
       margin-bottom: 0.5rem;
     }
 
@@ -122,20 +116,23 @@
       flex-direction: column;
     }
     .simplebar-track.simplebar-vertical {
-      background-color: var(--color-background-border);
+      background-color: var(--color-sidebar-bg);
     }
   }
 
   .frame {
-    margin-bottom: 6px;
+    margin-top: $main-spacing;
+
+    &:last-child {
+      margin-bottom: $main-spacing;
+    }
   }
 }
 
 .frames-on-bottom #frame-controller {
   flex-direction: column;
-  margin: $main-spacing;
 
-  border-top: 1px solid var(--color-surface);
+  border-top: 1px solid var(--color-sidebar-border);
 
   &.minimized {
     margin: 0 $main-spacing;
@@ -144,7 +141,7 @@
 
   .tools {
     flex-direction: row;
-    margin-bottom: 2px;
+    margin: $half-spacing $main-spacing;
 
     .section-header {
       margin-right: 1rem;
@@ -165,12 +162,16 @@
       flex-direction: row;
     }
     .simplebar-track.simplebar-horizontal {
-      background-color: var(--color-background-border);
+      background-color: var(--color-sidebar-bg);
     }
   }
 
   .frame {
-    margin-right: 6px;
+    margin-left: $main-spacing;
+
+    &:last-child {
+      margin-right: $main-spacing;
+    }
   }
 }
 

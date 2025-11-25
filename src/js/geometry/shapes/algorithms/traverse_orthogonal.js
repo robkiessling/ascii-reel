@@ -15,7 +15,7 @@ const DEBUG = false;
  * @param {CellArea} [endArea]
  * @param {string} [startDir]
  * @param {string} [endDir]
- * @param {(cell: Cell, direction: string, type: 'start'|'end'|'middle') => void} callback
+ * @param {(cell: Cell, direction: string, type: 'start'|'end'|'middle'|'connector') => void} callback
  */
 export function orthogonalPath(startCell, endCell, startArea, endArea, startDir, endDir, callback) {
     if (startDir === undefined) startDir = directionFrom(startCell, endCell);
@@ -28,22 +28,25 @@ export function orthogonalPath(startCell, endCell, startArea, endArea, startDir,
 
     path = centerLineCorrection(path, centerRow, centerCol, [startArea, endArea].filter(Boolean), [startCell, endCell]);
 
-    // Iterate through each line segment (where a line segment is the line between two adjacent path points)
+    // Iterate through each cell in the path
     for (let i = 0; i < path.length; i++) {
         const cell = path[i];
 
-        // If we're on the first line segment, draw its start char and then move to next segment
+        // If we're on the first cell, just draw it (start char)
         if (i === 0) {
             callback(cell, startDir, 'start');
             continue;
         }
 
-        // Draw straight line from prevCell to current cell (without endpoints)
+        // For later cells, draw a straight line from prevCell to current cell (without endpoints)
         const prevCell = path[i - 1];
         const direction = directionBetween(prevCell, cell);
-        prevCell.lineTo(cell, false).forEach(cell => callback(cell, direction, 'xxx'))
+        prevCell.lineTo(cell, cell => callback(cell, direction, 'connector'), {
+            inclusiveStart: false,
+            inclusiveEnd: false
+        })
 
-        // Draw line segment's end char
+        // Draw current cell, differing based on whether it's an end or middle point
         if (i === path.length - 1) {
             callback(cell, endDir, 'end')
         } else {

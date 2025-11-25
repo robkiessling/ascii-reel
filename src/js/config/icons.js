@@ -6,6 +6,78 @@ const ICOMOON = 'icomoon'
 const CUSTOM = 'custom'
 
 const ICON_DATA = {
+    'mainMenu.open': { type: REMIXICON, content: 'ri-menu-line' },
+    'file.new': { type: REMIXICON, content: 'ri-file-line' },
+    'file.open': { type: REMIXICON, content: 'ri-folder-2-line' },
+    'file.save-as': { type: REMIXICON, content: 'ri-download-2-line' },
+    'file.save-active': { type: REMIXICON, content: 'ri-save-3-line' },
+    'file.export-as': { type: REMIXICON, content: 'ri-export-line' },
+    'file.export-active': { type: REMIXICON, content: 'ri-export-line' },
+    'settings.open-project-settings-dialog': { type: REMIXICON, content: 'ri-settings-5-line' },
+    'settings.open-font-dialog': { type: REMIXICON, content: 'ri-font-sans-serif' },
+    'settings.open-background-dialog': { type: REMIXICON, content: 'ri-landscape-line' },
+    'settings.open-resize-dialog': { type: REMIXICON, content: 'ri-aspect-ratio-line' },
+
+    'view.zoom-out': { type: REMIXICON, content: 'ri-zoom-out-line' },
+    'view.zoom-in': { type: REMIXICON, content: 'ri-zoom-in-line' },
+    'view.toggle-grid': { type: REMIXICON, content: 'ri-grid-line' },
+    'view.toggle-whitespace': { type: REMIXICON, content: 'ri-space' },
+
+    'state.undo': { type: REMIXICON, content: 'ri-arrow-go-back-line', style: "font-size: 0.875rem;" },
+    'state.redo': { type: REMIXICON, content: 'ri-arrow-go-forward-line', style: "font-size: 0.875rem;" },
+
+    'frames.new-frame': { type: REMIXICON, content: 'ri-add-circle-line' },
+    'frames.duplicate-frame': { type: REMIXICON, content: 'ri-file-copy-2-line' },
+    'frames.delete-frame': { type: REMIXICON, content: 'ri-delete-bin-line' },
+    'frames.reverse-frames.left-aligned': { type: REMIXICON, content: 'ri-arrow-up-down-line' },
+    'frames.reverse-frames.bottom-aligned': { type: REMIXICON, content: 'ri-arrow-left-right-line' },
+    'frames.toggle-onion': { type: REMIXICON, content: 'ri-stack-line' },
+    'frames.toggle-ticks': { type: REMIXICON, content: 'ri-timer-line' },
+    'frames.toggle-component': { type: REMIXICON, content: 'ri-slideshow-view' },
+    'frames.align-left': { type: REMIXICON, content: 'ri-layout-left-line' },
+    'frames.align-bottom': { type: REMIXICON, content: 'ri-layout-bottom-line' },
+
+    'layers.add-layer': { type: REMIXICON, content: 'ri-add-circle-line' },
+    'layers.edit-layer': { type: REMIXICON, content: 'ri-pencil-line' },
+    'layers.delete-layer': { type: REMIXICON, content: 'ri-delete-bin-line' },
+    'layers.toggle-visibility-lock.lock': { type: REMIXICON, content: 'ri-lock-line' },
+    'layers.toggle-visibility-lock.unlock': { type: REMIXICON, content: 'ri-lock-unlock-line' },
+
+    'preview.play': { type: REMIXICON, content: 'ri-play-circle-line' },
+    'preview.pause': { type: REMIXICON, content: 'ri-pause-circle-line' },
+    'preview.open-popup': { type: REMIXICON, content: 'ri-external-link-line' },
+
+    'palette.sort-colors': { type: REMIXICON, content: 'ri-sort-desc' },
+    'palette.delete-unused-colors': { type: REMIXICON, content: 'ri-delete-bin-line' },
+    'palette.open-settings': { type: REMIXICON, content: 'ri-settings-5-line' },
+
+    'unicode.information': { type: REMIXICON, content: 'ri-information-line' },
+    'unicode.open-settings': { type: REMIXICON, content: 'ri-settings-5-line' },
+
+    'sidebar.toggle-component': { type: REMIXICON, content: 'ri-sidebar-fold-line' },
+
+    'tools.standard.select': { type: REMIXICON, content: 'ri-cursor-line' },
+    'tools.standard.text-editor': { type: REMIXICON, content: 'ri-input-field' },
+    'tools.standard.pan': { type: REMIXICON, content: 'ri-hand' },
+    'tools.standard.move-all': { type: REMIXICON, content: 'ri-drag-move-2-fill' },
+    'tools.standard.selection-rect': { type: ICOMOON, content: 'icon-rect-dashed' },
+    'tools.standard.selection-lasso': { type: ICOMOON, content: 'icon-lasso-dashed' },
+    'tools.standard.selection-line': { type: ICOMOON, content: 'icon-line-dashed' },
+    'tools.standard.selection-wand': { type: REMIXICON, content: 'ri-magic-line' },
+    'tools.standard.draw-rect': { type: ICOMOON, content: 'icon-rect-solid' },
+    'tools.standard.draw-line': { type: ICOMOON, content: 'icon-line-solid' },
+    'tools.standard.draw-ellipse': { type: REMIXICON, content: 'ri-circle-line' },
+    'tools.standard.draw-diamond': { type: REMIXICON, content: 'ri-poker-diamonds-line' },
+    'tools.standard.draw-freeform': { type: REMIXICON, content: 'ri-sketching' },
+    'tools.standard.draw-textbox': { type: REMIXICON, content: 'ri-t-box-line' },
+    'tools.standard.eraser': { type: REMIXICON, content: 'ri-eraser-line' },
+    'tools.standard.fill-char': {
+        type: CUSTOM,
+        content: '<span class="ri ri-fw ri-paint-fill ri-paint-fill-no-droplet"></span><span class="picked-char">A</span>'
+    },
+    'tools.standard.paint-brush': { type: REMIXICON, content: 'ri-brush-line' },
+    'tools.standard.color-swap': { type: REMIXICON, content: 'ri-palette-line' },
+
     'tools.shapes.freeformStroke.irregular-adaptive': { type: PRE, content: "  /'.\n| | |\n'./  " },
     'tools.shapes.freeformStroke.irregular-monochar': { type: PRE, content: "  AAA\nA A A\nAAA  " },
 
@@ -21,6 +93,9 @@ const ICON_DATA = {
     'tools.shapes.rectStroke.outline-monochar': { type: PRE, content: "AAAAA\nA   A\nAAAAA" },
 
     'tools.shapes.ellipseStroke.outline-monochar': { type: PRE, content: " AAA \nA   A\n AAA " },
+
+    'tools.shapes.diamondStroke.outline-ascii-1': { type: PRE, content: " .+. \n+   +\n '+' " },
+    'tools.shapes.diamondStroke.outline-monochar': { type: PRE, content: "  A  \n A A \n  A  " },
 
     // 'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-delete-back-2-line' },
     'tools.shapes.fill.empty': { type: REMIXICON, content: 'ri-forbid-line' },
@@ -104,9 +179,9 @@ export function getIconClass(key) {
     }
 }
 
-export function getIconHTML(key) {
+export function getIconHTML(key, debugQuestionMark = true) {
     const iconData = ICON_DATA[key];
-    if (!iconData) return `<span>?</span>`;
+    if (!iconData) return debugQuestionMark ? `<span>?</span>` : undefined;
 
     const style = iconData.style ? iconData.style : ''
 

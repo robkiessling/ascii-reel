@@ -1,6 +1,7 @@
 import {getIconHTML} from "../config/icons.js";
 import {standardTip, standardTips} from "./tooltips.js";
 import {defer} from "../utils/utilities.js";
+import {setupActionTooltips} from "../io/actions.js";
 
 const DEFAULT_OPTIONS = {
     items: [],
@@ -8,6 +9,9 @@ const DEFAULT_OPTIONS = {
     disabled: () => false,
     onRefresh: (/* iconMenu */) => {},
     closeDropdownOnSelect: true,
+    actionTooltips: false,
+    transparentBtns: true,
+    dropdownStyle: undefined
 }
 
 /**
@@ -27,11 +31,18 @@ export default class IconMenu {
     /**
      * @param $container - jQuery element for the menu
      * @param {Object} options - menu options
-     * @param {Array<{ value: string, icon: string, tooltip: string, disabled?: () => boolean }>} options.items - 
-     *   Items options for the menu
-     *   - `value` will be the value returned by onSelect
-     *   - `tooltip`/`icon` will be used for icon/tooltip constant lookups.
-     *   - `disabled` (optional) callback to determine if individual item is disabled
+     * @param {Array<{
+     *   value: string,            // Value to be returned by onSelect
+     *   icon: string,             // Used for icons.js constant lookup
+     *   tooltip?: string,         // Used for strings.js constant lookup to populate tooltip
+     *   label?: string,           // (only applicable if dropdown:true) Optional label text next to the dropdown icon
+     *   shortcut?: () => string,  // (only applicable if dropdown:true) Optional shortcut text next to the dropdown icon
+     *   disabled?: () => boolean, // Function: determines if individual item is disabled (default: enabled)
+     *   visible?: () => boolean,  // Function: determines if individual item is visible (default: visible). If all items
+     *                             // are invisible, entire menu will be considered invisible (see options.visible)
+     *   group?: string,           // (only applicable if dropdown:false) Members of same group will be grouped together
+     *                             // in a mini-dropdown. TODO grouping is not implemented yet
+     * }>} options.items - Items to populate the menu
      * @param {(value: string) => void} options.onSelect - Callback when menu item is selected
      * @param {(IconMenu) => void} [options.onRefresh] - Callback when menu is refreshed
      * @param {boolean} [options.dropdown=false] - If false, renders as a menu bar. If true, renders as dropdown
@@ -46,7 +57,14 @@ export default class IconMenu {
      * @param {() => boolean} [options.visible] - Callback that controls whether the entire menu is visible. Default: always visible
      * @param {() => boolean} [options.disabled] - Callback that controls whether the entire menu is disabled. Default: always enabled
      *   Note: if you want to disable individual menu items, see options.items
-     * @param {Object} [options.tooltipOptions] - tippy options for item tooltips. It does not currently affect dropdownBtnTooltip
+     * @param {Object} [options.tooltipOptions] - (Only applicable if items:tooltips is used) tippy options for item
+     *   tooltips. It does not currently affect dropdownBtnTooltip.
+     * @param {boolean} [options.actionTooltips] - (Only applicable if items:tooltips is used) Whether to instantiate
+     *   standard tooltips or action tooltips. It does not currently affect dropdownBtnTooltip.
+     * @param {boolean} [options.transparentBtns=true] - (Only applicable if dropdown:false) Whether button options
+     *   should have transparent background or not
+     * @param {() => Object} [options.dropdownStyle] - (Only applicable if dropdown:true) Additional styles to apply
+     *   to the dropdown <ul>
      */
     constructor($container, options = {}) {
         this.id = ++IconMenu.idSequence;
@@ -89,7 +107,7 @@ export default class IconMenu {
     _initBar() {
         this.options.items.forEach(item => {
             $('<div>', {
-                class: 'icon-menu-option',
+                class: `icon-menu-option ${this.options.transparentBtns ? '' : 'solid'}`,
                 'data-value': item.value,
                 'data-tooltip': item.tooltip,
                 html: getIconHTML(item.icon)
@@ -105,7 +123,7 @@ export default class IconMenu {
         });
 
         if (this.options.items.some(item => item.tooltip)) {
-            standardTips(this.$container.find('.icon-menu-option'), $option => $option.data('tooltip'), {
+            this._tooltipInstantiator()(this.$container.find('.icon-menu-option'), $option => $option.data('tooltip'), {
                 offset: [0, 15],
                 hideOnClick: false,
                 ...this.options.tooltipOptions
@@ -128,7 +146,12 @@ export default class IconMenu {
             const $option = $(element);
             const item = this.valueToItemLookup[$option.data('value')];
             if (item.disabled) $option.toggleClass('disabled', item.disabled(item))
+            if (item.visible) $option.toggle(item.visible(item))
         })
+    }
+
+    _tooltipInstantiator() {
+        return this.options.actionTooltips ? setupActionTooltips : standardTips;
     }
 
     // ------------------------------------------------- Dropdown Version:
@@ -145,10 +168,12 @@ export default class IconMenu {
 
         this.options.items.forEach(item => {
             $('<li>', {
-                class: 'icon-dropdown-option',
+                class: `icon-dropdown-option ${item.label ? 'has-label' : ''}`,
                 'data-value': item.value,
                 'data-tooltip': item.tooltip,
-                html: getIconHTML(item.icon)
+                html: item.label || item.shortcut ?
+                    `${getIconHTML(item.icon)}<span class="label">${item.label || ''}</span><span class="shortcut"></span>` :
+                    getIconHTML(item.icon)
             }).appendTo(this._dropdown.$ul);
         });
 
@@ -166,7 +191,7 @@ export default class IconMenu {
         });
 
         if (this.options.items.some(item => item.tooltip)) {
-            standardTips(this._dropdown.$ul.find('.icon-dropdown-option'), $option => $option.data('tooltip'), {
+            this._tooltipInstantiator()(this._dropdown.$ul.find('.icon-dropdown-option'), $option => $option.data('tooltip'), {
                 offset: [0, 15],
                 hideOnClick: false,
                 ...this.options.tooltipOptions
@@ -217,8 +242,12 @@ export default class IconMenu {
         this._dropdown.$ul.find('.icon-dropdown-option').each((i, element) => {
             const $option = $(element);
             const item = this.valueToItemLookup[$option.data('value')];
-            if (item.disabled) $option.toggleClass('disabled', item.disabled(item))
+            if (item.disabled) $option.toggleClass('disabled', !!item.disabled(item))
+            if (item.visible) $option.toggle(!!item.visible(item))
+            if (item.shortcut) $option.find('.shortcut').html(item.shortcut(item))
         })
+
+        if (this.options.dropdownStyle) this._dropdown.$ul.css(this.options.dropdownStyle());
 
         const open = visible && this._dropdown.open;
         if (open) {

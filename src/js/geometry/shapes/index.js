@@ -13,6 +13,7 @@ import './shape.js';
 
 // Subclasses next
 import './ellipse.js';
+import './diamond.js';
 import './freeform.js';
 import './line.js';
 import './rect.js';

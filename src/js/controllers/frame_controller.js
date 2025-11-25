@@ -12,15 +12,17 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {delegate, hideAll as hideAllTooltips} from "tippy.js";
 import {readGlobalSetting, saveGlobalSetting} from "../storage/local_storage.js";
 import Minimizer from "../components/minimizer.js";
+import {getIconClass, getIconHTML} from "../config/icons.js";
+import {setupActionButtons} from "../io/actions.js";
 
 let $container, $list;
-let simpleBar, frameComponents, actionButtons;
+let simpleBar, frameComponents, actionButtons, toggleComponentButton;
 let minimizer;
 
 export function init() {
     $container = $('#frame-controller');
 
-    minimizer = new Minimizer($container, 'frames')
+    minimizer = new Minimizer($container, 'frames', { fullyHide: true })
     setupList();
     setupActions();
     setupEventBus();
@@ -71,12 +73,8 @@ function refresh() {
 
     simpleBar.recalculate();
 
-    $container.find('[data-action]').each((i, element) => {
-        const $element = $(element);
-        $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
-    });
-
     actionButtons.refreshContent();
+    toggleComponentButton.refreshContent();
 }
 
 function isLeftAligned() {
@@ -245,7 +243,7 @@ function setupActions() {
             )
         },
         enabled: () => state.isAnimationProject() && state.frameRangeSelection().length > 1,
-        icon: () => isLeftAligned() ? 'ri-arrow-up-down-line' : 'ri-arrow-left-right-line',
+        icon: () => isLeftAligned() ? getIconHTML('frames.reverse-frames.left-aligned') : getIconHTML('frames.reverse-frames.bottom-aligned'),
     });
 
     actions.registerAction('frames.toggle-onion', {
@@ -255,7 +253,7 @@ function setupActions() {
             actionButtons.refreshContent();
             eventBus.emit(EVENTS.REFRESH.CURRENT_FRAME);
         },
-        icon: () => state.getConfig('showOnion') ? 'ri-stack-line active' : 'ri-stack-line'
+        active: () => state.getConfig('showOnion')
     });
 
     actions.registerAction('frames.toggle-ticks', {
@@ -265,24 +263,24 @@ function setupActions() {
             actionButtons.refreshContent();
             eventBus.emit(EVENTS.REFRESH.ALL);
         },
-        icon: () => state.getConfig('showTicks') ? 'ri-timer-line active' : 'ri-timer-line'
+        active: () => state.getConfig('showTicks')
     });
 
     actions.registerAction('frames.toggle-component', {
-        name: () => STRINGS[minimizer.isMinimized ? 'frames.show-component.name' : 'frames.hide-component.name'],
-        description: () => STRINGS[minimizer.isMinimized ? 'frames.show-component.description' : 'frames.hide-component.description'],
         callback: () => {
             minimizer.toggle();
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
-        icon: () => {
-            let icon = 'ri ri-fw ';
-            icon += minimizer.isMinimized ? 'ri-sidebar-unfold-line active ' : 'ri-sidebar-fold-line ';
-            if (!isLeftAligned()) icon += 'rotate270 ';
-            return icon;
-        }
+        active: () => !minimizer.isMinimized,
+        enabled: () => state.isAnimationProject(),
+        visible: () => state.isAnimationProject(),
+        shortcutAbbr: `' (Apostrophe)`
     });
+
+    toggleComponentButton = setupActionButtons($('#context-tools-bottom-left .frame-buttons'), {
+        placement: 'top'
+    })
 
     actions.registerAction('frames.align-left', {
         callback: () => {
@@ -292,7 +290,6 @@ function setupActions() {
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
         visible: () => !isLeftAligned() && !minimizer.isMinimized,
-        icon: () => 'ri ri-fw ri-layout-left-line'
     });
 
     actions.registerAction('frames.align-bottom', {
@@ -303,7 +300,6 @@ function setupActions() {
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
         visible: () => isLeftAligned() && !minimizer.isMinimized,
-        icon: () => 'ri ri-fw ri-layout-bottom-line'
     });
 
     actions.registerAction('frames.previous-frame', {

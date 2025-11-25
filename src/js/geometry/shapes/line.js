@@ -230,7 +230,7 @@ export default class Line extends Shape {
             if (isAdaptive) {
                 straightAsciiLine(a, b, (cell, char) => setGlyph(cell, char))
             } else {
-                a.lineTo(b).forEach(cell => setGlyph(cell, this.props[CHAR_PROP]))
+                a.lineTo(b, cell => setGlyph(cell, this.props[CHAR_PROP]))
             }
 
             // TODO adaptive could use calculated chars instead of just '+'
@@ -450,4 +450,4 @@ export default class Line extends Shape {
 
 }
 
-registerShape(SHAPE_TYPES.LINE, Line);
+registerShape(SHAPE_TYPES.LINE, Line); // Note: File also has to be manually imported in index.js

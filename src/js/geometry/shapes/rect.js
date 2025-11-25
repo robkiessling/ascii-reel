@@ -173,4 +173,4 @@ export default class Rect extends BoxShape {
 
 }
 
-registerShape(SHAPE_TYPES.RECT, Rect);
+registerShape(SHAPE_TYPES.RECT, Rect); // Note: File also has to be manually imported in index.js

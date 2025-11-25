@@ -9,13 +9,13 @@ import { EventEmitter } from 'events';
  * - Transient UI state (e.g. selection changes, zoom level)
  *
  * eventBus.emit() is similar to EventEmitter's emit(), except:
- *   - Only supports ONE event arg (in addition to the event name). If provided, this is typically an object. For event
- *     data I've found named object attributes to be more robust than positional parameters.
+ * - Only supports ONE event arg (in addition to the event name). If provided, this is typically an object. For event
+ *   data, I've found named object attributes to be more robust than positional parameters.
  *
  * eventBus.on() is similar to EventEmitter's on(), with some added features:
- *   - The eventName can be an array of strings (or just a single string, as normal)
- *   - There is a 3rd argument for `priority`. Listeners are always executed in priority order (highest to lowest),
- *     regardless of the order they were attached.
+ * - The eventName can be an array of strings (or just a single string, as normal)
+ * - There is a 3rd argument for `priority`. Listeners are always executed in priority order (highest to lowest),
+ *   regardless of the order they were attached.
  */
 export const eventBus = {
     emit: (eventName, data = {}) => {
@@ -126,8 +126,9 @@ export const EVENTS = {
         SAVED: 'file:saved'
     },
     HISTORY: {
-        BEFORE_CHANGE: 'history:before-change',
-        CHANGED: 'history:changed'
+        RECORDED: 'history:recorded',
+        BEFORE_RESTORE: 'history:before-restore',
+        RESTORED: 'history:restored',
     },
     THEME: {
         CHANGED: 'theme:changed',

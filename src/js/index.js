@@ -16,7 +16,6 @@ import { init as initUnicode } from "./controllers/unicode_controller.js";
 import { init as initCanvas, resize as resizeCanvas } from './controllers/canvas_controller.js';
 import { init as initSelection, clear as performClearSelection } from './controllers/selection/index.js'
 import {
-    init as initState,
     isValid as isStateValid,
     loadFromStorage,
     markClean,
@@ -31,8 +30,9 @@ import {debounce, defer} from "./utils/utilities.js";
 import {eventBus, EVENTS} from './events/events.js'
 import {calculateFontRatio} from "./config/font.js";
 import {recalculateCanvasColors} from "./config/colors.js";
-import {applyThemeToDocument, recalculateTheme} from "./config/theme.js";
-import "./geometry/shapes/index.js"; // Importing all shape files because they register themselves
+import {applyThemeToDocument, matchBgToTheme, recalculateTheme} from "./config/theme.js";
+import "./geometry/shapes/index.js";
+import {showFullScreenLoader} from "./utils/overlays.js"; // Importing all shape files because they register themselves
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
 initClipboard();
@@ -43,7 +43,6 @@ initActions();
 initPalette();
 initUnicode();
 initPreview();
-initState();
 initCanvas();
 initFrames();
 initLayers();
@@ -88,7 +87,7 @@ function setupEventBus() {
     })
     
     // History state-change listener:
-    eventBus.on(EVENTS.HISTORY.CHANGED, ({ requiresResize, recalculateFont, recalculateColors }) => {
+    eventBus.on(EVENTS.HISTORY.RESTORED, ({ requiresResize, recalculateFont, recalculateColors }) => {
         if (recalculateFont) calculateFontRatio(fontFamily())
         if (recalculateColors) recalculateCanvasColors()
 
@@ -104,6 +103,7 @@ function setupEventBus() {
 
     eventBus.on(EVENTS.THEME.CHANGED, () => {
         recalculateTheme();
+        matchBgToTheme(); // todo only do this if background set to 'match theme'
         applyThemeToDocument();
         recalculateCanvasColors();
         eventBus.emit(EVENTS.REFRESH.ALL);

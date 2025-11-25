@@ -703,6 +703,10 @@ export default class Canvas {
         return roundForComparison(this._camera.zoom) > roundForComparison(this._minZoomLevel)
     }
 
+    getZoomPct() {
+        return `${(this._camera.zoom / ZOOM_DEFAULT * 100.0).toFixed(0)}%`;
+    }
+
     /**
      * Sets the zoom to the given level, and aligns camera to center of canvas.
      * @param level
@@ -865,13 +869,11 @@ export default class Canvas {
                 y: evt.clientY - rect.top
             };
 
-            // const inCanvas = evt.clientX >= rect.left && evt.clientX <= rect.right &&
-            //     evt.clientY >= rect.top && evt.clientY <= rect.bottom;
-
             const cell = this.screenToWorld(mouseCoords.x, mouseCoords.y).cell;
             const currentPoint = this.screenToWorld(mouseCoords.x, mouseCoords.y);
+            const isOverCanvas = evt.target === this.canvasElement;
 
-            const callbackArgs = {evt, cell, currentPoint, mouseCoords/*, inCanvas*/};
+            const callbackArgs = {evt, cell, currentPoint, mouseCoords, isOverCanvas};
             if (includeMouseDownArgs) $.extend(callbackArgs, {isDragging, originalPoint, mouseDownButton})
             callback(callbackArgs);
         }

@@ -12,10 +12,11 @@ import {eventBus, EVENTS} from "../events/events.js";
 import Minimizer from "../components/minimizer.js";
 import {LAYER_TYPES} from "../state/constants.js";
 import {delegateTips, standardTip} from "../components/tooltips.js";
+import {getIconHTML} from "../config/icons.js";
 
 let $container, $template, $list,
     $editDialog, $editName, $editType, $isNewLayer, $rasterizeWarning, $vectorizeWarning;
-let simpleBar, layerComponents, minimizer;
+let simpleBar, layerComponents, minimizer, actionButtons;
 
 export function init() {
     $container = $('#layer-controller');
@@ -41,10 +42,7 @@ function refresh() {
     scrollElement.scrollTop = scrollTop;
     simpleBar.recalculate();
 
-    $container.find('[data-action]').each((i, element) => {
-        const $element = $(element);
-        $element.toggleClass('disabled', !actions.isActionEnabled($element.data('action')));
-    });
+    actionButtons.refreshContent();
 
     refreshVisibilities();
 }
@@ -115,12 +113,16 @@ function setupActions() {
         enabled: () => state.layers() && state.layers().length > 1
     });
 
-    actions.registerAction('layers.toggle-visibility-lock', () => {
-        state.setConfig('lockLayerVisibility', !state.getConfig('lockLayerVisibility'));
-        eventBus.emit(EVENTS.REFRESH.ALL);
+    actions.registerAction('layers.toggle-visibility-lock', {
+        callback: () => {
+            state.setConfig('lockLayerVisibility', !state.getConfig('lockLayerVisibility'));
+            eventBus.emit(EVENTS.REFRESH.ALL);
+        },
+        icon: () => state.getConfig('lockLayerVisibility') ?
+            getIconHTML('layers.toggle-visibility-lock.lock') : getIconHTML('layers.toggle-visibility-lock.unlock')
     });
 
-    actions.setupActionButtons($container, {
+    actionButtons = actions.setupActionButtons($container, {
         placement: 'top'
     });
 }
@@ -134,14 +136,10 @@ function refreshVisibilities() {
         layerComponents.forEach(layerComponent => layerComponent.refresh());
 
         const locked = state.getConfig('lockLayerVisibility');
-        $container.find('.toggle-visibility-lock').find('.ri')
-            .toggleClass('ri-lock-line', locked)
-            .toggleClass('ri-lock-unlock-line', !locked);
-
-        hideCanvasMessage();
 
         // When visibility is not locked, it can be easy to start editing a layer that is not actually visible on screen.
         // To help avoid this, we show a warning message if the current layer is not visible.
+        hideCanvasMessage();
         if (!locked && !state.currentLayer().visible) {
             showCanvasMessage(
                 "<span class='ri ri-fw ri-error-warning-line warning'></span>&emsp;" +

@@ -6,6 +6,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {isObject} from "../utils/objects.js";
 import {refreshableTooltips} from "../components/tooltips.js";
+import {getIconClass, getIconHTML} from "../config/icons.js";
 
 let actions;
 
@@ -15,8 +16,8 @@ let actions;
 let cmdKey = isMacOS() ? 'metaKey' : 'ctrlKey';
 let actionIdToShortcut = {
     'file.open': { key: 'o', modifiers: [cmdKey] },
-    'file.export-as': { key: 'e', modifiers: [cmdKey, 'shiftKey'] },
-    'file.export-active': { key: 'e', modifiers: [cmdKey] },
+    'file.export-as': { key: 'e', modifiers: [cmdKey] },
+    'file.export-active': { key: 'e', modifiers: [cmdKey, 'shiftKey'] },
 
     // Note: file.save is not shown in toolbar anywhere, it actually ends up calling either file.saveTo or file.saveAs
     'file.save': { key: 's', modifiers: [cmdKey] },
@@ -39,6 +40,7 @@ let actionIdToShortcut = {
     'frames.toggle-onion': { key: 'o', modifiers: [cmdKey, 'shiftKey'] },
     'frames.previous-frame': { key: ',' },
     'frames.next-frame': { key: '.' },
+    'frames.toggle-component': { key: "'" },
 
     'view.toggle-grid': { key: 'g', modifiers: [cmdKey, 'shiftKey'] },
     'view.toggle-whitespace': { key: 'p', modifiers: [cmdKey, 'shiftKey'] },
@@ -46,21 +48,27 @@ let actionIdToShortcut = {
     'view.zoom-out': { displayKey: '-', key: '-', modifiers: [cmdKey] },
     'view.zoom-default': { key: '0', modifiers: [cmdKey] },
 
+    'tools.standard.select': { key: 's' },
     'tools.standard.text-editor': { key: 't' },
     'tools.standard.draw-freeform': { key: 'f' },
     'tools.standard.eraser': { key: 'e' },
-    'tools.standard.draw-line': { key: 'l' },
+    // 'tools.standard.draw-line': { key: 'l' },
     'tools.standard.draw-rect': { key: 'r' },
     'tools.standard.draw-ellipse': { key: 'o' },
     // 'tools.standard.draw-textbox': { key: 't' }, // todo same key
     'tools.standard.fill-char': { key: 'p' },
-    'tools.standard.selection-lasso': { key: 's' },
+    // 'tools.standard.selection-lasso': { key: 's' },
     'tools.standard.selection-wand': { key: 'w' },
     'tools.standard.pan': { key: 'h' },
     'tools.standard.move-all': { key: 'm' },
     'tools.standard.paint-brush': { key: 'b' },
     'tools.shapes.charPicker': { key: 'c' },
     'tools.shapes.quickSwapChar': { key: 'q' },
+
+    'sidebar.toggle-component': { key: ']' },
+
+    'themes.select-light-mode': { key: 'l' },
+    'themes.select-dark-mode': { key: 'k' },
 };
 
 let shortcutToActionId = {};
@@ -88,6 +96,8 @@ export function init() {
  *   action will be greyed out and un-clickable.
  * @param {boolean|function:boolean} [data.visible=true] - Whether the action is visible in the UI. If an action is
  *   not visible it can still be called via shortcut -- if that is not desired make sure enabled is also false.
+ * @param {boolean|function:boolean} [data.active=false] - Whether the action is currently 'active'; if the action
+ *   has a button that button will be highlighted
  * @param {string|function:string} [data.shortcutAbbr] - Hardcoded shortcut abbreviation (not common; most abbr will
  *   come from preferences)
  * @param {string|function:string} [data.icon] - Class name of an icon (e.g. remixicon class). If the action is shown in
@@ -108,6 +118,8 @@ export function registerAction(id, data) {
     if (data.description === undefined) { data.description = STRINGS[`${id}.description`]; }
     if (data.enabled === undefined) { data.enabled = true; }
     if (data.visible === undefined) { data.visible = true; }
+    if (data.active === undefined) { data.active = false; }
+    if (data.icon === undefined) { data.icon = getIconHTML(id, false) }
 
     if (actions[id] !== undefined) { console.warn(`Re-registering action: ${id}`); }
     actions[id] = data;
@@ -125,7 +137,9 @@ export function getActionInfo(id) {
     if (isFunction(info.description)) { info.description = info.description(); }
     if (isFunction(info.enabled)) { info.enabled = info.enabled(); }
     if (isFunction(info.visible)) { info.visible = info.visible(); }
+    if (isFunction(info.active)) { info.active = info.active(); }
     if (isFunction(info.icon)) { info.icon = info.icon(); }
+    if (isFunction(info.shortcutAbbr)) { info.shortcutAbbr = info.shortcutAbbr(); }
 
     if (info.shortcutAbbr === undefined && actionIdToShortcut[id]) {
         info.shortcutAbbr = shortcutAbbr(actionIdToShortcut[id]);
@@ -174,14 +188,14 @@ export function callActionByShortcut(shortcut, callbackData) {
  * - if the action has a shortcut, that shortcut will be shown next to the title.
  * - if the action has any modifiers, those modifier keys / descriptions will be shown at the bottom of the tooltip.
  * @param {string | Element[]} $elements - jQuery elements to attach tooltip(s) to
- * @param {string | function(element):string} getActionId - Can be an action-id string, or a function that returns an
+ * @param {string | function(JQuery):string} getActionId - Can be an action-id string, or a function that returns an
  *   action-id. All tooltip content will be derived based on this action-id.
  * @param overrides - Standard tippy options
  * @returns {{tooltips: import('tippy.js').Instance[], refreshContent: function}}
  */
 export function setupActionTooltips($elements, getActionId, overrides = {}) {
     const contentBuilder = element => {
-        const actionId = isFunction(getActionId) ? getActionId(element) : getActionId;
+        const actionId = isFunction(getActionId) ? getActionId($(element)) : getActionId;
         const actionInfo = getActionInfo(actionId);
         if (!actionInfo) return '';
         if (!actionInfo.name && !actionInfo.description) return '';
@@ -231,20 +245,22 @@ export function setupActionButtons($container, tooltipOptions = {}) {
     attachClickHandlers($container);
 
     const $buttons = $container.find('[data-action]');
-    const getActionId = (button) => $(button).data('action')
 
-    const { tooltips, refreshContent: refreshTooltips } = setupActionTooltips($buttons, getActionId, tooltipOptions)
+    const { tooltips, refreshContent: refreshTooltips } = setupActionTooltips($buttons, $button => $button.data('action'), tooltipOptions)
 
     return {
         tooltips: tooltips,
         refreshContent: () => {
             // Refresh any button icons if the action has an `icon` attribute
             $buttons.each((index, button) => {
-                const actionId = getActionId(button);
+                const $button = $(button);
+                const actionId = $button.data('action');
                 const actionInfo = getActionInfo(actionId);
-                const $button = $(button)
+
                 $button.toggleClass('hidden', !actionInfo.visible)
-                if (actionInfo.icon) $button.empty().append(`<span class="ri ri-fw ${actionInfo.icon}"></span>`);
+                $button.toggleClass('active', !!actionInfo.active)
+                $button.toggleClass('disabled', !actionInfo.enabled)
+                if (actionInfo.icon) $button.html(actionInfo.icon)
             })
 
             refreshTooltips();

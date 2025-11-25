@@ -3,19 +3,21 @@
  * - charCanvas: The canvas that renders chars
  * - hoveredCellCanvas: The canvas that renders a rectangular box over the hovered cell. This is its own canvas so we
  *   can rapidly update it as the mouse moves without having to re-render any of the chars, selection polygons, etc.
- * - selectionCanvas: The canvas that renders selection polygons (light blue). This canvas has an overall 0.5 opacity
+ * - selectionCanvas: The canvas that renders selection polygons. This canvas has an overall 0.5 opacity
  *   so that you can see chars through the selections. We opt for this global opacity (instead of drawing each polygon
  *   at 0.5 opacity) so we don't have to worry about overlapping opacities.
  *   The selectionCanvas is also the canvas on top of the others, so it receives all the mouse events.
  * - selectionBorderCanvas: The canvas that renders the borders of selections. Basically just renders some parts of the
  *   selection polygons that would have been on the selectionCanvas but that needed full opacity.
+ * - selectionCaretCanvas: Renders the blinking caret animation. Is its own canvas since it is frequently updated
+ *   and overlaps with selection borders
  */
 
 import Canvas from "../components/canvas.js";
 import * as selectionController from "./selection/index.js";
 import {drawingContent, hoveredCells, showHoverForTool} from "./tool_controller.js";
 import * as state from "../state/index.js";
-import {majorGridColor, minorGridColor, PRIMARY_COLOR} from "../config/colors.js";
+import {majorGridColor, minorGridColor} from "../config/colors.js";
 import * as tools from "./tool_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
@@ -32,13 +34,14 @@ const NON_CURRENT_LAYER_OPACITY = 0.5;
 
 const DRAW_DEBUG_PATHS = false;
 
-let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
+let charCanvas, selectionCanvas, selectionBorderCanvas, selectionCaretCanvas, hoveredCellCanvas;
 let hoveredCell;
 let $canvasMessage, $canvasDetails;
 
 export function init() {
     charCanvas = new Canvas($('#char-canvas'), {});
     selectionBorderCanvas = new Canvas($('#selection-border-canvas'), {});
+    selectionCaretCanvas = new Canvas($('#selection-caret-canvas'), {});
     hoveredCellCanvas = new Canvas($('#hovered-cell-canvas'), {});
 
     // selection-canvas is on the top of the canvas stack, so it handles all the mouse events
@@ -48,11 +51,11 @@ export function init() {
                 mouseEvent: evt, canvas: selectionCanvas, cell, currentPoint, mouseDownButton, mouseCoords
             })
         },
-        onMouseMove: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords}) => {
+        onMouseMove: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords, isOverCanvas}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEMOVE, {
                 mouseEvent: evt, canvas: selectionCanvas, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords
             })
-            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
+            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell, isOverCanvas })
         },
         onMouseUp: ({evt, cell, isDragging, originalPoint, currentPoint, mouseDownButton, mouseCoords}) => {
             eventBus.emit(EVENTS.CANVAS.MOUSEUP, {
@@ -63,8 +66,8 @@ export function init() {
         onDblClick: ({evt, cell}) => {
             eventBus.emit(EVENTS.CANVAS.DBLCLICK, { mouseEvent: evt, cell: cell, canvas: selectionCanvas })
         },
-        onMouseEnter: ({cell}) => {
-            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell })
+        onMouseEnter: ({cell, isOverCanvas}) => {
+            eventBus.emit(EVENTS.CANVAS.HOVERED, { cell, isOverCanvas })
         },
         onMouseLeave: () => {
             eventBus.emit(EVENTS.CANVAS.HOVER_END)
@@ -132,8 +135,8 @@ function setupEventBus() {
         iterateCanvases(canvas => canvas.panBy(...delta, ignoreZoom))
     }, 1)
 
-    eventBus.on(EVENTS.CANVAS.HOVERED, ({cell}) => {
-        hoveredCell = cell;
+    eventBus.on(EVENTS.CANVAS.HOVERED, ({cell, isOverCanvas}) => {
+        hoveredCell = isOverCanvas ? cell : null;
         redrawHover();
     })
     eventBus.on(EVENTS.CANVAS.HOVER_END, () => {
@@ -154,26 +157,30 @@ function redrawAll() {
 
 function iterateCanvases(callback) {
     [
-        selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas
+        selectionCanvas, selectionBorderCanvas, selectionCaretCanvas, hoveredCellCanvas, charCanvas
     ].forEach(canvas => callback(canvas));
 
     redrawAll();
 }
 
 export function canZoomIn() {
-    return selectionCanvas.canZoomIn();
+    return selectionCanvas?.canZoomIn();
 }
 export function canZoomOut() {
-    return selectionCanvas.canZoomOut();
+    return selectionCanvas?.canZoomOut();
+}
+export function getCurrentZoomPct() {
+    return selectionCanvas?.getZoomPct();
 }
 
 export function getCurrentViewRect() {
-    return selectionCanvas.currentViewRect()
+    return selectionCanvas?.currentViewRect()
 }
 
 export function resize(resetZoom) {
     charCanvas.resize(resetZoom);
     selectionBorderCanvas.resize(resetZoom);
+    selectionCaretCanvas.resize(resetZoom);
     hoveredCellCanvas.resize(resetZoom);
     selectionCanvas.resize(resetZoom);
 }
@@ -297,30 +304,36 @@ function redrawCharCanvas() {
 function redrawSelection() {
     selectionCanvas.clear();
     selectionBorderCanvas.clear();
+    selectionCaretCanvas.clear();
+
+    // ----- Raster selections:
+    const rasterCaret = selectionController.raster.caretCell();
 
     selectionCanvas.highlightPolygons(selectionController.raster.selectionShapes());
 
-    if (selectionController.raster.hasSelection() && !selectionController.raster.isDrawing && !selectionController.raster.caretCell()) {
+    if (selectionController.raster.hasSelection() && !selectionController.raster.isDrawing && !rasterCaret) {
         selectionBorderCanvas.outlinePolygon(selectionController.raster.getSelectedRect(), selectionController.raster.movableContent())
     }
 
-    if (selectionController.raster.caretCell()) {
-        const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(selectionController.raster.caretCell(), state.getConfig('caretStyle'), () => state.getDrawingColor());
+    if (rasterCaret) {
+        selectionCaretCanvas.startCaretAnimation(rasterCaret, state.getConfig('caretStyle'), () => state.getDrawingColor());
     }
 
-    selectionController.vector.drawShapeSelection(selectionCanvas);
-
+    // ----- Vector selections:
     const vectorTextAreas = selectionController.vector.selectedTextAreas();
+    const vectorCaret = selectionController.vector.caretCell();
+
+    selectionController.vector.drawShapeSelection(selectionBorderCanvas);
+
     if (vectorTextAreas) {
         selectionCanvas.highlightPolygons(vectorTextAreas.map(cellArea => new RectSelection(cellArea.topLeft, cellArea.bottomRight)));
     }
 
-    const vectorCaret = selectionController.vector.caretCell();
     if (vectorCaret) {
-        const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => state.getDrawingColor());
+        selectionCaretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => state.getDrawingColor());
     }
+
+    // ----- Canvas Details:
 
     refreshCanvasDetails();
 }
@@ -328,7 +341,12 @@ function redrawSelection() {
 function redrawHover() {
     hoveredCellCanvas.clear();
 
-    if (hoveredCell && !selectionController.raster.isDrawing && !selectionController.raster.isMoving && showHoverForTool()) {
+    if (
+        hoveredCell &&
+        !selectionController.raster.isDrawing &&
+        !selectionController.raster.isMoving &&
+        showHoverForTool()
+    ) {
         hoveredCells(hoveredCell).forEach(cell => {
             if (state.isCellInBounds(cell)) hoveredCellCanvas.highlightCellOrArea(cell);
         })

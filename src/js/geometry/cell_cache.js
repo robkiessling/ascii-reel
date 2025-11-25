@@ -14,7 +14,7 @@ export default class CellCache {
     }
 
     add(cell) {
-        this._cache.set(this._cellKey(cell), cell);
+        this._cache.set(this._cellKey(cell), undefined);
     }
 
     /**
@@ -23,13 +23,19 @@ export default class CellCache {
      * @param {*} value - Value to store at cell index
      */
     set(cell, value) {
-        this._cache.set(this._cellKey(cell), value === undefined ? cell : value)
+        this._cache.set(this._cellKey(cell), value)
     }
 
     has(cell) {
         return this._cache.has(this._cellKey(cell))
     }
 
+    /**
+     * Gets the value stored for the given cell. Note: will simply be undefined if `add(cell)` was used; will only
+     * be defined if `set(cell, value)` was used.
+     * @param {Cell} cell
+     * @returns {*}
+     */
     get(cell) {
         return this._cache.get(this._cellKey(cell))
     }

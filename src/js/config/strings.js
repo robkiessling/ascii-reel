@@ -13,7 +13,7 @@ export const STRINGS = {
     'file.cannot-rename-active-file.description': 'This file exists on your computer and cannot be renamed from the browser. ' +
         'To rename it, save a copy with a new name and manually delete the original file.',
     'file.active-file-info.name': 'Linked to Disk File',
-    'file.active-file-info.description': 'This page can write to a local file on your computer. Saving will directly update that file — no need to re-download.',
+    'file.active-file-info.description': 'This page can write to a local file on your computer. Saving will directly update that file; there is no need to re-download.',
 
     'clipboard.cut.name': 'Cut',
     'clipboard.copy.name': 'Copy',
@@ -37,7 +37,7 @@ export const STRINGS = {
     'settings.open-project-settings-dialog.name': 'Project Settings',
     'settings.open-font-dialog.name': 'Font Settings',
     'settings.open-resize-dialog.name': 'Resize Canvas',
-    'settings.open-background-dialog.name': 'Color / Background Settings',
+    'settings.open-background-dialog.name': 'Colors / Background',
 
     'settings.change-background.invert-white.warning': "Your canvas contains white text, which won't be visible against a white background.",
     'settings.change-background.invert-white.checkbox': "Convert all white text to black",
@@ -68,6 +68,8 @@ export const STRINGS = {
         'Click once to start a multi-point line. Double click to finish drawing the multi-point line.',
     'tools.standard.draw-ellipse.name': 'Draw Ellipse',
     'tools.standard.draw-ellipse.description': 'Click and drag to draw an ellipse.',
+    'tools.standard.draw-diamond.name': 'Draw Diamond',
+    'tools.standard.draw-diamond.description': 'Click and drag to draw a diamond.',
     'tools.standard.draw-textbox.name': 'Create Textbox',
     'tools.standard.draw-textbox.description': 'Click and drag to create a textbox with a fixed width. ' +
         'Click once to create a textbox that expands as you type.',
@@ -177,6 +179,12 @@ export const STRINGS = {
     'tools.shapes.ellipseStroke.outline-monochar.name': 'Ellipse Outline',
     'tools.shapes.ellipseStroke.outline-monochar.description': 'Draws an ellipse outline by repeating a single character.',
 
+    'tools.shapes.diamondStroke.name': 'Diamond Stroke',
+    'tools.shapes.diamondStroke.outline-ascii-1.name': 'ASCII Outline',
+    'tools.shapes.diamondStroke.outline-ascii-1.description': 'Draws a diamond outline using best-fit ASCII characters.',
+    'tools.shapes.diamondStroke.outline-monochar.name': 'Single-Character Outline',
+    'tools.shapes.diamondStroke.outline-monochar.description': 'Draws a diamond outline by repeating a single character.',
+
     'tools.shapes.fill.name': 'Fill Style',
     'tools.shapes.fill.description': "Controls how the shape's background is rendered.",
     'tools.shapes.fill.empty.name': 'Empty',
@@ -245,10 +253,8 @@ export const STRINGS = {
     'frames.toggle-ticks.description': 'Displays tick controls to customize how long each frame appears.\n\n' +
         'Tick counts are shown in the bottom-right corner of each frame and can be edited by clicking them. ' +
         'When multiple frames are selected, the change is applied to all.',
-    'frames.show-component.name': 'Maximize Frames View',
-    'frames.show-component.description': 'Shows the frames component.',
-    'frames.hide-component.name': 'Minimize Frames View',
-    'frames.hide-component.description': 'Hides the frames component.',
+    'frames.toggle-component.name': 'Frames Panel',
+    'frames.toggle-component.description': 'Show or hide the frames panel for managing animation frames.',
     'frames.align-left.name': 'Align Frames: Left',
     'frames.align-left.description': 'Positions the frames on the left side of the screen.',
     'frames.align-bottom.name': 'Align Frames: Bottom',
@@ -311,9 +317,7 @@ export const STRINGS = {
 
     'warnings.current-layer-not-visible': 'The current layer is not visible!',
 
-    'sidebar.show-component.name': 'Maximize Sidebar',
-    'sidebar.show-component.description': 'Shows the sidebar content.',
-    'sidebar.hide-component.name': 'Minimize Sidebar',
-    'sidebar.hide-component.description': 'Hides the sidebar content.',
+    'sidebar.toggle-component.name': 'Sidebar',
+    'sidebar.toggle-component.description': 'Show or hide the sidebar, which includes Preview, Layers, Palette, and Unicode tools.',
 
 }

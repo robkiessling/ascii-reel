@@ -265,6 +265,7 @@ export default class Shape {
      */
     get boundingArea() {
         if (this._cache.boundingArea === undefined) this._cacheGeometry();
+        if (this._cache.boundingArea === undefined) throw new Error(`boundingArea needs to be defined by ${this.constructor.name}#_cacheGeometry`)
         return this._cache.boundingArea;
     }
 
@@ -279,6 +280,7 @@ export default class Shape {
      */
     get bufferArea() {
         if (this._cache.bufferArea === undefined) this._cacheGeometry();
+        if (this._cache.bufferArea === undefined) throw new Error(`bufferArea needs to be defined by ${this.constructor.name}#_cacheGeometry`)
         return this._cache.bufferArea;
     }
 
@@ -287,12 +289,15 @@ export default class Shape {
      */
     get handles() {
         if (this._cache.handles === undefined) this._cacheGeometry();
+        if (this._cache.handles === undefined) throw new Error(`handles needs to be defined by ${this.constructor.name}#_cacheGeometry`)
         return this._cache.handles;
     }
 
     // Returns { glyphs: [[]], origin: Cell }
     rasterize() {
         if (this._cache.glyphs === undefined) this._cacheGeometry();
+        if (this._cache.glyphs === undefined) throw new Error(`glyphs needs to be defined by ${this.constructor.name}#_cacheGeometry`)
+        if (this._cache.origin === undefined) throw new Error(`origin needs to be defined by ${this.constructor.name}#_cacheGeometry`)
         return {
             glyphs: this._cache.glyphs,
             origin: this._cache.origin

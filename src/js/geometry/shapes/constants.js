@@ -63,10 +63,10 @@ export const EDGE_SIDES = {
 }
 
 export const REORDER_ACTIONS = {
-    BRING_TO_FRONT: "bringToFront",
-    BRING_FORWARD: "bringForward",
-    SEND_BACKWARD: "sendBackward",
     SEND_TO_BACK: "sendToBack",
+    SEND_BACKWARD: "sendBackward",
+    BRING_FORWARD: "bringForward",
+    BRING_TO_FRONT: "bringToFront",
 }
 
 
@@ -75,6 +75,7 @@ export const SHAPE_TYPES = {
     RECT: 'rect',
     LINE: 'line',
     ELLIPSE: 'ellipse',
+    DIAMOND: 'diamond',
     TEXTBOX: 'textbox'
 }
 
@@ -84,6 +85,7 @@ export const STROKE_STYLE_PROPS = {
     [SHAPE_TYPES.RECT]: 'rectStroke',
     [SHAPE_TYPES.LINE]: 'lineStroke',
     [SHAPE_TYPES.ELLIPSE]: 'ellipseStroke',
+    [SHAPE_TYPES.DIAMOND]: 'diamondStroke',
 }
 
 export const STROKE_STYLE_OPTIONS = {
@@ -92,6 +94,7 @@ export const STROKE_STYLE_OPTIONS = {
         IRREGULAR_MONOCHAR: 'irregular-monochar',
     },
     [SHAPE_TYPES.RECT]: {
+        // todo these don't need word "outline"
         OUTLINE_ASCII_1: 'outline-ascii-1',
         OUTLINE_ASCII_2: 'outline-ascii-2',
         OUTLINE_UNICODE_1: 'outline-unicode-1',
@@ -105,6 +108,10 @@ export const STROKE_STYLE_OPTIONS = {
         ELBOW_MONOCHAR: 'elbow-monochar',
     },
     [SHAPE_TYPES.ELLIPSE]: {
+        OUTLINE_MONOCHAR: 'outline-monochar',
+    },
+    [SHAPE_TYPES.DIAMOND]: {
+        OUTLINE_ASCII_1: 'outline-ascii-1',
         OUTLINE_MONOCHAR: 'outline-monochar',
     }
 }

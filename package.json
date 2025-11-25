@@ -33,6 +33,7 @@
   "devDependencies": {
     "@babel/core": "^7.26.9",
     "@babel/preset-env": "^7.26.9",
+    "@types/jquery": "^3.5.33",
     "autoprefixer": "^10.4.20",
     "babel-loader": "^10.0.0",
     "copy-webpack-plugin": "^13.0.0",
@@ -40,6 +41,7 @@
     "gh-pages": "^6.3.0",
     "happy-dom": "^20.0.7",
     "html-webpack-plugin": "^5.6.3",
+    "mini-css-extract-plugin": "^2.9.4",
     "patch-package": "^8.0.0",
     "postcss-loader": "^8.1.1",
     "sass": "^1.85.1",

@@ -61,9 +61,10 @@ export default class LassoSelection extends SelectionShape {
         if (previousEnd === undefined || previousEnd.row !== cell.row || previousEnd.col !== cell.col) {
             if (previousEnd && !cell.isAdjacentTo(previousEnd)) {
                 // Mouse might skip cells if moved quickly, so fill in any skips
-                previousEnd.lineTo(cell, false).forEach(cell => {
-                    this._lassoCells.push(cell);
-                });
+                previousEnd.lineTo(cell, cell => this._lassoCells.push(cell), {
+                    inclusiveStart: false,
+                    inclusiveEnd: false
+                })
             }
 
             // Note: Duplicates cells ARE allowed, as long as they are not consecutive
@@ -89,9 +90,10 @@ export default class LassoSelection extends SelectionShape {
     complete() {
         // Connect the end point back to the start with a line to finish the full border chain
         let chain = this._lassoCells.map(cell => ({row: cell.row, col: cell.col}));
-        this.end.lineTo(this.start, false).forEach(cell => {
-            chain.push({row: cell.row, col: cell.col});
-        });
+        this.end.lineTo(this.start, cell => chain.push({row: cell.row, col: cell.col}), {
+            inclusiveStart: false,
+            inclusiveEnd: false
+        })
 
         // Update each link in the chain with a reference to its previous/next link
         for (let i = 0; i < chain.length; i++) {
