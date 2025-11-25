@@ -1,6 +1,6 @@
 import {eventBus, EVENTS} from "../../events/events.js";
 import * as state from "../../state/index.js";
-import {SELECTION_COLOR} from "../../config/colors.js";
+import {SELECTION_COLOR, SELECTION_SUBTLE_COLOR} from "../../config/colors.js";
 import {
     AUTO_TEXT_WIDTH_PROP,
     CARET_HANDLE_SELECTION_MODES, CHAR_PROP, COLOR_PROP,
@@ -1037,10 +1037,10 @@ export function drawShapeSelection(canvas) {
             if (shape.handles.showBoundingBox) drawBoundingBox(canvas, shape.boundingArea);
             drawHandles(canvas, shape.handles);
         } else {
-            shapes.forEach(shape => drawBoundingBox(canvas, shape.boundingArea))
+            shapes.forEach(shape => drawBoundingBox(canvas, shape.boundingArea, true))
 
             const cumulativeArea = CellArea.mergeCellAreas(shapes.map(shape => shape.boundingArea))
-            drawBoundingBox(canvas, cumulativeArea, true)
+            drawBoundingBox(canvas, cumulativeArea)
             drawHandles(canvas, shapeSelector.handles)
         }
 
@@ -1059,7 +1059,7 @@ function drawBoundingBox(canvas, cellArea, dashed = false) {
 
     context.lineWidth = SHAPE_OUTLINE_WIDTH;
     context.setLineDash(dashed ? [SHAPE_DASHED_OUTLINE_LENGTH, SHAPE_DASHED_OUTLINE_LENGTH] : []);
-    context.strokeStyle = SELECTION_COLOR;
+    context.strokeStyle = dashed ? SELECTION_SUBTLE_COLOR : SELECTION_COLOR;
 
     context.beginPath();
     context.rect(...buildScreenRect(canvas, cellArea.xywh, SHAPE_BOX_PADDING));

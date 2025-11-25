@@ -3,12 +3,14 @@
  * - charCanvas: The canvas that renders chars
  * - hoveredCellCanvas: The canvas that renders a rectangular box over the hovered cell. This is its own canvas so we
  *   can rapidly update it as the mouse moves without having to re-render any of the chars, selection polygons, etc.
- * - selectionCanvas: The canvas that renders selection polygons (light blue). This canvas has an overall 0.5 opacity
+ * - selectionCanvas: The canvas that renders selection polygons. This canvas has an overall 0.5 opacity
  *   so that you can see chars through the selections. We opt for this global opacity (instead of drawing each polygon
  *   at 0.5 opacity) so we don't have to worry about overlapping opacities.
  *   The selectionCanvas is also the canvas on top of the others, so it receives all the mouse events.
  * - selectionBorderCanvas: The canvas that renders the borders of selections. Basically just renders some parts of the
  *   selection polygons that would have been on the selectionCanvas but that needed full opacity.
+ * - selectionCaretCanvas: Renders the blinking caret animation. Is its own canvas since it is frequently updated
+ *   and overlaps with selection borders
  */
 
 import Canvas from "../components/canvas.js";
@@ -32,13 +34,14 @@ const NON_CURRENT_LAYER_OPACITY = 0.5;
 
 const DRAW_DEBUG_PATHS = false;
 
-let charCanvas, selectionCanvas, selectionBorderCanvas, hoveredCellCanvas;
+let charCanvas, selectionCanvas, selectionBorderCanvas, selectionCaretCanvas, hoveredCellCanvas;
 let hoveredCell;
 let $canvasMessage, $canvasDetails;
 
 export function init() {
     charCanvas = new Canvas($('#char-canvas'), {});
     selectionBorderCanvas = new Canvas($('#selection-border-canvas'), {});
+    selectionCaretCanvas = new Canvas($('#selection-caret-canvas'), {});
     hoveredCellCanvas = new Canvas($('#hovered-cell-canvas'), {});
 
     // selection-canvas is on the top of the canvas stack, so it handles all the mouse events
@@ -154,7 +157,7 @@ function redrawAll() {
 
 function iterateCanvases(callback) {
     [
-        selectionCanvas, selectionBorderCanvas, hoveredCellCanvas, charCanvas
+        selectionCanvas, selectionBorderCanvas, selectionCaretCanvas, hoveredCellCanvas, charCanvas
     ].forEach(canvas => callback(canvas));
 
     redrawAll();
@@ -177,6 +180,7 @@ export function getCurrentViewRect() {
 export function resize(resetZoom) {
     charCanvas.resize(resetZoom);
     selectionBorderCanvas.resize(resetZoom);
+    selectionCaretCanvas.resize(resetZoom);
     hoveredCellCanvas.resize(resetZoom);
     selectionCanvas.resize(resetZoom);
 }
@@ -300,30 +304,36 @@ function redrawCharCanvas() {
 function redrawSelection() {
     selectionCanvas.clear();
     selectionBorderCanvas.clear();
+    selectionCaretCanvas.clear();
+
+    // ----- Raster selections:
+    const rasterCaret = selectionController.raster.caretCell();
 
     selectionCanvas.highlightPolygons(selectionController.raster.selectionShapes());
 
-    if (selectionController.raster.hasSelection() && !selectionController.raster.isDrawing && !selectionController.raster.caretCell()) {
+    if (selectionController.raster.hasSelection() && !selectionController.raster.isDrawing && !rasterCaret) {
         selectionBorderCanvas.outlinePolygon(selectionController.raster.getSelectedRect(), selectionController.raster.movableContent())
     }
 
-    if (selectionController.raster.caretCell()) {
-        const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(selectionController.raster.caretCell(), state.getConfig('caretStyle'), () => state.getDrawingColor());
+    if (rasterCaret) {
+        selectionCaretCanvas.startCaretAnimation(rasterCaret, state.getConfig('caretStyle'), () => state.getDrawingColor());
     }
+
+    // ----- Vector selections:
+    const vectorTextAreas = selectionController.vector.selectedTextAreas();
+    const vectorCaret = selectionController.vector.caretCell();
 
     selectionController.vector.drawShapeSelection(selectionBorderCanvas);
 
-    const vectorTextAreas = selectionController.vector.selectedTextAreas();
     if (vectorTextAreas) {
         selectionCanvas.highlightPolygons(vectorTextAreas.map(cellArea => new RectSelection(cellArea.topLeft, cellArea.bottomRight)));
     }
 
-    const vectorCaret = selectionController.vector.caretCell();
     if (vectorCaret) {
-        const caretCanvas = state.getConfig('caretStyle') === 'I-beam' ? selectionBorderCanvas : selectionCanvas;
-        caretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => state.getDrawingColor());
+        selectionCaretCanvas.startCaretAnimation(vectorCaret, state.getConfig('caretStyle'), () => state.getDrawingColor());
     }
+
+    // ----- Canvas Details:
 
     refreshCanvasDetails();
 }
