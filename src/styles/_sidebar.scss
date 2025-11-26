@@ -129,6 +129,7 @@
 
     background: var(--color-canvas-bg);
     outline: 1px solid var(--color-sidebar-border);
+    border-radius: 4px;
   }
 
   #preview-controls {
@@ -271,6 +272,7 @@
       background: var(--color-unicode-bg);
 
       border: 1px solid var(--color-sidebar-bg);
+      border-radius: 4px;
 
       &:active {
         border: 1px solid var(--color-sidebar-bg);

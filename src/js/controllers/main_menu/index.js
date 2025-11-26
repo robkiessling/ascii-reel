@@ -44,6 +44,7 @@ export function init() {
 
     mainMenu = new IconMenu($('#main-menu-button'), {
         dropdown: true,
+        dropdownBtnClass: 'canvas-button',
         dropdownBtnIcon: 'mainMenu.open',
 
         // This used to handle having a button to the left of main-menu, it is not needed anymore

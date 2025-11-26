@@ -14,7 +14,7 @@ button, .button {
   cursor: pointer;
 
   &:hover {
-    background: var(--color-island-hover);
+    background: var(--color-sidebar-hover);
   }
 
   &:disabled, &.disabled {
@@ -28,7 +28,7 @@ button, .button {
   }
 
   &.active {
-    background: var(--color-island-active);
+    background: var(--color-sidebar-active);
   }
 }
 

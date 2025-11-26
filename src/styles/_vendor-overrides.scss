@@ -182,7 +182,7 @@
 .ui-button {
   background: transparent;
   color: var(--color-text);
-  border-color: var(--color-island-border);
+  border-color: var(--color-dialog-button-border);
 
   &:focus {
     background: transparent;
@@ -193,7 +193,7 @@
   &:hover {
     background: var(--color-island-hover);
     color: var(--color-text);
-    border-color: var(--color-island-border);
+    border-color: var(--color-dialog-button-border);
   }
 
   &.call-out {

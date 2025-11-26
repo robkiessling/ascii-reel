@@ -48,6 +48,7 @@ export default class IconMenu {
      * @param {boolean} [options.dropdown=false] - If false, renders as a menu bar. If true, renders as dropdown
      * @param {string} [options.dropdownBtnIcon] - (Only applicable if dropdown:true) If undefined, button icon will
      *   match whatever value is selected (based on item icon). If defined, button icon will be set to a static value
+     * @param {string} [options.dropdownBtnClass] - (Only applicable if dropdown:true) Class to add to dropdown button
      * @param {string} [options.dropdownBtnTooltip] - (Only applicable if dropdown:true) If undefined, button will not
      *   have a tooltip. If defined, button tooltip will be set to a static value.
      * @param {boolean} [options.closeDropdownOnSelect=true] - (Only applicable if dropdown:true) If true, dropdown
@@ -161,7 +162,7 @@ export default class IconMenu {
         this.$container.addClass('icon-dropdown')
 
         this._dropdown.$button = $('<span>', {
-            class: 'icon-dropdown-button'
+            class: `icon-dropdown-button ${this.options.dropdownBtnClass ? this.options.dropdownBtnClass : ''}`,
         }).appendTo(this.$container);
 
         this._dropdown.$ul = $('<ul>', {}).appendTo(this.$container);
