@@ -11,11 +11,11 @@ import BackgroundPicker from "../../components/background_picker.js";
 import UnsavedWarning from "../../components/unsaved_warning.js";
 import {modifierAbbr} from "../../utils/os.js";
 import Toast from "../../components/toast.js";
-import {DEFAULT_CONFIG} from "../../state/index.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 import ColorModePicker from "../../components/color_mode_picker.js";
 import ProjectTypePicker from "../../components/project_type_picker.js";
 import ExportForm from "../../components/export_form.js";
+import {DEFAULT_PROJECT_CONFIG} from "../../config/state.js";
 
 export function init() {
     setupNew();
@@ -71,14 +71,14 @@ function setupNew() {
 
     actions.registerAction('file.new', () => {
         unsavedWarning.toggle(state.isDirty());
-        projectTypePicker.value = DEFAULT_CONFIG.projectType
+        projectTypePicker.value = DEFAULT_PROJECT_CONFIG.projectType
         dimensionsPicker.value = {
-            numRows: DEFAULT_CONFIG.dimensions[0],
-            numCols: DEFAULT_CONFIG.dimensions[1]
+            numRows: DEFAULT_PROJECT_CONFIG.dimensions[0],
+            numCols: DEFAULT_PROJECT_CONFIG.dimensions[1]
         }
-        colorModePicker.value = DEFAULT_CONFIG.colorMode
-        backgroundPicker.mode = DEFAULT_CONFIG.colorMode;
-        backgroundPicker.value = DEFAULT_CONFIG.background;
+        colorModePicker.value = DEFAULT_PROJECT_CONFIG.colorMode
+        backgroundPicker.mode = DEFAULT_PROJECT_CONFIG.colorMode;
+        backgroundPicker.value = DEFAULT_PROJECT_CONFIG.background;
         $newFileDialog.dialog('open');
     });
 }

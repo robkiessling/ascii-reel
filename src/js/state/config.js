@@ -1,7 +1,7 @@
 import {getFormattedDateTime} from "../utils/strings.js";
 import {pick} from "../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
-import {CHAR_PROP, COLOR_STR_PROP, DEFAULT_DRAW_PROPS} from "../config/shapes.js";
+import {CHAR_PROP, COLOR_STR_PROP} from "../config/shapes.js";
 import {LAYER_TYPES} from "../config/timeline.js";
 import * as timeline from "./timeline/index.js";
 import {
@@ -24,36 +24,7 @@ import {
     VECTOR_TOOL_FALLBACKS,
     VECTOR_TOOLS
 } from "../config/tools.js";
-
-// TODO There are a lot of strings that should be constants
-// TODO Organize this better? E.g. projectSettings could contain certain keys
-export const DEFAULT_STATE = {
-    name: '',
-    projectType: 'animation',
-    layerType: LAYER_TYPES.RASTER,
-    colorMode: COLOR_MODES.BLACK_AND_WHITE,
-    createdAt: undefined,
-    dimensions: [30, 60], // [numRows, numCols]
-    background: BACKGROUND_MODES.MATCH_THEME,
-    font: 'monospace',
-    fps: 6,
-    playPreview: true,
-    grid: {
-        show: true,
-        minorGridEnabled: true,
-        minorGridSpacing: 1,
-        majorGridEnabled: false,
-        majorGridSpacing: 5,
-    },
-    showWhitespace: false,
-    showOnion: false,
-    showTicks: false,
-    lockLayerVisibility: true,
-    tool: 'text-editor',
-    drawProps: DEFAULT_DRAW_PROPS,
-    lastExportOptions: null,
-    caretStyle: 'I-beam', // vs. block
-}
+import {DEFAULT_PROJECT_CONFIG} from "../config/state.js";
 
 // Only the following config keys are saved to history; undo/redo will not affect the other config
 const CONFIG_KEYS_SAVED_TO_HISTORY = [
@@ -74,7 +45,7 @@ export function deserialize(data = {}, options = {}) {
         return;
     }
 
-    state = $.extend(true, {}, DEFAULT_STATE, { createdAt: new Date().toISOString() }, data);
+    state = $.extend(true, {}, DEFAULT_PROJECT_CONFIG, { createdAt: new Date().toISOString() }, data);
 }
 
 export function serialize(options = {}) {
