@@ -24,7 +24,7 @@ import RectSelection from "../geometry/selection/rect.js";
 import {LAYER_TYPES} from "../state/constants.js";
 import {callAction} from "../io/actions.js";
 import {getAttachTarget} from "./selection/vector_controller.js";
-import {HANDLE_TYPES} from "../geometry/shapes/constants.js";
+import {HANDLE_TYPES} from "../config/shapes.js";
 import CellArea from "../geometry/cell_area.js";
 import {getCanvasColors} from "../state/index.js";
 

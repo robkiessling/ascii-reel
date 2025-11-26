@@ -6,7 +6,7 @@ import {
     CARET_HANDLE_SELECTION_MODES, CHAR_PROP, COLOR_PROP,
     HANDLE_CELL_RADIUS, HANDLE_TYPES, SHAPE_BOX_PADDING, SHAPE_DASHED_OUTLINE_LENGTH,
     SHAPE_OUTLINE_WIDTH, SHAPE_TEXT_ACTIONS, SHAPE_TYPES, TEXT_PROP
-} from "../../geometry/shapes/constants.js";
+} from "../../config/shapes.js";
 import CellArea from "../../geometry/cell_area.js";
 import ShapeSelector from "./shape_selector.js";
 import VectorMarquee from "./vector_marquee.js";

@@ -24,7 +24,7 @@ import {
     STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP, TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_PROP,
     BRUSH_PROP, LINKED_PROPS, COLOR_STR_PROP, WRITE_EMPTY_CHARS_PROP, HANDLE_TYPES, ARROWHEAD_START_PROP,
     ARROWHEAD_END_PROP, ARROWHEAD_OPTIONS
-} from "../geometry/shapes/constants.js";
+} from "../config/shapes.js";
 import ColorPicker from "../components/color_picker.js";
 import {refreshableTooltips, standardTip, standardTipContentBuilder} from "../components/tooltips.js";
 import IconMenu from "../components/icon_menu.js";

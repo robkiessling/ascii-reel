@@ -2,7 +2,7 @@ import Cell from "../../cell.js";
 import TraversedCell from "../../traversed_cell.js";
 import {charForTraversedCell} from "./char_approximation.js";
 import CellCache from "../../cell_cache.js";
-import {BRUSH_TYPES} from "../constants.js";
+import {BRUSH_TYPES} from "../../../config/shapes.js";
 import {diamondBrushCells, squareBrushCells} from "./brush.js";
 
 /**

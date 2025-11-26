@@ -10,7 +10,7 @@ import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {LAYER_TYPES} from "./constants.js";
-import {COLOR_STR_PROP} from "../geometry/shapes/constants.js";
+import {COLOR_STR_PROP} from "../config/shapes.js";
 import {COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT} from "./palette.js";
 import {COLOR_MODES, contrastColor} from "../config/colors.js";
 

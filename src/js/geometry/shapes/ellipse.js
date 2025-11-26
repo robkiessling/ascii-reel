@@ -3,7 +3,7 @@ import {
     COLOR_PROP, LINE_PATHING_BUFFER,
     SHAPE_TYPES,
     STROKE_STYLE_PROPS
-} from "./constants.js";
+} from "../../config/shapes.js";
 import CellArea from "../cell_area.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import BoxShape from "./box_shape.js";

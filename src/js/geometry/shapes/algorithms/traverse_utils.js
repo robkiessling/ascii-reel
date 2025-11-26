@@ -1,4 +1,4 @@
-import {AXES, DIRECTIONS} from "../constants.js";
+import {AXES, DIRECTIONS} from "../../../config/shapes.js";
 
 export function longerAxis(startCell, endCell) {
     const rowDelta = endCell.row - startCell.row;

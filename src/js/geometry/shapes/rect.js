@@ -2,7 +2,7 @@ import {isFunction} from "../../utils/utilities.js";
 import {
     CHAR_PROP, COLOR_PROP, LINE_PATHING_BUFFER, SHAPE_TYPES, STROKE_STYLE_PROPS, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
     TEXT_ALIGN_V_OPTS, TEXT_ALIGN_V_PROP, TEXT_OVERFLOW_PROP, TEXT_PADDING_PROP, TEXT_PROP
-} from "./constants.js";
+} from "../../config/shapes.js";
 import CellArea from "../cell_area.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import {registerShape} from "./registry.js";

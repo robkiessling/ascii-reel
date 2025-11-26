@@ -1,5 +1,5 @@
 import Cell from "../cell.js";
-import {TEXT_ALIGN_H_OPTS, TEXT_ALIGN_V_OPTS} from "./constants.js";
+import {TEXT_ALIGN_H_OPTS, TEXT_ALIGN_V_OPTS} from "../../config/shapes.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {AnchoredGrid, create2dArray} from "../../utils/arrays.js";
 import CellArea from "../cell_area.js";

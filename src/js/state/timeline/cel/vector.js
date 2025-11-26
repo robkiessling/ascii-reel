@@ -2,7 +2,7 @@ import {areArraysEqual, create2dArray, mergeGlyphs, moveOneStep} from "../../../
 import {numCols, numRows} from "../../config.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {transformValues} from "../../../utils/objects.js";
-import {COLOR_PROP, HANDLE_TYPES, REORDER_ACTIONS} from "../../../geometry/shapes/constants.js";
+import {COLOR_PROP, HANDLE_TYPES, REORDER_ACTIONS} from "../../../config/shapes.js";
 import {LAYER_TYPES} from "../../constants.js";
 import Shape from "../../../geometry/shapes/shape.js";
 import CellArea from "../../../geometry/cell_area.js";

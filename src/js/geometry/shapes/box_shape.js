@@ -10,7 +10,7 @@ import {
     FILL_OPTIONS,
     FILL_PROP,
     VERTEX_CORNERS
-} from "./constants.js";
+} from "../../config/shapes.js";
 import {AttachmentHandle, BodyHandle, CaretHandle, EdgeHandle, HandleCollection, VertexHandle} from "./handle.js";
 
 /**

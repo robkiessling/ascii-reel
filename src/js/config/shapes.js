@@ -1,13 +1,10 @@
-
-// Note: This is in a priority order - the earlier handles are checked for mouse events before later handles
-import {transformObject, transformValues} from "../../utils/objects.js";
-import Color from "@sphinxxxx/color-conversion";
-
+import {transformObject} from "../utils/objects.js";
 
 export const AXES = {
     HORIZONTAL: 'horizontal',
     VERTICAL: 'vertical'
 }
+
 export const DIRECTIONS = {
     UP: 'up',
     RIGHT: 'right',
@@ -28,6 +25,7 @@ export const CARDINAL_DIRECTIONS = [
     DIRECTIONS.UP, DIRECTIONS.RIGHT, DIRECTIONS.DOWN, DIRECTIONS.LEFT
 ]
 
+// Note: This is in a priority order - the earlier handles are checked for mouse events before later handles
 export const HANDLE_TYPES = {
     VERTEX: 'vertex',
     EDGE: 'edge',
@@ -224,7 +222,6 @@ export const LINKED_PROPS = [
 
 
 // Drawing
-
 export const SHAPE_OUTLINE_WIDTH = 2;
 export const SHAPE_BOX_PADDING = 0;
 export const SHAPE_DASHED_OUTLINE_LENGTH = 5;

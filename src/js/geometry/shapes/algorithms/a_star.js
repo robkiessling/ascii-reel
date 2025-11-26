@@ -1,6 +1,6 @@
 import Cell from "../../cell.js";
 import {create2dArray} from "../../../utils/arrays.js";
-import {AXES, CARDINAL_DIRECTIONS, DIRECTIONS} from "../constants.js";
+import {AXES, CARDINAL_DIRECTIONS, DIRECTIONS} from "../../../config/shapes.js";
 import CellCache from "../../cell_cache.js";
 import {roundForComparison} from "../../../utils/numbers.js";
 import {axisForDir} from "./traverse_utils.js";

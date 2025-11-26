@@ -1,6 +1,6 @@
 import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
-import {DIRECTIONS} from "../constants.js";
+import {DIRECTIONS} from "../../../config/shapes.js";
 import {buildRoutingGraph, findPathAStar} from "./a_star.js";
 import {directionFrom} from "./traverse_utils.js";
 

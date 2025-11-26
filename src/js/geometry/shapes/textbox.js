@@ -3,7 +3,7 @@ import {
     AUTO_TEXT_WIDTH_PROP,
     COLOR_PROP, FILL_OPTIONS, FILL_PROP, LINE_PATHING_BUFFER, SHAPE_TYPES, TEXT_ALIGN_H_OPTS, TEXT_ALIGN_H_PROP,
     TEXT_ALIGN_V_PROP, TEXT_PADDING_PROP, TEXT_PROP
-} from "./constants.js";
+} from "../../config/shapes.js";
 import TextLayout from "./text_layout.js";
 import {EMPTY_CHAR} from "../../config/chars.js";
 import CellArea from "../cell_area.js";

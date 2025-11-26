@@ -7,7 +7,7 @@ import {
     FILL_PROP, LINKED_PROPS,
     SHAPE_TEXT_ACTIONS, STROKE_STYLE_PROPS,
     TEXT_PROP, WRITE_EMPTY_CHARS_PROP
-} from "./constants.js";
+} from "../../config/shapes.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
 import {deleteBackward, deleteForward, deleteRange, insertAt} from "../../utils/strings.js";
 import {deserializeShape, getConstructor} from "./registry.js";

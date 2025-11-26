@@ -5,7 +5,7 @@ import {
     SHAPE_TYPES,
     STROKE_STYLE_OPTIONS,
     STROKE_STYLE_PROPS
-} from "./constants.js";
+} from "../../config/shapes.js";
 import Shape from "./shape.js";
 import Cell from "../cell.js";
 import CellArea from "../cell_area.js";

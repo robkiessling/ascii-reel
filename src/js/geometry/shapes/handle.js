@@ -5,7 +5,7 @@ import {
     HANDLE_TYPES,
     SHAPE_BOX_PADDING,
     VERTEX_CORNERS
-} from "./constants.js";
+} from "../../config/shapes.js";
 
 class Handle {
     /**

@@ -5,7 +5,7 @@ import {
     reorderCurrentCelShapes,
     updateCurrentCelShape
 } from "../index.js";
-import {TEXT_OVERFLOW_PROP} from "../../geometry/shapes/constants.js";
+import {TEXT_OVERFLOW_PROP} from "../../config/shapes.js";
 import {areArraysEqual} from "../../utils/arrays.js";
 
 const DEFAULT_STATE = {

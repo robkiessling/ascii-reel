@@ -3,7 +3,7 @@ import CellArea from "../../geometry/cell_area.js";
 import {areArraysEqual, create2dArray, mergeGlyphs} from "../../utils/arrays.js";
 import {resizeBoundingBox} from "../../geometry/shapes/algorithms/box_sizing.js";
 import VertexArea from "../../geometry/vertex_area.js";
-import {HANDLE_TYPES} from "../../geometry/shapes/constants.js";
+import {HANDLE_TYPES} from "../../config/shapes.js";
 import {HandleCollection} from "../../geometry/shapes/handle.js";
 import BoxShape from "../../geometry/shapes/box_shape.js";
 import {EMPTY_CHAR} from "../../config/chars.js";

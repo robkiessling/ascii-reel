@@ -1,4 +1,4 @@
-import {DIRECTIONS, EDGE_SIDES, HANDLE_TYPES, VERTEX_CORNERS} from "../constants.js";
+import {DIRECTIONS, EDGE_SIDES, HANDLE_TYPES, VERTEX_CORNERS} from "../../../config/shapes.js";
 import Cell from "../../cell.js";
 import CellArea from "../../cell_area.js";
 import VertexArea from "../../vertex_area.js";

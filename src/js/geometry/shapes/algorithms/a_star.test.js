@@ -1,7 +1,7 @@
 import {findPathAStar, buildRoutingGraph} from "./a_star.js";
 import CellArea from "../../cell_area.js";
 import Cell from "../../cell.js";
-import {DIRECTIONS} from "../constants.js";
+import {DIRECTIONS} from "../../../config/shapes.js";
 import {create2dArray, forEachAdjPair} from "../../../utils/arrays.js";
 
 // If enabled, will print out node/pathing maps to the console
