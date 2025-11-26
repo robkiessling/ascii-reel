@@ -283,7 +283,7 @@ export default class ExportForm {
             $element.toggleClass('hidden', !conditionsMet);
         });
 
-        if (!state.getConfig('background')) {
+        if (!state.getCanvasColors().background) {
             this.$container.find(`[name="background"]`).closest('label').addClass('hidden');
         }
 

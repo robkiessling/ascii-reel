@@ -1,11 +1,11 @@
 import {setIntervalUsingRAF} from "../utils/utilities.js";
-import {numCols, numRows, fontFamily, colorStr} from "../state/index.js";
+import {numCols, numRows, fontFamily, colorStr, getCanvasColors} from "../state/index.js";
 import {fontHeight, fontWidth} from "../config/font.js";
 import PixelRect from "../geometry/pixel_rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
-import {hoverColor, HOVER_CELL_OPACITY, PRIMARY_COLOR, SELECTION_COLOR, checkerboardColors} from "../config/colors.js";
+import {HOVER_CELL_OPACITY, PRIMARY_COLOR, SELECTION_COLOR} from "../config/colors.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR, isMonospaceUnsafeChar} from "../config/chars.js";
 import Point from "../geometry/point.js";
 
@@ -309,7 +309,7 @@ export default class Canvas {
 
     highlightCellOrArea(cellOrCellArea) {
         this._withTemporaryContext(() => {
-            this.context.fillStyle = hoverColor;
+            this.context.fillStyle = getCanvasColors().hover;
             this.context.globalAlpha = HOVER_CELL_OPACITY;
             this.context.fillRect(...cellOrCellArea.xywh);
         });
@@ -386,6 +386,32 @@ export default class Canvas {
         });
     }
 
+    /**
+     * Draws a rectangular boundary outline around world space; cell (0,0) to cell (maxRow, maxCol)
+     */
+    drawBoundaries(width, color) {
+        this._withTemporaryContext(() => {
+            this.context.strokeStyle = color;
+            this.context.lineWidth = width / this._camera.zoom;
+
+            // Draw lines between the four corners of world space
+            [
+                { row: 0, col: 0 },
+                { row: 0, col: numCols() },
+                { row: numRows(), col: numCols() },
+                { row: numRows(), col: 0 }
+            ].forEach(({ row: startRow, col: startCol }, i, arr) => {
+                const nextIndex = (i + 1) % 4;
+                const { row: endRow, col: endCol } = arr[nextIndex]
+
+                this.context.beginPath();
+                this.context.moveTo(Cell.x(startCol), Cell.y(startRow));
+                this.context.lineTo(Cell.x(endCol), Cell.y(endRow));
+                this.context.stroke();
+            })
+        });
+    }
+
     _fillCheckerboard() {
         this._withTemporaryContext(() => {
             // First, draw a checkerboard over full area (checkerboard does not change depending on zoom; this way we have
@@ -410,7 +436,7 @@ export default class Canvas {
     }
 
     _drawCheckerboard(area) {
-        const [colorA, colorB] = checkerboardColors();
+        const [colorA, colorB] = getCanvasColors().checkerboard;
 
         // First, fill entire area with checkerboard-A color
         this.context.beginPath();

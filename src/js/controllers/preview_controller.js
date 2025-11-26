@@ -73,13 +73,13 @@ export function resize() {
 // Just redraw the current preview frame (e.g. if chars got updated)
 function redraw() {
     previewCanvas.clear();
-    previewCanvas.drawBackground(state.getConfig('background'));
+    previewCanvas.drawBackground(state.getCanvasColors().background);
     previewCanvas.drawGlyphs(getPreviewGlyphs());
     previewCanvas.drawWindow(getCurrentViewRect());
 
     if (popup && !popup.closed && popupCanvas) {
         popupCanvas.clear();
-        popupCanvas.drawBackground(state.getConfig('background'));
+        popupCanvas.drawBackground(state.getCanvasColors().background);
         popupCanvas.drawGlyphs(getPreviewGlyphs());
     }
 }

@@ -67,6 +67,7 @@ let actionIdToShortcut = {
 
     'sidebar.toggle-component': { key: ']' },
 
+    'themes.select-os': { key: 'j' },
     'themes.select-light-mode': { key: 'l' },
     'themes.select-dark-mode': { key: 'k' },
 };

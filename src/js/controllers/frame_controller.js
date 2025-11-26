@@ -367,7 +367,7 @@ class FrameComponent {
 
     redrawGlyphs() {
         this._canvas.clear();
-        this._canvas.drawBackground(state.getConfig('background'));
+        this._canvas.drawBackground(state.getCanvasColors().background);
         this._canvas.drawGlyphs(
             state.layeredGlyphs(this._frame, {
                 layers: [state.currentLayer()]

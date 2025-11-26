@@ -1,5 +1,7 @@
 import {STRINGS} from "../config/strings.js";
-import {BLACK, WHITE, hasCharContent, getConfig} from "../state/index.js";
+import {hasCharContent, getConfig} from "../state/index.js";
+import {BLACK, COLOR_MODES, DARK, LIGHT, WHITE} from "../config/colors.js";
+import {bgColorForMode} from "../state/config.js";
 
 const DEFAULT_OPTIONS = {}
 
@@ -51,7 +53,7 @@ export default class ColorInversionCheckbox {
     }
 
     refresh(newColorMode, newBackground) {
-        if (newColorMode === 'monochrome') {
+        if (newColorMode === COLOR_MODES.BLACK_AND_WHITE) {
             this.$container.hide();
             return;
         }
@@ -61,12 +63,13 @@ export default class ColorInversionCheckbox {
             return;
         }
 
-        if (this.hasBlackChars && newBackground === BLACK) {
+        const newEffectiveBg = bgColorForMode(newBackground);
+        if (this.hasBlackChars && (newEffectiveBg === BLACK || newEffectiveBg === DARK)) {
             this.$description.html(STRINGS['settings.change-background.invert-black.warning'])
             this.$checkboxDesc.html(STRINGS['settings.change-background.invert-black.checkbox'])
             this.$container.show();
         }
-        else if (this.hasWhiteChars && newBackground === WHITE) {
+        else if (this.hasWhiteChars && (newEffectiveBg === WHITE || newEffectiveBg === LIGHT)) {
             this.$description.html(STRINGS['settings.change-background.invert-white.warning'])
             this.$checkboxDesc.html(STRINGS['settings.change-background.invert-white.checkbox'])
             this.$container.show();

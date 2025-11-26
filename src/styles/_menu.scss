@@ -36,7 +36,12 @@
 }
 
 .canvas-button-group {
-  display: flex;
+  // Only show group if it has at least one visible button
+  display: none;
+  &:has(.canvas-button:not(.hidden)) {
+    display: flex;
+  }
+
   border: 1px solid var(--color-canvas-bg);
   border-radius: 0.5rem;
   box-sizing: border-box;

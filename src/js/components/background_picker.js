@@ -1,14 +1,8 @@
-import {COLOR_FORMAT, BLACK, WHITE} from "../state/index.js";
 import Color from "@sphinxxxx/color-conversion";
 import ColorPicker from "./color_picker.js";
-
-// TODO Move these constants elsewhere and combine with color_mode_picker.js etc.
-const BLACK_AND_WHITE_MODE = 'monochrome';
-const COLORED_MODE = 'multicolor';
+import {BACKGROUND_MODES, COLOR_FORMAT, COLOR_MODES} from "../config/colors.js";
 
 const DEFAULT_COLORED_BACKGROUND = new Color('rgba(160,208,230,1)')[COLOR_FORMAT];
-const TRANSPARENT = 'transparent';
-const CUSTOM = 'colored';
 
 const DEFAULT_OPTIONS = {
     onChange: () => {} // Callback when value is changed by user interaction (not programmatically)
@@ -35,41 +29,21 @@ export default class BackgroundPicker {
         return this._mode;
     }
 
-    /**
-     *
-     * @param {string|false} newValue - rgba/hex string, or false to represent transparent background
-     */
     set value(newValue) {
-        newValue = newValue ? new Color(newValue)[COLOR_FORMAT] : false;
-
-        if (newValue === false) {
-            // Transparent
-            this.$types.filter(`[value="${TRANSPARENT}"]`).prop('checked', true);
-        }
-        else if (this.$types.filter(`[value="${newValue}"]`).length) {
-            // There is an exact match (e.g. if color is #ffffff, we select the exact match 'white' option)
+        if (this.$types.filter(`[value="${newValue}"]`).length) {
+            // There is an exact match (e.g. 'dark', 'transparent')
             this.$types.filter(`[value="${newValue}"]`).prop('checked', true);
         }
         else {
             // All other colors
-            this.$types.filter(`[value="${CUSTOM}"]`).prop('checked', true);
-            this.colorPicker.value(newValue);
+            this.$types.filter(`[value="${BACKGROUND_MODES.CUSTOM}"]`).prop('checked', true);
+            this.colorPicker.value(new Color(newValue)[COLOR_FORMAT]);
         }
     }
 
     get value() {
-        switch(this.$types.filter(':checked').val()) {
-            case TRANSPARENT:
-                return false;
-            case WHITE:
-                return WHITE;
-            case BLACK:
-                return BLACK;
-            case CUSTOM:
-                return this.pickerValue;
-            default:
-                console.warn(`Unknown background_picker option: ${this.$types.filter(':checked').val()}`)
-        }
+        const checkedVal = this.$types.filter(':checked').val();
+        return checkedVal === BACKGROUND_MODES.CUSTOM ? this.pickerValue : checkedVal;
     }
 
     _init() {
@@ -84,7 +58,7 @@ export default class BackgroundPicker {
                 popup: 'top'
             },
             onOpen: () => {
-                this.$types.filter(`[value="${CUSTOM}"]`).prop('checked', true);
+                this.$types.filter(`[value="${BACKGROUND_MODES.CUSTOM}"]`).prop('checked', true);
                 this._onChange();
             },
             onDone: color => {
@@ -98,21 +72,24 @@ export default class BackgroundPicker {
 
     _createHTML() {
         this.$container.append(`
-            <label class="conditional-field" data-show-if="mode=${BLACK_AND_WHITE_MODE},${COLORED_MODE}">
-                <input type="radio" name="${this._radioInputName()}" value="${WHITE}"> White
+            <label class="conditional-field" data-show-if="mode=${COLOR_MODES.BLACK_AND_WHITE}">
+                <input type="radio" name="${this._radioInputName()}" value="${BACKGROUND_MODES.MATCH_THEME}"> Match UI Theme
             </label>
-            <label class="conditional-field" data-show-if="mode=${BLACK_AND_WHITE_MODE},${COLORED_MODE}">
-                <input type="radio" name="${this._radioInputName()}" value="${BLACK}"> Black
+            <label class="conditional-field" data-show-if="mode=${COLOR_MODES.BLACK_AND_WHITE},${COLOR_MODES.COLORED}">
+                <input type="radio" name="${this._radioInputName()}" value="${BACKGROUND_MODES.LIGHT}"> Light
             </label>
-            <label class="conditional-field" data-show-if="mode=${COLORED_MODE}">
-                <input type="radio" name="${this._radioInputName()}" value="${CUSTOM}"> Custom
+            <label class="conditional-field" data-show-if="mode=${COLOR_MODES.BLACK_AND_WHITE},${COLOR_MODES.COLORED}">
+                <input type="radio" name="${this._radioInputName()}" value="${BACKGROUND_MODES.DARK}"> Dark
+            </label>
+            <label class="conditional-field" data-show-if="mode=${COLOR_MODES.COLORED}">
+                <input type="radio" name="${this._radioInputName()}" value="${BACKGROUND_MODES.CUSTOM}"> Custom
                 <div class="color-picker"></div>
             </label>
         `);
 
         // --- Not showing transparency grid option for now since it clashes hard with grid
-        // <label class="conditional-field" data-show-if="mode=${BLACK_AND_WHITE_MODE},${COLORED_MODE}">
-        //     <input type="radio" name="${this._radioInputName()}" value="${TRANSPARENT}"> Transparency Grid
+        // <label class="conditional-field" data-show-if="mode=${COLOR_MODES.BLACK_AND_WHITE},${COLOR_MODES.COLORED}">
+        //     <input type="radio" name="${this._radioInputName()}" value="${BACKGROUND_MODES.TRANSPARENT}"> Transparency Grid
         // </label>
     }
 
@@ -129,8 +106,7 @@ export default class BackgroundPicker {
         });
 
         if (!this.$types.filter(':checked').is(':visible')) {
-            // If option is no longer visible, default to WHITE
-            this.$types.filter(`[value="${WHITE}"]`).prop('checked', true);
+            this.$types.filter(':visible').first().prop('checked', true);
         }
     }
 

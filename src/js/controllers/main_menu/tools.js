@@ -4,7 +4,6 @@ import * as actions from "../../io/actions.js";
 import {calculateFontRatio} from "../../config/font.js";
 import {AVAILABLE_FONTS} from "../../config/font.js";
 import {createDialog} from "../../utils/dialogs.js";
-import {recalculateCanvasColors} from "../../config/colors.js";
 import BackgroundPicker from "../../components/background_picker.js";
 import DimensionsPicker from "../../components/dimensions_picker.js";
 import {eventBus, EVENTS} from "../../events/events.js";
@@ -129,7 +128,6 @@ function setupBackgroundDialog() {
         state.validateColorMode()
         if (inversionCheckbox.shouldInvert()) state.invertInvisibleChars();
 
-        recalculateCanvasColors();
         eventBus.emit(EVENTS.REFRESH.ALL);
         state.pushHistory({ recalculateColors: true });
         $backgroundDialog.dialog('close');

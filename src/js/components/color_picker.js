@@ -1,7 +1,7 @@
 import Picker from "vanilla-picker";
 import Color from "@sphinxxxx/color-conversion";
 import * as keyboard from "../io/keyboard.js";
-import {COLOR_FORMAT} from "../state/index.js";
+import {COLOR_FORMAT} from "../config/colors.js";
 
 export default class ColorPicker {
     /**

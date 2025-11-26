@@ -74,7 +74,7 @@ async function exportJson(options = {}, exportToActiveFile) {
             width: state.numCols(),
             height: state.numRows(),
             fps: state.getConfig('fps'),
-            background: state.getConfig('background') ? encodeColor(state.getConfig('background')) : null,
+            background: state.getCanvasColors().background ? encodeColor(state.getCanvasColors().background) : null,
             frames: []
         }
 
@@ -231,7 +231,7 @@ function buildRtfFile(content, options) {
         '',
 
         // Second color reserved for background
-        state.getConfig('background') ? _encodeRtfColor(state.getConfig('background')) : '',
+        state.getCanvasColors().background ? _encodeRtfColor(state.getCanvasColors().background) : '',
 
         // Then merge in all colors used in the drawing
         ...state.colorTable().map(colorStr => _encodeRtfColor(colorStr))
@@ -247,7 +247,7 @@ function buildRtfFile(content, options) {
 
 function frameToRtf(frame, options) {
     // char background: use index 1 of color table. Note: chshdng / chcbpat is for MS Word compatibility
-    const charBg = options.background && state.getConfig('background') ? `\\chshdng0\\chcbpat${1}\\cb${1}` : '';
+    const charBg = options.background && state.getCanvasColors().background ? `\\chshdng0\\chcbpat${1}\\cb${1}` : '';
 
     return exportableFrameString(frame, '\\line ', line => {
         // The first replace handles special RTF chars: { } \
@@ -303,7 +303,7 @@ async function exportHtml(options, exportToActiveFile) {
         `;
 
         const width = state.numCols() * options.fontSize * fontRatio;
-        const background = options.background && state.getConfig('background') ? `background: ${state.getConfig('background')};` : '';
+        const background = options.background && state.getCanvasColors().background ? `background: ${state.getCanvasColors().background};` : '';
         const fontStyles = `font-family: ${state.fontFamily()};font-size: ${options.fontSize}px;`;
 
         const body = `<pre id="sprite" style="width:${width}px;${background};${fontStyles}"></pre>`;
@@ -600,7 +600,7 @@ function setupExportCanvas(options) {
 
 function renderExportFrame(frame, options) {
     exportCanvas.clear();
-    if (options.background && state.getConfig('background')) exportCanvas.drawBackground(state.getConfig('background'));
+    if (options.background && state.getCanvasColors().background) exportCanvas.drawBackground(state.getCanvasColors().background);
     exportCanvas.drawGlyphs(state.layeredGlyphs(frame));
 }
 

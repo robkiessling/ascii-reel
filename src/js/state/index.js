@@ -12,9 +12,11 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {LAYER_TYPES} from "./constants.js";
 import {COLOR_STR_PROP} from "../geometry/shapes/constants.js";
 import {COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT} from "./palette.js";
+import {COLOR_MODES, contrastColor} from "../config/colors.js";
 
 export {
     numRows, numCols, setConfig, getConfig, fontFamily, getName, getDrawingChar, getDrawingColor, updateDrawingProp,
+    resetCachedCanvasColors, getCanvasColors,
     isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, RASTER_TOOLS, VECTOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {
@@ -39,7 +41,7 @@ export {
 export {
     sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy,
     colorTable, colorStr, colorIndex, primaryColorIndex, vacuumColorTable,
-    importPalette, COLOR_FORMAT, BLACK, WHITE, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
+    importPalette, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
 } from './palette.js'
 export {
     sortedChars, importChars, setUnicodeSetting, getUnicodeSetting
@@ -48,6 +50,9 @@ export {
     canUndo, undo, canRedo, redo,
     pushHistory, endHistoryModification, isDirty, markClean
 } from './history.js'
+export {
+    recalculateTheme, getDarkModePref, setDarkModePref, getTheme, setTheme, getComputedTheme
+} from './preferences.js'
 
 export * as selection from './selection/index.js'
 // todo export the other slices like this ^ instead of writing every single method
@@ -55,7 +60,7 @@ export * as selection from './selection/index.js'
 export function loadNewState(projectType, dimensions, colorMode, background) {
     let primaryColor, paletteState;
     if (background !== undefined) {
-        primaryColor = palette.defaultContrastColor(background);
+        primaryColor = contrastColor(config.bgColorForMode(background));
         paletteState = { colors: [primaryColor] }
     }
 
@@ -178,7 +183,7 @@ export function loadFromTxt(txtContent, fileName) {
 
         deserialize({
             config: {
-                colorMode: 'monochrome',
+                colorMode: COLOR_MODES.BLACK_AND_WHITE,
                 dimensions: dimensions,
                 name: fileName
             },
@@ -337,41 +342,29 @@ function migrateToV8(state) {
 // --------------------------------------------------------------------------------
 
 export function validateColorMode() {
-    if (config.getConfig('colorMode') === 'monochrome') {
-        const charColor = config.getConfig('background') === palette.BLACK ? palette.WHITE : palette.BLACK;
+    const contrast = contrastColor(config.getCanvasColors().background);
 
-        timeline.convertToMonochrome(charColor);
-        palette.convertToMonochrome(charColor);
+    if (config.getConfig('colorMode') === COLOR_MODES.BLACK_AND_WHITE) {
+        timeline.convertToMonochrome(contrast);
+        palette.convertToMonochrome(contrast);
         config.toolFallback();
-        config.updateDrawingProp(COLOR_STR_PROP, charColor);
+        config.updateDrawingProp(COLOR_STR_PROP, contrast);
     }
     else {
         // Ensure primaryColor does not clash with background
-        if (config.getDrawingColor() === config.getConfig('background')) {
-            config.updateDrawingProp(COLOR_STR_PROP, config.getConfig('background') === palette.BLACK ? palette.WHITE : palette.BLACK);
+        if (config.getDrawingColor() === config.getCanvasColors().background) {
+            config.updateDrawingProp(COLOR_STR_PROP, contrast)
         }
     }
 }
 
 export function invertInvisibleChars() {
-    let oldColor, newColor;
+    const newCharColor = contrastColor(config.getCanvasColors().background);
+    const oldCharColor = contrastColor(newCharColor);
 
-    if (config.getConfig('background') === palette.BLACK) {
-        // convert all black text to white
-        oldColor = palette.BLACK;
-        newColor = palette.WHITE;
-    }
-    else if (config.getConfig('background') === palette.WHITE) {
-        // convert all white text to black
-        oldColor = palette.WHITE;
-        newColor = palette.BLACK;
-    }
-
-    if (oldColor && newColor) {
-        timeline.colorSwap(palette.colorIndex(oldColor), palette.colorIndex(newColor), {
-            allLayers: true, allFrames: true
-        })
-    }
+    timeline.colorSwap(palette.colorIndex(oldCharColor), palette.colorIndex(newCharColor), {
+        allLayers: true, allFrames: true
+    })
 }
 
 export function validateProjectType() {

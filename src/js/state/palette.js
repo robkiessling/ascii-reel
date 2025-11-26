@@ -1,14 +1,9 @@
 import Color from "@sphinxxxx/color-conversion";
 import {getDrawingColor} from "./config.js";
 import {iterateAllCels} from "./timeline/cels.js";
+import {BLACK, COLOR_FORMAT, WHITE} from "../config/colors.js";
 
-// TODO Should this be moved to state index? It is used by a lot of outside code
-export const COLOR_FORMAT = 'hex'; // vanilla-picker format we use to store colors
-
-export const BLACK = new Color('rgba(0,0,0,1)')[COLOR_FORMAT];
-export const WHITE = new Color('rgba(255,255,255,1)')[COLOR_FORMAT];
-
-export const DEFAULT_COLOR = BLACK;
+const DEFAULT_COLOR = BLACK;
 
 export const COLOR_DEPTH_8_BIT = '8bit';
 export const COLOR_DEPTH_16_BIT = '16bit';
@@ -104,15 +99,6 @@ export function getPaletteSortBy() {
     return state ? state.sortBy : null;
 }
 
-
-// Returns the best default color that contrasts a given background color
-export function defaultContrastColor(forBackground) {
-    if (!forBackground) return BLACK;
-
-    const backgroundColor = new Color(forBackground);
-    let [h, s, l, a] = backgroundColor.hsla;
-    return l < 0.5 ? WHITE : BLACK;
-}
 
 export function importPalette(newColors, replace = false) {
     newColors = newColors.map(colorStr => new Color(colorStr)[COLOR_FORMAT])

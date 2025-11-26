@@ -20,7 +20,8 @@ import {
     loadFromStorage,
     markClean,
     loadNewState,
-    fontFamily
+    fontFamily,
+    resetCachedCanvasColors,
 } from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./controllers/frame_controller.js";
 import { init as initLayers } from "./controllers/layer_controller.js";
@@ -29,10 +30,7 @@ import { init as initLocalStorage, readState as readLocalStorage} from "./storag
 import {debounce, defer} from "./utils/utilities.js";
 import {eventBus, EVENTS} from './events/events.js'
 import {calculateFontRatio} from "./config/font.js";
-import {recalculateCanvasColors} from "./config/colors.js";
-import {applyThemeToDocument, matchBgToTheme, recalculateTheme} from "./config/theme.js";
 import "./geometry/shapes/index.js";
-import {showFullScreenLoader} from "./utils/overlays.js"; // Importing all shape files because they register themselves
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
 initClipboard();
@@ -59,7 +57,7 @@ defer(() => loadInitialContent());
 function setupEventBus() {
     eventBus.on(EVENTS.STATE.LOADED, () => {
         calculateFontRatio(fontFamily());
-        recalculateCanvasColors();
+        resetCachedCanvasColors();
 
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: false, resetZoom: true })
     })
@@ -89,7 +87,7 @@ function setupEventBus() {
     // History state-change listener:
     eventBus.on(EVENTS.HISTORY.RESTORED, ({ requiresResize, recalculateFont, recalculateColors }) => {
         if (recalculateFont) calculateFontRatio(fontFamily())
-        if (recalculateColors) recalculateCanvasColors()
+        if (recalculateColors) resetCachedCanvasColors()
 
         if (requiresResize) {
             eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: true, resetZoom: true })
@@ -100,14 +98,6 @@ function setupEventBus() {
     })
 
     eventBus.on(EVENTS.FILE.SAVED, () => markClean());
-
-    eventBus.on(EVENTS.THEME.CHANGED, () => {
-        recalculateTheme();
-        matchBgToTheme(); // todo only do this if background set to 'match theme'
-        applyThemeToDocument();
-        recalculateCanvasColors();
-        eventBus.emit(EVENTS.REFRESH.ALL);
-    })
 }
 
 function loadInitialContent() {

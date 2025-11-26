@@ -16,7 +16,7 @@ export default class RadioButtons {
     }
 
     set value(newValue) {
-        this.$inputs.filter(`[value="${newValue}"]`).prop('checked', true).trigger('change');
+        this.$inputs.filter(`[value="${newValue}"]`).prop('checked', true);
     }
 
     get value() {

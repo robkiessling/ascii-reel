@@ -2,7 +2,7 @@
 import {isObject, transformValues} from "../../utils/objects.js";
 import {numCols, numRows, getConfig, setConfig, getDrawingColor} from "../config.js";
 import {mod} from "../../utils/numbers.js";
-import {colorDepth, colorIndex, DEFAULT_COLOR, isNewColor} from "../palette.js";
+import {colorIndex, isNewColor} from "../palette.js";
 import CelFactory from "./cel/factory.js";
 import {LAYER_TYPES} from "../constants.js";
 import RasterCel from "./cel/raster.js";

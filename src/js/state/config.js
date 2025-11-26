@@ -1,10 +1,20 @@
 import {getFormattedDateTime} from "../utils/strings.js";
-import {COLOR_FORMAT} from "./palette.js";
 import {pick} from "../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
 import {CHAR_PROP, COLOR_STR_PROP, DEFAULT_DRAW_PROPS} from "../geometry/shapes/constants.js";
 import {LAYER_TYPES} from "./constants.js";
 import * as timeline from "./timeline/index.js";
+import {
+    BACKGROUND_MODES, CHECKERBOARD_DARK_A, CHECKERBOARD_DARK_B, CHECKERBOARD_LIGHT_A, CHECKERBOARD_LIGHT_B,
+    COLOR_FORMAT,
+    COLOR_MODES, DARK,
+    HOVER_LIGHTNESS_DELTA, LIGHT,
+    MAJOR_GRID_LIGHTNESS_DELTA,
+    MINOR_GRID_LIGHTNESS_DELTA
+} from "../config/colors.js";
+import {getComputedTheme} from "./preferences.js";
+import {THEMES} from "../config/themes.js";
+import {isEmptyObject} from "jquery";
 
 // TODO There are a lot of strings that should be constants
 // TODO Organize this better? E.g. projectSettings could contain certain keys
@@ -12,10 +22,10 @@ export const DEFAULT_STATE = {
     name: '',
     projectType: 'animation',
     layerType: LAYER_TYPES.RASTER,
-    colorMode: 'monochrome',
+    colorMode: COLOR_MODES.BLACK_AND_WHITE,
     createdAt: undefined,
     dimensions: [30, 60], // [numRows, numCols]
-    background: new Color('rgba(0,0,0,1)')[COLOR_FORMAT],
+    background: BACKGROUND_MODES.MATCH_THEME,
     font: 'monospace',
     fps: 6,
     playPreview: true,
@@ -95,6 +105,8 @@ export function numCols() {
 }
 
 export function setConfig(key, newValue) {
+    if (resetCachedCanvasColorProps.has(key)) resetCachedCanvasColors();
+
     state[key] = newValue;
 }
 export function getConfig(key) {
@@ -145,21 +157,21 @@ export function isAnimationProject() {
 }
 
 export function isMultiColored() {
-    return getConfig('colorMode') === 'multicolor';
+    return getConfig('colorMode') === COLOR_MODES.COLORED;
 }
 
 // Certain tools are only available in certain modes. This ensures the current tool is valid
 export function toolFallback() {
     switch(timeline.currentLayerType()) {
         case LAYER_TYPES.RASTER:
-            if (getConfig('colorMode') === 'monochrome' && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
+            if (getConfig('colorMode') === COLOR_MODES.BLACK_AND_WHITE && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
                 setConfig('tool', VECTOR_TOOL_TO_RASTER_FALLBACK.default)
             } else if (VECTOR_TOOLS.has(getConfig('tool'))) {
                 setConfig('tool', VECTOR_TOOL_TO_RASTER_FALLBACK[getConfig('tool')] || VECTOR_TOOL_TO_RASTER_FALLBACK.default)
             }
             break;
         case LAYER_TYPES.VECTOR:
-            if (getConfig('colorMode') === 'monochrome' && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
+            if (getConfig('colorMode') === COLOR_MODES.BLACK_AND_WHITE && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
                 setConfig('tool', RASTER_TOOL_TO_VECTOR_FALLBACK.default)
             } else if (RASTER_TOOLS.has(getConfig('tool'))) {
                 setConfig('tool', RASTER_TOOL_TO_VECTOR_FALLBACK[getConfig('tool')] || RASTER_TOOL_TO_VECTOR_FALLBACK.default)
@@ -167,3 +179,72 @@ export function toolFallback() {
             break;
     }
 }
+
+// ------------------------------------------------------- Canvas BG / Grid Colors:
+// The canvas background / grid color depends on both the file's config:background setting & the user's theme.
+// We cache these colors and only recalculate them when one of those fields changes.
+
+// Config keys that reset cached colors
+const resetCachedCanvasColorProps = new Set(['background', 'colorMode']);
+
+let cachedCanvasColors = {};
+
+export function getCanvasColors() {
+    if (isEmptyObject(cachedCanvasColors)) cacheCanvasColors();
+    return cachedCanvasColors;
+}
+
+export function resetCachedCanvasColors() {
+    cachedCanvasColors = {};
+}
+
+export function bgColorForMode(backgroundMode) {
+    switch (backgroundMode) {
+        case BACKGROUND_MODES.MATCH_THEME:
+            return getComputedTheme() === THEMES.LIGHT_MODE ? LIGHT : DARK;
+        case BACKGROUND_MODES.DARK:
+            return DARK;
+        case BACKGROUND_MODES.LIGHT:
+            return LIGHT;
+        case BACKGROUND_MODES.TRANSPARENT:
+            return getComputedTheme() === THEMES.LIGHT_MODE ? CHECKERBOARD_LIGHT_A : CHECKERBOARD_DARK_A
+        case undefined:
+            throw new Error(`backgroundMode is undefined`)
+        default:
+            return new Color(backgroundMode)[COLOR_FORMAT];
+    }
+}
+
+function cacheCanvasColors() {
+    cachedCanvasColors.background = bgColorForMode(getConfig('background'))
+
+    // The color used for grids/hover effects changes depending on the canvas background. If the background is light we
+    // use a darker shade; if the background is dark we use a lighter shade.
+    let [h, s, l, a] = (new Color(cachedCanvasColors.background)).hsla;
+
+    if (l < 0.5) {
+        cachedCanvasColors.hover = colorFromHslaArray([h, s, l + HOVER_LIGHTNESS_DELTA, 1]);
+
+        // minor grid is a little lighter, major grid is a lot lighter
+        cachedCanvasColors.minor = colorFromHslaArray([h, s, l + MINOR_GRID_LIGHTNESS_DELTA, 1]);
+        cachedCanvasColors.major = colorFromHslaArray([h, s, l + MAJOR_GRID_LIGHTNESS_DELTA, 1]);
+    }
+    else {
+        cachedCanvasColors.hover = colorFromHslaArray([h, s, l - HOVER_LIGHTNESS_DELTA, 1]);
+
+        // minor grid is a little darker, major grid is a lot darker
+        cachedCanvasColors.minor = colorFromHslaArray([h, s, l - MINOR_GRID_LIGHTNESS_DELTA, 1]);
+        cachedCanvasColors.major = colorFromHslaArray([h, s, l - MAJOR_GRID_LIGHTNESS_DELTA, 1]);
+    }
+
+    cachedCanvasColors.checkerboard = getComputedTheme() === THEMES.LIGHT_MODE ?
+        [CHECKERBOARD_LIGHT_A, CHECKERBOARD_LIGHT_B] :
+        [CHECKERBOARD_DARK_A, CHECKERBOARD_DARK_B]
+}
+
+function colorFromHslaArray(hsla) {
+    let [h, s, l, a] = hsla;
+    l = Math.min(1.0, Math.max(0.0, l));
+    return new Color(`hsla(${h * 360},${s * 100}%,${l * 100}%,1)`)[COLOR_FORMAT]
+}
+

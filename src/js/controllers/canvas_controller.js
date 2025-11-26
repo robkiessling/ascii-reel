@@ -17,7 +17,6 @@ import Canvas from "../components/canvas.js";
 import * as selectionController from "./selection/index.js";
 import {drawingContent, hoveredCells, showHoverForTool} from "./tool_controller.js";
 import * as state from "../state/index.js";
-import {majorGridColor, minorGridColor} from "../config/colors.js";
 import * as tools from "./tool_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
@@ -27,6 +26,7 @@ import {callAction} from "../io/actions.js";
 import {getAttachTarget} from "./selection/vector_controller.js";
 import {HANDLE_TYPES} from "../geometry/shapes/constants.js";
 import CellArea from "../geometry/cell_area.js";
+import {getCanvasColors} from "../state/index.js";
 
 
 const ONION_OPACITY = 0.3;
@@ -235,7 +235,7 @@ function redrawCharCanvas() {
     // Begin rendering:
     // 1. Clear and draw background
     charCanvas.clear();
-    charCanvas.drawBackground(state.getConfig('background'));
+    charCanvas.drawBackground(state.getCanvasColors().background);
 
     // 2. If there are any layers below current layer, draw them at lower opacity
     charCanvas.drawGlyphs(belowGlyphs, {
@@ -293,11 +293,13 @@ function redrawCharCanvas() {
         });
     }
 
-    // 6. Draw grid
+    // 6. Draw boundaries / grid
     const grid = state.getConfig('grid');
     if (grid.show) {
-        if (grid.minorGridEnabled) charCanvas.drawGrid(1, grid.minorGridSpacing, minorGridColor);
-        if (grid.majorGridEnabled) charCanvas.drawGrid(1, grid.majorGridSpacing, majorGridColor);
+        if (grid.minorGridEnabled) charCanvas.drawGrid(1, grid.minorGridSpacing, getCanvasColors().minor);
+        if (grid.majorGridEnabled) charCanvas.drawGrid(1, grid.majorGridSpacing, getCanvasColors().major);
+    } else {
+        charCanvas.drawBoundaries(1, getCanvasColors().minor);
     }
 }
 

@@ -3,7 +3,7 @@
  - Accent: #7755FF (chosen from https://dev.to/finnhvman/which-colors-look-good-on-black-and-white-2pe6)
  - Gray: #8B8D98 (default)
  - Background: #FFFFFF (default)
- I also removed the alpha/preset colors since they're not needed
+ I also removed the alpha/preset colors since they're not needed. And I added --gray-0.
  */
 :root, [data-theme='light'] {
   --violet-1: #fcfcff;
@@ -40,6 +40,7 @@
 }
 
 :root, [data-theme='light'] {
+  --gray-0: #fff;
   --gray-1: #fcfcfd;
   --gray-2: #f9f9fb;
   --gray-3: #eff0f3;
