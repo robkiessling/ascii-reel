@@ -1254,9 +1254,6 @@ function setupColorPicker() {
 
     const $shapeColor = $('#shape-color');
     shapeColorPicker = new ColorPicker($shapeColor, {
-        pickerOptions: {
-            popup: 'right'
-        },
         tooltip: () => {
             return refreshableTooltips(
                 $shapeColor,
@@ -1271,6 +1268,7 @@ function setupColorPicker() {
             )
         },
         onDone: color => applyColor(color),
+        attachToBody: true,
 
         // For raster selections, the color picker is shown in split mode. This allows users to apply the current color
         // to highlighted text with a single click. Without split mode, they'd have to reopen the color picker and

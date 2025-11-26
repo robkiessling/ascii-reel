@@ -1,3 +1,4 @@
+@use 'variables' as *;
 
 // ---------------------------------------------------------------------- color-picker well/button css
 
@@ -65,6 +66,29 @@
 
   &.popup {
     z-index: 4 !important;
+    border-radius: 5px;
+
+    &.popup_bottom {
+      margin: 0.5rem 0 0 0;
+    }
+    &.popup_top {
+      margin: 0 0 0.5rem 0;
+    }
+    &.popup_right {
+      margin: 0 0 0 0.5rem;
+    }
+    &.popup_left {
+      margin: 0 0.5rem 0 0;
+    }
+
+    &.split-mode:not(.popup_right) {
+      margin-left: -$island-button-size;
+    }
+  }
+
+  // I don't really like the look of the arrow
+  .picker_arrow {
+    display: none;
   }
 
   .picker_editor {
@@ -93,7 +117,7 @@
   .picker_cancel button {
     color: var(--color-text);
     background: transparent;
-    border: 1px solid var(--color-text);
+    border: 1px solid var(--color-island-border);
     &:hover {
       background: var(--color-island-hover);
     }

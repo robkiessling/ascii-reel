@@ -30,6 +30,8 @@ export default class ColorPicker {
      *   mode (true) or normal mode (false). See documentation above for more info on split mode.
      * @param {() => tippy} [options.tooltip] - If the picker should have a tooltip, provide a function that instantiates
      *   the tooltip. Tooltip will be enabled/disabled when picker is open.
+     * @param {boolean} [options.attachToBody=false] - Attaches the popup to the <body> element instead of the $container,
+     *   which can be useful if container has overflow:hidden.
      */
     constructor($container, options = {}) {
         this.$container = $container;
@@ -46,16 +48,19 @@ export default class ColorPicker {
 
         this.$well = $('<div class="color-well"><span class="ri ri-arrow-down-s-fill"></span></div>')
             .appendTo(this.$container);
+        this.well = this.$well.get(0);
 
         this.picker = new Picker({
-            parent: this.$well.get(0),
-            popup: 'right',
+            parent: this.well,
+            popup: 'bottom',
             cancelButton: true,
             template: this._pickerTemplate(),
             onOpen: () => {
                 keyboard.toggleStandard('color-picker', true);
                 if (this._tooltip) this._tooltip.disable();
                 this.$container.addClass('picker-open');
+                $(this.picker.domElement).toggleClass('split-mode', this._isSplitMode())
+                if (this.options.attachToBody) this._attachToBody();
                 this.picker.setColor(this._value, true);
                 if (this.options.onOpen) this.options.onOpen();
             },
@@ -105,8 +110,12 @@ export default class ColorPicker {
         this._refreshWell();
     }
 
+    _isSplitMode() {
+        return this.options.splitMode ? !!this.options.splitMode() : false;
+    }
+
     _refreshWell() {
-        const isSplitMode = this.options.splitMode ? !!this.options.splitMode() : false;
+        const isSplitMode = this._isSplitMode();
 
         this.$container.toggleClass('split-mode', isSplitMode)
         this.$apply.toggle(isSplitMode)
@@ -151,5 +160,39 @@ export default class ColorPicker {
             </div>
         `;
     }
+
+
+    _attachToBody() {
+        const pickerWrapper = this.picker.domElement;
+        document.body.appendChild(pickerWrapper);
+
+        const pickerRect = pickerWrapper.getBoundingClientRect();
+        const wellRect = this.well.getBoundingClientRect();
+        pickerWrapper.style.position = "fixed";
+
+        switch(this.picker.settings.popup) {
+            case 'top':
+                pickerWrapper.style.left = wellRect.left + "px";
+                pickerWrapper.style.bottom = 'auto'; // Can no longer use 'bottom'; it will be relative to entire page
+                pickerWrapper.style.top = wellRect.top - pickerRect.height - 7 + "px"; // Use 'top' instead
+                break;
+            case 'right':
+                pickerWrapper.style.left = wellRect.left + wellRect.width + "px";
+                pickerWrapper.style.top = wellRect.top + "px";
+                break;
+            case 'bottom':
+                pickerWrapper.style.left = wellRect.left + "px";
+                pickerWrapper.style.top = wellRect.top + wellRect.height + "px";
+                break;
+            case 'left':
+                pickerWrapper.style.right = 'auto'; // Can no longer use 'right'; it will be relative to entire page
+                pickerWrapper.style.left = wellRect.left - pickerRect.width - 7 + "px"; // Use 'left' instead
+                pickerWrapper.style.top = wellRect.top + "px";
+                break;
+            default:
+                throw new Error(`Invalid popup alignment: ${this.picker.settings.popup}`)
+        }
+    }
+
 
 }

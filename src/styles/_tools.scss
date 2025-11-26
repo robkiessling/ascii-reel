@@ -69,13 +69,13 @@
     // Cannot use :first-child, :not(:first-child), etc. because that doesn't account for hidden children.
     // Have to use javascript to add these classes at runtime
     &.first-child {
-      margin-top: 0.25rem;
+      margin-top: 0.5rem;
     }
     &.subsequent-child {
       margin-top: 0.75rem;
     }
     &.last-child {
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
     }
 
     .group-title {
@@ -127,26 +127,6 @@
   // Color picker popup actually becomes a child element of color-well, so cannot use overflow:hidden like other buttons
   .color-well {
     overflow: inherit;
-  }
-
-  // Designed for popup:bottom
-  //.color-picker {
-  //  .picker_wrapper {
-  //    top: 60px;
-  //  }
-  //  &.split-mode .picker_wrapper {
-  //    left: -30px;
-  //  }
-  //}
-
-  // Designed for popup:right
-  .color-picker {
-    .picker_wrapper {
-      left: 60px;
-    }
-    &.split-mode .picker_wrapper {
-      left: -30px;
-    }
   }
 
   &.disabled {

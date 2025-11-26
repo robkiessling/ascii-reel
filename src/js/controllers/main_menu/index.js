@@ -70,8 +70,10 @@ export function init() {
 function refresh() {
     mainMenu.refresh();
 
-    $fileName.html(getName(false));
+    const fileName = getName(false);
+    $fileName.html(fileName);
     $activeFileIcon.toggle(hasActiveFile())
+    document.title = `${fileName} — Ascii Reel`;
 
     refreshView();
     refreshEdit();
@@ -104,18 +106,17 @@ function setupFileName() {
     });
 
     $fileName.on('keydown', function (e) {
-        if (e.key === 'Escape') {
-            canceled = true;
-            $fileName.blur();
-        }
         switch (e.key) {
             case 'Escape':
                 canceled = true;
                 $fileName.blur();
                 break;
             case 'Enter':
-                finishEditing();
+                $fileName.blur();
+                break;
         }
+
+        e.stopPropagation();
     });
 
     function finishEditing() {
