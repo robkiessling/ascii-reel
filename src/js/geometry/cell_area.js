@@ -1,8 +1,7 @@
 import PixelRect from "./pixel_rect.js";
-import {fontHeight, fontWidth} from "../config/font.js";
 import Cell from "./cell.js";
-import * as state from "../state/index.js";
 import Vertex from "./vertex.js";
+import {fontMetrics, numRows as stateRows, numCols as stateCols} from "../state/index.js";
 
 /**
  * Represents a rectangular region of the grid using inclusive cell coordinates.
@@ -31,7 +30,7 @@ export default class CellArea extends PixelRect {
     }
 
     static drawableArea() {
-        return new CellArea(new Cell(0, 0), new Cell(state.numRows() - 1, state.numCols() - 1));
+        return new CellArea(new Cell(0, 0), new Cell(stateRows() - 1, stateCols() - 1));
     }
 
     static fromOriginAndDimensions(topLeft, numRows, numCols) {
@@ -87,10 +86,10 @@ export default class CellArea extends PixelRect {
         return this.topLeft.y;
     }
     get width() {
-        return this.numCols * fontWidth;
+        return this.numCols * fontMetrics().width;
     }
     get height() {
-        return this.numRows * fontHeight;
+        return this.numRows * fontMetrics().height;
     }
 
     get numRows() {
@@ -125,13 +124,13 @@ export default class CellArea extends PixelRect {
     bindToDrawableArea() {
         if (this.topLeft.row < 0) { this.topLeft.row = 0; }
         if (this.topLeft.col < 0) { this.topLeft.col = 0; }
-        if (this.topLeft.row > state.numRows() - 1) { this.topLeft.row = state.numRows(); } // Allow 1 space negative
-        if (this.topLeft.col > state.numCols() - 1) { this.topLeft.col = state.numCols(); } // Allow 1 space negative
+        if (this.topLeft.row > stateRows() - 1) { this.topLeft.row = stateRows(); } // Allow 1 space negative
+        if (this.topLeft.col > stateCols() - 1) { this.topLeft.col = stateCols(); } // Allow 1 space negative
 
         if (this.bottomRight.row < 0) { this.bottomRight.row = -1; } // Allow 1 space negative
         if (this.bottomRight.col < 0) { this.bottomRight.col = -1; } // Allow 1 space negative
-        if (this.bottomRight.row > state.numRows() - 1) { this.bottomRight.row = state.numRows() - 1; }
-        if (this.bottomRight.col > state.numCols() - 1) { this.bottomRight.col = state.numCols() - 1; }
+        if (this.bottomRight.row > stateRows() - 1) { this.bottomRight.row = stateRows() - 1; }
+        if (this.bottomRight.col > stateCols() - 1) { this.bottomRight.col = stateCols() - 1; }
 
         return this;
     }

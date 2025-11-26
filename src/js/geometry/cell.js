@@ -1,6 +1,6 @@
 import PixelRect from "./pixel_rect.js";
-import {fontHeight, fontWidth} from "../config/font.js";
 import bresenham from "bresenham";
+import {fontMetrics} from "../state/index.js";
 
 /**
  * A Cell is a particular row/column pair of the drawable area. It is useful so we can deal with rows/columns instead
@@ -16,20 +16,20 @@ export default class Cell extends PixelRect {
     // Since x and y are based purely on col/row value, we have these static methods so you can calculate x/y without
     // having to instantiate a new Cell() -- helps with performance
     static x(col) {
-        return col * fontWidth;
+        return col * fontMetrics().width;
     }
     static y(row) {
-        return row * fontHeight;
+        return row * fontMetrics().height;
     }
     static get width() {
-        return fontWidth;
+        return fontMetrics().width;
     }
     static get height() {
-        return fontHeight;
+        return fontMetrics().height;
     }
 
     static fromXYWH(x, y) {
-        return new Cell(Math.floor(y / fontHeight), Math.floor(x / fontWidth));
+        return new Cell(Math.floor(y / fontMetrics().height), Math.floor(x / fontMetrics().width));
     }
 
     // Convert to/from its object representation (so we can store it in json state)
@@ -42,16 +42,16 @@ export default class Cell extends PixelRect {
     }
 
     get x() {
-        return this.col * fontWidth;
+        return this.col * fontMetrics().width;
     }
     get y() {
-        return this.row * fontHeight;
+        return this.row * fontMetrics().height;
     }
     get width() {
-        return fontWidth;
+        return fontMetrics().width;
     }
     get height() {
-        return fontHeight;
+        return fontMetrics().height;
     }
 
     clone() {

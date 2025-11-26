@@ -8,7 +8,7 @@ import RectSelection from "../../geometry/selection/rect.js";
 import TextSelection from "../../geometry/selection/text.js";
 import WandSelection from "../../geometry/selection/wand.js";
 import {getConfig} from "../config.js";
-import {mirrorCharHorizontally, mirrorCharVertically} from "../../utils/strings.js";
+import {mirrorCharHorizontally, mirrorCharVertically} from "../../utils/chars.js";
 
 
 const DEFAULT_STATE = {

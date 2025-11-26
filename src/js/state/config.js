@@ -15,6 +15,8 @@ import {
 import {getComputedTheme} from "./preferences.js";
 import {THEMES} from "../config/themes.js";
 import {isEmptyObject} from "jquery";
+import {roundToDecimal} from "../utils/numbers.js";
+import {FONT_PT} from "../config/font.js";
 
 // TODO There are a lot of strings that should be constants
 // TODO Organize this better? E.g. projectSettings could contain certain keys
@@ -113,11 +115,6 @@ export function getConfig(key) {
     return state[key];
 }
 
-// Returns the stored font as a string that can be entered as a CSS font-family attribute (including fallbacks)
-export function fontFamily() {
-    return `'${getConfig('font')}', monospace`
-}
-
 export function getName(includeDefaultTimestamp = true) {
     if (getConfig('name')) return getConfig('name');
 
@@ -179,6 +176,37 @@ export function toolFallback() {
             break;
     }
 }
+
+// ------------------------------------------------------- Font:
+
+let cachedFontMetrics = {};
+
+// Calculate font ratio based on how the user's browser renders text. Needs to be called after changing the font.
+export function recalculateFontRatio() {
+    const $fontTester = $('#font-ratio-tester');
+
+    cachedFontMetrics.height = FONT_PT;
+    $fontTester.show();
+    $fontTester.css('font-family', fontFamily()).css('font-size', `${cachedFontMetrics.height}px`);
+    cachedFontMetrics.width = roundToDecimal($fontTester.width(), 4);
+    cachedFontMetrics.ratio = cachedFontMetrics.width / cachedFontMetrics.height;
+    $fontTester.hide();
+}
+
+export function fontMetrics() {
+    return cachedFontMetrics;
+}
+
+// Returns the stored font as a string that can be entered as a CSS font-family attribute (including fallbacks)
+export function fontFamily() {
+    return `'${getConfig('font')}', monospace`
+}
+
+
+
+
+
+
 
 // ------------------------------------------------------- Canvas BG / Grid Colors:
 // The canvas background / grid color depends on both the file's config:background setting & the user's theme.

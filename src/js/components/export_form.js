@@ -4,7 +4,6 @@ import {ValidationError} from "../utils/errors.js";
 import Color from "@sphinxxxx/color-conversion";
 import dedent from "dedent-js";
 import SimpleBar from "simplebar";
-import {fontRatio} from "../config/font.js";
 
 const DEFAULT_FONT_SIZE = 16;
 
@@ -239,13 +238,13 @@ export default class ExportForm {
 
         $width.on('input', () => {
             const width = $width.val();
-            const height = Math.round(width / state.numCols() * state.numRows() / fontRatio);
+            const height = Math.round(width / state.numCols() * state.numRows() / state.fontMetrics().ratio);
             $height.val(height);
             this._refreshDimensionsVisibility();
         });
         $height.on('input', () => {
             const height = $height.val();
-            const width = Math.round(height / state.numRows() * state.numCols() * fontRatio);
+            const width = Math.round(height / state.numRows() * state.numCols() * state.fontMetrics().ratio);
             $width.val(width);
             this._refreshDimensionsVisibility();
         });

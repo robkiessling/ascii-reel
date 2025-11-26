@@ -25,7 +25,7 @@ export function reset() {
  *   will update the latest history slice instead of adding a new slice. This is used for things like typing, where
  *   we don't want each new character to be a new slice.
  * @param {boolean} [options.requiresResize] - If true, undoing/redoing to this slice will force the canvas to be resized.
- * @param {boolean} [options.recalculateFont] - If true, undoing/redoing to this slice will recalculate the fontRatio.
+ * @param {boolean} [options.recalculateFont] - If true, undoing/redoing to this slice will recalculate the font's ratio.
  * @param {boolean} [options.recalculateColors] - If true, undoing/redoing to this slice will recalculate the canvas colors.
  */
 export function pushHistory(options = {}) {

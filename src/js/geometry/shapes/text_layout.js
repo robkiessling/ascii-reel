@@ -5,7 +5,7 @@ import {AnchoredGrid, create2dArray} from "../../utils/arrays.js";
 import CellArea from "../cell_area.js";
 import Vertex from "../vertex.js";
 import VertexArea from "../vertex_area.js";
-import {isWordBreaker} from "../../utils/strings.js";
+import {isWordBreaker} from "../../utils/chars.js";
 
 const DEFAULT_OPTIONS = {
     alignH: TEXT_ALIGN_H_OPTS.LEFT,

@@ -2,7 +2,6 @@ import Color from "@sphinxxxx/color-conversion";
 import * as state from "../state/index.js";
 import {exportFile} from "./file_system.js";
 import {importAnimated_GIF, importJSZip} from "../utils/lazy_loaders.js";
-import {fontRatio} from "../config/font.js";
 import Canvas from "../components/canvas.js";
 import {defer, setIntervalUsingRAF} from "../utils/utilities.js";
 import {hideFullScreenLoader, showFullScreenLoader} from "../utils/overlays.js";
@@ -302,7 +301,7 @@ async function exportHtml(options, exportToActiveFile) {
             });
         `;
 
-        const width = state.numCols() * options.fontSize * fontRatio;
+        const width = state.numCols() * options.fontSize * state.fontMetrics().ratio;
         const background = options.background && state.getCanvasColors().background ? `background: ${state.getCanvasColors().background};` : '';
         const fontStyles = `font-family: ${state.fontFamily()};font-size: ${options.fontSize}px;`;
 

@@ -20,8 +20,7 @@ import {
     loadFromStorage,
     markClean,
     loadNewState,
-    fontFamily,
-    resetCachedCanvasColors,
+    resetCachedCanvasColors, recalculateFontRatio,
 } from "./state/index.js";
 import { init as initFrames, resize as resizeFrames } from "./controllers/frame_controller.js";
 import { init as initLayers } from "./controllers/layer_controller.js";
@@ -29,7 +28,6 @@ import { init as initSidebar, resize as resizeSidebar } from "./controllers/side
 import { init as initLocalStorage, readState as readLocalStorage} from "./storage/local_storage.js";
 import {debounce, defer} from "./utils/utilities.js";
 import {eventBus, EVENTS} from './events/events.js'
-import {calculateFontRatio} from "./config/font.js";
 import "./geometry/shapes/index.js";
 
 // Note: The order of these initializers does not matter (they should not depend on the other modules being initialized)
@@ -56,7 +54,7 @@ defer(() => loadInitialContent());
  */
 function setupEventBus() {
     eventBus.on(EVENTS.STATE.LOADED, () => {
-        calculateFontRatio(fontFamily());
+        recalculateFontRatio();
         resetCachedCanvasColors();
 
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: false, resetZoom: true })
@@ -86,7 +84,7 @@ function setupEventBus() {
     
     // History state-change listener:
     eventBus.on(EVENTS.HISTORY.RESTORED, ({ requiresResize, recalculateFont, recalculateColors }) => {
-        if (recalculateFont) calculateFontRatio(fontFamily())
+        if (recalculateFont) recalculateFontRatio()
         if (recalculateColors) resetCachedCanvasColors()
 
         if (requiresResize) {

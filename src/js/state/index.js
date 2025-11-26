@@ -15,7 +15,9 @@ import {COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT} from "./palette.js";
 import {COLOR_MODES, contrastColor} from "../config/colors.js";
 
 export {
-    numRows, numCols, setConfig, getConfig, fontFamily, getName, getDrawingChar, getDrawingColor, updateDrawingProp,
+    numRows, numCols, setConfig, getConfig,
+    fontFamily, fontMetrics, recalculateFontRatio,
+    getName, getDrawingChar, getDrawingColor, updateDrawingProp,
     resetCachedCanvasColors, getCanvasColors,
     isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, RASTER_TOOLS, VECTOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'

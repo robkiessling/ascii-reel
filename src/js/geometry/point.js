@@ -1,5 +1,5 @@
-import {fontHeight, fontWidth} from "../config/font.js";
 import Cell from "./cell.js";
+import {fontMetrics} from "../state/index.js";
 
 export default class Point {
     constructor(x, y) {
@@ -42,14 +42,14 @@ export default class Point {
     // The following functions will only work if the point is in world space (not screen space)
 
     get cell() {
-        const row = Math.floor(this.y / fontHeight);
-        const col = Math.floor(this.x / fontWidth);
+        const row = Math.floor(this.y / fontMetrics().height);
+        const col = Math.floor(this.x / fontMetrics().width);
         return new Cell(row, col);
     }
     
     get roundedCell() {
-        const row = Math.round(this.y / fontHeight);
-        const col = Math.round(this.x / fontWidth);
+        const row = Math.round(this.y / fontMetrics().height);
+        const col = Math.round(this.x / fontMetrics().width);
         return new Cell(row, col);
     }
 
@@ -61,8 +61,8 @@ export default class Point {
      * @returns {Cell}
      */
     get caretCell() {
-        const row = Math.floor(this.y / fontHeight);
-        const col = Math.round(this.x / fontWidth);
+        const row = Math.floor(this.y / fontMetrics().height);
+        const col = Math.round(this.x / fontMetrics().width);
         return new Cell(row, col);
     }
 

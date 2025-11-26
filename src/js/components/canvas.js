@@ -1,13 +1,13 @@
 import {setIntervalUsingRAF} from "../utils/utilities.js";
-import {numCols, numRows, fontFamily, colorStr, getCanvasColors} from "../state/index.js";
-import {fontHeight, fontWidth} from "../config/font.js";
+import {numCols, numRows, fontFamily, colorStr, getCanvasColors, fontMetrics} from "../state/index.js";
 import PixelRect from "../geometry/pixel_rect.js";
 import Cell from "../geometry/cell.js";
 import CellArea from "../geometry/cell_area.js";
 import {roundForComparison} from "../utils/numbers.js";
 import {HOVER_CELL_OPACITY, PRIMARY_COLOR, SELECTION_COLOR} from "../config/colors.js";
-import {EMPTY_CHAR, WHITESPACE_CHAR, isMonospaceUnsafeChar} from "../config/chars.js";
+import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
 import Point from "../geometry/point.js";
+import {isMonospaceUnsafeChar} from "../utils/chars.js";
 
 const WINDOW_BORDER_COLOR = PRIMARY_COLOR;
 const WINDOW_BORDER_WIDTH = 3;
@@ -93,7 +93,7 @@ export default class Canvas {
         }
 
         // Set up font
-        this.context.font = `${fontHeight}px ${fontFamily()}`;
+        this.context.font = `${fontMetrics().height}px ${fontFamily()}`;
         this.context.textAlign = 'left';
         this.context.textBaseline = 'middle';
 
@@ -659,15 +659,15 @@ export default class Canvas {
     cellPixelAtScreenXY(x, y, asFraction = true) {
         const point = this.screenToWorld(x, y);
 
-        const rowY = Math.floor(point.y / fontHeight) * fontHeight;
-        const colX = Math.floor(point.x / fontWidth) * fontWidth;
+        const rowY = Math.floor(point.y / fontMetrics().height) * fontMetrics().height;
+        const colX = Math.floor(point.x / fontMetrics().width) * fontMetrics().width;
 
         let relativeX = point.x - colX;
         let relativeY = point.y - rowY;
 
         if (asFraction) {
-            relativeX /= fontWidth;
-            relativeY /= fontHeight;
+            relativeX /= fontMetrics().width;
+            relativeY /= fontMetrics().height;
         }
 
         return { x: relativeX, y: relativeY };

@@ -1,6 +1,6 @@
-import {fontHeight, fontWidth} from "../config/font.js";
 import Point from "./point.js";
 import Cell from "./cell.js";
+import {fontMetrics} from "../state/index.js";
 
 export default class Vertex extends Point {
     constructor(row, col) {
@@ -12,10 +12,10 @@ export default class Vertex extends Point {
     // Since x and y are based purely on col/row value, we have these static methods so you can calculate x/y without
     // having to instantiate a new Vertex() -- helps with performance
     static x(col) {
-        return col * fontWidth;
+        return col * fontMetrics().width;
     }
     static y(row) {
-        return row * fontHeight;
+        return row * fontMetrics().height;
     }
 
     // Convert to/from its object representation (so we can store it in json state)
@@ -28,10 +28,10 @@ export default class Vertex extends Point {
     }
 
     get x() {
-        return this.col * fontWidth;
+        return this.col * fontMetrics().width;
     }
     get y() {
-        return this.row * fontHeight;
+        return this.row * fontMetrics().height;
     }
 
     get topLeftCell() {
