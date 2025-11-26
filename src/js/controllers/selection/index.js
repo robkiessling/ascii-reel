@@ -2,7 +2,7 @@ import * as vector from './vector_controller.js'
 import * as raster from './raster_controller.js'
 import * as actions from "../../io/actions.js";
 import * as state from "../../state/index.js";
-import {LAYER_TYPES} from "../../state/constants.js";
+import {LAYER_TYPES} from "../../config/timeline.js";
 
 export * as raster from './raster_controller.js';
 export * as vector from './vector_controller.js';

@@ -14,6 +14,7 @@ import {readGlobalSetting, saveGlobalSetting} from "../storage/local_storage.js"
 import Minimizer from "../components/minimizer.js";
 import {getIconClass, getIconHTML} from "../config/icons.js";
 import {setupActionButtons} from "../io/actions.js";
+import {FRAME_TICK_OPTIONS} from "../config/timeline.js";
 
 let $container, $list;
 let simpleBar, frameComponents, actionButtons, toggleComponentButton;
@@ -170,7 +171,7 @@ function setupTicksTooltips() {
 
             instance.setProps({ placement: isLeftAligned() ? 'right' : 'top' });
 
-            const selectOptions = state.TICKS_OPTIONS.map(ticks => {
+            const selectOptions = FRAME_TICK_OPTIONS.map(ticks => {
                 const selected = currentTicks === ticks ? 'selected="selected"' : '';
                 return `<option value="${ticks}" ${selected}>${ticks}x</option>`;
             }).join('');

@@ -1,21 +1,12 @@
 import Color from "@sphinxxxx/color-conversion";
 import {getDrawingColor} from "./config.js";
 import {iterateAllCels} from "./timeline/cels.js";
-import {BLACK, COLOR_FORMAT, WHITE} from "../config/colors.js";
+import {BLACK, COLOR_FORMAT, COLOR_SORT_OPTIONS, WHITE} from "../config/colors.js";
 
 const DEFAULT_COLOR = BLACK;
 
 export const COLOR_DEPTH_8_BIT = '8bit';
 export const COLOR_DEPTH_16_BIT = '16bit';
-
-// Note: these values get used to look up strings->description value for tooltip. If this is changed need to update strings.
-export const SORT_BY_OPTIONS = {
-    DATE_ADDED: 'date-added',
-    HUE: 'hue',
-    SATURATION: 'saturation',
-    LIGHTNESS: 'lightness',
-    ALPHA: 'alpha'
-}
 
 const DEFAULT_STATE = {
     colors: [DEFAULT_COLOR],
@@ -112,24 +103,24 @@ export function convertToMonochrome(charColor) {
 }
 
 function recalculateSortedPalette() {
-    if (!Object.values(SORT_BY_OPTIONS).includes(state.sortBy)) {
-        state.sortBy = SORT_BY_OPTIONS.DATE_ADDED;
+    if (!Object.values(COLOR_SORT_OPTIONS).includes(state.sortBy)) {
+        state.sortBy = COLOR_SORT_OPTIONS.DATE_ADDED;
     }
 
     switch (state.sortBy) {
-        case SORT_BY_OPTIONS.DATE_ADDED:
+        case COLOR_SORT_OPTIONS.DATE_ADDED:
             state.sortedColors = [...state.colors];
             break;
-        case SORT_BY_OPTIONS.HUE:
+        case COLOR_SORT_OPTIONS.HUE:
             state.sortedColors = sortColorsByHslaAttr(state.colors, 'h');
             break;
-        case SORT_BY_OPTIONS.SATURATION:
+        case COLOR_SORT_OPTIONS.SATURATION:
             state.sortedColors = sortColorsByHslaAttr(state.colors, 's');
             break;
-        case SORT_BY_OPTIONS.LIGHTNESS:
+        case COLOR_SORT_OPTIONS.LIGHTNESS:
             state.sortedColors = sortColorsByHslaAttr(state.colors, 'l');
             break;
-        case SORT_BY_OPTIONS.ALPHA:
+        case COLOR_SORT_OPTIONS.ALPHA:
             state.sortedColors = sortColorsByHslaAttr(state.colors, 'a');
             break;
         default:

@@ -10,7 +10,7 @@ import {createDialog} from "../utils/dialogs.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Minimizer from "../components/minimizer.js";
-import {LAYER_TYPES} from "../state/constants.js";
+import {LAYER_TYPES} from "../config/timeline.js";
 import {delegateTips, standardTip} from "../components/tooltips.js";
 import {getIconHTML} from "../config/icons.js";
 

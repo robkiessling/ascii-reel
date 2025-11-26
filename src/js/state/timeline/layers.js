@@ -1,4 +1,4 @@
-import {LAYER_TYPES} from "../constants.js";
+import {LAYER_TYPES} from "../../config/timeline.js";
 
 const DEFAULT_STATE = {
     layers: [],

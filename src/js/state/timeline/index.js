@@ -10,7 +10,7 @@ import * as layerData from './layers.js';
 import * as celData from './cels.js';
 import {ArrayRange, create2dArray, mergeGlyphs} from "../../utils/arrays.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../config/chars.js";
-import {LAYER_TYPES} from "../constants.js";
+import {LAYER_TYPES} from "../../config/timeline.js";
 import CellArea from "../../geometry/cell_area.js";
 
 export function deserialize(data = {}, options = {}) {
@@ -111,7 +111,6 @@ export function convertToDrawing() {
 export {
     frames as frames, frameIndex, changeFrameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame,
     previousFrame, reorderFrames, reverseFrames, updateFrame, expandedFrames,
-    TICKS_OPTIONS
 } from './frames.js'
 
 export function createFrame(index, data) {

@@ -9,7 +9,7 @@ import {resetState as resetLocalStorage, saveState as saveToLocalStorage} from "
 import {toggleStandard} from "../io/keyboard.js";
 import {isPickerCanceledError, saveCorruptedState} from "../storage/file_system.js";
 import {eventBus, EVENTS} from "../events/events.js";
-import {LAYER_TYPES} from "./constants.js";
+import {LAYER_TYPES} from "../config/timeline.js";
 import {COLOR_STR_PROP} from "../config/shapes.js";
 import {COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT} from "./palette.js";
 import {COLOR_MODES, contrastColor} from "../config/colors.js";
@@ -29,7 +29,6 @@ export {
     // frames
     frames, frameIndex, frameRangeSelection, extendFrameRangeSelection, currentFrame, previousFrame, createFrame,
     duplicateFrames, deleteFrames, reorderFrames, reverseFrames, updateFrame, expandedFrames,
-    TICKS_OPTIONS,
 
     // cels
     iterateCelsForCurrentLayer, iterateCels,
@@ -43,7 +42,7 @@ export {
 export {
     sortedPalette, isNewColor, addColor, deleteColor, changePaletteSortBy, getPaletteSortBy,
     colorTable, colorStr, colorIndex, primaryColorIndex, vacuumColorTable,
-    importPalette, SORT_BY_OPTIONS as PALETTE_SORT_BY_OPTIONS
+    importPalette
 } from './palette.js'
 export {
     sortedChars, importChars, setUnicodeSetting, getUnicodeSetting

@@ -21,7 +21,7 @@ import * as tools from "./tool_controller.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import {EMPTY_CHAR} from "../config/chars.js";
 import RectSelection from "../geometry/selection/rect.js";
-import {LAYER_TYPES} from "../state/constants.js";
+import {LAYER_TYPES} from "../config/timeline.js";
 import {callAction} from "../io/actions.js";
 import {getAttachTarget} from "./selection/vector_controller.js";
 import {HANDLE_TYPES} from "../config/shapes.js";

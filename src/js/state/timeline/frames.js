@@ -12,8 +12,6 @@ const FRAME_DEFAULTS = {
     ticks: 1
 }
 
-export const TICKS_OPTIONS = [0, 1, 2, 3, 4, 5, 10];
-
 let state = {};
 let idSequence = 0;
 

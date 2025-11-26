@@ -29,7 +29,7 @@ import ColorPicker from "../components/color_picker.js";
 import {refreshableTooltips, standardTip, standardTipContentBuilder} from "../components/tooltips.js";
 import IconMenu from "../components/icon_menu.js";
 import {MOUSE} from "../io/mouse.js";
-import {LAYER_TYPES} from "../state/constants.js";
+import {LAYER_TYPES} from "../config/timeline.js";
 import {diamondBrushCells, squareBrushCells} from "../geometry/shapes/algorithms/brush.js";
 import Shape from "../geometry/shapes/shape.js";
 import {selectedShapes} from "../state/selection/vector_selection.js";

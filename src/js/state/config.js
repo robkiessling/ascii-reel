@@ -2,7 +2,7 @@ import {getFormattedDateTime} from "../utils/strings.js";
 import {pick} from "../utils/objects.js";
 import Color from "@sphinxxxx/color-conversion";
 import {CHAR_PROP, COLOR_STR_PROP, DEFAULT_DRAW_PROPS} from "../config/shapes.js";
-import {LAYER_TYPES} from "./constants.js";
+import {LAYER_TYPES} from "../config/timeline.js";
 import * as timeline from "./timeline/index.js";
 import {
     BACKGROUND_MODES, CHECKERBOARD_DARK_A, CHECKERBOARD_DARK_B, CHECKERBOARD_LIGHT_A, CHECKERBOARD_LIGHT_B,

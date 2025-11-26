@@ -8,6 +8,7 @@ import * as actions from "../io/actions.js";
 import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Minimizer from "../components/minimizer.js";
+import {COLOR_SORT_OPTIONS} from "../config/colors.js";
 
 
 let $container, $colorList, $actions, actionButtons, minimizer;
@@ -45,9 +46,9 @@ function setupActions() {
             return STRINGS[`palette.sort-colors.name.${state.getPaletteSortBy()}`]
         },
         callback: () => {
-            let sortIndex = Object.values(state.PALETTE_SORT_BY_OPTIONS).indexOf(state.getPaletteSortBy());
-            sortIndex = (sortIndex + 1) % Object.values(state.PALETTE_SORT_BY_OPTIONS).length;
-            state.changePaletteSortBy(Object.values(state.PALETTE_SORT_BY_OPTIONS)[sortIndex]);
+            let sortIndex = Object.values(COLOR_SORT_OPTIONS).indexOf(state.getPaletteSortBy());
+            sortIndex = (sortIndex + 1) % Object.values(COLOR_SORT_OPTIONS).length;
+            state.changePaletteSortBy(Object.values(COLOR_SORT_OPTIONS)[sortIndex]);
             refresh();
         }
     });

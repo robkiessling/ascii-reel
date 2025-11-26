@@ -4,7 +4,7 @@ import {EMPTY_CHAR, WHITESPACE_CHAR} from "../../../config/chars.js";
 import {isCellInBounds, getOffsetPosition} from "../cels.js";
 import {addToCache} from "../../unicode.js";
 import pako from "pako";
-import {LAYER_TYPES} from "../../constants.js";
+import {LAYER_TYPES} from "../../../config/timeline.js";
 import {COLOR_DEPTH_16_BIT, COLOR_DEPTH_8_BIT} from "../../palette.js";
 
 const ENCODED_EMPTY_CHAR = "\0";

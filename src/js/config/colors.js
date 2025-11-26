@@ -54,3 +54,14 @@ export const MINOR_GRID_LIGHTNESS_DELTA = 0.1;
 export const MAJOR_GRID_LIGHTNESS_DELTA = 0.3;
 export const HOVER_LIGHTNESS_DELTA = 0.5;
 export const HOVER_CELL_OPACITY = 0.25;
+
+// ------------------------------------------------------------- Palette
+
+// Note: these values get used to look up strings->description value for tooltip. If this is changed need to update strings.
+export const COLOR_SORT_OPTIONS = {
+    DATE_ADDED: 'date-added',
+    HUE: 'hue',
+    SATURATION: 'saturation',
+    LIGHTNESS: 'lightness',
+    ALPHA: 'alpha'
+}

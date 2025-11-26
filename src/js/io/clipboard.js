@@ -6,7 +6,7 @@ import * as selectionController from "../controllers/selection/index.js";
 import * as state from "../state/index.js";
 import * as actions from "./actions.js";
 import {EMPTY_CHAR, WHITESPACE_CHAR} from "../config/chars.js";
-import {LAYER_TYPES} from "../state/constants.js";
+import {LAYER_TYPES} from "../config/timeline.js";
 
 let copiedSelection = {};
 

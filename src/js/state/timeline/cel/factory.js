@@ -1,6 +1,6 @@
 import RasterCel from "./raster.js";
 import VectorCel from "./vector.js";
-import {LAYER_TYPES} from "../../constants.js";
+import {LAYER_TYPES} from "../../../config/timeline.js";
 
 /**
  * Cel

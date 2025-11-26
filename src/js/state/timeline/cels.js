@@ -4,7 +4,7 @@ import {numCols, numRows, getConfig, setConfig, getDrawingColor} from "../config
 import {mod} from "../../utils/numbers.js";
 import {colorIndex, isNewColor} from "../palette.js";
 import CelFactory from "./cel/factory.js";
-import {LAYER_TYPES} from "../constants.js";
+import {LAYER_TYPES} from "../../config/timeline.js";
 import RasterCel from "./cel/raster.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 
