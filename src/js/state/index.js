@@ -19,7 +19,7 @@ export {
     fontFamily, fontMetrics, recalculateFontRatio,
     getName, getDrawingChar, getDrawingColor, updateDrawingProp,
     resetCachedCanvasColors, getCanvasColors,
-    isAnimationProject, isMultiColored, MULTICOLOR_TOOLS, RASTER_TOOLS, VECTOR_TOOLS, DEFAULT_STATE as DEFAULT_CONFIG
+    isAnimationProject, isMultiColored, DEFAULT_STATE as DEFAULT_CONFIG
 } from './config.js'
 export {
     // layers

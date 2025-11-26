@@ -36,6 +36,7 @@ import {selectedShapes} from "../state/selection/vector_selection.js";
 import {filterObject, isEmptyObject, transformValues} from "../utils/objects.js";
 import {getConstructor} from "../geometry/shapes/registry.js";
 import SimpleBar from "simplebar";
+import {MULTICOLOR_TOOLS, RASTER_TOOLS, TOOLS, VECTOR_TOOLS} from "../config/tools.js";
 
 
 // -------------------------------------------------------------------------------- Main External API
@@ -388,31 +389,6 @@ function toolForMouseButton(mouseButton) {
 
 let $tools, toolsMenu;
 
-const TOOLS = [
-    { value: 'select', group: 'Mouse' },
-    { value: 'text-editor', group: 'Mouse' },
-    { value: 'pan', group: 'Mouse' },
-    { value: 'move-all', group: 'Mouse' },
-
-    { value: 'draw-rect', group: 'Draw Shape' },
-    { value: 'draw-diamond', group: 'Draw Shape' },
-    { value: 'draw-ellipse', group: 'Draw Shape' },
-    { value: 'draw-line', group: 'Draw Shape' },
-
-    { value: 'draw-freeform', },
-    { value: 'draw-textbox', },
-    { value: 'eraser', },
-    { value: 'fill-char', },
-
-    { value: 'selection-rect', group: 'Selection' },
-    { value: 'selection-lasso', group: 'Selection' },
-    { value: 'selection-line', group: 'Selection' },
-    { value: 'selection-wand', group: 'Selection' },
-
-    { value: 'paint-brush', group: 'Color' },
-    { value: 'color-swap', group: 'Color' },
-]
-
 function setupTools() {
     $tools = $('#tools');
 
@@ -420,10 +396,10 @@ function setupTools() {
         const actionData = {
             callback: () => changeTool(tool.value),
             enabled: () => {
-                if (state.MULTICOLOR_TOOLS.has(tool.value) && !state.isMultiColored()) return false;
+                if (MULTICOLOR_TOOLS.has(tool.value) && !state.isMultiColored()) return false;
                 if (state.layers()) {
-                    if (state.RASTER_TOOLS.has(tool.value) && state.currentLayerType() !== LAYER_TYPES.RASTER) return false;
-                    if (state.VECTOR_TOOLS.has(tool.value) && state.currentLayerType() !== LAYER_TYPES.VECTOR) return false;
+                    if (RASTER_TOOLS.has(tool.value) && state.currentLayerType() !== LAYER_TYPES.RASTER) return false;
+                    if (VECTOR_TOOLS.has(tool.value) && state.currentLayerType() !== LAYER_TYPES.VECTOR) return false;
                 }
                 return true;
             },

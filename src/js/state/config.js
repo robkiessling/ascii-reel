@@ -17,6 +17,13 @@ import {THEMES} from "../config/themes.js";
 import {isEmptyObject} from "jquery";
 import {roundToDecimal} from "../utils/numbers.js";
 import {FONT_PT} from "../config/font.js";
+import {
+    MULTICOLOR_TOOLS,
+    RASTER_TOOL_FALLBACKS,
+    RASTER_TOOLS,
+    VECTOR_TOOL_FALLBACKS,
+    VECTOR_TOOLS
+} from "../config/tools.js";
 
 // TODO There are a lot of strings that should be constants
 // TODO Organize this better? E.g. projectSettings could contain certain keys
@@ -52,26 +59,6 @@ export const DEFAULT_STATE = {
 const CONFIG_KEYS_SAVED_TO_HISTORY = [
     'font', 'dimensions', 'background', 'projectType', 'colorMode'
 ]
-
-// These tools are only available if colorMode is multicolor
-export const MULTICOLOR_TOOLS = new Set(['paint-brush', 'color-swap'])
-
-// These tools are only available depending on layerType
-export const RASTER_TOOLS = new Set([
-    'text-editor', 'fill-char', 'selection-rect', 'selection-lasso', 'selection-line', 'selection-wand',
-    'paint-brush', 'color-swap'
-])
-export const VECTOR_TOOLS = new Set(['select', 'draw-textbox']);
-
-// Tool fallbacks for when the current tool isn't valid for the current layer type
-const VECTOR_TOOL_TO_RASTER_FALLBACK = {
-    default: 'text-editor',
-    'draw-textbox': 'fill-char'
-}
-const RASTER_TOOL_TO_VECTOR_FALLBACK = {
-    default: 'select',
-    'fill-char': 'draw-textbox',
-}
 
 let state = {};
 
@@ -162,16 +149,16 @@ export function toolFallback() {
     switch(timeline.currentLayerType()) {
         case LAYER_TYPES.RASTER:
             if (getConfig('colorMode') === COLOR_MODES.BLACK_AND_WHITE && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
-                setConfig('tool', VECTOR_TOOL_TO_RASTER_FALLBACK.default)
+                setConfig('tool', RASTER_TOOL_FALLBACKS.default)
             } else if (VECTOR_TOOLS.has(getConfig('tool'))) {
-                setConfig('tool', VECTOR_TOOL_TO_RASTER_FALLBACK[getConfig('tool')] || VECTOR_TOOL_TO_RASTER_FALLBACK.default)
+                setConfig('tool', RASTER_TOOL_FALLBACKS[getConfig('tool')] || RASTER_TOOL_FALLBACKS.default)
             }
             break;
         case LAYER_TYPES.VECTOR:
             if (getConfig('colorMode') === COLOR_MODES.BLACK_AND_WHITE && MULTICOLOR_TOOLS.has(getConfig('tool'))) {
-                setConfig('tool', RASTER_TOOL_TO_VECTOR_FALLBACK.default)
+                setConfig('tool', VECTOR_TOOL_FALLBACKS.default)
             } else if (RASTER_TOOLS.has(getConfig('tool'))) {
-                setConfig('tool', RASTER_TOOL_TO_VECTOR_FALLBACK[getConfig('tool')] || RASTER_TOOL_TO_VECTOR_FALLBACK.default)
+                setConfig('tool', VECTOR_TOOL_FALLBACKS[getConfig('tool')] || VECTOR_TOOL_FALLBACKS.default)
             }
             break;
     }
