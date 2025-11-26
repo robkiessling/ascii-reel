@@ -55,7 +55,6 @@ defer(() => loadInitialContent());
 function setupEventBus() {
     eventBus.on(EVENTS.STATE.LOADED, () => {
         recalculateFontRatio();
-        resetCachedCanvasColors();
 
         eventBus.emit(EVENTS.RESIZE.ALL, { clearSelection: false, resetZoom: true })
     })

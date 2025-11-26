@@ -13,6 +13,7 @@ import Minimizer from "../components/minimizer.js";
 import {LAYER_TYPES} from "../config/timeline.js";
 import {delegateTips, standardTip} from "../components/tooltips.js";
 import {getIconHTML} from "../config/icons.js";
+import {COMPONENT_KEYS} from "../config/preferences.js";
 
 let $container, $template, $list,
     $editDialog, $editName, $editType, $isNewLayer, $rasterizeWarning, $vectorizeWarning;
@@ -22,7 +23,7 @@ export function init() {
     $container = $('#layer-controller');
     $template = $container.find('.layer-template');
 
-    minimizer = new Minimizer($container, 'layers')
+    minimizer = new Minimizer($container, COMPONENT_KEYS.LAYERS)
     setupList();
     setupActions();
     setupEventBus();

@@ -1,10 +1,10 @@
 import {registerAction} from "../../io/actions.js";
-import {THEMES} from "../../config/themes.js";
+import {THEMES} from "../../config/preferences.js";
 import {eventBus, EVENTS} from "../../events/events.js";
 import {getIconClass, getIconHTML} from "../../config/icons.js";
 import {
-    getComputedTheme, getDarkModePref, getTheme, resetCachedCanvasColors,
-    recalculateTheme, setDarkModePref, setTheme, validateColorMode
+    getComputedTheme, getDarkModePref, getTheme,
+    setDarkModePref, setTheme, validateColorMode
 } from "../../state/index.js";
 
 export function init() {
@@ -15,7 +15,6 @@ export function init() {
     setupOSPreference();
     setupEventBus();
 
-    recalculateTheme();
     applyThemeToDocument();
 }
 
@@ -37,7 +36,6 @@ function setupEventBus() {
     eventBus.on(EVENTS.REFRESH.ALL, () => refresh())
 
     eventBus.on(EVENTS.THEME.CHANGED, () => {
-        recalculateTheme();
         validateColorMode();
         applyThemeToDocument();
         eventBus.emit(EVENTS.REFRESH.ALL);

@@ -13,7 +13,7 @@ import {
     MINOR_GRID_LIGHTNESS_DELTA
 } from "../config/colors.js";
 import {getComputedTheme} from "./preferences.js";
-import {THEMES} from "../config/themes.js";
+import {THEMES} from "../config/preferences.js";
 import {isEmptyObject} from "jquery";
 import {roundToDecimal} from "../utils/numbers.js";
 import {FONT_PT} from "../config/font.js";
@@ -24,7 +24,7 @@ import {
     VECTOR_TOOL_FALLBACKS,
     VECTOR_TOOLS
 } from "../config/tools.js";
-import {DEFAULT_PROJECT_CONFIG} from "../config/state.js";
+import {DEFAULT_PROJECT_CONFIG, PROJECT_TYPES} from "../config/state.js";
 
 // Only the following config keys are saved to history; undo/redo will not affect the other config
 const CONFIG_KEYS_SAVED_TO_HISTORY = [
@@ -65,8 +65,6 @@ export function numCols() {
 }
 
 export function setConfig(key, newValue) {
-    if (resetCachedCanvasColorProps.has(key)) resetCachedCanvasColors();
-
     state[key] = newValue;
 }
 export function getConfig(key) {
@@ -85,9 +83,9 @@ export function getName(includeDefaultTimestamp = true) {
     }
     else {
         switch (getConfig('projectType')) {
-            case 'animation':
+            case PROJECT_TYPES.ANIMATION:
                 return 'Untitled animation';
-            case 'drawing':
+            case PROJECT_TYPES.DRAWING:
                 return 'Untitled drawing';
             default:
                 return 'Untitled';
@@ -108,7 +106,7 @@ export function updateDrawingProp(key, value) {
 }
 
 export function isAnimationProject() {
-    return getConfig('projectType') === 'animation';
+    return getConfig('projectType') === PROJECT_TYPES.ANIMATION;
 }
 
 export function isMultiColored() {
@@ -169,9 +167,6 @@ export function fontFamily() {
 // ------------------------------------------------------- Canvas BG / Grid Colors:
 // The canvas background / grid color depends on both the file's config:background setting & the user's theme.
 // We cache these colors and only recalculate them when one of those fields changes.
-
-// Config keys that reset cached colors
-const resetCachedCanvasColorProps = new Set(['background', 'colorMode']);
 
 let cachedCanvasColors = {};
 

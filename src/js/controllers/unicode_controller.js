@@ -11,6 +11,7 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {createDialog} from "../utils/dialogs.js";
 import {STRINGS} from "../config/strings.js";
 import Minimizer from "../components/minimizer.js";
+import {COMPONENT_KEYS} from "../config/preferences.js";
 
 let $container, $charList, $actions, actionButtons, $unicodeDialog, minimizer;
 
@@ -36,7 +37,7 @@ export function init() {
         eventBus.emit(EVENTS.UNICODE.CHAR_SELECTED, { char })
     });
 
-    minimizer = new Minimizer($container, 'unicode')
+    minimizer = new Minimizer($container, COMPONENT_KEYS.UNICODE)
 
     setupSettings();
     setupActions();

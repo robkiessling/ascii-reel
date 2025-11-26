@@ -4,11 +4,12 @@ import {hideAll as hideAllTooltips} from "tippy.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Minimizer from "../components/minimizer.js";
 import {setupActionButtons} from "../io/actions.js";
+import {COMPONENT_KEYS} from "../config/preferences.js";
 
 let minimizer, toggleComponentButton;
 
 export function init() {
-    minimizer = new Minimizer($('#side-content'), 'sidebar', { fullyHide: true })
+    minimizer = new Minimizer($('#side-content'), COMPONENT_KEYS.SIDEBAR, { fullyHide: true })
     setupActions();
 }
 

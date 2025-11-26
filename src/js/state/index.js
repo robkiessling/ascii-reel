@@ -52,7 +52,8 @@ export {
     pushHistory, endHistoryModification, isDirty, markClean
 } from './history.js'
 export {
-    recalculateTheme, getDarkModePref, setDarkModePref, getTheme, setTheme, getComputedTheme
+    getDarkModePref, setDarkModePref, getTheme, setTheme, getComputedTheme,
+    isMinimizedComponent, setMinimizedComponent, getFramesOrientation, setFramesOrientation
 } from './preferences.js'
 
 export * as selection from './selection/index.js'
@@ -343,6 +344,7 @@ function migrateToV8(state) {
 // --------------------------------------------------------------------------------
 
 export function validateColorMode() {
+    config.resetCachedCanvasColors();
     const contrast = contrastColor(config.getCanvasColors().background);
 
     if (config.getConfig('colorMode') === COLOR_MODES.BLACK_AND_WHITE) {
@@ -369,7 +371,7 @@ export function invertInvisibleChars() {
 }
 
 export function validateProjectType() {
-    if (config.getConfig('projectType') === 'drawing') {
+    if (!config.isAnimationProject()) {
         timeline.convertToDrawing();
         config.setConfig('playPreview', false);
         config.setConfig('showOnion', false);

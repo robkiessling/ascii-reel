@@ -15,6 +15,7 @@ import Minimizer from "../components/minimizer.js";
 import {getIconClass, getIconHTML} from "../config/icons.js";
 import {setupActionButtons} from "../io/actions.js";
 import {FRAME_TICK_OPTIONS} from "../config/timeline.js";
+import {COMPONENT_KEYS, FRAME_ORIENTATIONS} from "../config/preferences.js";
 
 let $container, $list;
 let simpleBar, frameComponents, actionButtons, toggleComponentButton;
@@ -23,7 +24,7 @@ let minimizer;
 export function init() {
     $container = $('#frame-controller');
 
-    minimizer = new Minimizer($container, 'frames', { fullyHide: true })
+    minimizer = new Minimizer($container, COMPONENT_KEYS.FRAMES, { fullyHide: true })
     setupList();
     setupActions();
     setupEventBus();
@@ -79,7 +80,7 @@ function refresh() {
 }
 
 function isLeftAligned() {
-    return readGlobalSetting('frameOrientation') !== 'bottom';
+    return state.getFramesOrientation() === 'left';
 }
 
 function currentFrameComponent() {
@@ -286,7 +287,7 @@ function setupActions() {
     actions.registerAction('frames.align-left', {
         callback: () => {
             if (isLeftAligned()) minimizer.toggle(false);
-            saveGlobalSetting('frameOrientation', 'left');
+            state.setFramesOrientation(FRAME_ORIENTATIONS.LEFT);
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },
@@ -296,7 +297,7 @@ function setupActions() {
     actions.registerAction('frames.align-bottom', {
         callback: () => {
             if (!isLeftAligned()) minimizer.toggle(false);
-            saveGlobalSetting('frameOrientation', 'bottom');
+            state.setFramesOrientation(FRAME_ORIENTATIONS.BOTTOM);
             hideAllTooltips({ duration: 0 });
             eventBus.emit(EVENTS.RESIZE.ALL)
         },

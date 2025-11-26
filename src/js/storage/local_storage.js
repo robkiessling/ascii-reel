@@ -8,6 +8,7 @@
 
 import {serialize, isValid, deserialize} from "../state/index.js";
 import {eventBus, EVENTS} from "../events/events.js";
+import {GLOBAL_SETTINGS} from "../config/preferences.js";
 
 export function init() {
     setupBroadcastChannel();
@@ -95,11 +96,11 @@ function onAnotherTabGlobalSettingsUpdate(msgData) {
     cachedGlobalSettings = undefined; // Clear cache
 
     switch(msgData.setting) {
-        case 'theme':
+        case GLOBAL_SETTINGS.THEME:
             eventBus.emit(EVENTS.THEME.CHANGED);
             break;
-        case 'frameOrientation':
-        case 'minimizedComponents':
+        case GLOBAL_SETTINGS.FRAME_ORIENTATION:
+        case GLOBAL_SETTINGS.MINIMIZED_COMPONENTS:
             eventBus.emit(EVENTS.RESIZE.ALL);
             break;
     }

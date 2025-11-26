@@ -13,6 +13,7 @@ import {getDynamicColor} from "../config/colors.js";
 import Minimizer from "../components/minimizer.js";
 import {MOUSE} from "../io/mouse.js";
 import {getIconHTML} from "../config/icons.js";
+import {COMPONENT_KEYS} from "../config/preferences.js";
 
 const MAX_FPS = 30;
 const POPUP_INITIAL_SIZE = [640, 640]; // width, height
@@ -56,7 +57,7 @@ export function init() {
         }
     });
 
-    minimizer = new Minimizer($container, 'preview')
+    minimizer = new Minimizer($container, COMPONENT_KEYS.PREVIEW)
 
     setupActions();
     setupEventBus();

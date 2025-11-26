@@ -4,7 +4,8 @@ export const COLOR_FORMAT = 'hex'; // vanilla-picker format we use to store colo
 export const BLACK = new Color('#000')[COLOR_FORMAT];
 export const WHITE = new Color('#fff')[COLOR_FORMAT];
 export const DARK = new Color('#111113')[COLOR_FORMAT]; // Matches dark's --gray-1
-export const LIGHT = new Color('#fcfcfd')[COLOR_FORMAT]; // Matches light's --gray-1
+// export const LIGHT = new Color('#fcfcfd')[COLOR_FORMAT]; // Matches light's --gray-1
+export const LIGHT = new Color('#fff')[COLOR_FORMAT]; // Matches light's --gray-0
 
 export const COLOR_MODES = {
     BLACK_AND_WHITE: 'monochrome',

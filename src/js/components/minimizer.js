@@ -1,4 +1,4 @@
-import {readGlobalSetting, saveGlobalSetting} from "../storage/local_storage.js";
+import {isMinimizedComponent, setMinimizedComponent} from "../state/index.js";
 
 /**
  * Handles minimizing/maximizing various feature containers
@@ -28,14 +28,11 @@ export default class Minimizer {
     }
 
     get isMinimized() {
-        const minimizedComponents = readGlobalSetting('minimizedComponents') || {};
-        return !!minimizedComponents[this.componentKey];
+        return isMinimizedComponent(this.componentKey);
     }
 
     toggle(minimize) {
-        const minimizedComponents = readGlobalSetting('minimizedComponents') || {};
-        minimizedComponents[this.componentKey] = minimize === undefined ? !this.isMinimized : minimize;
-        saveGlobalSetting('minimizedComponents', minimizedComponents);
+        setMinimizedComponent(this.componentKey, minimize);
 
         if (this.options.onChange) this.options.onChange(this.isMinimized);
     }

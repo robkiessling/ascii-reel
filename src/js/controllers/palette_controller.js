@@ -9,6 +9,7 @@ import {STRINGS} from "../config/strings.js";
 import {eventBus, EVENTS} from "../events/events.js";
 import Minimizer from "../components/minimizer.js";
 import {COLOR_SORT_OPTIONS} from "../config/colors.js";
+import {COMPONENT_KEYS} from "../config/preferences.js";
 
 
 let $container, $colorList, $actions, actionButtons, minimizer;
@@ -29,7 +30,7 @@ export function init() {
         eventBus.emit(EVENTS.PALETTE.COLOR_SELECTED, { color: $color.data('color') });
     });
 
-    minimizer = new Minimizer($container, 'palette')
+    minimizer = new Minimizer($container, COMPONENT_KEYS.PALETTE)
 
     setupActions();
     setupEventBus();

@@ -1,9 +1,10 @@
 import Color from "@sphinxxxx/color-conversion";
 import {getDrawingColor} from "./config.js";
 import {iterateAllCels} from "./timeline/cels.js";
-import {BLACK, COLOR_FORMAT, COLOR_SORT_OPTIONS, WHITE} from "../config/colors.js";
+import {COLOR_FORMAT, COLOR_SORT_OPTIONS} from "../config/colors.js";
 
-const DEFAULT_COLOR = BLACK;
+// Using red here; I don't think this will ever actually get used and I want to notice if it is
+const DEFAULT_COLOR = '#ff0000';
 
 export const COLOR_DEPTH_8_BIT = '8bit';
 export const COLOR_DEPTH_16_BIT = '16bit';
