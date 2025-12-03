@@ -48,7 +48,7 @@ export const STRINGS = {
     'themes.select-light-mode.name': 'Light',
     'themes.select-dark-mode.name': 'Dark',
 
-    'tools.standard.select.name': 'Selection',
+    'tools.standard.select.name': 'Move',
     'tools.standard.select.description': 'Click on a shape to select it. Drag to move it, or use handles to resize and edit.',
     'tools.standard.text-editor.name': 'Text Editor',
     'tools.standard.text-editor.description': 'Use this tool to edit text directly on the canvas.\n\n' +
@@ -206,7 +206,7 @@ export const STRINGS = {
 
     'tools.shapes.charPicker.name': 'Selected Character',
     'tools.shapes.charPicker.description': 'Click to open the character picker. While open, pressing a key will select that character.',
-    'tools.shapes.quickSwapChar.name': 'Quick-Swap Mode',
+    'tools.shapes.quickSwapChar.name': 'Char-Swap Mode',
     'tools.shapes.quickSwapChar.description': 'While active, pressing any key selects that character instead of switching tools.',
 
     'tools.shapes.colorPicker.name': 'Color',
@@ -280,6 +280,8 @@ export const STRINGS = {
         'You can freely erase, overwrite, or repaint any part of the canvas. ' +
         'Raster layers are best suited for detailed editing and creating ASCII art.',
     'layers.layerType.rasterize.warning': 'This layer will be rasterized: it will appear the same, but all shapes will be converted to raw characters.',
+    'layers.previous-layer.name': 'Previous Layer',
+    'layers.next-layer.name': 'Next Layer',
 
     'preview.open-popup.name': 'Preview Popup',
     'preview.open-popup.description': 'Opens the preview in a resizeable popup window.',

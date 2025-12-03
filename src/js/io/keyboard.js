@@ -3,6 +3,7 @@ import * as state from "../state/index.js";
 import * as tools from "../controllers/tool_controller.js";
 import * as actions from "./actions.js";
 import {EMPTY_CHAR} from "../config/chars.js";
+import {PREVENT_DEFAULT_BROWSER_SHORTCUTS} from "../config/shortcuts.js";
 
 export function init() {
     setupKeydownListener();
@@ -71,7 +72,7 @@ function setupKeydownListener() {
                     break;
                 default:
                     if (key.length !== 1) return; // Unrecognized input; let browser handle as normal
-                    handleCharKey(key);
+                    handleCharKey(key, e);
             }
 
             e.preventDefault();
@@ -115,11 +116,14 @@ function handleBackspaceKey(key) {
     actions.callActionByShortcut({ key });
 }
 
-function handleCharKey(char) {
+function handleCharKey(char, e) {
     if (tools.handleCharKey(char)) return;
     if (selectionController.raster.handleCharKey(char)) return;
     if (selectionController.vector.handleCharKey(char)) return;
-    actions.callActionByShortcut({ key: char });
+
+    // At this point, the only modifier that matters is shiftKey (if metaKey, ctrlKey, or altKey was down we would
+    // have checked for an action much earlier in the app shortcuts section).
+    actions.callActionByShortcut({ key: char, modifiers: ['shiftKey'].filter(modifier => e[modifier]) });
 }
 
 function handleArrowKey(arrowKey, e) {
@@ -186,13 +190,6 @@ function handleStandardKeyboard(key, e) {
         e.preventDefault();
     }
 }
-
-const PREVENT_DEFAULT_BROWSER_SHORTCUTS = new Set([
-    // Preventing normal browser zoom in/out since we use these same keys to zoom in/out of the canvas. Normally our
-    // own shortcut already prevents normal browser behavior, but if the canvas is zoomed all the way in/out our action
-    // will actually be disabled, meaning our shortcut does not prevent default browser behavior.
-    '-', '=', '0'
-])
 
 // A few browser shortcuts are prevented. See PREVENT_DEFAULT_BROWSER_SHORTCUTS for details.
 function handleBrowserShortcut(e, key) {

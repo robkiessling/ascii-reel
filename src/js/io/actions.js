@@ -1,4 +1,3 @@
-import tippy from "tippy.js";
 import {STRINGS} from "../config/strings.js";
 import {isFunction}from "../utils/utilities.js";
 import {isMacOS, modifierAbbr, modifierWord} from "../utils/os.js";
@@ -6,82 +5,18 @@ import {eventBus, EVENTS} from "../events/events.js";
 import {capitalizeFirstLetter, strToHTML} from "../utils/strings.js";
 import {isObject} from "../utils/objects.js";
 import {refreshableTooltips} from "../components/tooltips.js";
-import {getIconClass, getIconHTML} from "../config/icons.js";
+import {getIconHTML} from "../config/icons.js";
+import {actionIdToShortcut} from "../config/shortcuts.js";
 
-let actions;
-
-// todo will move to preferences.js
-// Format: { key: 'x', modifiers: ['altKey', 'shiftKey'] } // modifiers are optional
-// If value is an array, that means the action has multiple shortcuts. The first element is displayed as the abbr.
-let cmdKey = isMacOS() ? 'metaKey' : 'ctrlKey';
-let actionIdToShortcut = {
-    'file.open': { key: 'o', modifiers: [cmdKey] },
-    'file.export-as': { key: 'e', modifiers: [cmdKey] },
-    'file.export-active': { key: 'e', modifiers: [cmdKey, 'shiftKey'] },
-
-    // Note: file.save is not shown in toolbar anywhere, it actually ends up calling either file.saveTo or file.saveAs
-    'file.save': { key: 's', modifiers: [cmdKey] },
-
-    'clipboard.cut': { key: 'x', modifiers: [cmdKey] },
-    'clipboard.copy': { key: 'c', modifiers: [cmdKey] },
-    'clipboard.paste': { key: 'v', modifiers: [cmdKey] },
-    'clipboard.paste-in-selection': { key: 'v', modifiers: [cmdKey, 'shiftKey'] },
-    // 'tools.standard.text-editor': { key: 'e', modifiers: [cmdKey] },
-    'selection.select-all': { key: 'a', modifiers: [cmdKey] },
-    'state.undo': { key: 'z', modifiers: [cmdKey] },
-    'state.redo': { key: 'z', modifiers: [cmdKey, 'shiftKey'] },
-
-    'frames.new-frame': { key: 'f', modifiers: [cmdKey, 'shiftKey'] }, // Not using 'n' since that is reserved for new window
-    'frames.duplicate-frame': { key: 'd', modifiers: [cmdKey, 'shiftKey'] },
-    'frames.delete-frame': [
-        { key: 'Delete', modifiers: [cmdKey] },
-        { key: 'Backspace', modifiers: [cmdKey] }
-    ],
-    'frames.toggle-onion': { key: 'o', modifiers: [cmdKey, 'shiftKey'] },
-    'frames.previous-frame': { key: ',' },
-    'frames.next-frame': { key: '.' },
-    'frames.toggle-component': { key: "'" },
-
-    'view.toggle-grid': { key: 'g', modifiers: [cmdKey, 'shiftKey'] },
-    'view.toggle-whitespace': { key: 'p', modifiers: [cmdKey, 'shiftKey'] },
-    'view.zoom-in': { displayKey: '+', key: '=', modifiers: [cmdKey] },
-    'view.zoom-out': { displayKey: '-', key: '-', modifiers: [cmdKey] },
-    'view.zoom-default': { key: '0', modifiers: [cmdKey] },
-
-    'tools.standard.select': { key: 's' },
-    'tools.standard.text-editor': { key: 't' },
-    'tools.standard.draw-freeform': { key: 'f' },
-    'tools.standard.eraser': { key: 'e' },
-    // 'tools.standard.draw-line': { key: 'l' },
-    'tools.standard.draw-rect': { key: 'r' },
-    'tools.standard.draw-ellipse': { key: 'o' },
-    // 'tools.standard.draw-textbox': { key: 't' }, // todo same key
-    'tools.standard.fill-char': { key: 'p' },
-    // 'tools.standard.selection-lasso': { key: 's' },
-    'tools.standard.selection-wand': { key: 'w' },
-    'tools.standard.pan': { key: 'h' },
-    'tools.standard.move-all': { key: 'm' },
-    'tools.standard.paint-brush': { key: 'b' },
-    'tools.shapes.charPicker': { key: 'c' },
-    'tools.shapes.quickSwapChar': { key: 'q' },
-
-    'sidebar.toggle-component': { key: ']' },
-
-    'themes.select-os': { key: 'j' },
-    'themes.select-light-mode': { key: 'l' },
-    'themes.select-dark-mode': { key: 'k' },
-};
-
-let shortcutToActionId = {};
+const actions = {};
+const shortcutToActionIds = {}; // A shortcut can map to multiple actions; all enabled actions will be called
 
 export function init() {
-    shortcutToActionId = {};
-
     for (let [actionId, shortcutData] of Object.entries(actionIdToShortcut)) {
         (Array.isArray(shortcutData) ? shortcutData : [shortcutData]).forEach(shortcut => {
             const shortcutKey = getFullKey(shortcut);
-            if (shortcutToActionId[shortcutKey]) console.warn(`There is already a shortcut for: ${shortcutKey}`);
-            shortcutToActionId[shortcutKey] = actionId;
+            if (shortcutToActionIds[shortcutKey] === undefined) shortcutToActionIds[shortcutKey] = [];
+            shortcutToActionIds[shortcutKey].push(actionId);
         })
     }
 }
@@ -106,10 +41,6 @@ export function init() {
  *   shown next to the action name.
  */
 export function registerAction(id, data) {
-    if (actions === undefined) {
-        actions = {};
-    }
-
     if (isFunction(data)) {
         data = { callback: data };
     }
@@ -178,9 +109,24 @@ export function callAction(id, callbackData) {
     return false;
 }
 
+/**
+ * Calls the action associated with the given shortcut. If multiple actions are found, all enabled actions will be
+ * called.
+ * @param {Object|string} shortcut
+ * @param {Object} [callbackData] - Optional data to pass to called action
+ * @returns {boolean} - True if an action was called
+ */
 export function callActionByShortcut(shortcut, callbackData) {
-    const actionId = shortcutToActionId[getFullKey(shortcut)];
-    return actionId === undefined ? false : callAction(actionId, callbackData);
+    // console.log(`calling`, shortcut, ` -> ${getFullKey(shortcut)}`);
+
+    const actionIds = shortcutToActionIds[getFullKey(shortcut)] || [];
+    let actionCalled = false;
+
+    actionIds.forEach(actionId => {
+        if (callAction(actionId, callbackData)) actionCalled = true;
+    })
+
+    return actionCalled;
 }
 
 /**

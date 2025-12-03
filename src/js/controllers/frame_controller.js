@@ -307,19 +307,19 @@ function setupActions() {
     actions.registerAction('frames.previous-frame', {
         enabled: () => state.isAnimationProject(),
         callback: () => {
-            let index = state.frameRangeSelection().startIndex;
-            index -= 1;
-            if (index < 0) index = state.frames().length - 1;
-            selectFrame(index, 'changeFrameSingle');
+            const currentIndex = state.frameRangeSelection().startIndex;
+            let newIndex = currentIndex - 1;
+            if (newIndex < 0) newIndex = state.frames().length - 1;
+            if (newIndex !== currentIndex) selectFrame(newIndex, 'changeFrameSingle');
         }
     })
     actions.registerAction('frames.next-frame', {
         enabled: () => state.isAnimationProject(),
         callback: () => {
-            let index = state.frameRangeSelection().endIndex;
-            index += 1;
-            if (index >= state.frames().length) index = 0;
-            selectFrame(index, 'changeFrameSingle');
+            const currentIndex = state.frameRangeSelection().endIndex;
+            let newIndex = currentIndex + 1;
+            if (newIndex >= state.frames().length) newIndex = 0;
+            if (newIndex !== currentIndex) selectFrame(newIndex, 'changeFrameSingle');
         }
     })
 

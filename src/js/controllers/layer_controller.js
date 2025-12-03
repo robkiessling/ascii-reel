@@ -123,6 +123,19 @@ function setupActions() {
             getIconHTML('layers.toggle-visibility-lock.lock') : getIconHTML('layers.toggle-visibility-lock.unlock')
     });
 
+    actions.registerAction('layers.previous-layer', () => {
+        const currentIndex = state.layerIndex();
+        let newIndex = currentIndex - 1;
+        if (newIndex < 0) newIndex = state.layers().length - 1;
+        if (newIndex !== currentIndex) selectLayer(newIndex);
+    })
+    actions.registerAction('layers.next-layer', () => {
+        const currentIndex = state.layerIndex();
+        let newIndex = currentIndex + 1;
+        if (newIndex >= state.layers().length) newIndex = 0;
+        if (newIndex !== currentIndex) selectLayer(newIndex);
+    })
+
     actionButtons = actions.setupActionButtons($container, {
         placement: 'top'
     });

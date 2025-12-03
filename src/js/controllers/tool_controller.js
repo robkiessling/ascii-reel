@@ -414,7 +414,7 @@ function setupTools() {
                 actionData.shortcutAbbr = 'E, Right Click'
                 break;
             case 'draw-textbox':
-                actionData.shortcutAbbr = 'Double Click'
+                actionData.shortcutAbbr = 'T, Double Click'
                 break;
         }
 
@@ -858,6 +858,7 @@ function setupOrderMenu() {
             visible: () => selectionController.vector.hasSelectedShapes(),
             onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
             transparentBtns: false,
+            actionTooltips: true,
             menuTooltipOptions: shapeMenuTooltipOptions($actions)
         })
     }
@@ -1122,7 +1123,7 @@ function setupCharPicker() {
     })
     actions.registerAction('tools.shapes.quickSwapChar', {
         callback: () => toggleQuickSwap(true),
-        shortcutAbbr: `Q to enter, Esc to exit`
+        shortcutAbbr: `W to enter, Esc to exit`
     })
 
     $shapeChar = $('#shape-char');
