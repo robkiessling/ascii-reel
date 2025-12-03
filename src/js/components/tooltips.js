@@ -60,6 +60,7 @@ export function delegateTips($container, targetSelector, stringsKeyGetter, overr
  * @returns {{
  *   tooltips: import('tippy.js').Instance[],
  *   refreshContent: function,
+ *   refreshContentIf: (condition: boolean) => void,
  *   enable: function,
  *   disable: function
  * }} - tooltip control object. `tooltips` is the array of tippy instances. `refreshContent` is a function that can
@@ -81,6 +82,11 @@ export function refreshableTooltips($elements, contentBuilder, overrides = {}) {
 
         // Custom refresh function that reloads all tooltip content
         refreshContent: () => tooltips.forEach(tooltip => tooltip.setContent(element => contentBuilder(element))),
+        refreshContentIf: condition => {
+            tooltips.forEach(tooltip => {
+                if (condition(tooltip.reference)) tooltip.setContent(element => contentBuilder(element))
+            })
+        },
 
         // Standard tippy instance methods. I've only piped a few needed methods so far, we can add more if needed:
         enable: () => tooltips.forEach(tooltip => tooltip.enable()),

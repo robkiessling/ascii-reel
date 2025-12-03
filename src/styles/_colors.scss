@@ -51,8 +51,10 @@
   --color-button-call-out-text: var(--color-text-white);
   --color-button-call-out-hover: var(--violet-10);
 
-  --color-tooltip-bg: var(--color-white);
+  --color-tooltip-bg: var(--gray-0);
+  --color-tooltip-border: var(--gray-7);
   --color-tooltip-title: var(--violet-9);
+  --color-tooltip-shadow: 0 0.25rem 1rem 0rem rgba(0, 0, 0, 0.08);
 
   --color-resize-options: var(--gray-8);
 }
@@ -88,6 +90,7 @@
   --color-dialog-button-border: var(--gray-8);
 
   --color-tooltip-bg: var(--gray-5);
+  --color-tooltip-border: var(--gray-6);
   --color-tooltip-title: color-mix(in srgb, var(--color-primary) 70%, white); // seems better than violet-11?
 
   --color-resize-options: var(--gray-12);

@@ -114,7 +114,7 @@ function refresh() {
     }
 
     refreshSelectedColor();
-    actionButtons.refreshContent();
+    actionButtons.refreshContent(true);
 }
 
 function refreshSelectedColor() {

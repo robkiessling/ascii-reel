@@ -132,7 +132,6 @@ const ICON_DATA = {
     'tools.shapes.brush.diamond-5': { type: REMIXICON, content: 'ri-checkbox-blank-fill rotate45', style: "font-size: 1.25rem;" },
     'tools.shapes.brush.diamond-10': { type: REMIXICON, content: 'ri-checkbox-blank-fill rotate45', style: "font-size: 1.5rem;" },
 
-    'tools.shapes.order': { type: REMIXICON, content: 'ri-stack-line' },
     'tools.shapes.sendToBack': { type: REMIXICON, content: 'ri-contract-right-line rotate90' },
     'tools.shapes.sendBackward': { type: REMIXICON, content: 'ri-arrow-right-line rotate90' },
     'tools.shapes.bringForward': { type: REMIXICON, content: 'ri-arrow-right-line rotate270' },

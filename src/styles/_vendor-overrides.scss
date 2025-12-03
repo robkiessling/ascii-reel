@@ -5,9 +5,14 @@
 // Docs: https://atomiks.github.io/tippyjs/v6/themes/
 
 .tippy-box {
-  border: 1px solid #000;
+  border: 1px solid var(--color-tooltip-border);
   background: var(--color-tooltip-bg);
   color: var(--color-text);
+  box-shadow: var(--color-tooltip-shadow);
+
+  .tippy-content {
+    padding: 7px 11px;
+  }
 
   .tippy-arrow {
     color: var(--color-tooltip-bg)

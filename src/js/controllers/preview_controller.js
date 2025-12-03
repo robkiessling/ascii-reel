@@ -93,7 +93,7 @@ function reset() {
     const fps = state.getConfig('fps');
     $fpsSlider.slider('value', fps);
     $fpsValue.html(`${fps} FPS`);
-    actionButtons.refreshContent();
+    actionButtons.refreshContent(true);
 
     const expandedFrames = state.expandedFrames();
     const usableFps = state.getConfig('playPreview') ? fps : 0;

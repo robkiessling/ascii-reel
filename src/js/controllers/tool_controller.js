@@ -95,7 +95,7 @@ export function handleEscapeKey() {
 
     // Close any submenus if they are open
     if (Object.values(shapeProperties).some(property => property.menu.isOpen)) {
-        Object.values(shapeProperties).forEach(property => property.menu.toggleDropdown(false))
+        Object.values(shapeProperties).forEach(property => property.menu.closeDropdowns())
         return true;
     }
 
@@ -435,8 +435,12 @@ function setupTools() {
         }),
         getValue: () => state.getConfig('tool'),
         onSelect: newValue => actions.callAction(`tools.standard.${newValue}`),
-        tooltipOptions: {
+        menuTooltipOptions: {
             placement: 'bottom'
+        },
+        dropdownTooltipOptions: {
+            placement: 'right',
+            offset: [0, 18]
         },
         actionTooltips: true
     });
@@ -741,7 +745,7 @@ function setupShapeMenu($group, prop, options, overrides = {}) {
         $group: $group,
         menu: new IconMenu($actions, {
             dropdown: false,
-            dropdownBtnTooltip: `tools.shapes.${prop}`,
+            // dropdownBtnTooltip: `tools.shapes.${prop}`,
             items: options.map(option => {
                 return {
                     value: option,
@@ -753,7 +757,7 @@ function setupShapeMenu($group, prop, options, overrides = {}) {
             getValue: () => firstActiveShapeProp(prop),
             onSelect: newValue => updateActiveShapeProp(prop, newValue),
             transparentBtns: false,
-            tooltipOptions: shapeMenuTooltipOptions($actions),
+            menuTooltipOptions: shapeMenuTooltipOptions($actions),
             ...overrides
         })
     }
@@ -841,8 +845,6 @@ function setupOrderMenu() {
     shapeProperties[ORDER_MENU] = {
         $group: $group,
         menu: new IconMenu($actions, {
-            dropdownBtnIcon: 'tools.shapes.order',
-            dropdownBtnTooltip: 'tools.shapes.order',
             closeDropdownOnSelect: false,
             items: Object.values(REORDER_ACTIONS).map(action => {
                 const actionId = `tools.shapes.${action}`;
@@ -856,7 +858,7 @@ function setupOrderMenu() {
             visible: () => selectionController.vector.hasSelectedShapes(),
             onSelect: newValue => actions.callAction(`tools.shapes.${newValue}`),
             transparentBtns: false,
-            tooltipOptions: shapeMenuTooltipOptions($actions)
+            menuTooltipOptions: shapeMenuTooltipOptions($actions)
         })
     }
 }

@@ -90,6 +90,10 @@
 }
 
 .icon-dropdown {
+  display: flex;
+  flex-direction: row;
+  gap: 1px;
+
   position: relative;
 
   &.show-dropdown {
@@ -126,7 +130,7 @@
       //}
 
       &.active {
-        background: var(--color-primary);
+        background: var(--color-island-active);
       }
 
       &:hover {
@@ -137,7 +141,7 @@
   }
 }
 
-.icon-menu-option, .icon-dropdown-button, .icon-dropdown-option,
+.icon-menu-option, .icon-dropdown-button, .icon-dropdown-option, .icon-menu-toggle,
 .action-button, .canvas-button, .color-well, .char-well {
   width: $island-button-size;
   height: $island-button-size;
@@ -169,6 +173,10 @@
   &.active {
     background: var(--color-island-active);
     color: var(--color-text);
+  }
+
+  &.tiny {
+    width: 1.25rem;
   }
 }
 

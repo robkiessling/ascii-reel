@@ -47,13 +47,6 @@ export function init() {
         dropdownBtnClass: 'canvas-button',
         dropdownBtnIcon: 'mainMenu.open',
 
-        // This used to handle having a button to the left of main-menu, it is not needed anymore
-        // dropdownStyle: () => {
-        //     return {
-        //         left: isAnimationProject() ? -42 : 0
-        //     }
-        // },
-
         items: MAIN_MENU.map(item => {
             return {
                 value: item,

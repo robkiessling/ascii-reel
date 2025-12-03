@@ -22,6 +22,8 @@
   // I'm not sure if there's a better way to do this. But I need file-name to be behind #context-tools-top-center
   // most of the time, EXCEPT if it's hovered. I have to manipulate z-index of #context containers.
   &:has(#file-name:hover) { z-index: 4; }
+
+  gap: 2rem;
 }
 
 #context-tools-top-center {

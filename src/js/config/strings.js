@@ -194,7 +194,6 @@ export const STRINGS = {
     'tools.shapes.fill.monochar.name': 'Solid Char',
     'tools.shapes.fill.monochar.description': "Fills the background with the shape's selected character",
 
-    'tools.shapes.order.name': 'Re-order Shape',
     'tools.shapes.sendToBack.name': 'Send To Back',
     'tools.shapes.sendBackward.name': 'Send Backward',
     'tools.shapes.bringForward.name': 'Bring Forward',
@@ -249,7 +248,7 @@ export const STRINGS = {
     'frames.reverse-frames.description': 'Reverses the order of the currently selected frames.',
     'frames.toggle-onion.name': 'Toggle Onion',
     'frames.toggle-onion.description': 'When enabled, the previous frame will be faintly displayed.',
-    'frames.toggle-ticks.name': 'Show Frame Ticks',
+    'frames.toggle-ticks.name': 'Toggle Frame Ticks',
     'frames.toggle-ticks.description': 'Displays tick controls to customize how long each frame appears.\n\n' +
         'Tick counts are shown in the bottom-right corner of each frame and can be edited by clicking them. ' +
         'When multiple frames are selected, the change is applied to all.',

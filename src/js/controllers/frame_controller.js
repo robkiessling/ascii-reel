@@ -75,7 +75,7 @@ function refresh() {
 
     simpleBar.recalculate();
 
-    actionButtons.refreshContent();
+    actionButtons.refreshContent(true);
     toggleComponentButton.refreshContent();
 }
 

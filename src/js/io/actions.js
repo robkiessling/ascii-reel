@@ -240,7 +240,7 @@ export function setupActionTooltips($elements, getActionId, overrides = {}) {
  * Also sets up tooltips (see setupActionTooltips for more info).
  * @param $container - Element containing buttons
  * @param {Object} [tooltipOptions] - Standard tippy options
- * @returns {{tooltips: Tippy[], refreshContent: function}}
+ * @returns {{tooltips: Tippy[], refreshContent: (shouldRefreshTooltips: boolean = false) => void}}
  */
 export function setupActionButtons($container, tooltipOptions = {}) {
     attachClickHandlers($container);
@@ -251,7 +251,7 @@ export function setupActionButtons($container, tooltipOptions = {}) {
 
     return {
         tooltips: tooltips,
-        refreshContent: () => {
+        refreshContent: (shouldRefreshTooltips = false) => {
             // Refresh any button icons if the action has an `icon` attribute
             $buttons.each((index, button) => {
                 const $button = $(button);
@@ -264,7 +264,7 @@ export function setupActionButtons($container, tooltipOptions = {}) {
                 if (actionInfo.icon) $button.html(actionInfo.icon)
             })
 
-            refreshTooltips();
+            if (shouldRefreshTooltips) refreshTooltips();
         }
     }
 }
