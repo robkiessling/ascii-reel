@@ -1,9 +1,9 @@
 @use 'themes/light' as *;
 @use 'themes/dark' as *;
 
-/* The following color values (e.g. --gray-1, --violet-6) automatically change depending on light/dark mode */
+/* The following color values (e.g. --gray-1, --primary-6) automatically change depending on light/dark mode */
 :root {
-  --color-primary: var(--violet-9);
+  --color-primary: var(--primary-9);
   --color-warning: #f48225;
   --color-error: #f42525;
   --color-selection: var(--color-primary);
@@ -19,14 +19,14 @@
 
   --color-canvas-bg: var(--gray-0);
   --color-canvas-button: var(--gray-4);
-  --color-canvas-button-hover: var(--violet-5);
+  --color-canvas-button-hover: var(--primary-5);
 
   --color-sidebar-bg: var(--gray-2);
   --color-sidebar-border: var(--gray-5);
   --color-sidebar-hover: var(--gray-5);
-  --color-sidebar-active: var(--violet-6);
+  --color-sidebar-active: var(--primary-6);
   --color-frame-border: var(--gray-9);
-  --color-frame-selected: var(--violet-9);
+  --color-frame-selected: var(--primary-9);
   --color-layer-bg: var(--gray-4);
   --color-layer-selected: var(--color-sidebar-active);
   --color-unicode-bg: var(--gray-4);
@@ -36,8 +36,8 @@
   --color-island-bg: var(--gray-1);
   --color-island-button: var(--gray-4);
   --color-island-border: var(--gray-4);
-  --color-island-hover: var(--violet-4);
-  --color-island-active: var(--violet-6);
+  --color-island-hover: var(--primary-4);
+  --color-island-active: var(--primary-6);
   --color-island-shadow: 0 0.25rem 1rem 0rem rgba(0, 0, 0, 0.08);
   //--color-island-shadow: 0px 0px .9310142993927002px 0px #0000002b,0px 0px 3.1270833015441895px 0px #00000014,0px 7px 14px 0px #0000000d;
 
@@ -47,13 +47,13 @@
   --color-dialog-button-border: var(--gray-7);
   --color-overlay: #00000080;
 
-  --color-button-call-out: var(--violet-9);
+  --color-button-call-out: var(--primary-9);
   --color-button-call-out-text: var(--color-text-white);
-  --color-button-call-out-hover: var(--violet-10);
+  --color-button-call-out-hover: var(--primary-10);
 
   --color-tooltip-bg: var(--gray-0);
   --color-tooltip-border: var(--gray-7);
-  --color-tooltip-title: var(--violet-9);
+  --color-tooltip-title: var(--primary-9);
   --color-tooltip-shadow: 0 0.25rem 1rem 0rem rgba(0, 0, 0, 0.08);
 
   --color-resize-options: var(--gray-8);
@@ -73,7 +73,7 @@
   --color-sidebar-bg: var(--gray-3);
   --color-sidebar-border: var(--gray-6);
   --color-sidebar-hover: var(--gray-6);
-  --color-sidebar-active: var(--violet-7);
+  --color-sidebar-active: var(--primary-7);
   --color-frame-border: var(--gray-7);
   --color-layer-bg: var(--gray-5);
   --color-unicode-bg: var(--gray-5);
@@ -82,7 +82,7 @@
   --color-island-button: var(--gray-4);
   --color-island-border: var(--gray-6);
   --color-island-hover: var(--gray-6);
-  --color-island-active: var(--violet-7);
+  --color-island-active: var(--primary-7);
 
   --color-dialog-bg: var(--gray-3);
   --color-dialog-border: var(--gray-6);

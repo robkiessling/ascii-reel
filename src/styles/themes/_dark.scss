@@ -1,43 +1,76 @@
 /*
  https://www.radix-ui.com/colors/custom using the following:
- - Accent: #7755FF (chosen from https://dev.to/finnhvman/which-colors-look-good-on-black-and-white-2pe6)
+ - Accent: #DD3311 (chosen from https://dev.to/finnhvman/which-colors-look-good-on-black-and-white-2pe6)
  - Gray: #8B8D98 (default)
  - Background: #111111 (default)
- I also removed the alpha/preset colors since they're not needed. And I added --gray-0.
+
+ Then made a few more changes:
+ - .dark, .dark-theme -> [data-theme='dark']
+ - Removed alphas/presets (e.g. --red-a1, --red-contrast)
+ - Renamed --red to --primary for easy swapping
+ - Added --gray-0
+ - Removed alpha/preset colors
  */
 [data-theme='dark'] {
-  --violet-1: #100f1e;
-  --violet-2: #161429;
-  --violet-3: #241c52;
-  --violet-4: #301d74;
-  --violet-5: #3a2684;
-  --violet-6: #443293;
-  --violet-7: #513eaa;
-  --violet-8: #614acb;
-  --violet-9: #75f;
-  --violet-10: #6a55d6;
-  --violet-11: #aea8ff;
-  --violet-12: #dedeff;
+  //--primary-1: #170f0d;
+  //--primary-2: #201411;
+  //--primary-3: #3a160d;
+  //--primary-4: #521202;
+  //--primary-5: #621905;
+  //--primary-6: #722613;
+  //--primary-7: #8b3621;
+  //--primary-8: #b4462a;
+  //--primary-9: #ff4500;
+  //--primary-10: #f03400;
+  //--primary-11: #ff9576;
+  //--primary-12: #ffd4c8;
+
+  //--primary-1: #0c101e;
+  //--primary-2: #111728;
+  //--primary-3: #16224f;
+  //--primary-4: #1b2b6a;
+  //--primary-5: #23357e;
+  //--primary-6: #2b408f;
+  //--primary-7: #344ca4;
+  //--primary-8: #3d59c1;
+  //--primary-9: #46f;
+  //--primary-10: #3957ef;
+  //--primary-11: #92b2ff;
+  //--primary-12: #d3e1ff;
+
+  --primary-1: #0b130e;
+  --primary-2: #101c15;
+  --primary-3: #0b2e1d;
+  --primary-4: #003d23;
+  --primary-5: #004c2c;
+  --primary-6: #005b36;
+  --primary-7: #006c42;
+  --primary-8: #00804e;
+  --primary-9: #085;
+  --primary-10: #007a48;
+  --primary-11: #66d098;
+  --primary-12: #9ef6c4;
+
 }
 
-@supports (color: color(display-p3 1 1 1)) {
-  @media (color-gamut: p3) {
-    [data-theme='dark'] {
-      --violet-1: oklch(17.8% 0.0311 285.5);
-      --violet-2: oklch(20.7% 0.041 285.5);
-      --violet-3: oklch(27.1% 0.0945 285.5);
-      --violet-4: oklch(31.7% 0.1391 285.5);
-      --violet-5: oklch(35.6% 0.149 285.5);
-      --violet-6: oklch(39.7% 0.1528 285.5);
-      --violet-7: oklch(44.7% 0.1646 285.5);
-      --violet-8: oklch(50.9% 0.1901 285.5);
-      --violet-9: oklch(58.5% 0.2384 285.5);
-      --violet-10: oklch(54.1% 0.1901 285.5);
-      --violet-11: oklch(77.6% 0.1834 285.5);
-      --violet-12: oklch(91.4% 0.059 285.5);
-    }
-  }
-}
+//@supports (color: color(display-p3 1 1 1)) {
+//  @media (color-gamut: p3) {
+//    [data-theme='dark'] {
+//      --primary-1: oklch(17.8% 0.0135 35.4);
+//      --primary-2: oklch(20.7% 0.02 35.4);
+//      --primary-3: oklch(25.4% 0.0591 35.4);
+//      --primary-4: oklch(29.1% 0.0977 35.4);
+//      --primary-5: oklch(33.2% 0.1085 35.4);
+//      --primary-6: oklch(38.2% 0.1116 35.4);
+//      --primary-7: oklch(44.9% 0.1209 35.4);
+//      --primary-8: oklch(53.9% 0.1484 35.4);
+//      --primary-9: oklch(66% 0.2294 35.4);
+//      --primary-10: oklch(62.1% 0.2294 35.4);
+//      --primary-11: oklch(78.9% 0.194 35.4);
+//      --primary-12: oklch(90.7% 0.0556 35.4);
+//    }
+//  }
+//}
 
 [data-theme='dark'] {
   --gray-0: #090911;
