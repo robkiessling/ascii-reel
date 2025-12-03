@@ -157,7 +157,7 @@ export default class IconMenu {
     }
 
     _buildMenuDropdown(group) {
-        const dropdown = { open: false };
+        const dropdown = { open: false, group: group };
 
         dropdown.$group = $('<div>', {
             class: `icon-dropdown`,
@@ -268,10 +268,8 @@ export default class IconMenu {
         this._toggleDocumentListener(false)
 
         this._refreshSelectedValue(menuVisible);
-        this._refreshMenuBar(menuVisible);
+        this._refreshMenuOptions(menuVisible);
         this._refreshDropdowns(menuVisible);
-
-        if (this.options.actionTooltips) this._menuTips.refreshContentIf(element => $(element).hasClass('active'));
 
         this.options.onRefresh(this);
     }
@@ -299,11 +297,32 @@ export default class IconMenu {
             // Only highlighting the menu option if dropdown:false
             this.$container.find(`.icon-menu-option[data-value="${selectedValue}"]`).toggleClass('active', true);
         }
+
+        if (this.options.actionTooltips) this._menuTips.refreshContentIf(element => $(element).hasClass('active'));
     }
 
-    _refreshMenuBar(menuVisible) {
+    _refreshMenuOptions(menuVisible) {
         if (!menuVisible) return;
 
+        // If menu option is invisible and has a dropdown, fallback to first visible item
+        this.$container.find('.icon-menu-option').each((i, element) => {
+            const $button = $(element);
+            const item = this._valueToItemLookup[$button.attr('data-value')];
+            if (item.visible === undefined || item.visible(item)) return;
+
+            const dropdown = this._dropdowns[item.group];
+            if (!dropdown) return;
+
+            const firstVisibleItem = dropdown.group.items.find(item => item.visible === undefined || item.visible(item));
+            if (!firstVisibleItem) return;
+
+            dropdown.$button.html(getIconHTML(firstVisibleItem.icon));
+            dropdown.$button.attr('data-value', firstVisibleItem.value);
+            dropdown.$button.attr('data-tooltip', firstVisibleItem.tooltip);
+            if (this.options.actionTooltips) this._menuTips.refreshContentIf(element => element === dropdown.$button[0]);
+        })
+
+        // Apply disabled/visible props
         this.$container.find('.icon-menu-option').each((i, element) => {
             const $option = $(element);
             const item = this._valueToItemLookup[$option.attr('data-value')];

@@ -41,7 +41,7 @@ import {MULTICOLOR_TOOLS, RASTER_TOOLS, TOOLS, VECTOR_TOOLS} from "../config/too
 
 // -------------------------------------------------------------------------------- Main External API
 
-let $standardTools, $canvasContainer;
+let $canvasContainer;
 
 export function init() {
     $canvasContainer = $('#canvas-container');

@@ -101,10 +101,6 @@
       display: block;
     }
   }
-  &.hovered {
-    background-color: var(--color-island-hover);
-    cursor: pointer;
-  }
 
   > ul {
     display: none;
@@ -129,16 +125,40 @@
       //  border-radius: 0;
       //}
 
-      &.active {
-        background: var(--color-island-active);
-      }
-
       &:hover {
         background-color: var(--color-island-hover);
         cursor: pointer;
       }
+
+      &.active {
+        background: var(--color-island-active);
+      }
     }
   }
+
+
+  // The following makes the menu button and toggle arrow share a central border and apply hover effects simultaneously
+  //.icon-menu-option {
+  //  border-top-right-radius: 0;
+  //  border-bottom-right-radius: 0;
+  //}
+  //.icon-menu-toggle {
+  //  border-top-left-radius: 0;
+  //  border-bottom-left-radius: 0;
+  //}
+  //&:has(.icon-menu-option:hover), &:has(.icon-menu-toggle:hover) {
+  //  .icon-menu-option, .icon-menu-toggle {
+  //    background: var(--color-island-hover);
+  //  }
+  //}
+  //&:has(.icon-menu-option.active) {
+  //  .icon-menu-option {
+  //    background: var(--color-island-active);
+  //  }
+  //  .icon-menu-toggle {
+  //    background: var(--color-island-hover);
+  //  }
+  //}
 }
 
 .icon-menu-option, .icon-dropdown-button, .icon-dropdown-option, .icon-menu-toggle,

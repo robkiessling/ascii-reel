@@ -48,7 +48,7 @@ export const STRINGS = {
     'themes.select-light-mode.name': 'Light',
     'themes.select-dark-mode.name': 'Dark',
 
-    'tools.standard.select.name': 'Select Tool',
+    'tools.standard.select.name': 'Selection',
     'tools.standard.select.description': 'Click on a shape to select it. Drag to move it, or use handles to resize and edit.',
     'tools.standard.text-editor.name': 'Text Editor',
     'tools.standard.text-editor.description': 'Use this tool to edit text directly on the canvas.\n\n' +
