@@ -161,9 +161,9 @@ const ICON_DATA = {
     'tools.shapes.arrowheadEnd.ascii-1': { type: PRE, content: '-->' },
     'tools.shapes.arrowheadEnd.unicode-1': { type: PRE, content: '--▶' },
 
-    'themes.dark-mode': { type: REMIXICON, content: 'ri-moon-line' },
-    'themes.light-mode': { type: REMIXICON, content: 'ri-sun-line' },
-    'themes.os': { type: REMIXICON, content: 'ri-contrast-line' },
+    'themes.select.light-mode': { type: REMIXICON, content: 'ri-sun-line' },
+    'themes.select.dark-mode': { type: REMIXICON, content: 'ri-moon-line' },
+    'themes.select.system': { type: REMIXICON, content: 'ri-contrast-line' },
 }
 
 export function getIconClass(key) {

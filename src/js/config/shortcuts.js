@@ -47,13 +47,13 @@ export const actionIdToShortcut = {
     'tools.standard.select': { key: 'v' },
     'tools.standard.text-editor': { key: 'v' },
     'tools.standard.eraser': { key: 'e' },
-    // 'tools.standard.draw-line': { key: 'l' },
+    'tools.standard.draw-line': { key: 'l' },
     'tools.standard.draw-rect': { key: 'r' },
     'tools.standard.draw-ellipse': { key: 'o' },
     'tools.standard.draw-diamond': { key: 'd' },
     'tools.standard.draw-textbox': { key: 't' },
     'tools.standard.draw-freeform': { key: 'p' },
-    // 'tools.standard.fill-char': { key: 'k' },
+    'tools.standard.fill-char': { key: 'k' },
     'tools.standard.selection-rect': { key: 'm' },
     'tools.standard.pan': { key: 'h' },
     'tools.standard.paint-brush': { key: 'b' },
@@ -67,9 +67,9 @@ export const actionIdToShortcut = {
 
     'sidebar.toggle-component': { key: ']' },
 
-    'themes.select-os': { key: 'j' },
-    'themes.select-light-mode': { key: 'l' },
-    'themes.select-dark-mode': { key: 'k' },
+    // 'themes.select.light-mode': { key: 'l' },
+    // 'themes.select.dark-mode': { key: 'k' },
+    // 'themes.select.system': { key: 'j' },
 };
 
 

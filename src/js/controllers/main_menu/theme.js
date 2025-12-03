@@ -1,16 +1,41 @@
-import {registerAction} from "../../io/actions.js";
+import {callAction, registerAction} from "../../io/actions.js";
 import {THEMES} from "../../config/preferences.js";
 import {eventBus, EVENTS} from "../../events/events.js";
-import {getIconClass, getIconHTML} from "../../config/icons.js";
 import {
     getComputedTheme, getDarkModePref, getTheme,
     setDarkModePref, setTheme, validateColorMode
 } from "../../state/index.js";
+import IconMenu from "../../components/icon_menu.js";
+import {STRINGS} from "../../config/strings.js";
+
+let themeMenu;
 
 export function init() {
-    registerThemeAction('themes.select-os', THEMES.OS);
-    registerThemeAction('themes.select-light-mode', THEMES.LIGHT_MODE);
-    registerThemeAction('themes.select-dark-mode', THEMES.DARK_MODE);
+    Object.values(THEMES).forEach(theme => {
+        const action = `themes.select.${theme}`;
+        registerAction(action, {
+            callback: () => {
+                setTheme(theme);
+                eventBus.emit(EVENTS.THEME.CHANGED);
+            }
+        });
+    })
+
+    themeMenu = new IconMenu($('#theme-button'), {
+        dropdown: true,
+        dropdownBtnClass: 'canvas-button',
+        items: Object.values(THEMES).map(theme => {
+            return {
+                value: theme,
+                icon: `themes.select.${theme}`,
+                // tooltip: `themes.select.${theme}`,
+                label: STRINGS[`themes.select.${theme}.name`],
+            }
+        }),
+        onSelect: newValue => callAction(`themes.select.${newValue}`),
+        getValue: () => getTheme(),
+        dropdownClass: 'right-aligned'
+    })
 
     setupOSPreference();
     setupEventBus();
@@ -18,18 +43,8 @@ export function init() {
     applyThemeToDocument();
 }
 
-function registerThemeAction(actionName, theme) {
-    registerAction(actionName, {
-        icon: getIconClass(theme),
-        callback: () => {
-            setTheme(theme);
-            eventBus.emit(EVENTS.THEME.CHANGED);
-        }
-    });
-}
-
 function refresh() {
-    $('#right-menu').find('.current-theme').html(getIconHTML(getTheme()))
+    themeMenu.refresh();
 }
 
 function setupEventBus() {

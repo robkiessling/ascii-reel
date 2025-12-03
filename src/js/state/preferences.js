@@ -3,7 +3,7 @@ import {readGlobalSetting, saveGlobalSetting} from "../storage/local_storage.js"
 
 // ------------------------------------------------------ Themes
 
-const DEFAULT_THEME = THEMES.OS;
+const DEFAULT_THEME = THEMES.SYSTEM;
 
 let prefersDarkMode;
 
@@ -28,7 +28,7 @@ export function getTheme() {
 // The resulting theme based on their selection and OS (will either be light or dark)
 export function getComputedTheme() {
     let computedTheme = getTheme();
-    if (computedTheme === THEMES.OS) computedTheme = prefersDarkMode ? THEMES.DARK_MODE : THEMES.LIGHT_MODE;
+    if (computedTheme === THEMES.SYSTEM) computedTheme = prefersDarkMode ? THEMES.DARK_MODE : THEMES.LIGHT_MODE;
     return computedTheme;
 }
 

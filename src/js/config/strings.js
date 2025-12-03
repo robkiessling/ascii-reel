@@ -44,9 +44,9 @@ export const STRINGS = {
     'settings.change-background.invert-black.warning': "Your canvas contains black text, which won't be visible against a black background.",
     'settings.change-background.invert-black.checkbox': "Convert all black text to white",
 
-    'themes.select-os.name': 'System Default',
-    'themes.select-light-mode.name': 'Light',
-    'themes.select-dark-mode.name': 'Dark',
+    'themes.select.light-mode.name': 'Light Mode',
+    'themes.select.dark-mode.name': 'Dark Mode',
+    'themes.select.system.name': 'System Theme',
 
     'tools.standard.select.name': 'Move',
     'tools.standard.select.description': 'Click on a shape to select it. Drag to move it, or use handles to resize and edit.',

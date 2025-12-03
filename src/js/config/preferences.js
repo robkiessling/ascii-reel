@@ -6,9 +6,9 @@ export const GLOBAL_SETTINGS = {
 }
 
 export const THEMES = {
-    DARK_MODE: 'themes.dark-mode',
-    LIGHT_MODE: 'themes.light-mode',
-    OS: 'themes.os',
+    LIGHT_MODE: 'light-mode',
+    DARK_MODE: 'dark-mode',
+    SYSTEM: 'system',
 }
 
 export const FRAME_ORIENTATIONS = {

@@ -50,11 +50,12 @@ export default class IconMenu {
      * @param {boolean} [options.dropdown=false] - If false, renders as a menu bar. If true, renders as dropdown
      * @param {string} [options.dropdownBtnIcon] - (Only applicable if dropdown:true) If undefined, button icon will
      *   match whatever value is selected (based on item icon). If defined, button icon will be set to a static value
-     * @param {string} [options.dropdownBtnClass] - (Only applicable if dropdown:true) Class to add to dropdown button
      * @param {string} [options.dropdownBtnTooltip] - (Only applicable if dropdown:true) If undefined, button will not
      *   have a tooltip. If defined, button tooltip will be set to a static value.
      * @param {boolean} [options.closeDropdownOnSelect=true] - (Only applicable if dropdown:true) If true, dropdown
      *   menu will be closed after a selection is made.
+     * @param {string} [options.dropdownClass] - Classes to add to dropdown divs. E.g. `right-aligned`.
+     * @param {string} [options.dropdownBtnClass] - Classes to add to dropdown buttons.
      * @param {() => Object} [options.getValue] - Callback to get the current value of the select. If provided,
      *   the current selected option will be highlighted. If no callback is provided, items will just function like buttons
      * @param {() => boolean} [options.visible] - Callback that controls whether the entire menu is visible.
@@ -160,7 +161,7 @@ export default class IconMenu {
         const dropdown = { open: false, group: group };
 
         dropdown.$group = $('<div>', {
-            class: `icon-dropdown`,
+            class: `icon-dropdown ${this.options.dropdownClass || ''}`,
             'data-group': group.name
         }).appendTo(this.$container);
 
@@ -181,7 +182,7 @@ export default class IconMenu {
             }).appendTo(dropdown.$group);
 
             dropdown.$toggle = $('<div>', {
-                class: `icon-menu-toggle tiny ${this.options.transparentBtns ? '' : 'solid'}`,
+                class: `icon-menu-toggle tiny ${this.options.transparentBtns ? '' : 'solid'} ${this.options.dropdownBtnClass || ''}`,
                 'data-dropdown': group.name,
                 html: '<span class="ri ri-arrow-down-s-fill"></span>'
             }).appendTo(dropdown.$group);
